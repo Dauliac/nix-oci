@@ -22,7 +22,7 @@ in
         {
           pkgs,
           tag,
-          user ? null,
+          user,
           package ? null,
           dependencies ? [ ],
         }:
@@ -31,10 +31,10 @@ in
           shadowSetup =
             if user == "root" then
               cfg.mkRootShadowSetup { inherit pkgs; }
-            else if user == null then
-              [ ]
+            else if user != null && user != "" then
+              cfg.mkNonRootShadowSetup { inherit pkgs user; }
             else
-              cfg.mkNonRootShadowSetup { inherit pkgs user; };
+              throw "User must be specified";
         in
         (pkgs.buildEnv {
           name = "root";

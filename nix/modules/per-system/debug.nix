@@ -1,0 +1,52 @@
+localflake:
+{
+  config,
+  lib,
+  inputs,
+  self,
+  ...
+}:
+let
+  inherit (lib)
+    mkOption
+    types
+    ;
+in
+{
+  options = {
+    perSystem = inputs.flake-parts.lib.mkPerSystemOption (
+      {
+        config,
+        pkgs,
+        system,
+        ...
+      }:
+      {
+        options.oci = {
+          debug = mkOption {
+            description = "Add debug build in output.";
+            default = { };
+            type = types.submodule {
+              options = {
+                enabled = mkOption {
+                  type = types.bool;
+                  description = "";
+                  default = false;
+                };
+                packages = mkOption {
+                  type = types.listOf types.packages;
+                  description = "";
+                  default = with pkgs;  [
+                    coreutils
+                    bash
+                    # curl
+                  ];
+                };
+              };
+            };
+          };
+        };
+      }
+    );
+  };
+}

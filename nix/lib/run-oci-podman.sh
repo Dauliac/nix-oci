@@ -3,6 +3,7 @@
 set -o errexit
 set -o pipefail
 set -o nounset
+set -x
 
 cleanup() {
   if [[ -n ${PODMAN_PID:-} ]]; then

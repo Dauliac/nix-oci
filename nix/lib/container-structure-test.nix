@@ -23,46 +23,27 @@ in
           containerId,
         }:
         let
-          policy = cfg.mkPodmanPolicy pkgs;
           oci = perSystemConfig.internal.OCIs.${containerId};
           configFlags = lib.concatStringsSep " " (
             lib.map (
               config: "--config=${config}"
             ) perSystemConfig.containers.${containerId}.test.containerStructureTest.configs
           );
-
-          # TODO: add option to configure tests output format
-          cst = pkgs.writeShellScriptBin "container-structure-test" ''
-            ${oci.copyToPodman}/bin/copy-to-podman
-            set -x
-            ${perSystemConfig.packages.containerStructureTest}/bin/container-structure-test \
-              test --image "${oci.imageName}:${oci.imageTag}" \
-              --runtime podman \
-              --output text \
-              "${configFlags}"
-          '';
-          envRunScript = pkgs.writeScriptBin "run" ''
+        in
+        pkgs.writeShellScriptBin "container-structure-test" ''
             set -o errexit
             set -o nounset
             set -o pipefail
 
             main() {
-              ${./run-oci-podman.sh} "${cst}/bin/container-structure-test"
+              ${oci.copyToDockerDaemon}/bin/copy-to-docker-daemon
+              ${perSystemConfig.packages.containerStructureTest}/bin/container-structure-test \
+                test --image "${oci.imageName}:${oci.imageTag}" \
+                --output text \
+                ${configFlags}
             }
 
             main "$@"
-          '';
-          fhsEnv = pkgs.buildFHSEnv {
-            name = "container-structure-test";
-            extraBuildCommands = ''
-              cp -r ${policy}/* $out/
-            '';
-            runScript = "${envRunScript}/bin/run";
-          };
-        in
-        pkgs.writeScriptBin "container-structure-test" ''
-          export PATH="${pkgs.podman}/bin:${pkgs.bash}/bin"
-          ${fhsEnv}/bin/container-structure-test
         '';
     };
     mkAppContainerStructureTest = mkOption {

@@ -213,8 +213,9 @@ in
         }:
         let
           oci = args.perSystemConfig.containers.${args.containerId};
+          package = cfg.mkNixOrSimpleOCI args;
         in
-        (if oci.installNix then cfg.mkNixOCI args else cfg.mkSimpleOCI args)
+        package
         // (
           if oci.cve.trivy.enabled then
             {
@@ -227,33 +228,78 @@ in
                   ;
               };
             }
-          else if oci.cve.grype.enabled then
+          else {} ) // (
+          if oci.cve.grype.enabled then
             {
               cve.grype = cfg.mkScriptCVEGrype {
                 inherit pkgs containerId perSystemConfig;
               };
             }
-          else if oci.sbom.syft.enabled then
+          else {} ) // (
+          if oci.sbom.syft.enabled then
             {
               sbom.syft = cfg.mkScriptSBOMSyft {
                 inherit pkgs containerId perSystemConfig;
               };
             }
-          else if oci.credentialsLeak.trivy.enabled then
+          else {} ) // (
+          if oci.credentialsLeak.trivy.enabled then
             {
               credentialsLeak.trivy = cfg.mkScriptCredentialsLeakTrivy {
                 inherit pkgs containerId perSystemConfig;
               };
             }
-          else if oci.test.containerStructureTest.enabled then
+          else {} ) // (
+          if oci.test.containerStructureTest.enabled then
             {
               containerStructureTest = cfg.mkScriptContainerStructureTest {
                 inherit pkgs containerId perSystemConfig;
               };
             }
-          else
-            { }
-        );
+          else {} ) // (
+          if oci.debug.enabled then
+            let
+              args' = args // {
+                perSystemConfig.containers.${args.containerId} = {
+                  tag  = perSystemConfig.containers.${args.containerId}.tag + "-debug";
+                  dependencies =
+                    perSystemConfig.containers.${args.containerId}.dependencies ++
+                    perSystemConfig.containers.${args.containerId}.debug.packages;
+                };
+              };
+            in
+            {
+              debug = cfg.mkDebugOCI args;
+            }
+          else {} );
+    };
+    mkDebugOCI = mkOption {
+      description = mdDoc "A function to build debug container.";
+      type = types.functionTo types.package;
+      default =
+        args:
+        let
+          oci = args.perSystemConfig.containers.${args.containerId};
+          args' = args // {
+              perSystemConfig.containers.${args.containerId} = {
+                tag  = oci.tag + "-debug";
+                dependencies =
+                  oci.dependencies ++
+                  oci.debug.packages;
+              };
+          };
+          in
+          cfg.mkNixOrSimpleOCI args';
+    };
+    mkNixOrSimpleOCI = mkOption {
+      description = mdDoc "A function to that build nix or simple container depending config.";
+      type = types.functionTo types.package;
+      default =
+        args:
+        let
+          oci = args.perSystemConfig.containers.${args.containerId};
+        in
+          if oci.installNix then cfg.mkNixOCI args else cfg.mkSimpleOCI args;
     };
     mkSimpleOCI = mkOption {
       description = mdDoc "A function to build simple container";
@@ -281,6 +327,7 @@ in
                 package
                 dependencies
                 tag
+                user
                 ;
             })
           ];
@@ -306,10 +353,12 @@ in
           inherit (oci) name tag;
           initializeNixDatabase = true;
           copyToRoot = [
-            cfg.mkRoot
-            {
-              inherit (oci) pkgs package tag;
-            }
+            # TODO: add mkNixRoot function to build root with nix shadow setup
+            # cfg.mkRoot
+            # {
+            #   inherit (oci) pkgs package tag "";
+            #   user = "nixbld";
+            # }
           ];
           layers = [
             (cfg.mkNixOCILayer {

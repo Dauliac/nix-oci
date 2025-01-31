@@ -34,7 +34,7 @@ in
                   rootPath = mkOption {
                     type = types.path;
                     description = "The root path for the container.";
-                    default = config.oci.rootPath + name + "/";
+                    default = cfg.oci.rootPath + name + "/";
                   };
                   tag = mkOption {
                     type = types.nullOr types.str;
@@ -101,6 +101,24 @@ in
                               };
                             };
                           };
+                        };
+                      };
+                    };
+                  };
+                  debug = mkOption {
+                    description = "Add debug build in output.";
+                    default = { };
+                    type = types.submodule {
+                      options = {
+                        enabled = mkOption {
+                          type = types.bool;
+                          description = "";
+                          default = config.oci.debug.enabled;
+                        };
+                        packages = mkOption {
+                          type = types.listOf types.packages;
+                          description = "";
+                          default = config.oci.debug.packages;
                         };
                       };
                     };

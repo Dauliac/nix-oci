@@ -19,37 +19,28 @@ in
       default =
         {
           pkgs,
-          oci,
-          dgoss,
           perSystemConfig,
           containerId,
-          config,
         }:
         let
           name = "dgoss";
-          policy = cfg.mkPodmanPolicy pkgs;
-          dgoss = pkgs.writeShellScriptBin name ''
-            set -o errexit
-            set -o nounset
-            set -o pipefail
-            ${oci.copyToPodman}/bin/copy-to-podman
-            GOSS_FILE=${config.containers.${containerId}.dgoss.config}
-            GOSS_FILES_STRATEGY=cp
-            CONTAINER_RUNTIME=podman
-            ${perSystemConfig.packages.${name}}/bin/${name} \
-              run "${oci.imageName}:${oci.imageTag}"
-          '';
-          fhsEnv = pkgs.buildFHSEnv {
-            inherit name;
-            extraBuildCommands = ''
-              cp -r ${policy}/* $out/
-            '';
-            runScript = "${dgoss}/bin/run";
-          };
+          oci = perSystemConfig.internal.OCIs.${containerId};
         in
-        pkgs.writeScriptBin name ''
-          export PATH="${pkgs.podman}/bin:${pkgs.bash}/bin"
-          ${fhsEnv}/bin/${name}
+        # TODO: we need to add debug deps or to pass the command to run as an dgoss option
+        pkgs.writeShellScriptBin name ''
+          set -o errexit
+          set -o nounset
+          set -o pipefail
+
+          main() {
+            ${oci.copyToDockerDaemon}/bin/copy-to-docker-daemon
+            export GOSS_FILE=${perSystemConfig.containers.${containerId}.test.${name}.optionsPath}
+            ${perSystemConfig.packages.${name}}/bin/${name} \
+               run --entrypoint "" \
+              ${oci.imageName}:${oci.imageTag} \
+              kubectl version
+          }
+          main "$@"
         '';
     };
     mkAppDgoss = mkOption {
