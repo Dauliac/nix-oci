@@ -52,3 +52,16 @@
   run nix run '.#oci-credentials-leak-minimalistWithCredentialsLeaksTrivy'
   [ "$status" -eq 0 ]
 }
+
+@test "Nix default template works" {
+  local -gx repo_dir
+  repo_dir=$(git rev-parse --show-toplevel)
+  local -xg working_dir
+  working_dir=$(mktemp -d)
+  cd "$working_dir"
+  git init
+  run nix flake init -t "$repo_dir"
+  [ "$status" -eq 0 ]
+  run nix flake show
+  [ "$status" -eq 0 ]
+}
