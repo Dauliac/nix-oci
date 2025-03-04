@@ -43,6 +43,7 @@ in
                       inherit (config.oci.containers.${name}) package fromImage;
                     };
                   };
+                  # TODO: should we had an OTLP wrapper ?
                   test = mkOption {
                     description = ".";
                     default = { };
@@ -119,6 +120,22 @@ in
                           type = types.listOf types.packages;
                           description = "";
                           default = config.oci.debug.packages;
+                        };
+                        entrypoint = mkOption {
+                          type = types.submodule {
+                            options = {
+                              enabled = mkOption {
+                                type = types.bool;
+                                description = "";
+                                default = config.oci.debug.entrypoint.enabled;
+                              };
+                              wrapper = mkOption {
+                                type = types.package;
+                                description = "";
+                                default = config.oci.debug.entrypoint.enabled;
+                              };
+                            };
+                          };
                         };
                       };
                     };

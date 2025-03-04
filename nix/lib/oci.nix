@@ -281,15 +281,18 @@ in
         let
           oci = args.perSystemConfig.containers.${args.containerId};
           args' = args // {
-              perSystemConfig.containers.${args.containerId} = {
-                tag  = oci.tag + "-debug";
-                dependencies =
-                  oci.dependencies ++
-                  oci.debug.packages;
-              };
+            perSystemConfig.containers.${args.containerId} = {
+              tag = oci.tag + "-debug";
+              dependencies = oci.dependencies ++ oci.debug.packages;
+              entrypoint =
+                if oci.debug.entrypoint.enabled then
+                  "${oci.debug.entrypoint.wrapper} ${oci.entrypoint}"
+                else
+                  oci.entrypoint;
+            };
           };
-          in
-          cfg.mkNixOrSimpleOCI args';
+        in
+        cfg.mkNixOrSimpleOCI args';
     };
     mkNixOrSimpleOCI = mkOption {
       description = mdDoc "A function to that build nix or simple container depending config.";
