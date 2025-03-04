@@ -46,7 +46,7 @@ nix flake init -t github:Dauliac/nix-oci
 
 This command sets up a new Nix flake project pre-configured with nix-oci, allowing you to define and build OCI containers efficiently.
 
-For comprehensive examples and test cases, refer to the [examples](https://github.com/Dauliac/nix-oci/tree/main/examples) directory in the repository.
+For comprehensive examples and test cases, refer to the [examples](./examples) directory in the repository.
 
 ## Inspirations
 
@@ -54,7 +54,7 @@ nix-oci draws inspiration from projects such as [skaffold](https://skaffold.dev/
 
 ## Contributing
 
-Contributions are welcome! Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines on how to get involved.
+Contributions are welcome! Please refer to the [CONTRIBUTING.md](./CONTRIBUTING.md) file for guidelines on how to get involved.
 
 ## License
 
