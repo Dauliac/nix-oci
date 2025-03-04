@@ -2,7 +2,7 @@
   description = "Nix OCI tests";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
-    nix-oci.url = "../../.";
+    nix-oci.url = "../../../.";
     flake-parts.url = "github:hercules-ci/flake-parts";
   };
 
@@ -18,7 +18,7 @@
           inputs.nix-oci.modules.flake.default
         ]
         ++ inputs.nixpkgs.lib.fileset.toList (
-          inputs.nixpkgs.lib.fileset.fileFilter (file: file.hasExt "nix") ../../examples
+          inputs.nixpkgs.lib.fileset.fileFilter (file: file.hasExt "nix") ../../../examples
         );
       config = {
         oci.enabled = true;

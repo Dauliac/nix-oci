@@ -11,6 +11,7 @@
 }
 
 @test "Nix can run all check" {
+  cd self
   run nix flake check
   [ "$status" -eq 0 ]
 }
@@ -23,26 +24,31 @@
 # }
 
 @test "Nix run cve grype minimalistWithGrype" {
+  cd self
   run nix run '.#oci-cve-grype-minimalistWithGrype'
   [ "$status" -eq 0 ]
 }
 
 @test "Nix run cve trivy minimalistWithTrivyIgnore" {
+  cd self
   run nix run '.#oci-cve-trivy-minimalistWithTrivyIgnore'
   [ "$status" -eq 0 ]
 }
 
 @test "Update pulled manifests locks works" {
+  cd self
   run nix run '.#oci-updatePulledManifestsLocks'
   [ "$status" -eq 0 ]
 }
 
 @test "Nix run sbom syft" {
+  cd self
   run nix run '.#oci-sbom-syft-minimalistWithSyft'
   [ "$status" -eq 0 ]
 }
 
 @test "Nix run credentials leaks trivy" {
+  cd self
   run nix run '.#oci-credentials-leak-minimalistWithCredentialsLeaksTrivy'
   [ "$status" -eq 0 ]
 }
