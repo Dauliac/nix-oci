@@ -10,15 +10,13 @@ let
     inherit inputs;
     inherit config;
   };
-  inherit (lib)
-    attrValues
-    ;
 in
 {
   imports = [
     ./lib
     ./treefmt.nix
     ./examples.nix
+    ./templates.nix
     inputs.flake-parts.flakeModules.modules
     flakeModules
   ];
