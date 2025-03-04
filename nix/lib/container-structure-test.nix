@@ -31,19 +31,19 @@ in
           );
         in
         pkgs.writeShellScriptBin "container-structure-test" ''
-            set -o errexit
-            set -o nounset
-            set -o pipefail
+          set -o errexit
+          set -o nounset
+          set -o pipefail
 
-            main() {
-              ${oci.copyToDockerDaemon}/bin/copy-to-docker-daemon
-              ${perSystemConfig.packages.containerStructureTest}/bin/container-structure-test \
-                test --image "${oci.imageName}:${oci.imageTag}" \
-                --output text \
-                ${configFlags}
-            }
+          main() {
+            ${oci.copyToDockerDaemon}/bin/copy-to-docker-daemon
+            ${perSystemConfig.packages.containerStructureTest}/bin/container-structure-test \
+              test --image "${oci.imageName}:${oci.imageTag}" \
+              --output text \
+              ${configFlags}
+          }
 
-            main "$@"
+          main "$@"
         '';
     };
     mkAppContainerStructureTest = mkOption {

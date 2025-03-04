@@ -6,7 +6,7 @@ package:
   kubectl:
     installed: true
     versions:
-    - v1.32.0
+      - v1.32.0
 command:
   kubectl version:
     exit-status: 0

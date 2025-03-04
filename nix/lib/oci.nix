@@ -228,50 +228,57 @@ in
                   ;
               };
             }
-          else {} ) // (
+          else
+            { }
+        )
+        // (
           if oci.cve.grype.enabled then
             {
               cve.grype = cfg.mkScriptCVEGrype {
                 inherit pkgs containerId perSystemConfig;
               };
             }
-          else {} ) // (
+          else
+            { }
+        )
+        // (
           if oci.sbom.syft.enabled then
             {
               sbom.syft = cfg.mkScriptSBOMSyft {
                 inherit pkgs containerId perSystemConfig;
               };
             }
-          else {} ) // (
+          else
+            { }
+        )
+        // (
           if oci.credentialsLeak.trivy.enabled then
             {
               credentialsLeak.trivy = cfg.mkScriptCredentialsLeakTrivy {
                 inherit pkgs containerId perSystemConfig;
               };
             }
-          else {} ) // (
+          else
+            { }
+        )
+        // (
           if oci.test.containerStructureTest.enabled then
             {
               containerStructureTest = cfg.mkScriptContainerStructureTest {
                 inherit pkgs containerId perSystemConfig;
               };
             }
-          else {} ) // (
+          else
+            { }
+        )
+        // (
           if oci.debug.enabled then
-            let
-              args' = args // {
-                perSystemConfig.containers.${args.containerId} = {
-                  tag  = perSystemConfig.containers.${args.containerId}.tag + "-debug";
-                  dependencies =
-                    perSystemConfig.containers.${args.containerId}.dependencies ++
-                    perSystemConfig.containers.${args.containerId}.debug.packages;
-                };
-              };
-            in
             {
               debug = cfg.mkDebugOCI args;
             }
-          else {} );
+          else
+            { }
+        );
     };
     mkDebugOCI = mkOption {
       description = mdDoc "A function to build debug container.";
@@ -302,7 +309,7 @@ in
         let
           oci = args.perSystemConfig.containers.${args.containerId};
         in
-          if oci.installNix then cfg.mkNixOCI args else cfg.mkSimpleOCI args;
+        if oci.installNix then cfg.mkNixOCI args else cfg.mkSimpleOCI args;
     };
     mkSimpleOCI = mkOption {
       description = mdDoc "A function to build simple container";
