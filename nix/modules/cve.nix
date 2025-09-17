@@ -12,6 +12,7 @@ let
     mkOption
     types
     mkEnableOption
+    mdDoc
     ;
 in
 {
@@ -19,42 +20,36 @@ in
     oci = {
       cve = mkOption {
         default = { };
+        description = mdDoc "Configuration for Common Vulnerabilities and Exposures (CVE) scanning in container images.";
         type = types.submodule {
           options = {
-            # TODO: normalize name of config path dir
             configPath = mkOption {
               type = types.path;
               default = cfg.oci.rootPath;
-              description = "";
+              defaultText = lib.literalExpression "cfg.oci.rootPath";
+              description = mdDoc "Path where CVE scanner configuration files will be stored.";
             };
             trivy = mkOption {
-              description = "Whether to try to check for CVEs using trivy.";
+              description = mdDoc "Configuration for CVE scanning using Trivy.";
               default = { };
               type = types.submodule {
                 options = {
-                  # TODO: change all enabled into mkEnableOption
-                  enabled = mkOption {
-                    type = types.bool;
-                    description = "";
-                    default = false;
-                  };
+                  enabled = mkEnableOption (mdDoc "CVE scanning with Trivy");
                   ignore = mkOption {
                     default = { };
+                    description = mdDoc "Configuration for CVE exclusions in Trivy scans.";
                     type = types.submodule {
                       options = {
-                        fileEnabled = mkOption {
-                          type = types.bool;
-                          description = "";
-                          default = false;
-                        };
+                        fileEnabled = mkEnableOption (mdDoc "Trivy CVE ignore file generation");
                         rootPath = mkOption {
                           type = types.path;
-                          description = "";
+                          description = mdDoc "Path where Trivy CVE ignore files will be stored.";
                           default = cfg.oci.cve.configPath;
+                          defaultText = lib.literalExpression "cfg.oci.cve.configPath";
                         };
                         extra = mkOption {
                           type = types.listOf types.str;
-                          description = "Extra CVE to ignore globally";
+                          description = mdDoc "Additional CVE identifiers to ignore globally in Trivy scans.";
                           default = [ ];
                         };
                       };
@@ -64,24 +59,22 @@ in
               };
             };
             grype = mkOption {
-              description = "Whether to try to check for CVEs using grype.";
+              description = mdDoc "Configuration for CVE scanning using Grype.";
               default = { };
               type = types.submodule {
                 options = {
-                  enabled = mkOption {
-                    type = types.bool;
-                    description = "";
-                    default = false;
-                  };
+                  enabled = mkEnableOption (mdDoc "CVE scanning with Grype");
                   config = mkOption {
                     default = { };
+                    description = mdDoc "Configuration for Grype scanner settings.";
                     type = types.submodule {
                       options = {
-                        enabled = mkEnableOption "";
+                        enabled = mkEnableOption (mdDoc "Grype configuration file generation");
                         rootPath = mkOption {
                           type = types.path;
-                          description = "";
+                          description = mdDoc "Path where Grype configuration files will be stored.";
                           default = cfg.oci.cve.configPath + "/grype/";
+                          defaultText = lib.literalExpression ''cfg.oci.cve.configPath + "/grype/"'';
                         };
                       };
                     };
@@ -91,7 +84,6 @@ in
             };
           };
         };
-        description = "Whether to check for CVEs.";
       };
     };
   };

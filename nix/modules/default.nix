@@ -12,6 +12,7 @@ let
     mkOption
     types
     mkEnableOption
+    mdDoc
     ;
 in
 {
@@ -29,27 +30,29 @@ in
       # TODO: move it into devShell submodule ?
       devShellPackage = mkOption {
         type = types.package;
-        description = "The package to use for the dev shell.";
+        description = mdDoc "The package to use for the development shell.";
       };
       enableDevShell = mkOption {
         type = types.bool;
-        description = "Enable the flake dev shell.";
+        description = mdDoc "Whether to enable the flake development shell.";
         default = false;
       };
       rootPath = mkOption {
         type = types.path;
         default = self + "/oci/";
-        description = "The root path to store the nix OCI resources.";
+        defaultText = lib.literalExpression ''self + "/oci/"'';
+        description = mdDoc "The root path to store the Nix OCI resources.";
       };
       fromImageManifestRootPath = mkOption {
         type = types.path;
         default = cfg.oci.rootPath + "/pulledManifestsLocks/";
-        description = "The root path to store the pulled OCI image manifest json lockfiles.";
+        defaultText = lib.literalExpression ''cfg.oci.rootPath + "/pulledManifestsLocks/"'';
+        description = mdDoc "The root path to store the pulled OCI image manifest JSON lockfiles.";
       };
       registry = mkOption {
         type = types.nullOr types.str;
         default = null;
-        description = "The OCI registry to use for pushing and pulling images.";
+        description = mdDoc "The OCI registry to use for pushing and pulling images.";
       };
     };
   };

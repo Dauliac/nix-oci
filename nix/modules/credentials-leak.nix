@@ -10,7 +10,9 @@ let
   cfg = config;
   inherit (lib)
     mkOption
+    mkEnableOption
     types
+    mdDoc
     ;
 in
 {
@@ -23,25 +25,21 @@ in
             configPath = mkOption {
               type = types.path;
               default = cfg.oci.rootPath + "/credentials-leak/";
-              description = "";
+              defaultText = lib.literalExpression ''cfg.oci.rootPath + "/credentials-leak/"'';
+              description = mdDoc "Path where global credentials leak check configuration files will be stored.";
             };
             trivy = mkOption {
-              description = "Whether to try to check for CVEs using trivy.";
+              description = mdDoc "Configuration for detecting credentials leaks using Trivy.";
               default = { };
               type = types.submodule {
                 options = {
-                  # TODO: change all enabled into mkEnableOption
-                  enabled = mkOption {
-                    type = types.bool;
-                    description = "";
-                    default = false;
-                  };
+                  enabled = mkEnableOption (mdDoc "credentials leak detection with Trivy");
                 };
               };
             };
           };
         };
-        description = "Whether to check for CVEs.";
+        description = mdDoc "Options for credential leak detection in container images.";
       };
     };
   };

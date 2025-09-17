@@ -62,15 +62,14 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 0,
-        "narHash": "sha256-hoQohZ+ppred6E6lzd7IaJBBSiT4MfYEy3B3/VS27t4=",
-        "path": "/nix/store/vj0y7qydcvc1l1dacip0mi5nyzl5spi6-source",
+        "path": "../../../.",
         "type": "path"
       },
       "original": {
-        "path": "/nix/store/vj0y7qydcvc1l1dacip0mi5nyzl5spi6-source",
+        "path": "../../../.",
         "type": "path"
-      }
+      },
+      "parent": []
     },
     "nix2container": {
       "inputs": {
