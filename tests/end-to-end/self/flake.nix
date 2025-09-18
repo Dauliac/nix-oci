@@ -13,13 +13,12 @@
       ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } (_: {
-      imports =
-        [
-          inputs.nix-oci.modules.flake.default
-        ]
-        ++ inputs.nixpkgs.lib.fileset.toList (
-          inputs.nixpkgs.lib.fileset.fileFilter (file: file.hasExt "nix") ../../../examples
-        );
+      imports = [
+        inputs.nix-oci.modules.flake.default
+      ]
+      ++ inputs.nixpkgs.lib.fileset.toList (
+        inputs.nixpkgs.lib.fileset.fileFilter (file: file.hasExt "nix") ../../../examples
+      );
       config = {
         oci.enabled = true;
         oci.enableDevShell = true;

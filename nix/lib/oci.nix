@@ -469,7 +469,8 @@ in
               dependencies = [
                 pkgs.podman
                 podmanConfig
-              ] ++ dependencies;
+              ]
+              ++ dependencies;
             })
             entrypointScript
           ];

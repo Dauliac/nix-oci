@@ -4,6 +4,7 @@ localflake:
   lib,
   inputs,
   self,
+  flake-parts-lib,
   ...
 }:
 let
@@ -16,7 +17,7 @@ let
 in
 {
   options = {
-    perSystem = inputs.flake-parts.lib.mkPerSystemOption (
+    perSystem = flake-parts-lib.mkPerSystemOption (
       {
         config,
         pkgs,
