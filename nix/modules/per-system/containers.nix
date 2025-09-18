@@ -2,8 +2,6 @@ localflake:
 {
   config,
   lib,
-  inputs,
-  self,
   flake-parts-lib,
   ...
 }:
@@ -22,7 +20,6 @@ in
     perSystem = flake-parts-lib.mkPerSystemOption (
       {
         config,
-        pkgs,
         system,
         ...
       }:
@@ -125,7 +122,7 @@ in
                           defaultText = lib.literalExpression "config.oci.debug.enabled";
                         };
                         packages = mkOption {
-                          type = types.listOf types.packages;
+                          type = types.listOf types.package;
                           description = mdDoc "List of additional packages to include in debug builds.";
                           default = config.oci.debug.packages;
                           defaultText = lib.literalExpression "config.oci.debug.packages";

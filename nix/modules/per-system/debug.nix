@@ -1,9 +1,6 @@
 localflake:
 {
-  config,
   lib,
-  inputs,
-  self,
   flake-parts-lib,
   ...
 }:
@@ -16,12 +13,7 @@ in
 {
   options = {
     perSystem = flake-parts-lib.mkPerSystemOption (
-      {
-        config,
-        pkgs,
-        system,
-        ...
-      }:
+      { pkgs, ... }:
       {
         options.oci = {
           debug = mkOption {
@@ -35,7 +27,7 @@ in
                   default = false;
                 };
                 packages = mkOption {
-                  type = types.listOf types.packages;
+                  type = types.listOf types.package;
                   description = "";
                   default = with pkgs; [
                     coreutils

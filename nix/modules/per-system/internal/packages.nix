@@ -2,7 +2,6 @@ localflake:
 {
   config,
   lib,
-  inputs,
   self,
   flake-parts-lib,
   ...
@@ -22,7 +21,6 @@ in
       {
         config,
         pkgs,
-        system,
         ...
       }:
       {
