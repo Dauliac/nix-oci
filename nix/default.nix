@@ -22,8 +22,11 @@ in
   ];
   config = {
     oci.enabled = true;
-    flake.modules.flake.flakeModule = flakeModule;
+    flake.modules.flake.default = flakeModule;
     flake.modules.flake.nix-oci = flakeModule;
+    flake.flakeModules.nix-oci = flakeModule;
+    flake.flakeModules.default = flakeModule;
+    flake.flakeModule = flakeModule;
     perSystem =
       {
         config,
