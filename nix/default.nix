@@ -6,7 +6,7 @@
 }:
 let
   inherit (inputs.flake-parts.lib) importApply;
-  flakeModules = importApply ./modules {
+  flakeModule = importApply ./modules {
     inherit inputs;
     inherit config;
   };
@@ -18,12 +18,12 @@ in
     ./examples.nix
     ./templates.nix
     inputs.flake-parts.flakeModules.modules
-    flakeModules
+    flakeModule
   ];
   config = {
     oci.enabled = true;
-    flake.modules.flake.default = flakeModules;
-    flake.modules.flake.nix-oci = flakeModules;
+    flake.modules.flake.flakeModule = flakeModule;
+    flake.modules.flake.nix-oci = flakeModule;
     perSystem =
       {
         config,
