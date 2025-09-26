@@ -18,7 +18,7 @@ in
   options = {
     perSystem = flake-parts-lib.mkPerSystemOption (
       {
-        config: perSystemConfig,
+        config,
         system,
         ...
       }:
@@ -26,7 +26,7 @@ in
         options.oci.containers = mkOption {
           type = types.attrsOf (
             types.submodule (
-              { name, config, ... }:
+              { name, ... }:
               {
                 options = {
                   rootPath = mkOption {
@@ -50,7 +50,7 @@ in
                         rootPath = mkOption {
                           type = types.path;
                           description = "The root path for the test.";
-                          default = config.rootPath + "test/";
+                          default = cfg.oci.rootPath + name + "/test/";
                         };
                         dive = mkOption {
                           default = { };
@@ -79,9 +79,9 @@ in
                                 type = types.listOf types.path;
                                 description = "List of container-structure-test configuration files to run.";
                                 default = [
-                                  (config.test.rootPath + "container-structure-test.yaml")
+                                  (cfg.oci.rootPath + name + "/test/container-structure-test.yaml")
                                 ];
-                                defaultText = lib.literalExpression ''[ (config.oci.containers.\$\{name\}.test.rootPath + "container-structure-test.yaml") ]'';
+                                defaultText = lib.literalExpression ''[ (cfg.oci.rootPath + name + "/test/container-structure-test.yaml") ]'';
                               };
                             };
                           };
@@ -100,8 +100,8 @@ in
                               optionsPath = mkOption {
                                 type = types.path;
                                 description = "Path to the dgoss configuration file.";
-                                default = config.test.rootPath + "dgoss.yaml";
-                                defaultText = lib.literalExpression ''config.oci.containers.\$\{name\}.test.rootPath + "dgoss.yaml"'';
+                                default = cfg.oci.rootPath + name + "/test/dgoss.yaml";
+                                defaultText = lib.literalExpression ''cfg.oci.rootPath + name + "/test/dgoss.yaml"'';
                               };
                             };
                           };
@@ -117,14 +117,14 @@ in
                         enabled = mkOption {
                           type = types.bool;
                           description = "Whether to enable debug build with additional debugging tools.";
-                          default = perSystemConfig.oci.debug.enabled;
-                          defaultText = lib.literalExpression "perSystemConfig.oci.debug.enabled";
+                          default = config.oci.debug.enabled;
+                          defaultText = lib.literalExpression "config.oci.debug.enabled";
                         };
                         packages = mkOption {
                           type = types.listOf types.package;
                           description = "List of additional packages to include in debug builds.";
-                          default = perSystemConfig.oci.debug.packages;
-                          defaultText = lib.literalExpression "perSystemConfig.oci.debug.packages";
+                          default = config.oci.debug.packages;
+                          defaultText = lib.literalExpression "config.oci.debug.packages";
                         };
                         entrypoint = mkOption {
                           type = types.submodule {
@@ -132,14 +132,14 @@ in
                               enabled = mkOption {
                                 type = types.bool;
                                 description = "Whether to enable debug entrypoint wrapper.";
-                                default = perSystemConfig.oci.debug.entrypoint.enabled;
-                                defaultText = lib.literalExpression "perSystemConfig.oci.debug.entrypoint.enabled";
+                                default = config.oci.debug.entrypoint.enabled;
+                                defaultText = lib.literalExpression "config.oci.debug.entrypoint.enabled";
                               };
                               wrapper = mkOption {
                                 type = types.package;
                                 description = "Package containing the debug entrypoint wrapper.";
-                                default = perSystemConfig.oci.debug.entrypoint.wrapper;
-                                defaultText = lib.literalExpression "perSystemConfig.oci.debug.entrypoint.wrapper";
+                                default = config.oci.debug.entrypoint.wrapper;
+                                defaultText = lib.literalExpression "config.oci.debug.entrypoint.wrapper";
                               };
                             };
                           };
@@ -176,7 +176,7 @@ in
                         rootPath = mkOption {
                           type = types.path;
                           description = "The root path for the sbom.";
-                          default = config.rootPath + "sbom/";
+                          default = cfg.oci.rootPath + name + "/sbom/";
                         };
                         syft = mkOption {
                           description = "";
@@ -201,7 +201,7 @@ in
                                     path = mkOption {
                                       type = types.path;
                                       description = "";
-                                      default = config.sbom.rootPath + "syft.yaml";
+                                      default = cfg.oci.rootPath + name + "/sbom/syft.yaml";
                                     };
                                   };
                                 };
@@ -220,7 +220,7 @@ in
                         rootPath = mkOption {
                           type = types.path;
                           description = "";
-                          default = config.rootPath + "cve/";
+                          default = cfg.oci.rootPath + name + "/cve/";
                         };
                         trivy = mkOption {
                           description = "The package to use for the cve check.";
@@ -241,7 +241,7 @@ in
                                     path = mkOption {
                                       type = types.nullOr types.path;
                                       description = "";
-                                      default = config.cve.rootPath + "trivy.ignore";
+                                      default = cfg.oci.rootPath + name + "/cve/trivy.ignore";
                                     };
                                     extra = mkOption {
                                       type = types.listOf types.str;
@@ -277,7 +277,7 @@ in
                                     path = mkOption {
                                       type = types.path;
                                       description = "";
-                                      default = config.cve.rootPath + "grype.yaml";
+                                      default = cfg.oci.rootPath + name + "/cve/grype.yaml";
                                     };
                                   };
                                 };
