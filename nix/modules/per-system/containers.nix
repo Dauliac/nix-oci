@@ -18,7 +18,7 @@ in
   options = {
     perSystem = flake-parts-lib.mkPerSystemOption (
       {
-        config,
+        config: perSystemConfig,
         system,
         ...
       }:
@@ -26,7 +26,7 @@ in
         options.oci.containers = mkOption {
           type = types.attrsOf (
             types.submodule (
-              { name, ... }:
+              { name, config, ... }:
               {
                 options = {
                   rootPath = mkOption {
@@ -38,7 +38,7 @@ in
                     type = types.nullOr types.str;
                     description = "Tag of the container.";
                     default = localLib.mkOCITag {
-                      inherit (config.oci.containers.${name}) package fromImage;
+                      inherit (config) package fromImage;
                     };
                   };
                   # TODO: should we had an OTLP wrapper ?
@@ -50,7 +50,7 @@ in
                         rootPath = mkOption {
                           type = types.path;
                           description = "The root path for the test.";
-                          default = config.oci.containers.${name}.rootPath + "test/";
+                          default = config.rootPath + "test/";
                         };
                         dive = mkOption {
                           default = { };
@@ -79,7 +79,7 @@ in
                                 type = types.listOf types.path;
                                 description = "List of container-structure-test configuration files to run.";
                                 default = [
-                                  (config.oci.containers.${name}.test.rootPath + "container-structure-test.yaml")
+                                  (config.test.rootPath + "container-structure-test.yaml")
                                 ];
                                 defaultText = lib.literalExpression ''[ (config.oci.containers.\$\{name\}.test.rootPath + "container-structure-test.yaml") ]'';
                               };
@@ -100,7 +100,7 @@ in
                               optionsPath = mkOption {
                                 type = types.path;
                                 description = "Path to the dgoss configuration file.";
-                                default = config.oci.containers.${name}.test.rootPath + "dgoss.yaml";
+                                default = config.test.rootPath + "dgoss.yaml";
                                 defaultText = lib.literalExpression ''config.oci.containers.\$\{name\}.test.rootPath + "dgoss.yaml"'';
                               };
                             };
@@ -117,14 +117,14 @@ in
                         enabled = mkOption {
                           type = types.bool;
                           description = "Whether to enable debug build with additional debugging tools.";
-                          default = config.oci.debug.enabled;
-                          defaultText = lib.literalExpression "config.oci.debug.enabled";
+                          default = perSystemConfig.oci.debug.enabled;
+                          defaultText = lib.literalExpression "perSystemConfig.oci.debug.enabled";
                         };
                         packages = mkOption {
                           type = types.listOf types.package;
                           description = "List of additional packages to include in debug builds.";
-                          default = config.oci.debug.packages;
-                          defaultText = lib.literalExpression "config.oci.debug.packages";
+                          default = perSystemConfig.oci.debug.packages;
+                          defaultText = lib.literalExpression "perSystemConfig.oci.debug.packages";
                         };
                         entrypoint = mkOption {
                           type = types.submodule {
@@ -132,14 +132,14 @@ in
                               enabled = mkOption {
                                 type = types.bool;
                                 description = "Whether to enable debug entrypoint wrapper.";
-                                default = config.oci.debug.entrypoint.enabled;
-                                defaultText = lib.literalExpression "config.oci.debug.entrypoint.enabled";
+                                default = perSystemConfig.oci.debug.entrypoint.enabled;
+                                defaultText = lib.literalExpression "perSystemConfig.oci.debug.entrypoint.enabled";
                               };
                               wrapper = mkOption {
                                 type = types.package;
                                 description = "Package containing the debug entrypoint wrapper.";
-                                default = config.oci.debug.entrypoint.wrapper;
-                                defaultText = lib.literalExpression "config.oci.debug.entrypoint.wrapper";
+                                default = perSystemConfig.oci.debug.entrypoint.wrapper;
+                                defaultText = lib.literalExpression "perSystemConfig.oci.debug.entrypoint.wrapper";
                               };
                             };
                           };
@@ -176,7 +176,7 @@ in
                         rootPath = mkOption {
                           type = types.path;
                           description = "The root path for the sbom.";
-                          default = config.oci.containers.${name}.rootPath + "sbom/";
+                          default = config.rootPath + "sbom/";
                         };
                         syft = mkOption {
                           description = "";
@@ -201,7 +201,7 @@ in
                                     path = mkOption {
                                       type = types.path;
                                       description = "";
-                                      default = config.oci.containers.${name}.sbom.rootPath + "syft.yaml";
+                                      default = config.sbom.rootPath + "syft.yaml";
                                     };
                                   };
                                 };
@@ -220,7 +220,7 @@ in
                         rootPath = mkOption {
                           type = types.path;
                           description = "";
-                          default = config.oci.containers.${name}.rootPath + "cve/";
+                          default = config.rootPath + "cve/";
                         };
                         trivy = mkOption {
                           description = "The package to use for the cve check.";
@@ -241,7 +241,7 @@ in
                                     path = mkOption {
                                       type = types.nullOr types.path;
                                       description = "";
-                                      default = config.oci.containers.${name}.cve.rootPath + "trivy.ignore";
+                                      default = config.cve.rootPath + "trivy.ignore";
                                     };
                                     extra = mkOption {
                                       type = types.listOf types.str;
@@ -277,7 +277,7 @@ in
                                     path = mkOption {
                                       type = types.path;
                                       description = "";
-                                      default = config.oci.containers.${name}.cve.rootPath + "grype.yaml";
+                                      default = config.cve.rootPath + "grype.yaml";
                                     };
                                   };
                                 };
@@ -297,7 +297,7 @@ in
                     type = types.nullOr types.str;
                     description = "Name of the container. If null, the name will be automatically generated from the package or base image.";
                     default = localLib.mkOCIName {
-                      inherit (config.oci.containers.${name}) package fromImage;
+                      inherit (config) package fromImage;
                     };
                     defaultText = lib.literalExpression "localLib.mkOCIName { inherit package fromImage; }";
                   };
@@ -305,7 +305,7 @@ in
                     type = types.nullOr types.str;
                     description = "The user to run the container as. If null, will be automatically determined based on isRoot setting.";
                     default = localLib.mkOCIUser {
-                      inherit (config.oci.containers.${name}) name isRoot;
+                      inherit (config) name isRoot;
                     };
                     defaultText = lib.literalExpression "localLib.mkOCIUser { inherit name isRoot; }";
                   };
@@ -385,7 +385,7 @@ in
                   entrypoint = mkOption {
                     type = types.listOf types.str;
                     description = "The entrypoint command and arguments for the container. Will be automatically generated from the package if not specified.";
-                    default = localLib.mkOCIEntrypoint { inherit (config.oci.containers.${name}) package; };
+                    default = localLib.mkOCIEntrypoint { inherit (config) package; };
                     defaultText = lib.literalExpression "localLib.mkOCIEntrypoint { inherit package; }";
                   };
                 };
