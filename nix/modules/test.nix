@@ -10,7 +10,6 @@ let
   inherit (lib)
     mkOption
     types
-    mdDoc
     ;
 in
 {
@@ -18,17 +17,17 @@ in
     oci = {
       test = mkOption {
         default = { };
-        description = mdDoc "Global configuration for container testing tools.";
+        description = "Global configuration for container testing tools.";
         type = types.submodule {
           options = {
             dive = mkOption {
               default = { };
-              description = mdDoc "Configuration for Dive container image analysis tool.";
+              description = "Configuration for Dive container image analysis tool.";
               type = types.submodule {
                 options = {
                   enabled = mkOption {
                     type = types.bool;
-                    description = mdDoc "Whether to enable Dive analysis globally for all containers.";
+                    description = "Whether to enable Dive analysis globally for all containers.";
                     default = false;
                   };
                 };
@@ -36,12 +35,12 @@ in
             };
             containerStructureTest = mkOption {
               default = { };
-              description = mdDoc "Configuration for container-structure-test validation tool.";
+              description = "Configuration for container-structure-test validation tool.";
               type = types.submodule {
                 options = {
                   enabled = mkOption {
                     type = types.bool;
-                    description = mdDoc "Whether to enable container-structure-test globally for all containers.";
+                    description = "Whether to enable container-structure-test globally for all containers.";
                     default = false;
                   };
                 };
@@ -49,12 +48,12 @@ in
             };
             dgoss = mkOption {
               default = { };
-              description = mdDoc "Configuration for dgoss (Docker + goss) testing framework.";
+              description = "Configuration for dgoss (Docker + goss) testing framework.";
               type = types.submodule {
                 options = {
                   enabled = mkOption {
                     type = types.bool;
-                    description = mdDoc "Whether to enable dgoss testing globally for all containers.";
+                    description = "Whether to enable dgoss testing globally for all containers.";
                     default = false;
                   };
                 };

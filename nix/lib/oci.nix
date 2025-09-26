@@ -6,7 +6,6 @@
 let
   inherit (lib)
     mkOption
-    mdDoc
     types
     ;
   cfg = config.lib;
@@ -14,7 +13,7 @@ in
 {
   options.lib = {
     mkOCIPulledManifestLockUpdateScript = mkOption {
-      description = mdDoc "A function to build script to update pulled OCI manifests locks";
+      description = "A function to build script to update pulled OCI manifests locks";
       type = types.functionTo types.package;
       default =
         {
@@ -69,7 +68,7 @@ in
         '';
     };
     mkOCIPulledManifestLockPath = mkOption {
-      description = mdDoc "A function to build OCI manifest to pull";
+      description = "A function to build OCI manifest to pull";
       type = types.functionTo types.path;
       default =
         args@{
@@ -85,7 +84,7 @@ in
         config.fromImageManifestRootPath + name + "-" + oci.fromImage.imageTag + "-manifest-lock.json";
     };
     mkOCIPulledManifestLockRelativeRootPath = mkOption {
-      description = mdDoc "A function to get relative path lock manifest of to pull OCI";
+      description = "A function to get relative path lock manifest of to pull OCI";
       type = types.functionTo types.str;
       default =
         args:
@@ -96,7 +95,7 @@ in
         + "/";
     };
     mkOCIPulledManifestLockRelativePath = mkOption {
-      description = mdDoc "Generate local relive path to download OCI";
+      description = "Generate local relive path to download OCI";
       type = types.functionTo types.str;
       default =
         args@{
@@ -115,7 +114,7 @@ in
         );
     };
     mkOCIPulledManifestLock = mkOption {
-      description = mdDoc "A function to build OCI manifest to pull";
+      description = "A function to build OCI manifest to pull";
       type = types.functionTo types.package;
       default =
         args@{
@@ -134,7 +133,7 @@ in
     };
     mkOCIName = mkOption {
       type = types.functionTo types.str;
-      description = mdDoc "A function to get name of container";
+      description = "A function to get name of container";
       default =
         {
           package,
@@ -149,7 +148,7 @@ in
     };
     mkOCIUser = mkOption {
       type = types.functionTo types.str;
-      description = mdDoc "A function to get user of container";
+      description = "A function to get user of container";
       default =
         {
           isRoot,
@@ -168,7 +167,7 @@ in
     };
     mkOCITag = mkOption {
       type = types.functionTo types.str;
-      description = mdDoc "A function to get tag of container";
+      description = "A function to get tag of container";
       default =
         {
           package,
@@ -187,7 +186,7 @@ in
     };
     mkOCIEntrypoint = mkOption {
       type = types.functionTo (types.listOf types.str);
-      description = mdDoc "A function to get entrypoint of container";
+      description = "A function to get entrypoint of container";
       default =
         { package }:
         let
@@ -202,7 +201,7 @@ in
         entrypoint;
     };
     mkOCI = mkOption {
-      description = mdDoc "A function to build container";
+      description = "A function to build container";
       type = types.functionTo types.package;
       default =
         args@{
@@ -281,7 +280,7 @@ in
         );
     };
     mkDebugOCI = mkOption {
-      description = mdDoc "A function to build debug container.";
+      description = "A function to build debug container.";
       type = types.functionTo types.package;
       default =
         args:
@@ -302,7 +301,7 @@ in
         cfg.mkNixOrSimpleOCI args';
     };
     mkNixOrSimpleOCI = mkOption {
-      description = mdDoc "A function to that build nix or simple container depending config.";
+      description = "A function to that build nix or simple container depending config.";
       type = types.functionTo types.package;
       default =
         args:
@@ -312,7 +311,7 @@ in
         if oci.installNix then cfg.mkNixOCI args else cfg.mkSimpleOCI args;
     };
     mkSimpleOCI = mkOption {
-      description = mdDoc "A function to build simple container";
+      description = "A function to build simple container";
       type = types.functionTo types.package;
       default =
         args:
@@ -352,7 +351,7 @@ in
         });
     };
     mkNixOCI = mkOption {
-      description = mdDoc "A function to build nix container";
+      description = "A function to build nix container";
       type = types.functionTo types.package;
       default =
         args:
@@ -381,7 +380,7 @@ in
         };
     };
     mkNixOCILayer = mkOption {
-      description = mdDoc "A function to build nix container";
+      description = "A function to build nix container";
       type = types.package;
       default =
         args:
@@ -415,7 +414,7 @@ in
         };
     };
     mkDockerArchive = mkOption {
-      description = mdDoc "A function to transform nix2container build into docker archive";
+      description = "A function to transform nix2container build into docker archive";
       type = types.functionTo types.package;
       default =
         {
@@ -437,7 +436,7 @@ in
           '';
     };
     mkPodmanOCI = mkOption {
-      description = mdDoc "Function to build a container image with Podman and a non-root daemon.";
+      description = "Function to build a container image with Podman and a non-root daemon.";
       # type = types.functionTo types.package;
       default =
         {
@@ -488,7 +487,7 @@ in
         };
     };
     mkPodmanOCIRunScript = mkOption {
-      description = mdDoc "Function to build a script into a podman container image";
+      description = "Function to build a script into a podman container image";
       type = types.functionTo types.package;
       default =
         args@{

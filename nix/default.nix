@@ -1,12 +1,13 @@
 {
   inputs,
   config,
-  lib,
+  withSystem,
   ...
 }:
 let
   inherit (inputs.flake-parts.lib) importApply;
   flakeModule = importApply ./modules {
+    inherit withSystem;
     inherit inputs;
     inherit config;
   };
@@ -17,16 +18,11 @@ in
     ./treefmt.nix
     ./examples.nix
     ./templates.nix
+    ./module.nix
     inputs.flake-parts.flakeModules.modules
-    flakeModule
   ];
   config = {
     oci.enabled = true;
-    flake.modules.flake.default = flakeModule;
-    flake.modules.flake.nix-oci = flakeModule;
-    flake.flakeModules.nix-oci = flakeModule;
-    flake.flakeModules.default = flakeModule;
-    flake.flakeModule = flakeModule;
     perSystem =
       {
         config,

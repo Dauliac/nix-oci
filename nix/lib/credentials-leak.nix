@@ -6,7 +6,6 @@
 let
   inherit (lib)
     mkOption
-    mdDoc
     types
     ;
   cfg = config.lib;
@@ -14,7 +13,7 @@ in
 {
   options.lib = {
     mkScriptCredentialsLeakTrivy = mkOption {
-      description = mdDoc "To build trivy app to check for CVEs on OCI.";
+      description = "To build trivy app to check for CVEs on OCI.";
       type = types.functionTo types.attrs;
       default =
         args@{
@@ -42,7 +41,7 @@ in
         '';
     };
     mkAppCredentialsLeakTrivy = mkOption {
-      description = mdDoc "To build trivy app to check for CVEs on OCI.";
+      description = "To build trivy app to check for CVEs on OCI.";
       type = types.functionTo types.attrs;
       default =
         args@{

@@ -6,7 +6,6 @@
 let
   inherit (lib)
     mkOption
-    mdDoc
     types
     ;
   cfg = config.lib;
@@ -14,7 +13,7 @@ in
 {
   options.lib = {
     mkScriptDgoss = mkOption {
-      description = mdDoc "A function to create a check that runs dgoss on a built image using podman.";
+      description = "A function to create a check that runs dgoss on a built image using podman.";
       type = types.functionTo types.package;
       default =
         {
@@ -44,7 +43,7 @@ in
         '';
     };
     mkAppDgoss = mkOption {
-      description = mdDoc "";
+      description = "";
       type = types.functionTo types.attrs;
       default = args: {
         type = "app";

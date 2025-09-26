@@ -3,14 +3,13 @@ let
   inherit (lib)
     attrsets
     foldl'
-    mdDoc
     mkOption
     ;
 in
 {
   options.lib = {
     prefixOutputs = mkOption {
-      description = mdDoc "A prefix to add to the output file.";
+      description = "A prefix to add to the output file.";
       default =
         {
           prefix,
@@ -25,7 +24,7 @@ in
         ) { } (attrsets.attrNames set);
     };
     filterEnabledOutputsSet = mkOption {
-      description = mdDoc "A function to filter outputs.";
+      description = "A function to filter outputs.";
       default =
         {
           config,

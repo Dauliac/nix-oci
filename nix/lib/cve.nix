@@ -7,14 +7,13 @@ let
   cfg = config.lib;
   inherit (lib)
     mkOption
-    mdDoc
     types
     ;
 in
 {
   options.lib = {
     mkScriptCVETrivy = mkOption {
-      description = mdDoc "To build trivy app to check for CVEs on OCI.";
+      description = "To build trivy app to check for CVEs on OCI.";
       type = types.functionTo types.attrs;
       default =
         args@{
@@ -61,7 +60,7 @@ in
         '';
     };
     mkAppCVETrivy = mkOption {
-      description = mdDoc "To build trivy app to check for CVEs on OCI.";
+      description = "To build trivy app to check for CVEs on OCI.";
       type = types.functionTo types.attrs;
       default = args: {
         type = "app";
@@ -69,7 +68,7 @@ in
       };
     };
     mkScriptCVEGrype = mkOption {
-      description = mdDoc "To build grype app to check for CVEs on OCI.";
+      description = "To build grype app to check for CVEs on OCI.";
       type = types.functionTo types.attrs;
       default =
         args@{
@@ -98,7 +97,7 @@ in
         '';
     };
     mkAppCVEGrype = mkOption {
-      description = mdDoc "To build grype app to check for CVEs on OCI.";
+      description = "To build grype app to check for CVEs on OCI.";
       type = types.functionTo types.attrs;
       default =
         args@{

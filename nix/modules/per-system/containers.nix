@@ -12,7 +12,6 @@ let
     mkEnableOption
     mkOption
     types
-    mdDoc
     ;
 in
 {
@@ -59,7 +58,7 @@ in
                             options = {
                               enabled = mkOption {
                                 type = types.bool;
-                                description = mdDoc "Whether to enable Dive analysis for container image layers and efficiency.";
+                                description = "Whether to enable Dive analysis for container image layers and efficiency.";
                                 default = cfg.oci.test.dive.enabled;
                                 defaultText = lib.literalExpression "cfg.oci.test.dive.enabled";
                               };
@@ -72,13 +71,13 @@ in
                             options = {
                               enabled = mkOption {
                                 type = types.bool;
-                                description = mdDoc "Whether to enable container-structure-test for validating container structure and metadata.";
+                                description = "Whether to enable container-structure-test for validating container structure and metadata.";
                                 default = cfg.oci.test.containerStructureTest.enabled;
                                 defaultText = lib.literalExpression "cfg.oci.test.containerStructureTest.enabled";
                               };
                               configs = mkOption {
                                 type = types.listOf types.path;
-                                description = mdDoc "List of container-structure-test configuration files to run.";
+                                description = "List of container-structure-test configuration files to run.";
                                 default = [
                                   (config.oci.containers.${name}.test.rootPath + "container-structure-test.yaml")
                                 ];
@@ -88,19 +87,19 @@ in
                           };
                         };
                         dgoss = mkOption {
-                          description = mdDoc "Configuration for dgoss (Docker + goss) testing framework.";
+                          description = "Configuration for dgoss (Docker + goss) testing framework.";
                           default = { };
                           type = types.submodule {
                             options = {
                               enabled = mkOption {
                                 type = types.bool;
-                                description = mdDoc "Whether to enable dgoss testing for the container.";
+                                description = "Whether to enable dgoss testing for the container.";
                                 default = cfg.oci.test.dgoss.enabled;
                                 defaultText = lib.literalExpression "cfg.oci.test.dgoss.enabled";
                               };
                               optionsPath = mkOption {
                                 type = types.path;
-                                description = mdDoc "Path to the dgoss configuration file.";
+                                description = "Path to the dgoss configuration file.";
                                 default = config.oci.containers.${name}.test.rootPath + "dgoss.yaml";
                                 defaultText = lib.literalExpression ''config.oci.containers.\$\{name\}.test.rootPath + "dgoss.yaml"'';
                               };
@@ -111,19 +110,19 @@ in
                     };
                   };
                   debug = mkOption {
-                    description = mdDoc "Configuration for debug builds with additional debugging tools and packages.";
+                    description = "Configuration for debug builds with additional debugging tools and packages.";
                     default = { };
                     type = types.submodule {
                       options = {
                         enabled = mkOption {
                           type = types.bool;
-                          description = mdDoc "Whether to enable debug build with additional debugging tools.";
+                          description = "Whether to enable debug build with additional debugging tools.";
                           default = config.oci.debug.enabled;
                           defaultText = lib.literalExpression "config.oci.debug.enabled";
                         };
                         packages = mkOption {
                           type = types.listOf types.package;
-                          description = mdDoc "List of additional packages to include in debug builds.";
+                          description = "List of additional packages to include in debug builds.";
                           default = config.oci.debug.packages;
                           defaultText = lib.literalExpression "config.oci.debug.packages";
                         };
@@ -132,13 +131,13 @@ in
                             options = {
                               enabled = mkOption {
                                 type = types.bool;
-                                description = mdDoc "Whether to enable debug entrypoint wrapper.";
+                                description = "Whether to enable debug entrypoint wrapper.";
                                 default = config.oci.debug.entrypoint.enabled;
                                 defaultText = lib.literalExpression "config.oci.debug.entrypoint.enabled";
                               };
                               wrapper = mkOption {
                                 type = types.package;
-                                description = mdDoc "Package containing the debug entrypoint wrapper.";
+                                description = "Package containing the debug entrypoint wrapper.";
                                 default = config.oci.debug.entrypoint.wrapper;
                                 defaultText = lib.literalExpression "config.oci.debug.entrypoint.wrapper";
                               };
@@ -296,7 +295,7 @@ in
                   };
                   name = mkOption {
                     type = types.nullOr types.str;
-                    description = mdDoc "Name of the container. If null, the name will be automatically generated from the package or base image.";
+                    description = "Name of the container. If null, the name will be automatically generated from the package or base image.";
                     default = localLib.mkOCIName {
                       inherit (config.oci.containers.${name}) package fromImage;
                     };
@@ -304,14 +303,14 @@ in
                   };
                   user = mkOption {
                     type = types.nullOr types.str;
-                    description = mdDoc "The user to run the container as. If null, will be automatically determined based on isRoot setting.";
+                    description = "The user to run the container as. If null, will be automatically determined based on isRoot setting.";
                     default = localLib.mkOCIUser {
                       inherit (config.oci.containers.${name}) name isRoot;
                     };
                     defaultText = lib.literalExpression "localLib.mkOCIUser { inherit name isRoot; }";
                   };
                   fromImage = mkOption {
-                    description = mdDoc "The base image to use as the foundation for this container. If null, will create a minimal scratch-based container.";
+                    description = "The base image to use as the foundation for this container. If null, will create a minimal scratch-based container.";
                     type = types.nullOr (
                       types.submodule (
                         { ... }:
@@ -385,7 +384,7 @@ in
                   };
                   entrypoint = mkOption {
                     type = types.listOf types.str;
-                    description = mdDoc "The entrypoint command and arguments for the container. Will be automatically generated from the package if not specified.";
+                    description = "The entrypoint command and arguments for the container. Will be automatically generated from the package if not specified.";
                     default = localLib.mkOCIEntrypoint { inherit (config.oci.containers.${name}) package; };
                     defaultText = lib.literalExpression "localLib.mkOCIEntrypoint { inherit package; }";
                   };
@@ -393,7 +392,7 @@ in
               }
             )
           );
-          description = mdDoc "Definitions for all containers managed by this flake.";
+          description = "Definitions for all containers managed by this flake.";
           default = { };
           example = lib.literalExpression ''
             {

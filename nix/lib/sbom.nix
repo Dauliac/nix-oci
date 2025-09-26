@@ -7,14 +7,13 @@ let
   cfg = config.lib;
   inherit (lib)
     mkOption
-    mdDoc
     types
     ;
 in
 {
   options.lib = {
     mkScriptSBOMSyft = mkOption {
-      description = mdDoc "To build syft app to check for CVEs on OCI.";
+      description = "To build syft app to check for CVEs on OCI.";
       type = types.functionTo types.attrs;
       default =
         args@{
@@ -43,7 +42,7 @@ in
         '';
     };
     mkAppSBOMSyft = mkOption {
-      description = mdDoc "To build syft app to check for CVEs on OCI.";
+      description = "To build syft app to check for CVEs on OCI.";
       type = types.functionTo types.attrs;
       default =
         args@{

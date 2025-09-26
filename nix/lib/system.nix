@@ -6,7 +6,6 @@
 let
   inherit (lib)
     mkOption
-    mdDoc
     concatMapStrings
     concatStringsSep
     types
@@ -16,7 +15,7 @@ in
 {
   options.lib = {
     mkRoot = mkOption {
-      description = mdDoc "A function to build container root filesystem with package, user setup, and dependencies";
+      description = "A function to build container root filesystem with package, user setup, and dependencies";
       type = types.functionTo types.package;
       defaultText = lib.literalExpression ''
         { pkgs, tag, user, package ? null, dependencies ? [ ] }:
@@ -57,7 +56,7 @@ in
         });
     };
     mkNixConfig = mkOption {
-      description = mdDoc "A function to build nix configuration file for containers";
+      description = "A function to build nix configuration file for containers";
       defaultText = lib.literalExpression ''pkgs: pkgs.writeText "etc/nix/nix.conf" "..."'';
       default =
         pkgs:
@@ -68,7 +67,7 @@ in
         '';
     };
     mkPublishOCIScript = mkOption {
-      description = mdDoc "A function to build publishing script for CI that pushes container images to registry";
+      description = "A function to build publishing script for CI that pushes container images to registry";
       defaultText = lib.literalExpression ''{ container, pkgs }: pkgs.writeScriptBin "publish-docker-image" "..."'';
       default =
         {
@@ -99,7 +98,7 @@ in
         '';
     };
     mkRootShadowSetup = mkOption {
-      description = mdDoc "A function to build passwd, shadow, group, and gshadow files for containers run as root user";
+      description = "A function to build passwd, shadow, group, and gshadow files for containers run as root user";
       defaultText = lib.literalExpression ''{ pkgs }: [ (writeTextDir "etc/passwd" "...") (writeTextDir "etc/shadow" "...") ... ]'';
       default =
         { pkgs }:
@@ -120,7 +119,7 @@ in
         ];
     };
     mkNonRootShadowSetup = mkOption {
-      description = mdDoc "A function to build passwd, shadow, group, and gshadow files for containers run as non-root user";
+      description = "A function to build passwd, shadow, group, and gshadow files for containers run as non-root user";
       defaultText = lib.literalExpression ''{ user, pkgs, uid ? 4000, gid ? uid }: [ (writeTextDir "etc/passwd" "...") ... ]'';
       default =
         {
@@ -150,7 +149,7 @@ in
         ];
     };
     mkNixShadowSetup = mkOption {
-      description = mdDoc "A function to build passwd, shadow, group, and gshadow files for containers that run nested Nix";
+      description = "A function to build passwd, shadow, group, and gshadow files for containers that run nested Nix";
       defaultText = lib.literalExpression ''pkgs: [ (writeText "etc/passwd" "...") (writeText "etc/group" "...") ... ]'';
       default =
         pkgs:
@@ -200,7 +199,7 @@ in
         ];
     };
     mkPodmanPolicy = mkOption {
-      description = mdDoc "A function to build podman security policy configuration";
+      description = "A function to build podman security policy configuration";
       defaultText = lib.literalExpression ''pkgs: pkgs.writeTextDir "etc/containers/policy.json" "..."'';
       default =
         pkgs:

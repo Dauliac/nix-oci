@@ -6,14 +6,13 @@
 let
   inherit (lib)
     mkOption
-    mdDoc
     types
     ;
 in
 {
   options.lib = {
     mkCheckDive = mkOption {
-      description = mdDoc "A function to create a check that runs dive on a built image";
+      description = "A function to create a check that runs dive on a built image";
       type = types.functionTo types.package;
       default =
         {
