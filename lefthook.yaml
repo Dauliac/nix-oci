@@ -1,0 +1,38 @@
+skip_output:
+  - meta
+  - success
+commit-msg:
+  parallel: true
+  commands:
+    commitlint:
+      skip:
+        - merge
+        - rebase
+      tags: check lint commit
+      run: cat "{1}" | convco check --from-stdin
+    typos:
+      skip:
+        - merge
+        - rebase
+      tags: check commit typos
+      run: cat "{1}" | head -n 1 | typos -
+pre-commit:
+  parallel: true
+  commands:
+    formatter:
+      tags: formatter
+      run: nix fmt
+      stage_fixed: true
+    show:
+      tags: show
+      run: nix flake show
+    checks:
+      tags: build checks
+      run: nix flake check --quiet
+    update-pulled-manifests-locks:
+      run: |
+        nix run '.#oci-updatePulledManifestsLocks'
+    test:
+      tags: checks
+      run: |
+        task test --verbose --output prefixed
