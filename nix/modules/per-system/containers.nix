@@ -50,6 +50,7 @@ in
                       inherit (containerConfig) package fromImage;
                     };
                     defaultText = lib.literalExpression ''config.oci.lib.mkOCITag { inherit package fromImage; }'';
+                    example = "1.0.0";
                   };
                   # TODO: should we had an OTLP wrapper ?
                   test = mkOption {
@@ -73,6 +74,7 @@ in
                                 description = "Whether to enable Dive analysis for container image layers and efficiency.";
                                 default = cfg.oci.test.dive.enabled;
                                 defaultText = lib.literalExpression "cfg.oci.test.dive.enabled";
+                                example = true;
                               };
                             };
                           };
@@ -311,6 +313,7 @@ in
                     type = types.nullOr types.package;
                     description = "The main package for the container";
                     default = null;
+                    example = lib.literalExpression "pkgs.hello";
                   };
                   name = mkOption {
                     type = types.nullOr types.str;
@@ -319,6 +322,7 @@ in
                       inherit (containerConfig) package fromImage;
                     };
                     defaultText = lib.literalExpression "cfg.oci.lib.mkOCIName { inherit package fromImage; }";
+                    example = "my-app";
                   };
                   user = mkOption {
                     type = types.nullOr types.str;
@@ -393,27 +397,32 @@ in
                     type = types.listOf types.package;
                     description = "Additional dependencies packages to include in the container.";
                     default = [ ];
+                    example = lib.literalExpression "[ pkgs.bash pkgs.coreutils ]";
                   };
                   isRoot = mkOption {
                     type = types.bool;
                     description = "Whether the container is a root container.";
                     default = false;
+                    example = true;
                   };
                   installNix = mkOption {
                     type = types.bool;
                     description = "Whether to install nix in the container.";
                     default = false;
+                    example = true;
                   };
                   push = mkOption {
                     type = types.bool;
                     description = "Whether to push the container to the OCI registry.";
                     default = false;
+                    example = true;
                   };
                   entrypoint = mkOption {
                     type = types.listOf types.str;
                     description = "The entrypoint command and arguments for the container. Will be automatically generated from the package if not specified.";
                     default = cfg.oci.lib.mkOCIEntrypoint { inherit (containerConfig) package; };
                     defaultText = lib.literalExpression "cfg.oci.lib.mkOCIEntrypoint { inherit package; }";
+                    example = [ "/bin/sh" "-c" "echo hello" ];
                   };
                 };
               }
