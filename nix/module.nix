@@ -1,13 +1,17 @@
-args@{ flake-parts-lib, ... }:
+args@{
+  flake-parts-lib,
+  inputs,
+  ...
+}:
 {
   imports = [
     (flake-parts-lib.importApply ./modules args)
   ];
   config = {
-    flake.modules.flake.default = ./modules/default.nix;
-    flake.modules.flake.nix-oci = ./modules/default.nix;
-    flake.flakeModules.nix-oci = ./modules/default.nix;
-    flake.flakeModules.default = ./modules/default.nix;
-    flake.flakeModule = ./modules/default.nix;
+    flake.modules.flake.default = import ./modules/flake-module.nix inputs;
+    flake.modules.flake.nix-oci = import ./modules/flake-module.nix inputs;
+    flake.flakeModules.nix-oci = import ./modules/flake-module.nix inputs;
+    flake.flakeModules.default = import ./modules/flake-module.nix inputs;
+    flake.flakeModule = import ./modules/flake-module.nix inputs;
   };
 }

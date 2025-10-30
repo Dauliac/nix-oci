@@ -8,6 +8,8 @@
 let
   inherit (lib)
     mkIf
+    any
+    attrValues
     ;
 in
 {
@@ -20,15 +22,21 @@ in
         system,
         ...
       }:
+      let
+        # Check if any container has external dependencies (fromImage)
+        hasExternalDependencies = any (containerConfig: containerConfig.fromImage != null) (
+          attrValues config.oci.containers
+        );
+      in
       {
         apps = lib.mkMerge [
-          {
-            # BUG: fix puller
+          # Only create updatePulledManifestsLocks if containers have external dependencies
+          (mkIf hasExternalDependencies {
             oci-updatePulledManifestsLocks = {
               type = "app";
               program = config.oci.internal.updatepulledOCIsManifestLocks;
             };
-          }
+          })
           config.oci.internal.prefixedCVEGrypeApps
           config.oci.internal.prefixedCVETrivyApps
           config.oci.internal.prefixedContainerStructureTestApps

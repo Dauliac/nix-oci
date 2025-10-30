@@ -422,7 +422,11 @@ in
                     description = "The entrypoint command and arguments for the container. Will be automatically generated from the package if not specified.";
                     default = cfg.oci.lib.mkOCIEntrypoint { inherit (containerConfig) package; };
                     defaultText = lib.literalExpression "cfg.oci.lib.mkOCIEntrypoint { inherit package; }";
-                    example = [ "/bin/sh" "-c" "echo hello" ];
+                    example = [
+                      "/bin/sh"
+                      "-c"
+                      "echo hello"
+                    ];
                   };
                 };
               }

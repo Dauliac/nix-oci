@@ -14,7 +14,7 @@
     }:
     flake-parts.lib.mkFlake { inherit inputs; } (_: {
       imports = [
-        inputs.nix-oci.modules.flake.default
+        inputs.nix-oci.flakeModules.default
       ];
       config = {
         systems = [

@@ -2,7 +2,7 @@
   description = "Nix OCI tests";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
-    nix-oci.url = "../../../.";
+    nix-oci.url = "path:../../..";
     flake-parts.url = "github:hercules-ci/flake-parts";
   };
 
@@ -14,7 +14,7 @@
     }:
     flake-parts.lib.mkFlake { inherit inputs; } (_: {
       imports = [
-        inputs.nix-oci.modules.flake.default
+        inputs.nix-oci.flakeModules.default
       ]
       ++ inputs.nixpkgs.lib.fileset.toList (
         inputs.nixpkgs.lib.fileset.fileFilter (file: file.hasExt "nix") ../../../examples
@@ -22,6 +22,8 @@
       config = {
         oci.enabled = true;
         oci.enableDevShell = true;
+        oci.rootPath = ./oci;
+        oci.fromImageManifestRootPath = ./oci/pulledManifestsLocks;
         systems = [
           "x86_64-linux"
           "aarch64-linux"
