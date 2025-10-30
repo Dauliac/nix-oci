@@ -65,29 +65,6 @@ in
               set = config.oci.internal.OCIs;
             };
           };
-          allOCIs = mkOption {
-            type = types.package;
-            internal = true;
-            readOnly = true;
-            default =
-              pkgs.runCommand "oci-all"
-                {
-                  buildInputs = [ ];
-                }
-                ''
-                  mkdir -p $out
-                  ${lib.concatMapStringsSep "\n" (
-                    name:
-                    let
-                      package = config.oci.internal.prefixedOCIs.${name};
-                    in
-                    ''
-                      echo "Building container: ${name}"
-                      cp ${package} $out/${name}
-                    ''
-                  ) (attrsets.attrNames config.oci.internal.prefixedOCIs)}
-                '';
-          };
           updatepulledOCIsManifestLocks = mkOption {
             type = types.package;
             internal = true;

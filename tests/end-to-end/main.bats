@@ -4,12 +4,6 @@
   [ "$status" -eq 0 ]
 }
 
-@test "Nix can build all containers" {
-  cd self
-  run nix build '.#oci-all' --no-link
-  [ "$status" -eq 0 ]
-}
-
 @test "Nix can run all check" {
   cd self
   run nix flake check
