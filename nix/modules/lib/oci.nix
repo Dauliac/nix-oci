@@ -297,7 +297,7 @@ in
           };
           args' = args // {
             perSystemConfig = args.perSystemConfig // {
-              containers.${args.containerId} = (builtins.removeAttrs oci [ "debug" ]) // debugConfig;
+              containers.${args.containerId} = oci // debugConfig;
             };
           };
         in
