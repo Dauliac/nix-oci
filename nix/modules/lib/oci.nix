@@ -286,17 +286,18 @@ in
         args:
         let
           oci = args.perSystemConfig.containers.${args.containerId};
+          debugConfig = {
+            tag = oci.tag + "-debug";
+            dependencies = oci.dependencies ++ oci.debug.packages;
+            entrypoint =
+              if oci.debug.entrypoint.enabled then
+                [ "${oci.debug.entrypoint.wrapper}/bin/entrypoint" ] ++ oci.entrypoint
+              else
+                oci.entrypoint;
+          };
           args' = args // {
             perSystemConfig = args.perSystemConfig // {
-              containers.${args.containerId} = oci // {
-                tag = oci.tag + "-debug";
-                dependencies = oci.dependencies ++ oci.debug.packages;
-                entrypoint =
-                  if oci.debug.entrypoint.enabled then
-                    "${oci.debug.entrypoint.wrapper} ${oci.entrypoint}"
-                  else
-                    oci.entrypoint;
-              };
+              containers.${args.containerId} = (builtins.removeAttrs oci [ "debug" ]) // debugConfig;
             };
           };
         in
