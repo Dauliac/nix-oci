@@ -287,7 +287,7 @@ in
         let
           oci = args.perSystemConfig.containers.${args.containerId};
           args' = args // {
-            perSystemConfig.containers.${args.containerId} = {
+            perSystemConfig.containers.${args.containerId} = oci // {
               tag = oci.tag + "-debug";
               dependencies = oci.dependencies ++ oci.debug.packages;
               entrypoint =
