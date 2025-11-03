@@ -324,6 +324,16 @@ in
                     defaultText = lib.literalExpression "cfg.oci.lib.mkOCIName { inherit package fromImage; }";
                     example = "my-app";
                   };
+                  registry = mkOption {
+                    type = types.nullOr types.str;
+                    description = ''
+                      Container registry prefix (e.g., "ghcr.io/my-org" or "my-registry.io/project").
+                      If set, the full container name will be "registry/name".
+                      If null or empty string, no registry prefix will be added.
+                    '';
+                    default = null;
+                    example = "ghcr.io/my-org";
+                  };
                   user = mkOption {
                     type = types.nullOr types.str;
                     description = "The user to run the container as. If null, will be automatically determined based on isRoot setting.";
