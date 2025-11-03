@@ -310,8 +310,10 @@ in
         args:
         let
           oci = args.perSystemConfig.containers.${args.containerId};
+          # Safely access installNix with a default value
+          installNix = oci.installNix or false;
         in
-        if oci.installNix then cfg.mkNixOCI args else cfg.mkSimpleOCI args;
+        if installNix then cfg.mkNixOCI args else cfg.mkSimpleOCI args;
     };
     mkSimpleOCI = mkOption {
       description = "A function to build simple container";
@@ -320,9 +322,16 @@ in
         args:
         let
           oci = args.perSystemConfig.containers.${args.containerId};
+          # Calculate full container name with registry prefix if provided
+          fullName =
+            if oci.registry != null && oci.registry != "" then
+              "${oci.registry}/${oci.name}"
+            else
+              oci.name;
         in
         (args.perSystemConfig.packages.nix2container.buildImage {
-          inherit (oci) tag name;
+          inherit (oci) tag;
+          name = fullName;
           # NOTE: here we can't use mkIf because fromImage with empty value require an empty string
 
           fromImage =
@@ -360,9 +369,16 @@ in
         args:
         let
           oci = args.perSystemConfig.containers.${args.containerId};
+          # Calculate full container name with registry prefix if provided
+          fullName =
+            if oci.registry != null && oci.registry != "" then
+              "${oci.registry}/${oci.name}"
+            else
+              oci.name;
         in
         args.perSystemConfig.packages.nix2container.buildImage {
-          inherit (oci) name tag;
+          inherit (oci) tag;
+          name = fullName;
           initializeNixDatabase = true;
           copyToRoot = [
             # TODO: add mkNixRoot function to build root with nix shadow setup

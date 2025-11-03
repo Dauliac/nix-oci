@@ -56,6 +56,6 @@
   git init
   run nix flake init -t "$repo_dir"
   [ "$status" -eq 0 ]
-  run nix flake show
+  run nix flake show --override-input nix-oci "path:$repo_dir"
   [ "$status" -eq 0 ]
 }
