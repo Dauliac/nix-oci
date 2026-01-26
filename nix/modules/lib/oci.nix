@@ -324,10 +324,7 @@ in
           oci = args.perSystemConfig.containers.${args.containerId};
           # Calculate full container name with registry prefix if provided
           fullName =
-            if oci.registry != null && oci.registry != "" then
-              "${oci.registry}/${oci.name}"
-            else
-              oci.name;
+            if oci.registry != null && oci.registry != "" then "${oci.registry}/${oci.name}" else oci.name;
         in
         (args.perSystemConfig.packages.nix2container.buildImage {
           inherit (oci) tag;
@@ -371,10 +368,7 @@ in
           oci = args.perSystemConfig.containers.${args.containerId};
           # Calculate full container name with registry prefix if provided
           fullName =
-            if oci.registry != null && oci.registry != "" then
-              "${oci.registry}/${oci.name}"
-            else
-              oci.name;
+            if oci.registry != null && oci.registry != "" then "${oci.registry}/${oci.name}" else oci.name;
         in
         args.perSystemConfig.packages.nix2container.buildImage {
           inherit (oci) tag;

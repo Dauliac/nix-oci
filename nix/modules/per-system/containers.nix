@@ -49,8 +49,19 @@ in
                     default = cfg.oci.lib.mkOCITag {
                       inherit (containerConfig) package fromImage;
                     };
-                    defaultText = lib.literalExpression ''config.oci.lib.mkOCITag { inherit package fromImage; }'';
+                    defaultText = lib.literalExpression "config.oci.lib.mkOCITag { inherit package fromImage; }";
                     example = "1.0.0";
+                  };
+                  tags = mkOption {
+                    type = types.listOf types.str;
+                    description = "List of tags for the container. All tags will be pushed to the registry. The first tag is used for the local build.";
+                    default = [ containerConfig.tag ];
+                    defaultText = lib.literalExpression "[ tag ]";
+                    example = [
+                      "1.0.0"
+                      "latest"
+                      "stable"
+                    ];
                   };
                   # TODO: should we had an OTLP wrapper ?
                   test = mkOption {

@@ -31,7 +31,7 @@ in
                 defaultText = lib.literalExpression "inputs.nix2container.packages.\${system}.skopeo-nix2container";
                 example = defaultText;
               };
-              #  TODO move all of these into packages under submodules
+              #  TODO: move all of these into packages under submodules
               containerStructureTest = mkOption rec {
                 type = types.package;
                 description = "The package to use for container-structure-test.";
