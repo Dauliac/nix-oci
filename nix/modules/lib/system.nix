@@ -74,6 +74,9 @@ in
           container,
           pkgs,
         }:
+        let
+          tags = container.tags or [ container.imageTag ];
+        in
         pkgs.writeScriptBin "publish-docker-image" ''
           #!${pkgs.bash}/bin/bash
 
@@ -82,16 +85,17 @@ in
           set -o pipefail
 
           main() {
-            local -r image_path="$CI_REGISTRY_IMAGE/${container.imageName}:${container.imageTag}"
-
             echo "Authenticating to the registry..."
             echo "$CI_REGISTRY_PASSWORD" | ${pkgs.skopeo}/bin/skopeo login --username "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
 
-            echo "Pushing image $image_path to the registry..."
-            ${pkgs.skopeo}/bin/skopeo copy \
-              docker-archive:${container.outPath} \
-              docker://$image_path
-            echo "Image pushed to $image_path"
+            ${concatMapStrings (tag: ''
+              local image_path="$CI_REGISTRY_IMAGE/${container.imageName}:${tag}"
+              echo "Pushing image $image_path to the registry..."
+              ${pkgs.skopeo}/bin/skopeo copy \
+                docker-archive:${container.outPath} \
+                docker://$image_path
+              echo "Image pushed to $image_path"
+            '') tags}
           }
 
           main "$@"

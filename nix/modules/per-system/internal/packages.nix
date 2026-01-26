@@ -56,13 +56,32 @@ in
               }
             ) config.oci.containers;
           };
+          debugOCIs = mkOption {
+            description = "Built debug OCI container images.";
+            type = types.attrsOf types.package;
+            internal = true;
+            readOnly = true;
+            default = lib.pipe config.oci.internal.OCIs [
+              (attrsets.mapAttrs' (
+                containerId: ociOutput:
+                let
+                  containerConfig = config.oci.containers.${containerId};
+                in
+                if containerConfig.debug.enabled && ociOutput ? debug then
+                  attrsets.nameValuePair "${containerId}-debug" ociOutput.debug
+                else
+                  attrsets.nameValuePair "${containerId}-debug-disabled" null
+              ))
+              (attrsets.filterAttrs (_: v: v != null))
+            ];
+          };
           prefixedOCIs = mkOption {
             type = types.attrsOf types.package;
             internal = true;
             readOnly = true;
             default = cfg.oci.lib.prefixOutputs {
               prefix = "oci-";
-              set = config.oci.internal.OCIs;
+              set = config.oci.internal.OCIs // config.oci.internal.debugOCIs;
             };
           };
           updatepulledOCIsManifestLocks = mkOption {

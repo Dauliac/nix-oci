@@ -43,6 +43,7 @@ in
                 };
                 entrypoint = mkOption {
                   description = "Debug entrypoint wrapper configuration.";
+                  default = { };
                   type = types.submodule {
                     options = {
                       enabled = mkOption {
