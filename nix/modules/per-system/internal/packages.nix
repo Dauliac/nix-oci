@@ -12,6 +12,10 @@ let
     types
     attrsets
     ;
+  archMap = {
+    "x86_64-linux" = "amd64";
+    "aarch64-linux" = "arm64";
+  };
 in
 {
   options = {
@@ -19,6 +23,7 @@ in
       {
         config,
         pkgs,
+        system,
         ...
       }:
       {
@@ -96,6 +101,76 @@ in
               config = cfg.oci;
               perSystemConfig = config.oci;
             };
+          };
+          pushTmpOCIApps = mkOption {
+            description = "Apps to push architecture-specific temporary images for multi-arch builds. Keyed by containerId-arch.";
+            type = types.attrsOf types.package;
+            internal = true;
+            readOnly = true;
+            default =
+              let
+                arch = archMap.${system} or null;
+              in
+              if arch == null then
+                { }
+              else
+                lib.pipe config.oci.containers [
+                  (attrsets.filterAttrs (_: c: c.multiArch.enabled))
+                  (attrsets.mapAttrs' (
+                    containerId: containerConfig:
+                    # Include arch in the key for explicit naming
+                    attrsets.nameValuePair "${containerId}-${arch}" (
+                      cfg.oci.lib.mkPushTempOCIApp {
+                        inherit pkgs containerId arch;
+                        perSystemConfig = config.oci;
+                      }
+                    )
+                  ))
+                ];
+          };
+          prefixedPushTmpOCIApps = mkOption {
+            type = types.attrsOf types.attrs;
+            internal = true;
+            readOnly = true;
+            default = attrsets.mapAttrs' (
+              name: app:
+              # name is already containerId-arch
+              attrsets.nameValuePair "oci-push-tmp-${name}" {
+                type = "app";
+                program = lib.getExe app;
+              }
+            ) config.oci.internal.pushTmpOCIApps;
+          };
+          mergeMultiArchApps = mkOption {
+            description = "Apps to merge architecture-specific images into multi-arch manifest lists.";
+            type = types.attrsOf types.package;
+            internal = true;
+            readOnly = true;
+            default = lib.pipe config.oci.containers [
+              (attrsets.filterAttrs (_: c: c.multiArch.enabled))
+              (attrsets.mapAttrs' (
+                containerId: containerConfig:
+                attrsets.nameValuePair containerId (
+                  cfg.oci.lib.mkMergeMultiArchApp {
+                    inherit pkgs containerId;
+                    perSystemConfig = config.oci;
+                    systems = cfg.systems;
+                  }
+                )
+              ))
+            ];
+          };
+          prefixedMergeMultiArchApps = mkOption {
+            type = types.attrsOf types.attrs;
+            internal = true;
+            readOnly = true;
+            default = attrsets.mapAttrs' (
+              name: app:
+              attrsets.nameValuePair "oci-merge-${name}" {
+                type = "app";
+                program = lib.getExe app;
+              }
+            ) config.oci.internal.mergeMultiArchApps;
           };
         };
       }
