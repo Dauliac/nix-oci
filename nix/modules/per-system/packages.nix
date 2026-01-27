@@ -95,6 +95,13 @@ in
                 defaultText = lib.literalExpression "pkgs.skaffold";
                 example = defaultText;
               };
+              regctl = mkOption rec {
+                type = types.package;
+                description = "The package to use for regctl (multi-arch manifest tool).";
+                default = pkgs.regclient;
+                defaultText = lib.literalExpression "pkgs.regclient";
+                example = defaultText;
+              };
             };
           };
         };

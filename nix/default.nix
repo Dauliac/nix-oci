@@ -40,6 +40,7 @@ in
               parallel
               lefthook
               convco
+              regclient
             ]
             ++ config.oci.internal.packages;
           shellHook = ''

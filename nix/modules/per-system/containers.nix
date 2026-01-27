@@ -438,6 +438,26 @@ in
                     default = false;
                     example = true;
                   };
+                  multiArch = mkOption {
+                    description = "Multi-architecture image configuration.";
+                    default = { };
+                    type = types.submodule {
+                      options = {
+                        enabled = mkOption {
+                          type = types.bool;
+                          description = "Enable multi-arch manifest creation for this container.";
+                          default = false;
+                          example = true;
+                        };
+                        tempTagPrefix = mkOption {
+                          type = types.str;
+                          description = "Prefix for temporary architecture-specific tags.";
+                          default = "tmp";
+                          example = "arch";
+                        };
+                      };
+                    };
+                  };
                   entrypoint = mkOption {
                     type = types.listOf types.str;
                     description = "The entrypoint command and arguments for the container. Will be automatically generated from the package if not specified.";
