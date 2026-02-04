@@ -13,12 +13,19 @@
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
     };
+    nix-lib = {
+      url = "github:Dauliac/nix-lib";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    import-tree.url = "github:vic/import-tree";
   };
   outputs =
     inputs@{
       flake-parts,
       treefmt-nix,
       nix2container,
+      nix-lib,
+      import-tree,
       ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } (_: {
@@ -28,7 +35,40 @@
         "aarch64-linux"
       ];
       imports = [
-        ./nix
+        ./nix/treefmt.nix
+        ./nix/examples.nix
+        ./nix/templates.nix
+        ./nix/module.nix
+        inputs.flake-parts.flakeModules.modules
+        inputs.nix-lib.flakeModules.default
+        # Use import-tree internally for auto-discovery
+        (import-tree ./nix/modules)
       ];
+      oci.enabled = true;
+      perSystem =
+        {
+          config,
+          pkgs,
+          ...
+        }:
+        {
+          devShells.default = pkgs.mkShell {
+            packages =
+              with pkgs;
+              [
+                cosign
+                conftest
+                bats
+                parallel
+                lefthook
+                convco
+                regclient
+              ]
+              ++ config.oci.internal.packages;
+            shellHook = ''
+              ${pkgs.lefthook}/bin/lefthook install --force
+            '';
+          };
+        };
     });
 }
