@@ -2,19 +2,23 @@
   description = "Nix OCI tests";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
-    nix-oci.url = "path:../../..";
     flake-parts.url = "github:hercules-ci/flake-parts";
+    get-flake.url = "github:ursi/get-flake";
   };
 
   outputs =
     inputs@{
       flake-parts,
-      nix-oci,
+      get-flake,
       ...
     }:
+    let
+      # Use get-flake to reference parent flake without sandbox issues
+      nix-oci = get-flake ../../..;
+    in
     flake-parts.lib.mkFlake { inherit inputs; } (_: {
       imports = [
-        inputs.nix-oci.flakeModules.default
+        nix-oci.flakeModules.default
       ]
       ++ inputs.nixpkgs.lib.fileset.toList (
         inputs.nixpkgs.lib.fileset.fileFilter (file: file.hasExt "nix") ../../../examples
