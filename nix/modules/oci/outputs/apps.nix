@@ -16,7 +16,7 @@ in
   options.perSystem = flake-parts-lib.mkPerSystemOption (
     { config, ... }:
     {
-      options.oci.outputs.apps = mkOption {
+      options.oci.flake.apps = mkOption {
         type = types.attrsOf types.attrs;
         description = "OCI-related apps that can be exposed as flake outputs.";
         readOnly = true;
