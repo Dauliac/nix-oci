@@ -20,6 +20,7 @@ in
         type = types.attrsOf types.attrs;
         description = "OCI-related apps that can be exposed as flake outputs.";
         readOnly = true;
+        defaultText = lib.literalMD "Apps for security scanning, SBOM generation, validation, and multi-arch builds, derived from [`oci.containers`](#opt-perSystem.oci.containers).";
         default =
           let
             hasExternalDependencies = any (containerConfig: containerConfig.fromImage.enabled) (
