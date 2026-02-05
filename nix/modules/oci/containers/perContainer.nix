@@ -89,6 +89,7 @@ in
               config._containerName = lib.mkDefault containerName;
             }
           );
+          default = { };
           description = ''
             Per-container module definition.
 
