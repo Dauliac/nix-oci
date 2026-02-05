@@ -1,4 +1,4 @@
-# Flake packages output - extracts oci.outputs.packages when enableFlakeOutputs is true
+# Flake packages output - binds oci.flake.packages to flake outputs when enableFlakeOutputs is true
 {
   config,
   lib,
@@ -12,7 +12,7 @@ in
     perSystem =
       { config, ... }:
       {
-        packages = config.oci.outputs.packages;
+        packages = config.oci.flake.packages;
       };
   };
 }

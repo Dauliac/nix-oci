@@ -1,4 +1,4 @@
-# Flake checks output - extracts oci.outputs.checks when enableFlakeOutputs is true
+# Flake checks output - binds oci.flake.checks to flake outputs when enableFlakeOutputs is true
 {
   config,
   lib,
@@ -12,7 +12,7 @@ in
     perSystem =
       { config, ... }:
       {
-        checks = config.oci.outputs.checks;
+        checks = config.oci.flake.checks;
       };
   };
 }

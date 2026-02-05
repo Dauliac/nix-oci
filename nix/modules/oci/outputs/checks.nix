@@ -11,7 +11,7 @@ in
   options.perSystem = flake-parts-lib.mkPerSystemOption (
     { config, ... }:
     {
-      options.oci.outputs.checks = mkOption {
+      options.oci.flake.checks = mkOption {
         type = types.attrsOf types.package;
         description = "OCI-related checks that can be exposed as flake outputs.";
         readOnly = true;
