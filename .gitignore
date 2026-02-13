@@ -1,2 +1,4 @@
 result
 .direnv
+.ezci/
+tests/.claude/
