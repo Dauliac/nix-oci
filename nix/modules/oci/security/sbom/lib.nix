@@ -43,7 +43,8 @@ in
               set -o errexit
               set -o pipefail
               set -o nounset
-
+              # Use empty docker config to avoid credentials helper issues
+              export DOCKER_CONFIG="$(mktemp -d)"
               ${perSystemConfig.packages.syft}/bin/syft ${configFlag} ${archive}
             '';
         };

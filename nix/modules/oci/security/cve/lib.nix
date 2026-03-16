@@ -61,6 +61,8 @@ in
               set -o errexit
               set -o pipefail
               set -o nounset
+              # Use empty docker config to avoid credentials helper issues
+              export DOCKER_CONFIG="$(mktemp -d)"
               ${perSystemConfig.packages.trivy}/bin/trivy image \
                 --input ${archive} \
                 ${ignoreFileFlag} \
@@ -112,6 +114,8 @@ in
               set -o errexit
               set -o pipefail
               set -o nounset
+              # Use empty docker config to avoid credentials helper issues
+              export DOCKER_CONFIG="$(mktemp -d)"
               ${perSystemConfig.packages.grype}/bin/grype \
                 ${configFlag} \
                 ${archive}
