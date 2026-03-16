@@ -40,7 +40,8 @@ in
               set -o errexit
               set -o pipefail
               set -o nounset
-
+              # Use empty docker config to avoid credentials helper issues
+              export DOCKER_CONFIG="$(mktemp -d)"
               ${perSystemConfig.packages.trivy}/bin/trivy fs --scanners secret ${archive}
             '';
         };
