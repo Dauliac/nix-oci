@@ -11,7 +11,7 @@
 #
 #   # In any module - define options and config for perContainer
 #   config.perSystem = { ... }: {
-#     oci.perContainer = mkPerContainerOption { containerName, config, ... }: {
+#     oci.perContainer = mkPerContainerOption { name, config, ... }: {
 #       # Options available for all containers
 #       options.tag = mkOption { ... };
 #

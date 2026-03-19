@@ -12,13 +12,13 @@ in
     { ... }:
     {
       oci.perContainer =
-        { containerName, ... }:
+        { name, ... }:
         {
           options.test.dgoss.optionsPath = lib.mkOption {
             type = lib.types.path;
             description = "Path to the dgoss configuration file.";
-            default = cfg.oci.rootPath + containerName + "/test/dgoss.yaml";
-            defaultText = lib.literalExpression ''config.oci.rootPath + containerName + "/test/dgoss.yaml"'';
+            default = cfg.oci.rootPath + name + "/test/dgoss.yaml";
+            defaultText = lib.literalExpression ''config.oci.rootPath + name + "/test/dgoss.yaml"'';
           };
         };
     };

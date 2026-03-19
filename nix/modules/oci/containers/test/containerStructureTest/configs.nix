@@ -12,15 +12,15 @@ in
     { ... }:
     {
       oci.perContainer =
-        { containerName, ... }:
+        { name, ... }:
         {
           options.test.containerStructureTest.configs = lib.mkOption {
             type = lib.types.listOf lib.types.path;
             description = "List of container-structure-test configuration files to run.";
             default = [
-              (cfg.oci.rootPath + containerName + "/test/container-structure-test.yaml")
+              (cfg.oci.rootPath + name + "/test/container-structure-test.yaml")
             ];
-            defaultText = lib.literalExpression ''[ (cfg.oci.rootPath + containerName + "/test/container-structure-test.yaml") ]'';
+            defaultText = lib.literalExpression ''[ (cfg.oci.rootPath + name + "/test/container-structure-test.yaml") ]'';
           };
         };
     };

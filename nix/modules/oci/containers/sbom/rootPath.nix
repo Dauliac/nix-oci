@@ -12,13 +12,13 @@ in
     { ... }:
     {
       oci.perContainer =
-        { containerName, ... }:
+        { name, ... }:
         {
           options.sbom.rootPath = lib.mkOption {
             type = lib.types.path;
             description = "The root path for the SBOM.";
-            default = cfg.oci.rootPath + containerName + "/sbom/";
-            defaultText = lib.literalExpression ''config.oci.rootPath + containerName + "/sbom/"'';
+            default = cfg.oci.rootPath + name + "/sbom/";
+            defaultText = lib.literalExpression ''config.oci.rootPath + name + "/sbom/"'';
           };
         };
     };

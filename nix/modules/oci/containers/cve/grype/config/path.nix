@@ -12,13 +12,13 @@ in
     { ... }:
     {
       oci.perContainer =
-        { containerName, ... }:
+        { name, ... }:
         {
           options.cve.grype.config.path = lib.mkOption {
             type = lib.types.path;
             description = "Path to the grype config file.";
-            default = cfg.oci.rootPath + containerName + "/cve/grype.yaml";
-            defaultText = lib.literalExpression ''config.oci.rootPath + containerName + "/cve/grype.yaml"'';
+            default = cfg.oci.rootPath + name + "/cve/grype.yaml";
+            defaultText = lib.literalExpression ''config.oci.rootPath + name + "/cve/grype.yaml"'';
           };
         };
     };
