@@ -12,13 +12,13 @@ in
     { ... }:
     {
       oci.perContainer =
-        { containerName, ... }:
+        { name, ... }:
         {
           options.cve.rootPath = lib.mkOption {
             type = lib.types.path;
             description = "The root path for CVE configuration files.";
-            default = cfg.oci.rootPath + containerName + "/cve/";
-            defaultText = lib.literalExpression ''config.oci.rootPath + containerName + "/cve/"'';
+            default = cfg.oci.rootPath + name + "/cve/";
+            defaultText = lib.literalExpression ''config.oci.rootPath + name + "/cve/"'';
           };
         };
     };

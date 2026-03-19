@@ -4,7 +4,7 @@
 # Other modules contribute container options via:
 #
 #   config.perSystem = { ... }: {
-#     oci.perContainer = { containerName, config, ... }: {
+#     oci.perContainer = { name, config, ... }: {
 #       options.myOption = mkOption { ... };
 #     };
 #   };
@@ -78,15 +78,15 @@ in
         # These modules define the options available on each container
         perContainer = mkOption {
           type = mkPerContainerType (
-            { containerName, ... }:
+            { name, ... }:
             {
-              # Base container options - containerName is always available
+              # Base container options - name is always available (from types.attrsOf)
               options._containerName = mkOption {
                 type = types.str;
                 internal = true;
                 description = "Internal: the container attribute name.";
               };
-              config._containerName = lib.mkDefault containerName;
+              config._containerName = lib.mkDefault name;
             }
           );
           default = { };
@@ -98,7 +98,7 @@ in
             context.
 
             The module receives these special arguments:
-            - `containerName`: the attribute name of the container
+            - `name`: the attribute name of the container (from types.attrsOf)
             - `config`: the container's config (for reading within the module)
             - `globalConfig`: the top-level flake config
             - `perSystemConfig`: the perSystem config

@@ -12,13 +12,13 @@ in
     { ... }:
     {
       oci.perContainer =
-        { containerName, ... }:
+        { name, ... }:
         {
           options.test.rootPath = lib.mkOption {
             type = lib.types.path;
             description = "The root path for the test.";
-            default = cfg.oci.rootPath + containerName + "/test/";
-            defaultText = lib.literalExpression ''config.oci.rootPath + containerName + "/test/"'';
+            default = cfg.oci.rootPath + name + "/test/";
+            defaultText = lib.literalExpression ''config.oci.rootPath + name + "/test/"'';
           };
         };
     };
