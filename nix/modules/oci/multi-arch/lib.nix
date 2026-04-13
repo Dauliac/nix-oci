@@ -50,19 +50,30 @@ in
 
                 if [ -n "''${OCI_DIR:-}" ]; then
                   mkdir -p "$OCI_DIR"
-                  DEST="oci:$OCI_DIR:$TEMP_TAG"
-                  echo "Pushing temporary ${arch} image to OCI dir: $DEST..."
+                  REF="$OCI_DIR:$TEMP_TAG"
+                  DEST="oci:$REF"
+                  echo "==> Pushing per-arch (${arch}) OCI image to local OCI dir"
+                  echo "    source: nix:${ociOutput}"
+                  echo "    target: $DEST"
                   skopeo copy --insecure-policy \
                     nix:${ociOutput} \
                     "$DEST"
+                  DIGEST="$(skopeo inspect --format '{{.Digest}}' "$DEST" 2>/dev/null || echo 'unknown')"
                 else
-                  FULL_NAME="''${CI_REGISTRY_IMAGE:-}${baseName}:$TEMP_TAG"
-                  echo "Pushing temporary ${arch} image: $FULL_NAME..."
+                  REF="''${CI_REGISTRY_IMAGE:-}${baseName}:$TEMP_TAG"
+                  DEST="docker://$REF"
+                  echo "==> Pushing per-arch (${arch}) OCI image"
+                  echo "    source: nix:${ociOutput}"
+                  echo "    target: $DEST"
                   skopeo copy \
                     nix:${ociOutput} \
-                    docker://"$FULL_NAME"
+                    "$DEST"
+                  DIGEST="$(skopeo inspect --format '{{.Digest}}' "$DEST" 2>/dev/null || echo 'unknown')"
                 fi
-                echo "Successfully pushed ${arch} image"
+                echo "==> Pushed per-arch (${arch}) OCI image"
+                echo "    image:  $REF"
+                echo "    digest: $DIGEST"
+                echo "CIMERA_OCI_PUSHED_TMP arch=${arch} ref=$REF digest=$DIGEST"
               '';
             };
         };
@@ -102,58 +113,46 @@ in
 
                 if [ -n "''${OCI_DIR:-}" ]; then
                   BASE_NAME="ocidir://$OCI_DIR"
-                  FINAL_REF="$BASE_NAME:${primaryTag}"
-
-                  REFS=""
-                  for arch in ${lib.concatStringsSep " " arches}; do
-                    TEMP_TAG="${containerConfig.multiArch.tempTagPrefix}-$arch-$COMMIT_SHA"
-                    REFS="$REFS --ref $BASE_NAME:$TEMP_TAG --platform linux/$arch"
-                  done
-
-                  echo "Creating multi-arch manifest in OCI dir: $FINAL_REF..."
-                  # shellcheck disable=SC2086
-                  regctl index create "$FINAL_REF" $REFS
-                  echo "Successfully created multi-arch manifest"
-
-                  ${lib.concatMapStrings (tag: ''
-                    echo "Copying to additional tag: ${tag}..."
-                    regctl image copy "$BASE_NAME:${primaryTag}" "$BASE_NAME:${tag}"
-                  '') additionalTags}
-
-                  echo "Cleaning up temporary images..."
-                  for arch in ${lib.concatStringsSep " " arches}; do
-                    TEMP_TAG="${containerConfig.multiArch.tempTagPrefix}-$arch-$COMMIT_SHA"
-                    echo "Deleting temporary tag: $TEMP_TAG..."
-                    regctl tag delete "$BASE_NAME:$TEMP_TAG" || echo "Warning: Failed to delete $TEMP_TAG"
-                  done
+                  PRIMARY_REF="$BASE_NAME:${primaryTag}"
                 else
                   BASE_NAME="''${CI_REGISTRY_IMAGE:-}${baseName}"
-                  FINAL_REF="$BASE_NAME:${primaryTag}"
-
-                  REFS=""
-                  for arch in ${lib.concatStringsSep " " arches}; do
-                    TEMP_TAG="${containerConfig.multiArch.tempTagPrefix}-$arch-$COMMIT_SHA"
-                    REFS="$REFS --ref $BASE_NAME:$TEMP_TAG --platform linux/$arch"
-                  done
-
-                  echo "Creating multi-arch manifest for $FINAL_REF..."
-                  # shellcheck disable=SC2086
-                  regctl index create "$FINAL_REF" $REFS
-                  echo "Successfully created multi-arch manifest"
-
-                  ${lib.concatMapStrings (tag: ''
-                    echo "Copying to additional tag: ${tag}..."
-                    regctl image copy "$BASE_NAME:${primaryTag}" "$BASE_NAME:${tag}"
-                  '') additionalTags}
-
-                  echo "Cleaning up temporary images..."
-                  for arch in ${lib.concatStringsSep " " arches}; do
-                    TEMP_TAG="${containerConfig.multiArch.tempTagPrefix}-$arch-$COMMIT_SHA"
-                    echo "Deleting temporary image: ${baseName}:$TEMP_TAG..."
-                    regctl tag delete "$BASE_NAME:$TEMP_TAG" || echo "Warning: Failed to delete $TEMP_TAG"
-                  done
+                  PRIMARY_REF="$BASE_NAME:${primaryTag}"
                 fi
-                echo "Cleanup complete"
+
+                REFS=""
+                for arch in ${lib.concatStringsSep " " arches}; do
+                  TEMP_TAG="${containerConfig.multiArch.tempTagPrefix}-$arch-$COMMIT_SHA"
+                  REFS="$REFS --ref $BASE_NAME:$TEMP_TAG --platform linux/$arch"
+                done
+
+                echo "==> Creating multi-arch manifest"
+                echo "    architectures: ${lib.concatStringsSep ", " arches}"
+                echo "    target:        $PRIMARY_REF"
+                # shellcheck disable=SC2086
+                regctl index create "$PRIMARY_REF" $REFS
+
+                # Resolve digest of the multi-arch index we just created.
+                DIGEST="$(regctl manifest get --format '{{.GetDescriptor.Digest}}' "$PRIMARY_REF" 2>/dev/null || echo 'unknown')"
+
+                echo "==> Published multi-arch OCI image"
+                echo "    image:         $PRIMARY_REF"
+                echo "    digest:        $DIGEST"
+                echo "    architectures: ${lib.concatStringsSep ", " arches}"
+                echo "CIMERA_OCI_PUBLISHED ref=$PRIMARY_REF digest=$DIGEST architectures=${lib.concatStringsSep "," arches}"
+
+                ${lib.concatMapStrings (tag: ''
+                  echo "==> Tagging additional: ${tag}"
+                  regctl image copy "$PRIMARY_REF" "$BASE_NAME:${tag}"
+                  echo "CIMERA_OCI_PUBLISHED ref=$BASE_NAME:${tag} digest=$DIGEST architectures=${lib.concatStringsSep "," arches}"
+                '') additionalTags}
+
+                echo "==> Cleaning up temporary per-arch tags"
+                for arch in ${lib.concatStringsSep " " arches}; do
+                  TEMP_TAG="${containerConfig.multiArch.tempTagPrefix}-$arch-$COMMIT_SHA"
+                  regctl tag delete "$BASE_NAME:$TEMP_TAG" \
+                    && echo "    deleted: $TEMP_TAG" \
+                    || echo "    WARN: failed to delete $TEMP_TAG"
+                done
               '';
             };
         };
