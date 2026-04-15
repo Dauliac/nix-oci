@@ -33,11 +33,15 @@
             layers = [
               (ociLib.mkNixOCILayer {
                 inherit perSystemConfig;
-                inherit (oci) user;
               })
             ];
             config = {
               inherit (oci) entrypoint;
+              Env = [
+                "NIX_PAGER=cat"
+                "USER=${oci.user}"
+                "HOME=/"
+              ];
             };
           };
       };

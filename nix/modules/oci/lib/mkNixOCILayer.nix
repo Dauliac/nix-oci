@@ -16,10 +16,7 @@
         type = lib.types.functionTo lib.types.package;
         description = "Build the Nix layer for containers with Nix support";
         fn =
-          {
-            perSystemConfig,
-            user,
-          }:
+          { perSystemConfig }:
           perSystemConfig.packages.nix2container.buildLayer {
             copyToRoot = [
               (pkgs.buildEnv {
@@ -37,13 +34,6 @@
                 ];
               })
             ];
-            config = {
-              Env = [
-                "NIX_PAGER=cat"
-                "USER=${user}"
-                "HOME=/"
-              ];
-            };
           };
       };
     };
