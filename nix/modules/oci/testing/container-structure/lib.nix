@@ -32,25 +32,37 @@ in
             let
               oci = perSystemConfig.internal.OCIs.${containerId};
               containerConfig = perSystemConfig.containers.${containerId}.test.containerStructureTest;
+              # Filter out configs whose file doesn't exist at eval time.
+              # Interpolating `${path}` copies the file to the Nix store and
+              # fails eval if missing, so we can't defer the check to runtime.
+              existingConfigs = lib.filter builtins.pathExists containerConfig.configs;
               configFlags = lib.concatStringsSep " " (
-                lib.map (config: "--config=${config}") containerConfig.configs
+                lib.map (config: "--config=${config}") existingConfigs
               );
             in
-            pkgs.writeShellScriptBin "container-structure-test-${containerId}" ''
-              set -o errexit
-              set -o nounset
-              set -o pipefail
+            if existingConfigs == [ ] then
+              pkgs.writeShellScriptBin "container-structure-test-${containerId}" ''
+                echo "[container-structure-test-${containerId}] no config files configured (expected e.g. at ${
+                  toString (lib.head containerConfig.configs)
+                }); skipping" >&2
+                exit 0
+              ''
+            else
+              pkgs.writeShellScriptBin "container-structure-test-${containerId}" ''
+                set -o errexit
+                set -o nounset
+                set -o pipefail
 
-              main() {
-                ${oci.copyToDockerDaemon}/bin/copy-to-docker-daemon
-                ${perSystemConfig.packages.containerStructureTest}/bin/container-structure-test \
-                  test --image "${oci.imageName}:${oci.imageTag}" \
-                  --output text \
-                  ${configFlags}
-              }
+                main() {
+                  ${oci.copyToDockerDaemon}/bin/copy-to-docker-daemon
+                  ${perSystemConfig.packages.containerStructureTest}/bin/container-structure-test \
+                    test --image "${oci.imageName}:${oci.imageTag}" \
+                    --output text \
+                    ${configFlags}
+                }
 
-              main "$@"
-            '';
+                main "$@"
+              '';
         };
 
         mkAppContainerStructureTest = {

@@ -11,11 +11,11 @@ inputs: {
   # Override the package defaults to use our bundled nix2container
   config = {
     perSystem =
-      { pkgs, ... }:
+      { system, ... }:
       {
         oci.packages = {
-          nix2container = inputs.nix2container.packages.${pkgs.system}.nix2container;
-          skopeo = inputs.nix2container.packages.${pkgs.system}.skopeo-nix2container;
+          nix2container = inputs.nix2container.packages.${system}.nix2container;
+          skopeo = inputs.nix2container.packages.${system}.skopeo-nix2container;
         };
       };
   };

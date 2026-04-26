@@ -107,6 +107,7 @@
     ./oci/containers/test/containerStructureTest/configs.nix
     ./oci/containers/test/dgoss/enabled.nix
     ./oci/containers/test/dgoss/optionsPath.nix
+    ./oci/containers/test/dgoss/command.nix
 
     # OCI debug
     ./oci/debug/options.nix
