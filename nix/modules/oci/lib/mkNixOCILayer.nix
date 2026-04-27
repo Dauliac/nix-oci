@@ -10,6 +10,13 @@
     }:
     let
       ociLib = config.lib.oci or { };
+
+      # Standard FHS directories that must exist as real directories
+      # (not symlinks). Placed outside buildEnv as a separate copyToRoot
+      # entry so nix2container creates them at the filesystem root.
+      fhsDirs = pkgs.runCommand "fhs-dirs" {} ''
+        mkdir -p $out/tmp $out/var/tmp
+      '';
     in
     {
       nix-lib.lib.oci.mkNixOCILayer = {
@@ -46,6 +53,7 @@
                   "/etc/nix"
                 ];
               })
+              fhsDirs
             ];
           };
       };

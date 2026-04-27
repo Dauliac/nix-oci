@@ -46,6 +46,8 @@
                   user
                   ;
               })
+              # Standard FHS temp directories
+              (pkgs.runCommand "fhs-dirs" {} "mkdir -p $out/tmp $out/var/tmp")
             ] ++ (oci.configFiles or []);
             config = {
               inherit (oci) entrypoint;
