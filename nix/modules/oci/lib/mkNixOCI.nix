@@ -38,6 +38,7 @@
             config = {
               inherit (oci) entrypoint;
               Env = [
+                "PATH=/bin:/root/.nix-profile/bin:/nix/var/nix/profiles/default/bin"
                 "NIX_PAGER=cat"
                 "USER=${oci.user}"
                 "HOME=/"

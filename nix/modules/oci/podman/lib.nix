@@ -63,7 +63,10 @@ in
               ];
               config = {
                 User = user;
-                Env = [ "USER=${user}" ];
+                Env = [
+                  "PATH=/bin"
+                  "USER=${user}"
+                ];
                 entrypoint = [
                   "/podman-oci-entrypoint.sh"
                   "$@"
