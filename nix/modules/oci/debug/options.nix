@@ -54,8 +54,8 @@ in
                       wrapper = mkOption {
                         type = types.package;
                         description = "Default behavior run sleep infinity fallback if entrypoint fail.";
-                        default = pkgs.writeScriptBin "entrypoint" ./debug-entrypoint.sh;
-                        defaultText = lib.literalExpression ''pkgs.writeScriptBin "entrypoint" ./debug-entrypoint.sh'';
+                        default = pkgs.writeShellScriptBin "entrypoint" (builtins.readFile ./debug-entrypoint.sh);
+                        defaultText = lib.literalExpression ''pkgs.writeShellScriptBin "entrypoint" (builtins.readFile ./debug-entrypoint.sh)'';
                       };
                     };
                   };
