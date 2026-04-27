@@ -101,6 +101,118 @@ in
               globalConfig = cfg.oci;
             };
           };
+          # ========== PER-TAG PUSH APPS ==========
+          #
+          # One derivation per tag declared on each container. This
+          # reifies each push as a standalone unit so consumers (e.g.
+          # cimera's DirectExecutor) can schedule them in parallel,
+          # retry per-tag, and emit per-tag events / markers.
+          #
+          # Shape: attrsOf (attrsOf package). Outer key is
+          # containerId; inner key is the tag literal. For containers
+          # with debug enabled, `debugPushApps` mirrors the structure.
+          pushApps = mkOption {
+            description = ''
+              Per-tag push apps for each container. Keys are
+              containerIds; each entry is itself an attrset keyed by
+              tag literal. Every tag in `containerConfig.tags`
+              produces one app; the first tag is flagged as
+              `primary = true` in its marker output.
+            '';
+            type = types.attrsOf (types.attrsOf types.package);
+            internal = true;
+            readOnly = true;
+            default = attrsets.mapAttrs (
+              containerId: containerConfig:
+              let
+                tags = containerConfig.tags;
+                primaryTag = builtins.head tags;
+              in
+              attrsets.listToAttrs (
+                map (tag: {
+                  name = tag;
+                  value = ociLib.mkPushApp {
+                    perSystemConfig = config.oci;
+                    inherit containerId tag;
+                    primary = tag == primaryTag;
+                  };
+                }) tags
+              )
+            ) config.oci.containers;
+          };
+          prefixedPushApps = mkOption {
+            description = "Flat app attrset (for flake.apps.*) with `oci-push-<container>-<tag>` keys.";
+            type = types.attrsOf types.attrs;
+            internal = true;
+            readOnly = true;
+            default = lib.pipe config.oci.internal.pushApps [
+              (attrsets.mapAttrsToList (
+                containerId: tagsMap:
+                attrsets.mapAttrs' (
+                  tag: app:
+                  attrsets.nameValuePair "oci-push-${containerId}-${tag}" {
+                    type = "app";
+                    program = lib.getExe app;
+                  }
+                ) tagsMap
+              ))
+              (builtins.foldl' (a: b: a // b) { })
+            ];
+          };
+          debugPushApps = mkOption {
+            description = ''
+              Same shape as `pushApps` but for debug images. Only
+              produced for containers that enable `debug`.
+            '';
+            type = types.attrsOf (types.attrsOf types.package);
+            internal = true;
+            readOnly = true;
+            default = lib.pipe config.oci.containers [
+              (attrsets.filterAttrs (_: c: c.debug.enabled))
+              (attrsets.mapAttrs (
+                containerId: containerConfig:
+                let
+                  # Debug variants push the same tag list with a
+                  # consistent suffix so the registry shows
+                  # `cimera:v1.0.0-debug` next to `cimera:v1.0.0`.
+                  # Keep the primary flag aligned with production.
+                  tags = containerConfig.tags;
+                  primaryTag = builtins.head tags;
+                in
+                attrsets.listToAttrs (
+                  map (tag: {
+                    name = "${tag}-debug";
+                    value = ociLib.mkPushApp {
+                      perSystemConfig = config.oci;
+                      inherit containerId;
+                      tag = "${tag}-debug";
+                      primary = tag == primaryTag;
+                      debug = true;
+                    };
+                  }) tags
+                )
+              ))
+            ];
+          };
+          prefixedDebugPushApps = mkOption {
+            description = "Flat app attrset for debug pushes; keys `oci-push-debug-<container>-<tag>-debug`.";
+            type = types.attrsOf types.attrs;
+            internal = true;
+            readOnly = true;
+            default = lib.pipe config.oci.internal.debugPushApps [
+              (attrsets.mapAttrsToList (
+                containerId: tagsMap:
+                attrsets.mapAttrs' (
+                  tag: app:
+                  attrsets.nameValuePair "oci-push-debug-${containerId}-${tag}" {
+                    type = "app";
+                    program = lib.getExe app;
+                  }
+                ) tagsMap
+              ))
+              (builtins.foldl' (a: b: a // b) { })
+            ];
+          };
           pushTmpOCIApps = mkOption {
             description = "Apps to push architecture-specific temporary images for multi-arch builds. Keyed by containerId-arch.";
             type = types.attrsOf types.package;

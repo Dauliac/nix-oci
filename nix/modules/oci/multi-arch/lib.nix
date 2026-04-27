@@ -138,13 +138,26 @@ in
                 echo "    image:         $PRIMARY_REF"
                 echo "    digest:        $DIGEST"
                 echo "    architectures: ${lib.concatStringsSep ", " arches}"
+                # New per-tag marker scheme (matches mkPushApp output).
+                # Downstream CI can assert the right number of pushed
+                # tags by counting `CIMERA_OCI_PUSHED_TAG` lines.
+                echo "CIMERA_OCI_PUSHED_TAG ref=$PRIMARY_REF digest=$DIGEST tag=${primaryTag} primary=true"
+                # Legacy marker kept for backwards compatibility with
+                # older consumers. Can be dropped once all parsers
+                # migrate to CIMERA_OCI_PUSHED_TAG / CIMERA_OCI_PUSHED.
                 echo "CIMERA_OCI_PUBLISHED ref=$PRIMARY_REF digest=$DIGEST architectures=${lib.concatStringsSep "," arches}"
 
                 ${lib.concatMapStrings (tag: ''
                   echo "==> Tagging additional: ${tag}"
                   regctl image copy "$PRIMARY_REF" "$BASE_NAME:${tag}"
+                  echo "CIMERA_OCI_PUSHED_TAG ref=$BASE_NAME:${tag} digest=$DIGEST tag=${tag} primary=false"
                   echo "CIMERA_OCI_PUBLISHED ref=$BASE_NAME:${tag} digest=$DIGEST architectures=${lib.concatStringsSep "," arches}"
                 '') additionalTags}
+
+                # Single summary line listing the full tag set for
+                # this published manifest; easier to consume than
+                # re-aggregating per-tag lines downstream.
+                echo "CIMERA_OCI_PUSHED ref=$PRIMARY_REF digest=$DIGEST tags=${lib.concatStringsSep "," containerConfig.tags}"
 
                 echo "==> Cleaning up temporary per-arch tags"
                 for arch in ${lib.concatStringsSep " " arches}; do
