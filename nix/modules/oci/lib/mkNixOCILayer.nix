@@ -10,6 +10,15 @@
     }:
     let
       ociLib = config.lib.oci or { };
+
+      # Config files placed as a separate copyToRoot entry — buildEnv
+      # can't merge subdirectories under /etc when the nix package
+      # already provides /etc as a top-level symlink target.
+      etcConfig = pkgs.runCommand "etc-config" {} ''
+        mkdir -p $out/etc/nix $out/etc/containers
+        echo 'experimental-features = nix-command flakes' > $out/etc/nix/nix.conf
+        echo '${builtins.toJSON { default = [{ type = "insecureAcceptAnything"; }]; }}' > $out/etc/containers/policy.json
+      '';
     in
     {
       nix-lib.lib.oci.mkNixOCILayer = {
@@ -30,14 +39,6 @@
                       mkdir -p $out/bin
                       ln -s ${pkgs.bashInteractive}/bin/bash $out/bin/sh
                     '')
-                    # Enable flakes and nix-command by default
-                    (pkgs.writeTextDir "etc/nix/nix.conf" ''
-                      experimental-features = nix-command flakes
-                    '')
-                    # Default permissive container policy for skopeo/podman
-                    (pkgs.writeTextDir "etc/containers/policy.json" (builtins.toJSON {
-                      default = [{ type = "insecureAcceptAnything"; }];
-                    }))
                     coreutils
                     nix
                   ]
@@ -45,10 +46,13 @@
                 pathsToLink = [
                   "/bin"
                   "/etc"
-                  "/etc/nix"
-                  "/etc/containers"
                 ];
               })
+              # Separate from buildEnv: nix.conf + containers/policy.json
+              # nix2container merges multiple copyToRoot entries at the
+              # filesystem level, so these files land alongside buildEnv's
+              # /etc without conflicting.
+              etcConfig
             ];
           };
       };
