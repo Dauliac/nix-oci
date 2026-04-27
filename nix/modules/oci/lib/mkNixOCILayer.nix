@@ -34,6 +34,10 @@
                     (pkgs.writeTextDir "etc/nix/nix.conf" ''
                       experimental-features = nix-command flakes
                     '')
+                    # Default permissive container policy for skopeo/podman
+                    (pkgs.writeTextDir "etc/containers/policy.json" (builtins.toJSON {
+                      default = [{ type = "insecureAcceptAnything"; }];
+                    }))
                     coreutils
                     nix
                   ]
@@ -42,6 +46,7 @@
                   "/bin"
                   "/etc"
                   "/etc/nix"
+                  "/etc/containers"
                 ];
               })
             ];
