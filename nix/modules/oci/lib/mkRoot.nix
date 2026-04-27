@@ -35,7 +35,12 @@
           pkgs.buildEnv {
             name = "root";
             version = tag;
-            paths = package' ++ shadowSetup ++ dependencies;
+            paths = package' ++ shadowSetup ++ dependencies ++ [
+              # Standard FHS temp directories
+              (pkgs.runCommand "fhs-tmp" {} ''
+                mkdir -p $out/tmp $out/var/tmp
+              '')
+            ];
             pathsToLink = [
               "/bin"
               "/lib"

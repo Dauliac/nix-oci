@@ -27,8 +27,9 @@
                   [
                     bashInteractive
                     # Provide /bin/sh -> bash for tools that expect a POSIX shell
-                    (pkgs.runCommand "sh-symlink" {} ''
-                      mkdir -p $out/bin
+                    # and standard FHS temp directories
+                    (pkgs.runCommand "fhs-base" {} ''
+                      mkdir -p $out/bin $out/tmp $out/var/tmp
                       ln -s ${pkgs.bashInteractive}/bin/bash $out/bin/sh
                     '')
                     # Enable flakes and nix-command by default
