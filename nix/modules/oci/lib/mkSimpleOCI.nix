@@ -46,7 +46,7 @@
                   user
                   ;
               })
-            ];
+            ] ++ (oci.configFiles or []);
             config = {
               inherit (oci) entrypoint;
               User = oci.user;

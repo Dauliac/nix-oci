@@ -47,6 +47,7 @@
     ./oci/lib/mkDebugOCI.nix
     ./oci/lib/mkOCI.nix
     ./oci/lib/mkDockerArchive.nix
+    ./oci/lib/mkPushApp.nix
     ./oci/lib/mkPerContainerOption.nix
 
     # OCI containers - perContainer base and individual options
@@ -59,6 +60,7 @@
     ./oci/containers/user.nix
     ./oci/containers/package.nix
     ./oci/containers/dependencies.nix
+    ./oci/containers/configFiles.nix
     ./oci/containers/entrypoint.nix
     ./oci/containers/isRoot.nix
     ./oci/containers/installNix.nix

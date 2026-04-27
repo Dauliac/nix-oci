@@ -29,7 +29,7 @@
             inherit (oci) tag;
             name = fullName;
             initializeNixDatabase = true;
-            copyToRoot = [ ];
+            copyToRoot = oci.configFiles or [];
             layers = [
               (ociLib.mkNixOCILayer {
                 inherit perSystemConfig;
