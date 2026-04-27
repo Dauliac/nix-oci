@@ -24,6 +24,12 @@
                 paths =
                   with pkgs;
                   [
+                    bashInteractive
+                    # Provide /bin/sh -> bash for tools that expect a POSIX shell
+                    (pkgs.runCommand "sh-symlink" {} ''
+                      mkdir -p $out/bin
+                      ln -s ${pkgs.bashInteractive}/bin/bash $out/bin/sh
+                    '')
                     coreutils
                     nix
                   ]
