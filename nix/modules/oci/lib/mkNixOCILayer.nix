@@ -30,6 +30,12 @@
                       mkdir -p $out/bin
                       ln -s ${pkgs.bashInteractive}/bin/bash $out/bin/sh
                     '')
+                    # Enable flakes and nix-command by default so `nix run`,
+                    # `nix build`, etc. work out of the box inside containers.
+                    (pkgs.runCommand "nix-config" {} ''
+                      mkdir -p $out/etc/nix
+                      echo 'experimental-features = nix-command flakes' > $out/etc/nix/nix.conf
+                    '')
                     coreutils
                     nix
                   ]
