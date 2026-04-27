@@ -10,13 +10,6 @@
     }:
     let
       ociLib = config.lib.oci or { };
-
-      # Standalone nix.conf derivation — placed outside buildEnv to avoid
-      # collisions with the nix package's own /etc/nix contents.
-      nixConf = pkgs.runCommand "nix-conf" {} ''
-        mkdir -p $out/etc/nix
-        echo 'experimental-features = nix-command flakes' > $out/etc/nix/nix.conf
-      '';
     in
     {
       nix-lib.lib.oci.mkNixOCILayer = {
@@ -37,6 +30,10 @@
                       mkdir -p $out/bin
                       ln -s ${pkgs.bashInteractive}/bin/bash $out/bin/sh
                     '')
+                    # Enable flakes and nix-command by default
+                    (pkgs.writeTextDir "etc/nix/nix.conf" ''
+                      experimental-features = nix-command flakes
+                    '')
                     coreutils
                     nix
                   ]
@@ -44,11 +41,9 @@
                 pathsToLink = [
                   "/bin"
                   "/etc"
+                  "/etc/nix"
                 ];
               })
-              # Enable flakes by default — separate from buildEnv to avoid
-              # collisions with the nix package's /etc/nix contents.
-              nixConf
             ];
           };
       };
