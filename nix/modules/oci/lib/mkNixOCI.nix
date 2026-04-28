@@ -42,6 +42,7 @@
                 "LANG=C.UTF-8"
                 "LC_ALL=C.UTF-8"
                 "NIX_PAGER=cat"
+                "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
                 "USER=${oci.user}"
                 "HOME=/"
               ];
