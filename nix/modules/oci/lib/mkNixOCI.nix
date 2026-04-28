@@ -25,11 +25,28 @@
             fullName =
               if oci.registry != null && oci.registry != "" then "${oci.registry}/${oci.name}" else oci.name;
           in
+          let
+            # Application package + dependencies as a buildEnv.
+            # Unlike mkSimpleOCI we do NOT use mkRoot here because mkRoot
+            # includes its own shadow setup (mkRootShadowSetup) which would
+            # overwrite the nixbld users from mkNixOCILayer's mkNixShadowSetup,
+            # causing "group 'nixbld' does not exist" errors.
+            appPackages = let
+              pkg = if oci.package != null then [ oci.package ] else [ ];
+              deps = oci.dependencies or [ ];
+            in
+            pkgs.buildEnv {
+              name = "app-root";
+              paths = pkg ++ deps;
+              pathsToLink = [ "/bin" "/lib" "/etc" ];
+              ignoreCollisions = true;
+            };
+          in
           perSystemConfig.packages.nix2container.buildImage {
             inherit (oci) tag;
             name = fullName;
             initializeNixDatabase = true;
-            copyToRoot = oci.configFiles or [];
+            copyToRoot = [ appPackages ] ++ (oci.configFiles or []);
             layers = [
               (ociLib.mkNixOCILayer {
                 inherit perSystemConfig;
