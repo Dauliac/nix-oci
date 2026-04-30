@@ -55,18 +55,18 @@ in
 
                 CST="${perSystemConfig.packages.containerStructureTest}/bin/container-structure-test"
                 IMAGE="${oci.imageName}:${oci.imageTag}"
-                REPORT_DIR="''${FLAKE_ROOT:-.}/ci-artifacts/oci/${containerId}/container-structure-test/reports"
+                # Use CIMERA_ARTIFACTS_DIR if set (from cimera task env), else fallback
+                REPORT_DIR="''${CIMERA_ARTIFACTS_DIR:-''${FLAKE_ROOT:-.}/artifacts}/oci/${containerId}/container-structure-test/reports"
 
                 main() {
                   ${oci.copyToDockerDaemon}/bin/copy-to-docker-daemon
 
-                  # Run with text output for console
-                  $CST test --image "$IMAGE" --output text ${configFlags}
-
-                  # Generate JUnit report for CI artifact collection
                   mkdir -p "$REPORT_DIR"
-                  $CST test --image "$IMAGE" --output junit ${configFlags} \
-                    > "$REPORT_DIR/junit.xml" 2>/dev/null || true
+                  # Single run: text to console + JUnit report to file
+                  $CST test --image "$IMAGE" \
+                    --output text \
+                    --test-report "$REPORT_DIR/junit.xml" \
+                    ${configFlags}
                   echo "JUnit report saved to $REPORT_DIR/junit.xml"
                 }
 
