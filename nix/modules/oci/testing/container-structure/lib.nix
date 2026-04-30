@@ -61,12 +61,13 @@ in
                 main() {
                   ${oci.copyToDockerDaemon}/bin/copy-to-docker-daemon
 
+                  # Run with text output for console feedback
+                  $CST test --image "$IMAGE" --output text ${configFlags}
+
+                  # Generate JUnit report (image already loaded, near-instant)
                   mkdir -p "$REPORT_DIR"
-                  # Single run: text to console + JUnit report to file
-                  $CST test --image "$IMAGE" \
-                    --output text \
-                    --test-report "$REPORT_DIR/junit.xml" \
-                    ${configFlags}
+                  $CST test --image "$IMAGE" --output junit ${configFlags} \
+                    > "$REPORT_DIR/junit.xml" 2>/dev/null
                   echo "JUnit report saved to $REPORT_DIR/junit.xml"
                 }
 
