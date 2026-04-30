@@ -27,7 +27,7 @@
               if oci.registry != null && oci.registry != "" then "${oci.registry}/${oci.name}" else oci.name;
             fromImage =
               if !oci.fromImage.enabled then
-                ""
+                null
               else
                 ociLib.mkOCIPulledManifestLock {
                   inherit perSystemConfig containerId globalConfig;
