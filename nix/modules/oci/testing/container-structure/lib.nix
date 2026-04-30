@@ -55,8 +55,9 @@ in
 
                 CST="${perSystemConfig.packages.containerStructureTest}/bin/container-structure-test"
                 IMAGE="${oci.imageName}:${oci.imageTag}"
-                # Use CIMERA_ARTIFACTS_DIR if set (from cimera task env), else fallback
-                REPORT_DIR="''${CIMERA_ARTIFACTS_DIR:-''${FLAKE_ROOT:-.}/artifacts}/oci/${containerId}/container-structure-test/reports"
+                # CIMERA_REPORT_DIR is set by the cimera task wrapper.
+                # Fallback for standalone usage outside cimera.
+                REPORT_DIR="''${CIMERA_REPORT_DIR:-''${FLAKE_ROOT:-.}/artifacts/oci/${containerId}/container-structure-test/reports}"
 
                 main() {
                   ${oci.copyToDockerDaemon}/bin/copy-to-docker-daemon
