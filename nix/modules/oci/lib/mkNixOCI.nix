@@ -46,7 +46,15 @@
             inherit (oci) tag;
             name = fullName;
             initializeNixDatabase = true;
-            copyToRoot = [ appPackages ] ++ (oci.configFiles or []);
+            copyToRoot = [
+              appPackages
+              # SSL certificates at standard FHS paths
+              (pkgs.runCommand "ssl-certs" {} ''
+                mkdir -p $out/etc/ssl/certs
+                ln -s ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt $out/etc/ssl/certs/ca-bundle.crt
+                ln -s ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt $out/etc/ssl/certs/ca-certificates.crt
+              '')
+            ] ++ (oci.configFiles or []);
             layers = [
               (ociLib.mkNixOCILayer {
                 inherit perSystemConfig;
@@ -59,7 +67,7 @@
                 "LANG=C.UTF-8"
                 "LC_ALL=C.UTF-8"
                 "NIX_PAGER=cat"
-                "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+                "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
                 "USER=${oci.user}"
                 "HOME=/"
               ];

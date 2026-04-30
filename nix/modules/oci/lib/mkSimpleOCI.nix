@@ -48,13 +48,19 @@
               })
               # Standard FHS temp directories
               (pkgs.runCommand "fhs-dirs" {} "mkdir -p $out/tmp $out/var/tmp")
+              # SSL certificates at standard FHS paths
+              (pkgs.runCommand "ssl-certs" {} ''
+                mkdir -p $out/etc/ssl/certs
+                ln -s ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt $out/etc/ssl/certs/ca-bundle.crt
+                ln -s ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt $out/etc/ssl/certs/ca-certificates.crt
+              '')
             ] ++ (oci.configFiles or []);
             config = {
               inherit (oci) entrypoint;
               User = oci.user;
               Env = [
                 "PATH=/bin"
-                "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+                "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
                 "USER=${oci.user}"
               ];
             };
