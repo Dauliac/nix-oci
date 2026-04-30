@@ -53,12 +53,21 @@ in
                 set -o nounset
                 set -o pipefail
 
+                CST="${perSystemConfig.packages.containerStructureTest}/bin/container-structure-test"
+                IMAGE="${oci.imageName}:${oci.imageTag}"
+                REPORT_DIR="''${FLAKE_ROOT:-.}/ci-artifacts/oci/${containerId}/container-structure-test/reports"
+
                 main() {
                   ${oci.copyToDockerDaemon}/bin/copy-to-docker-daemon
-                  ${perSystemConfig.packages.containerStructureTest}/bin/container-structure-test \
-                    test --image "${oci.imageName}:${oci.imageTag}" \
-                    --output text \
-                    ${configFlags}
+
+                  # Run with text output for console
+                  $CST test --image "$IMAGE" --output text ${configFlags}
+
+                  # Generate JUnit report for CI artifact collection
+                  mkdir -p "$REPORT_DIR"
+                  $CST test --image "$IMAGE" --output junit ${configFlags} \
+                    > "$REPORT_DIR/junit.xml" 2>/dev/null || true
+                  echo "JUnit report saved to $REPORT_DIR/junit.xml"
                 }
 
                 main "$@"
@@ -81,6 +90,47 @@ in
                 }
               }/bin/container-structure-test-${containerId}";
             };
+        };
+
+        mkCheckContainerStructureTest = {
+          type = types.functionTo types.package;
+          description = "Run container-structure-test as a hermetic check via podman-in-sandbox";
+          fn =
+            {
+              perSystemConfig,
+              containerId,
+            }:
+            let
+              oci = perSystemConfig.internal.OCIs.${containerId};
+              containerConfig = perSystemConfig.containers.${containerId}.test.containerStructureTest;
+              existingConfigs = lib.filter builtins.pathExists containerConfig.configs;
+              configFlags = lib.concatStringsSep " " (
+                lib.map (cfg: "--config=${cfg}") existingConfigs
+              );
+              dockerArchive = ociLib.mkDockerArchive {
+                inherit oci;
+                inherit (perSystemConfig.packages) skopeo;
+              };
+            in
+            if existingConfigs == [ ] then
+              pkgs.runCommand "container-structure-test-${containerId}" { } ''
+                echo "[container-structure-test-${containerId}] no config files; skipping" >&2
+                mkdir -p $out && touch $out/passed
+              ''
+            else
+              ociLib.mkPodmanSandboxCheck {
+                name = "container-structure-test-${containerId}";
+                inherit dockerArchive;
+                imageRef = "${oci.imageName}:${oci.imageTag}";
+                extraBuildInputs = [ perSystemConfig.packages.containerStructureTest ];
+                testScript = ''
+                  ${perSystemConfig.packages.containerStructureTest}/bin/container-structure-test \
+                    test --image "localhost/${oci.imageName}:${oci.imageTag}" \
+                    --output text \
+                    --pull=false \
+                    ${configFlags}
+                '';
+              };
         };
       };
     };
