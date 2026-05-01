@@ -42,7 +42,16 @@ in
               set -o nounset
               # Use empty docker config to avoid credentials helper issues
               export DOCKER_CONFIG="$(mktemp -d)"
-              ${perSystemConfig.packages.trivy}/bin/trivy fs --scanners secret ${archive}
+              TRIVY="${perSystemConfig.packages.trivy}/bin/trivy"
+              # Human-readable output to stdout
+              $TRIVY fs --scanners secret ${archive}
+              # Write GitLab-compatible JSON report when CIMERA_REPORT_DIR is set
+              if [ -n "''${CIMERA_REPORT_DIR:-}" ]; then
+                mkdir -p "$CIMERA_REPORT_DIR"
+                $TRIVY fs --scanners secret ${archive} \
+                  --format json \
+                  --output "$CIMERA_REPORT_DIR/gl-secret-detection-report.json"
+              fi
             '';
         };
 

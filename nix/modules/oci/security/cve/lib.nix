@@ -63,13 +63,18 @@ in
               set -o nounset
               # Use empty docker config to avoid credentials helper issues
               export DOCKER_CONFIG="$(mktemp -d)"
-              ${perSystemConfig.packages.trivy}/bin/trivy image \
-                --input ${archive} \
-                ${ignoreFileFlag} \
-                ${extraIgnoreFileFlag} \
-                ${containerExtraIgnoreFileFlag} \
-                --exit-code 1 \
-                --scanners vuln
+              TRIVY="${perSystemConfig.packages.trivy}/bin/trivy"
+              COMMON_FLAGS="--input ${archive} ${ignoreFileFlag} ${extraIgnoreFileFlag} ${containerExtraIgnoreFileFlag} --scanners vuln"
+              # Human-readable output to stdout
+              $TRIVY image $COMMON_FLAGS --exit-code 1
+              # Write GitLab-compatible JSON report when CIMERA_REPORT_DIR is set
+              if [ -n "''${CIMERA_REPORT_DIR:-}" ]; then
+                mkdir -p "$CIMERA_REPORT_DIR"
+                $TRIVY image $COMMON_FLAGS \
+                  --exit-code 0 \
+                  --format json \
+                  --output "$CIMERA_REPORT_DIR/gl-container-scanning-report.json"
+              fi
             '';
         };
 
@@ -116,9 +121,16 @@ in
               set -o nounset
               # Use empty docker config to avoid credentials helper issues
               export DOCKER_CONFIG="$(mktemp -d)"
-              ${perSystemConfig.packages.grype}/bin/grype \
-                ${configFlag} \
-                ${archive}
+              GRYPE="${perSystemConfig.packages.grype}/bin/grype"
+              # Human-readable output to stdout
+              $GRYPE ${configFlag} ${archive}
+              # Write GitLab-compatible JSON report when CIMERA_REPORT_DIR is set
+              if [ -n "''${CIMERA_REPORT_DIR:-}" ]; then
+                mkdir -p "$CIMERA_REPORT_DIR"
+                $GRYPE ${configFlag} ${archive} \
+                  --output json \
+                  --file "$CIMERA_REPORT_DIR/gl-dependency-scanning-report.json"
+              fi
             '';
         };
 
