@@ -55,9 +55,6 @@ in
 
                 CST="${perSystemConfig.packages.containerStructureTest}/bin/container-structure-test"
                 IMAGE="${oci.imageName}:${oci.imageTag}"
-                # CIMERA_REPORT_DIR is set by the cimera task wrapper.
-                # Fallback for standalone usage outside cimera.
-                REPORT_DIR="''${CIMERA_REPORT_DIR:-''${FLAKE_ROOT:-.}/artifacts/oci/${containerId}/container-structure-test/reports}"
 
                 main() {
                   ${oci.copyToDockerDaemon}/bin/copy-to-docker-daemon
@@ -65,11 +62,14 @@ in
                   # Run with text output for console feedback
                   $CST test --image "$IMAGE" --output text ${configFlags}
 
-                  # Generate JUnit report (image already loaded, near-instant)
-                  mkdir -p "$REPORT_DIR"
-                  $CST test --image "$IMAGE" --output junit ${configFlags} \
-                    > "$REPORT_DIR/junit.xml" 2>/dev/null
-                  echo "JUnit report saved to $REPORT_DIR/junit.xml"
+                  # Generate JUnit report when CIMERA_REPORT_DIR is set
+                  # (injected by the cimera task wrapper for all tasks)
+                  if [ -n "''${CIMERA_REPORT_DIR:-}" ]; then
+                    mkdir -p "$CIMERA_REPORT_DIR"
+                    $CST test --image "$IMAGE" --output junit ${configFlags} \
+                      > "$CIMERA_REPORT_DIR/junit.xml" 2>/dev/null
+                    echo "JUnit report saved to $CIMERA_REPORT_DIR/junit.xml"
+                  fi
                 }
 
                 main "$@"
