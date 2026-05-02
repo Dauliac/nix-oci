@@ -36,15 +36,11 @@ in
               # Interpolating `${path}` copies the file to the Nix store and
               # fails eval if missing, so we can't defer the check to runtime.
               existingConfigs = lib.filter builtins.pathExists containerConfig.configs;
-              configFlags = lib.concatStringsSep " " (
-                lib.map (config: "--config=${config}") existingConfigs
-              );
+              configFlags = lib.concatStringsSep " " (lib.map (config: "--config=${config}") existingConfigs);
             in
             if existingConfigs == [ ] then
               pkgs.writeShellScriptBin "container-structure-test-${containerId}" ''
-                echo "[container-structure-test-${containerId}] no config files configured (expected e.g. at ${
-                  toString (lib.head containerConfig.configs)
-                }); skipping" >&2
+                echo "[container-structure-test-${containerId}] no config files configured (expected e.g. at ${toString (lib.head containerConfig.configs)}); skipping" >&2
                 exit 0
               ''
             else
@@ -92,47 +88,6 @@ in
                 }
               }/bin/container-structure-test-${containerId}";
             };
-        };
-
-        mkCheckContainerStructureTest = {
-          type = types.functionTo types.package;
-          description = "Run container-structure-test as a hermetic check via podman-in-sandbox";
-          fn =
-            {
-              perSystemConfig,
-              containerId,
-            }:
-            let
-              oci = perSystemConfig.internal.OCIs.${containerId};
-              containerConfig = perSystemConfig.containers.${containerId}.test.containerStructureTest;
-              existingConfigs = lib.filter builtins.pathExists containerConfig.configs;
-              configFlags = lib.concatStringsSep " " (
-                lib.map (cfg: "--config=${cfg}") existingConfigs
-              );
-              dockerArchive = ociLib.mkDockerArchive {
-                inherit oci;
-                inherit (perSystemConfig.packages) skopeo;
-              };
-            in
-            if existingConfigs == [ ] then
-              pkgs.runCommand "container-structure-test-${containerId}" { } ''
-                echo "[container-structure-test-${containerId}] no config files; skipping" >&2
-                mkdir -p $out && touch $out/passed
-              ''
-            else
-              ociLib.mkPodmanSandboxCheck {
-                name = "container-structure-test-${containerId}";
-                inherit dockerArchive;
-                imageRef = "${oci.imageName}:${oci.imageTag}";
-                extraBuildInputs = [ perSystemConfig.packages.containerStructureTest ];
-                testScript = ''
-                  ${perSystemConfig.packages.containerStructureTest}/bin/container-structure-test \
-                    test --image "localhost/${oci.imageName}:${oci.imageTag}" \
-                    --output text \
-                    --pull=false \
-                    ${configFlags}
-                '';
-              };
         };
       };
     };

@@ -14,7 +14,7 @@
       # Standard FHS directories that must exist as real directories
       # (not symlinks). Placed outside buildEnv as a separate copyToRoot
       # entry so nix2container creates them at the filesystem root.
-      fhsDirs = pkgs.runCommand "fhs-dirs" {} ''
+      fhsDirs = pkgs.runCommand "fhs-dirs" { } ''
         mkdir -p $out/tmp $out/var/tmp
       '';
     in
@@ -35,7 +35,7 @@
                     bashInteractive
                     # Provide /bin/sh -> bash for tools that expect a POSIX shell
                     # and standard FHS temp directories
-                    (pkgs.runCommand "fhs-base" {} ''
+                    (pkgs.runCommand "fhs-base" { } ''
                       mkdir -p $out/bin $out/tmp $out/var/tmp
                       ln -s ${pkgs.bashInteractive}/bin/bash $out/bin/sh
                     '')

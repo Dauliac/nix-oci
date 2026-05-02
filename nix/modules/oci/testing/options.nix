@@ -49,6 +49,15 @@ in
                     description = "Whether to enable dgoss testing globally for all containers.";
                     default = false;
                   };
+                  hermetic = mkOption {
+                    type = types.bool;
+                    description = ''
+                      Run dgoss as a pure Nix derivation (check) using podman
+                      inside the Nix sandbox.
+                      Requires `extra-sandbox-paths = /sys/fs/cgroup` in nix.conf.
+                    '';
+                    default = false;
+                  };
                 };
               };
             };

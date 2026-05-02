@@ -6,7 +6,7 @@
 #  3. Runs an arbitrary test command with DOCKER_HOST pointed at the socket
 #
 # This runs inside the Nix build sandbox (no __noChroot).
-# Requirement: `extra-sandbox-paths = /sys` in nix.conf (for cgroup access).
+# Requirement: `extra-sandbox-paths = /sys/fs/cgroup` in nix.conf.
 {
   lib,
   config,
@@ -26,9 +26,11 @@ in
     }:
     let
       # Podman config files shared by all hermetic checks
-      policyJson = pkgs.writeText "podman-sandbox-policy.json" (builtins.toJSON {
-        default = [ { type = "insecureAcceptAnything"; } ];
-      });
+      policyJson = pkgs.writeText "podman-sandbox-policy.json" (
+        builtins.toJSON {
+          default = [ { type = "insecureAcceptAnything"; } ];
+        }
+      );
 
       storageConf = pkgs.writeText "podman-sandbox-storage.conf" ''
         [storage]
@@ -91,7 +93,8 @@ in
                   pkgs.coreutils
                   pkgs.bash
                   pkgs.util-linux
-                ] ++ extraBuildInputs;
+                ]
+                ++ extraBuildInputs;
               }
               ''
                 set -euo pipefail
@@ -120,8 +123,15 @@ in
 
                 ${extraSetup}
 
-                # Load image
-                podman "''${PODMAN_FLAGS[@]}" load -i ${dockerArchive}
+                # Load image and tag it with the expected reference.
+                # skopeo's docker-archive format may not embed repo tags, so
+                # podman load returns a bare sha256 digest. We capture that
+                # and tag it so test tools can find the image by name.
+                LOADED=$(podman "''${PODMAN_FLAGS[@]}" load -i ${dockerArchive} \
+                  | sed -n 's/^Loaded image: //p')
+                if [ -n "$LOADED" ]; then
+                  podman "''${PODMAN_FLAGS[@]}" tag "$LOADED" "${imageRef}" 2>/dev/null || true
+                fi
 
                 # Start podman API socket in background
                 podman "''${PODMAN_FLAGS[@]}" \

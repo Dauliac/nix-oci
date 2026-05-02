@@ -57,11 +57,7 @@
                 "${containerConfig.registry}/${containerConfig.name}"
               else
                 containerConfig.name;
-            appName =
-              if debug then
-                "push-debug-${containerId}-${tag}"
-              else
-                "push-${containerId}-${tag}";
+            appName = if debug then "push-debug-${containerId}-${tag}" else "push-${containerId}-${tag}";
             primaryLiteral = if primary then "true" else "false";
           in
           pkgs.writeShellApplication {

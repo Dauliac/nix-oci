@@ -32,39 +32,57 @@
                 ociLib.mkOCIPulledManifestLock {
                   inherit perSystemConfig containerId globalConfig;
                 };
+            optimized = oci.optimizeLayers or false;
+            rootDeps = if optimized then [ ] else oci.dependencies;
+            depsLayers =
+              if optimized && oci.dependencies != [ ] then
+                [
+                  (ociLib.mkDepsLayer {
+                    inherit perSystemConfig;
+                    dependencies = oci.dependencies;
+                  })
+                ]
+              else
+                [ ];
           in
-          perSystemConfig.packages.nix2container.buildImage {
-            inherit (oci) tag;
-            name = fullName;
-            inherit fromImage;
-            copyToRoot = [
-              (ociLib.mkRoot {
-                inherit (oci)
-                  package
-                  dependencies
-                  tag
-                  user
-                  ;
-              })
-              # Standard FHS temp directories
-              (pkgs.runCommand "fhs-dirs" {} "mkdir -p $out/tmp $out/var/tmp")
-              # SSL certificates at standard FHS paths
-              (pkgs.runCommand "ssl-certs" {} ''
-                mkdir -p $out/etc/ssl/certs
-                ln -s ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt $out/etc/ssl/certs/ca-bundle.crt
-                ln -s ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt $out/etc/ssl/certs/ca-certificates.crt
-              '')
-            ] ++ (oci.configFiles or []);
-            config = {
-              inherit (oci) entrypoint;
-              User = oci.user;
-              Env = [
-                "PATH=/bin"
-                "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
-                "USER=${oci.user}"
-              ];
-            };
-          };
+          perSystemConfig.packages.nix2container.buildImage (
+            {
+              inherit (oci) tag;
+              name = fullName;
+              copyToRoot = [
+                (ociLib.mkRoot {
+                  inherit (oci)
+                    package
+                    tag
+                    user
+                    ;
+                  dependencies = rootDeps;
+                })
+                # Standard FHS temp directories
+                (pkgs.runCommand "fhs-dirs" { } "mkdir -p $out/tmp $out/var/tmp")
+              ]
+              ++ (oci.configFiles or [ ]);
+              config = {
+                inherit (oci) entrypoint;
+                User = oci.user;
+                Env = [
+                  "PATH=/bin"
+                  "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
+                  "USER=${oci.user}"
+                ];
+              }
+              // lib.optionalAttrs (oci.labels != { }) {
+                Labels = oci.labels;
+              };
+            }
+            // lib.optionalAttrs (fromImage != null) {
+              inherit fromImage;
+            }
+            // lib.optionalAttrs optimized {
+              layers = depsLayers;
+              maxLayers = 40;
+            }
+          );
       };
     };
 }

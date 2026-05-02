@@ -43,6 +43,7 @@
     ./oci/lib/mkSimpleOCI.nix
     ./oci/lib/mkNixOCI.nix
     ./oci/lib/mkNixOCILayer.nix
+    ./oci/lib/mkDepsLayer.nix
     ./oci/lib/mkNixOrSimpleOCI.nix
     ./oci/lib/mkDebugOCI.nix
     ./oci/lib/mkOCI.nix
@@ -64,6 +65,8 @@
     ./oci/containers/entrypoint.nix
     ./oci/containers/isRoot.nix
     ./oci/containers/installNix.nix
+    ./oci/containers/optimizeLayers.nix
+    ./oci/containers/labels.nix
     ./oci/containers/push.nix
 
     # OCI containers - multiArch options
@@ -79,6 +82,7 @@
 
     # OCI containers - debug options
     ./oci/containers/debug/enabled.nix
+    ./oci/containers/debug/labels.nix
     ./oci/containers/debug/packages.nix
     ./oci/containers/debug/entrypoint/enabled.nix
     ./oci/containers/debug/entrypoint/wrapper.nix
@@ -110,6 +114,7 @@
     ./oci/containers/test/dgoss/enabled.nix
     ./oci/containers/test/dgoss/optionsPath.nix
     ./oci/containers/test/dgoss/command.nix
+    ./oci/containers/test/dgoss/hermetic.nix
 
     # OCI debug
     ./oci/debug/options.nix
@@ -127,6 +132,7 @@
     ./oci/testing/dive/lib.nix
     ./oci/testing/dgoss/lib.nix
     ./oci/testing/container-structure/lib.nix
+    ./oci/testing/podman-sandbox/lib.nix
 
     # OCI manifest & multi-arch
     ./oci/manifest/lib.nix

@@ -31,6 +31,7 @@
                   [ "${oci.debug.entrypoint.wrapper}/bin/entrypoint" ] ++ oci.entrypoint
                 else
                   oci.entrypoint;
+              labels = oci.debug.labels or oci.labels;
             };
             perSystemConfig' = perSystemConfig // {
               containers = perSystemConfig.containers // {

@@ -54,8 +54,7 @@ in
                   export GOSS_FILE=${containerConfig.optionsPath}
                   ${perSystemConfig.packages.dgoss}/bin/dgoss \
                     run ${
-                      lib.optionalString (containerConfig.command != "")
-                        ''--entrypoint "" ''
+                      lib.optionalString (containerConfig.command != "") ''--entrypoint "" ''
                     }${oci.imageName}:${oci.imageTag} ${containerConfig.command}
                 }
                 main "$@"
@@ -78,6 +77,44 @@ in
                 }
               }/bin/dgoss-${containerId}";
             };
+        };
+
+        mkCheckDgoss = {
+          type = types.functionTo types.package;
+          description = "Run dgoss as a hermetic check via podman-in-sandbox";
+          fn =
+            {
+              perSystemConfig,
+              containerId,
+            }:
+            let
+              oci = perSystemConfig.internal.OCIs.${containerId};
+              containerConfig = perSystemConfig.containers.${containerId}.test.dgoss;
+              hasGossFile = builtins.pathExists containerConfig.optionsPath;
+              dockerArchive = ociLib.mkDockerArchive {
+                inherit oci;
+                inherit (perSystemConfig.packages) skopeo;
+              };
+              entrypointOverride = lib.optionalString (containerConfig.command != "") ''--entrypoint "" '';
+              imageRef = "localhost/${oci.imageName}:${oci.imageTag}";
+            in
+            if !hasGossFile then
+              pkgs.runCommand "dgoss-${containerId}" { } ''
+                echo "[dgoss-${containerId}] no goss file at ${toString containerConfig.optionsPath}; skipping" >&2
+                mkdir -p $out && touch $out/passed
+              ''
+            else
+              ociLib.mkPodmanSandboxCheck {
+                name = "dgoss-${containerId}";
+                inherit dockerArchive;
+                inherit imageRef;
+                extraBuildInputs = [ perSystemConfig.packages.dgoss ];
+                testScript = ''
+                  export GOSS_FILE=${containerConfig.optionsPath}
+                  ${perSystemConfig.packages.dgoss}/bin/dgoss \
+                    run ${entrypointOverride}${imageRef} ${containerConfig.command}
+                '';
+              };
         };
       };
     };
