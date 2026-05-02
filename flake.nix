@@ -8,7 +8,6 @@
     };
     nix2container = {
       url = "github:nlewo/nix2container";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
