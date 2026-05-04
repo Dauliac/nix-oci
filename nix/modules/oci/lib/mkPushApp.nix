@@ -35,18 +35,14 @@
           {
             perSystemConfig,
             containerId,
-            tag,
-            # Whether this tag is the head of containerConfig.tags
-            # (stamped into the marker line). Non-primary tags are
-            # aliases in the registry sense.
-            primary ? false,
-            # When set, the app uses the debug image instead of the
-            # production one (keyed as "${containerId}-debug" in
-            # internal.debugOCIs, per internal/packages.nix).
+            tagConfig,
+            # When true, pushes the debug image variant and appends
+            # "-debug" to the tag literal (e.g. "1.0.0" → "1.0.0-debug").
             debug ? false,
           }:
           let
             containerConfig = perSystemConfig.containers.${containerId};
+            tag = if debug then "${tagConfig._tagName}-debug" else tagConfig._tagName;
             ociOutput =
               if debug then
                 perSystemConfig.internal.debugOCIs."${containerId}-debug"
@@ -58,7 +54,10 @@
               else
                 containerConfig.name;
             appName = if debug then "push-debug-${containerId}-${tag}" else "push-${containerId}-${tag}";
-            primaryLiteral = if primary then "true" else "false";
+            primaryLiteral = if tagConfig.primary then "true" else "false";
+            # registry is types.nullOr types.str — `or ""` does NOT handle null
+            # (or only fires for missing attributes, not null values), so guard explicitly.
+            registryFallback = if containerConfig.registry != null then containerConfig.registry else "";
           in
           pkgs.writeShellApplication {
             name = appName;
@@ -66,7 +65,7 @@
               perSystemConfig.packages.skopeo
             ];
             text = ''
-              REGISTRY="''${CIMERA_OCI_REGISTRY:-''${CI_REGISTRY_IMAGE:-${containerConfig.registry or ""}}}"
+              REGISTRY="''${CIMERA_OCI_REGISTRY:-''${CI_REGISTRY_IMAGE:-${registryFallback}}}"
 
               if [ -n "''${OCI_DIR:-}" ]; then
                 mkdir -p "$OCI_DIR"

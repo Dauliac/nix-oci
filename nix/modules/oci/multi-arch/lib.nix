@@ -99,8 +99,10 @@ in
                 else
                   containerConfig.name;
               arches = builtins.map (sys: archMap.${sys}) systems;
-              primaryTag = builtins.head containerConfig.tags;
-              additionalTags = builtins.filter (tag: tag != primaryTag) containerConfig.tags;
+              primaryTag = builtins.head (
+                lib.attrNames (lib.filterAttrs (_: tc: tc.primary) containerConfig.tagConfigs)
+              );
+              additionalTags = lib.attrNames (lib.filterAttrs (_: tc: !tc.primary) containerConfig.tagConfigs);
             in
             pkgs.writeShellApplication {
               name = "merge-${containerId}";
@@ -157,7 +159,7 @@ in
                 # Single summary line listing the full tag set for
                 # this published manifest; easier to consume than
                 # re-aggregating per-tag lines downstream.
-                echo "CIMERA_OCI_PUSHED ref=$PRIMARY_REF digest=$DIGEST tags=${lib.concatStringsSep "," containerConfig.tags}"
+                echo "CIMERA_OCI_PUSHED ref=$PRIMARY_REF digest=$DIGEST tags=${lib.concatStringsSep "," (lib.attrNames containerConfig.tagConfigs)}"
 
                 echo "==> Cleaning up temporary per-arch tags"
                 for arch in ${lib.concatStringsSep " " arches}; do

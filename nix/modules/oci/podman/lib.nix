@@ -117,7 +117,6 @@ in
             let
               container = perSystemConfig.containers.${containerId};
               oci = perSystemConfig.internal.OCIs.${containerId};
-              tags = container.tags;
             in
             pkgs.writeScriptBin "publish-docker-image-${containerId}" ''
               #!${pkgs.bash}/bin/bash
@@ -137,7 +136,7 @@ in
                     nix:${oci} \
                     docker://$image_path
                   echo "Image pushed to $image_path"
-                '') tags}
+                '') (lib.attrNames container.tagConfigs)}
               }
 
               main "$@"

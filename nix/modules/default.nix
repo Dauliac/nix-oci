@@ -56,6 +56,7 @@
     ./oci/containers/rootPath.nix
     ./oci/containers/tag.nix
     ./oci/containers/tags.nix
+    ./oci/containers/perTag.nix
     ./oci/containers/name.nix
     ./oci/containers/registry.nix
     ./oci/containers/user.nix

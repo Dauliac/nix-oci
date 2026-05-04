@@ -115,7 +115,7 @@ in
             description = ''
               Per-tag push apps for each container. Keys are
               containerIds; each entry is itself an attrset keyed by
-              tag literal. Every tag in `containerConfig.tags`
+              tag literal. Every tag in `containerConfig.tagConfigs`
               produces one app; the first tag is flagged as
               `primary = true` in its marker output.
             '';
@@ -124,20 +124,13 @@ in
             readOnly = true;
             default = attrsets.mapAttrs (
               containerId: containerConfig:
-              let
-                tags = containerConfig.tags;
-                primaryTag = builtins.head tags;
-              in
-              attrsets.listToAttrs (
-                map (tag: {
-                  name = tag;
-                  value = ociLib.mkPushApp {
-                    perSystemConfig = config.oci;
-                    inherit containerId tag;
-                    primary = tag == primaryTag;
-                  };
-                }) tags
-              )
+              attrsets.mapAttrs (
+                _tag: tagConfig:
+                ociLib.mkPushApp {
+                  perSystemConfig = config.oci;
+                  inherit containerId tagConfig;
+                }
+              ) containerConfig.tagConfigs
             ) config.oci.containers;
           };
           prefixedPushApps = mkOption {
@@ -171,26 +164,20 @@ in
               (attrsets.filterAttrs (_: c: c.debug.enabled))
               (attrsets.mapAttrs (
                 containerId: containerConfig:
-                let
-                  # Debug variants push the same tag list with a
-                  # consistent suffix so the registry shows
-                  # `cimera:v1.0.0-debug` next to `cimera:v1.0.0`.
-                  # Keep the primary flag aligned with production.
-                  tags = containerConfig.tags;
-                  primaryTag = builtins.head tags;
-                in
-                attrsets.listToAttrs (
-                  map (tag: {
-                    name = "${tag}-debug";
-                    value = ociLib.mkPushApp {
+                # Debug variants push the same tag list with a
+                # consistent suffix so the registry shows
+                # `cimera:v1.0.0-debug` next to `cimera:v1.0.0`.
+                # primary flag is read from tagConfig, aligned with production.
+                attrsets.mapAttrs' (
+                  tag: tagConfig:
+                  attrsets.nameValuePair "${tag}-debug" (
+                    ociLib.mkPushApp {
                       perSystemConfig = config.oci;
-                      inherit containerId;
-                      tag = "${tag}-debug";
-                      primary = tag == primaryTag;
+                      inherit containerId tagConfig;
                       debug = true;
-                    };
-                  }) tags
-                )
+                    }
+                  )
+                ) containerConfig.tagConfigs
               ))
             ];
           };
