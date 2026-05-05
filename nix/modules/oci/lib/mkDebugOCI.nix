@@ -25,7 +25,10 @@
             oci = perSystemConfig.containers.${containerId};
             debugConfig = {
               tag = oci.tag + "-debug";
-              dependencies = oci.dependencies ++ oci.debug.packages;
+              dependencies =
+                oci.dependencies
+                ++ oci.debug.packages
+                ++ lib.optional oci.debug.entrypoint.enabled oci.debug.entrypoint.wrapper;
               entrypoint =
                 if oci.debug.entrypoint.enabled then
                   [ "${oci.debug.entrypoint.wrapper}/bin/entrypoint" ] ++ oci.entrypoint
