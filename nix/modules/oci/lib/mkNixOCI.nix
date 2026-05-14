@@ -55,6 +55,31 @@
                 ]
               else
                 [ ];
+            home = if oci.user == "root" then "/root" else "/home/${oci.user}";
+            homeDir = pkgs.runCommand "home-dir" { } ''
+              mkdir -p $out${home}
+            '';
+            # configFiles must NOT be in the top-level copyToRoot when
+            # initializeNixDatabase = true. nix2container registers all
+            # copyToRoot closure paths in the Nix DB, but then rewrites
+            # them out of /nix/store/ into /etc/... .  This creates a
+            # DB-vs-disk inconsistency: the DB says the store path is
+            # valid but lstat() fails because the file was moved.
+            #
+            # Fix: put configFiles in a separate layer with its own
+            # copyToRoot. The layer is NOT included in the nixDatabase
+            # closure graph, so the rewritten paths are never registered
+            # in the DB.
+            configFiles = oci.configFiles or [ ];
+            configFilesLayer =
+              if configFiles != [ ] then
+                [
+                  (perSystemConfig.packages.nix2container.buildLayer {
+                    copyToRoot = configFiles;
+                  })
+                ]
+              else
+                [ ];
           in
           perSystemConfig.packages.nix2container.buildImage (
             {
@@ -63,24 +88,26 @@
               initializeNixDatabase = true;
               copyToRoot = [
                 appPackages
-              ]
-              ++ (oci.configFiles or [ ]);
+                homeDir
+              ];
               layers = [
                 (ociLib.mkNixOCILayer {
                   inherit perSystemConfig;
                 })
               ]
-              ++ depsLayers;
+              ++ depsLayers
+              ++ configFilesLayer;
               config = {
                 inherit (oci) entrypoint;
+                User = oci.user;
                 Env = [
-                  "PATH=/bin:/root/.nix-profile/bin:/nix/var/nix/profiles/default/bin"
+                  "PATH=/bin:${home}/.nix-profile/bin:/nix/var/nix/profiles/default/bin"
                   "LANG=C.UTF-8"
                   "LC_ALL=C.UTF-8"
                   "NIX_PAGER=cat"
                   "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
                   "USER=${oci.user}"
-                  "HOME=/"
+                  "HOME=${home}"
                 ];
               }
               // lib.optionalAttrs (oci.labels != { }) {
