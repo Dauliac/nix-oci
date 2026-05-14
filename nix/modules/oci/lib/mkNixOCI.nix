@@ -59,6 +59,14 @@
             homeDir = pkgs.runCommand "home-dir" { } ''
               mkdir -p $out${home}
             '';
+            # Nix requires /nix/var/nix/profiles to exist and be writable
+            # by the container user. For non-root users, pre-create it
+            # so `nix eval`/`nix build` don't fail with Permission denied.
+            nixVarDirs = pkgs.runCommand "nix-var-dirs" { } ''
+              mkdir -p $out/nix/var/nix/profiles/per-user/${oci.user}
+              mkdir -p $out/nix/var/nix/gcroots/per-user/${oci.user}
+              mkdir -p $out/nix/var/nix/temproots
+            '';
             # configFiles must NOT be in the top-level copyToRoot when
             # initializeNixDatabase = true. nix2container registers all
             # copyToRoot closure paths in the Nix DB, but then rewrites
@@ -86,9 +94,25 @@
               inherit (oci) tag;
               name = fullName;
               initializeNixDatabase = true;
+              # Non-root users need ownership of /nix for single-user mode.
+              nixUid = if oci.user == "root" then 0 else 4000;
+              nixGid = if oci.user == "root" then 0 else 4000;
               copyToRoot = [
                 appPackages
                 homeDir
+                nixVarDirs
+              ];
+              # Non-root users need write access to the entire Nix state
+              # (/nix/var/nix/ and /nix/store/) for single-user mode.
+              # nix2container's perms sets ownership in the OCI layer.
+              perms = lib.optionals (oci.user != "root") [
+                {
+                  path = nixVarDirs;
+                  regex = "/nix/var/nix/.*";
+                  mode = "0755";
+                  uid = 4000;
+                  gid = 4000;
+                }
               ];
               layers = [
                 (ociLib.mkNixOCILayer {
