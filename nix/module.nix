@@ -5,11 +5,15 @@ args@{
 }:
 {
   # Modules are imported via import-tree in flake.nix
-  config = {
-    flake.modules.flake.default = import ./flake-module.nix inputs;
-    flake.modules.flake.nix-oci = import ./flake-module.nix inputs;
-    flake.flakeModules.nix-oci = import ./flake-module.nix inputs;
-    flake.flakeModules.default = import ./flake-module.nix inputs;
-    flake.flakeModule = import ./flake-module.nix inputs;
-  };
+  config =
+    let
+      module = import ./flake-module.nix inputs;
+    in
+    {
+      flake.modules.flake.default = module;
+      flake.modules.flake.nix-oci = module;
+      flake.flakeModules.nix-oci = module;
+      flake.flakeModules.default = module;
+      flake.flakeModule = module;
+    };
 }
