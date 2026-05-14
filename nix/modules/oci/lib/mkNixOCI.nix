@@ -93,6 +93,8 @@
               layers = [
                 (ociLib.mkNixOCILayer {
                   inherit perSystemConfig;
+                  user = oci.user;
+                  inherit home;
                 })
               ]
               ++ depsLayers

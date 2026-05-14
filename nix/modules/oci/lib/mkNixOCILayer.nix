@@ -23,7 +23,14 @@
         type = lib.types.functionTo lib.types.package;
         description = "Build the Nix layer for containers with Nix support";
         fn =
-          { perSystemConfig }:
+          {
+            perSystemConfig,
+            # Optional container user for shadow setup.
+            # When non-root, mkNixShadowSetup adds the user to
+            # passwd/group/shadow alongside the nixbld build users.
+            user ? null,
+            home ? null,
+          }:
           perSystemConfig.packages.nix2container.buildLayer {
             copyToRoot = [
               (pkgs.buildEnv {
@@ -46,7 +53,12 @@
                     coreutils
                     nix
                   ]
-                  ++ (ociLib.mkNixShadowSetup { });
+                  ++ (ociLib.mkNixShadowSetup ({
+                  } // lib.optionalAttrs (user != null) {
+                    inherit user;
+                  } // lib.optionalAttrs (home != null) {
+                    inherit home;
+                  }));
                 pathsToLink = [
                   "/bin"
                   "/etc"

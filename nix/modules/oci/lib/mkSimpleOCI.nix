@@ -44,6 +44,10 @@
                 ]
               else
                 [ ];
+            home = if oci.user == "root" then "/root" else "/home/${oci.user}";
+            homeDir = pkgs.runCommand "home-dir" { } ''
+              mkdir -p $out${home}
+            '';
           in
           perSystemConfig.packages.nix2container.buildImage (
             {
@@ -58,6 +62,7 @@
                     ;
                   dependencies = rootDeps;
                 })
+                homeDir
                 # Standard FHS temp directories
                 (pkgs.runCommand "fhs-dirs" { } "mkdir -p $out/tmp $out/var/tmp")
               ]
@@ -69,6 +74,7 @@
                   "PATH=/bin"
                   "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
                   "USER=${oci.user}"
+                  "HOME=${home}"
                 ];
               }
               // lib.optionalAttrs (oci.labels != { }) {
