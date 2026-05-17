@@ -67,17 +67,6 @@
               mkdir -p $out/nix/var/nix/gcroots/per-user/${oci.user}
               mkdir -p $out/nix/var/nix/temproots
             '';
-            # configFiles must NOT be in the top-level copyToRoot when
-            # initializeNixDatabase = true. nix2container registers all
-            # copyToRoot closure paths in the Nix DB, but then rewrites
-            # them out of /nix/store/ into /etc/... .  This creates a
-            # DB-vs-disk inconsistency: the DB says the store path is
-            # valid but lstat() fails because the file was moved.
-            #
-            # Fix: put configFiles in a separate layer with its own
-            # copyToRoot. The layer is NOT included in the nixDatabase
-            # closure graph, so the rewritten paths are never registered
-            # in the DB.
             configFiles = oci.configFiles or [ ];
             configFilesLayer =
               if configFiles != [ ] then
@@ -93,10 +82,13 @@
             {
               inherit (oci) tag;
               name = fullName;
-              initializeNixDatabase = true;
-              # Non-root users need ownership of /nix for single-user mode.
-              nixUid = if oci.user == "root" then 0 else 4000;
-              nixGid = if oci.user == "root" then 0 else 4000;
+              # NOTE: initializeNixDatabase is intentionally NOT used.
+              # It registers copyToRoot paths in the nix DB, but copyToRoot
+              # rewrites those paths to / (removing the original store path).
+              # This creates phantom DB entries: the DB claims paths exist but
+              # they don't on disk. When the container rebuilds itself in CI,
+              # nix skips building them (DB says valid) → lstat fails.
+              # Use a binary cache (S3) for substitution instead.
               copyToRoot = [
                 appPackages
                 homeDir
