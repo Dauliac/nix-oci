@@ -10,7 +10,7 @@
     {
       nix-lib.lib.oci.mkNixShadowSetup = {
         type = lib.types.functionTo (lib.types.listOf lib.types.package);
-        description = "Build passwd, shadow, group, and gshadow files for containers that run nested Nix";
+        description = "Build passwd, shadow, group, gshadow, and nsswitch.conf files for containers that run nested Nix";
         fn =
           {
             # Optional non-root container user. When set, an entry is
@@ -67,6 +67,15 @@
               nobody:x::
               nixbld:x::
               ${userGshadow}'')
+            # nsswitch.conf: glibc's NSS needs this to resolve users and
+            # groups from /etc/passwd and /etc/group. Without it, getgrnam()
+            # and getpwnam() fail even when the files exist, causing
+            # "the group 'nixbld' does not exist" errors from nix.
+            (writeTextDir "etc/nsswitch.conf" ''
+              passwd: files
+              group:  files
+              shadow: files
+            '')
           ];
       };
     };
