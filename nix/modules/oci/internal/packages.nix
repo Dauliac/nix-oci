@@ -200,6 +200,47 @@ in
               (builtins.foldl' (a: b: a // b) { })
             ];
           };
+          # ========== ALL-TAGS PUSH APPS (efficient) ==========
+          #
+          # One derivation per container that pushes all tags. The primary
+          # tag is pushed from the Nix store; additional tags are created
+          # via registry-side copies (zero blob re-upload).
+          pushAllTagsApps = mkOption {
+            description = ''
+              Efficient all-tags push apps, keyed by containerId.
+              Pushes the primary tag once from the Nix store, then
+              creates additional tags via registry-side copies.
+            '';
+            type = types.attrsOf types.package;
+            internal = true;
+            readOnly = true;
+            default = attrsets.mapAttrs (
+              containerId: _containerConfig:
+              ociLib.mkPushAllTagsApp {
+                perSystemConfig = config.oci;
+                inherit containerId;
+              }
+            ) config.oci.containers;
+          };
+          debugPushAllTagsApps = mkOption {
+            description = ''
+              Same as `pushAllTagsApps` but for debug images.
+            '';
+            type = types.attrsOf types.package;
+            internal = true;
+            readOnly = true;
+            default = lib.pipe config.oci.containers [
+              (attrsets.filterAttrs (_: c: c.debug.enabled))
+              (attrsets.mapAttrs (
+                containerId: _containerConfig:
+                ociLib.mkPushAllTagsApp {
+                  perSystemConfig = config.oci;
+                  inherit containerId;
+                  debug = true;
+                }
+              ))
+            ];
+          };
           pushTmpOCIApps = mkOption {
             description = "Apps to push architecture-specific temporary images for multi-arch builds. Keyed by containerId-arch.";
             type = types.attrsOf types.package;
