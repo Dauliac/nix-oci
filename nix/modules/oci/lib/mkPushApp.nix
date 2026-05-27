@@ -79,15 +79,25 @@
                 exit 1
               fi
 
-              echo "[${appName}] pushing ${containerId}${lib.optionalString debug " (debug)"} -> $REF"
+              # Digest-based skip: compare local image digest with remote tag.
+              # If they match, the image is already pushed — skip the expensive blob upload.
+              LOCAL_DIGEST="$(skopeo inspect --format '{{.Digest}}' "nix:${ociOutput}" 2>/dev/null || echo "")"
+              REMOTE_DIGEST="$(skopeo inspect --format '{{.Digest}}' "$DEST" 2>/dev/null || echo "")"
 
-              skopeo copy --retry-times 3 \
-                "nix:${ociOutput}" "$DEST" >&2
+              if [ -n "$LOCAL_DIGEST" ] && [ "$LOCAL_DIGEST" = "$REMOTE_DIGEST" ]; then
+                echo "[${appName}] image unchanged (digest=$LOCAL_DIGEST) — skipping push"
+                echo "CIMERA_OCI_PUSHED_TAG ref=$REF digest=$LOCAL_DIGEST tag=${tag} primary=${primaryLiteral}"
+              else
+                echo "[${appName}] pushing ${containerId}${lib.optionalString debug " (debug)"} -> $REF"
 
-              DIGEST="$(skopeo inspect --format '{{.Digest}}' "$DEST" 2>/dev/null || echo 'unknown')"
+                skopeo copy --retry-times 3 \
+                  "nix:${ociOutput}" "$DEST" >&2
 
-              echo "[${appName}] pushed $REF@$DIGEST"
-              echo "CIMERA_OCI_PUSHED_TAG ref=$REF digest=$DIGEST tag=${tag} primary=${primaryLiteral}"
+                DIGEST="$(skopeo inspect --format '{{.Digest}}' "$DEST" 2>/dev/null || echo 'unknown')"
+
+                echo "[${appName}] pushed $REF@$DIGEST"
+                echo "CIMERA_OCI_PUSHED_TAG ref=$REF digest=$DIGEST tag=${tag} primary=${primaryLiteral}"
+              fi
             '';
           };
       };
