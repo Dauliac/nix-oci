@@ -1,0 +1,16 @@
+file:
+  /etc/passwd:
+    exists: true
+    filetype: symlink
+package:
+  kubectl:
+    installed: true
+    versions:
+      - v1.32.0
+command:
+  kubectl version:
+    exit-status: 0
+    # stdout:
+    # - Flask (0.12)
+    stderr: []
+    timeout: 10000

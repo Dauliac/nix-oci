@@ -1,0 +1,15 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: USER
+      value: kubectl
+fileExistenceTests:
+  - name: 'Check db directory absence'
+    path: '/app/db'
+    shouldExist: false
+commandTests:
+  - name: "version"
+    command: "kubectl"
+    args:
+      - "version"
+      - "--client"

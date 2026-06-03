@@ -1,0 +1,13 @@
+version: "3"
+set: [errexit, pipefail, nounset]
+shopt: [globstar]
+tasks:
+  default:
+    cmds:
+      - task --list
+  test:
+    desc: Run tests with bats
+    dir: ./tests/end-to-end/
+    cmds:
+      - |
+        bats main.bats --timing --trace --print-output-on-failure
