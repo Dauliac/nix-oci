@@ -78,6 +78,30 @@ in
                 };
               };
             };
+            vulnix = mkOption {
+              description = "Configuration for Nix-native CVE scanning using vulnix.";
+              default = { };
+              type = types.submodule {
+                options = {
+                  enabled = mkEnableOption "CVE scanning with vulnix";
+                  whitelist = mkOption {
+                    default = { };
+                    description = "Configuration for vulnix CVE whitelist.";
+                    type = types.submodule {
+                      options = {
+                        enabled = mkEnableOption "vulnix whitelist file";
+                        rootPath = mkOption {
+                          type = types.path;
+                          description = "Path where vulnix whitelist files will be stored.";
+                          default = cfg.oci.cve.configPath + "/vulnix/";
+                          defaultText = lib.literalExpression ''config.oci.cve.configPath + "/vulnix/"'';
+                        };
+                      };
+                    };
+                  };
+                };
+              };
+            };
           };
         };
       };

@@ -151,6 +151,54 @@ in
               }/bin/grype-${containerId}";
             };
         };
+        mkScriptCVEVulnix = {
+          type = types.functionTo types.package;
+          description = "Generate vulnix CVE scanning script";
+          fn =
+            {
+              perSystemConfig,
+              containerId,
+            }:
+            let
+              oci = perSystemConfig.internal.OCIs.${containerId};
+              containerConfig = perSystemConfig.containers.${containerId}.cve.vulnix;
+              whitelistFlag =
+                if containerConfig.whitelist.enabled then
+                  "--whitelist ${containerConfig.whitelist.path}"
+                else
+                  "";
+            in
+            pkgs.writeShellScriptBin "vulnix-${containerId}" ''
+              set -o errexit
+              set -o pipefail
+              set -o nounset
+              VULNIX="${perSystemConfig.packages.vulnix}/bin/vulnix"
+              $VULNIX ${whitelistFlag} --show-description ${oci}
+              if [ -n "''${CIMERA_REPORT_DIR:-}" ]; then
+                mkdir -p "$CIMERA_REPORT_DIR"
+                $VULNIX ${whitelistFlag} --json ${oci} \
+                  > "$CIMERA_REPORT_DIR/gl-vulnix-cve-report.json" || true
+              fi
+            '';
+        };
+
+        mkAppCVEVulnix = {
+          type = types.functionTo types.attrs;
+          description = "Create flake app for vulnix CVE scanning";
+          fn =
+            {
+              perSystemConfig,
+              containerId,
+            }:
+            {
+              type = "app";
+              program = "${
+                ociLib.mkScriptCVEVulnix {
+                  inherit perSystemConfig containerId;
+                }
+              }/bin/vulnix-${containerId}";
+            };
+        };
       };
     };
 }

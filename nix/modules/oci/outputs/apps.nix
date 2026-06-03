@@ -40,6 +40,7 @@ in
           updateManifestApp
           // config.oci.internal.prefixedCVEGrypeApps
           // config.oci.internal.prefixedCVETrivyApps
+          // config.oci.internal.prefixedCVEVulnixApps
           // config.oci.internal.prefixedContainerStructureTestApps
           // config.oci.internal.prefixedCredentialsLeakTrivyApps
           // config.oci.internal.prefixedDgossApps
