@@ -4,8 +4,8 @@ inputs: {
   imports = [
     # Import nix-lib for library management (typing, testing, docs)
     inputs.nix-lib.flakeModules.default
-    # Import the standard modules (manual list for external users without import-tree)
-    ./modules
+    # Auto-discover all modules using import-tree
+    (inputs.import-tree ./modules)
   ];
 
   # Override the package defaults to use our bundled nix2container

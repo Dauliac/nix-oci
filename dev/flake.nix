@@ -4,7 +4,6 @@
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
     };
-    import-tree.url = "github:vic/import-tree";
   };
   outputs = _: { };
 }

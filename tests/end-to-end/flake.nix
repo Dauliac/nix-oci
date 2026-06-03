@@ -24,10 +24,8 @@
       (_: {
         imports = [
           nix-oci.flakeModules.default
-        ]
-        ++ inputs.nixpkgs.lib.fileset.toList (
-          inputs.nixpkgs.lib.fileset.fileFilter (file: file.hasExt "nix") ../../examples
-        );
+          (nix-oci.inputs.import-tree ../../examples)
+        ];
         config = {
           systems = [
             "x86_64-linux"

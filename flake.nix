@@ -8,6 +8,9 @@
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
     };
+    import-tree = {
+      url = "github:denful/import-tree";
+    };
     nix-lib = {
       url = "github:Dauliac/nix-lib";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -47,8 +50,6 @@
             imports = [
               # Load the full OCI module system (same as consumers would)
               (import ./nix/flake-module.nix inputs)
-              # Auto-discover modules using import-tree (dev convenience)
-              (inputs.import-tree ./nix/modules)
               # Treefmt formatter and check
               ./nix/treefmt.nix
             ];
