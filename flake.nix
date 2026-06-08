@@ -96,6 +96,7 @@
                       lefthook
                       convco
                       regclient
+                      act
                     ]
                     ++ config.oci.internal.packages;
                   shellHook = ''
