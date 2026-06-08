@@ -33,10 +33,11 @@ in
           containerIsRoot = config.isRoot;
           mainService = nixosCfg.mainService or null;
 
-          # Resolve package name: meta.mainProgram -> pname -> parsed drv name
+          # Resolve package identity for user name: pname -> parsed drv name
+          # Unlike image naming (which uses mainProgram), user names should
+          # reflect the package identity (e.g. "redis" not "redis-cli").
           packageName = pkg:
-            if pkg.meta.mainProgram or null != null then pkg.meta.mainProgram
-            else if pkg.pname or null != null then pkg.pname
+            if pkg.pname or null != null then pkg.pname
             else (builtins.parseDrvName (pkg.name or "unknown")).name;
 
           # Derive container user from the actual service package when possible.
