@@ -37,13 +37,23 @@ let
 
   # Inline arch map — avoids raw `import`, values only used in lazy option defaults.
   archMap = {
-    "x86_64-linux".ociArch = "amd64";
-    "aarch64-linux".ociArch = "arm64";
+    "x86_64-linux" = {
+      ociArch = "amd64";
+      crossPkgsAttr = "gnu64";
+    };
+    "aarch64-linux" = {
+      ociArch = "arm64";
+      crossPkgsAttr = "aarch64-multiplatform";
+    };
     "armv7l-linux" = {
       ociArch = "arm";
       ociVariant = "v7";
+      crossPkgsAttr = "armv7l-hf-multiplatform";
     };
-    "riscv64-linux".ociArch = "riscv64";
+    "riscv64-linux" = {
+      ociArch = "riscv64";
+      crossPkgsAttr = "riscv64";
+    };
   };
 
   systemToOCIArch = system: archMap.${system}.ociArch;
@@ -145,25 +155,73 @@ in
                   default = name == system;
                 };
 
-                # Per-arch package override. Defaults to the container's
-                # package for native arch, null for cross arches.
+                # Per-arch package override.
+                # Native arch: defaults to the container's main package.
+                # Cross arch: auto-inferred via pkgsCross.${crossPkgsAttr}.${pname}.
+                #   Falls back to null if inference fails — user must set manually.
                 options.package = mkOption {
                   type = types.nullOr types.package;
                   description = ''
                     Package for this architecture.
 
                     For the native architecture, defaults to the container's main package.
-                    For cross architectures, must be set explicitly (e.g. via pkgsCross).
+                    For cross architectures, auto-inferred from the container's package
+                    via `pkgs.pkgsCross.''${crossPkgsAttr}.''${pname}`. If the package
+                    is not available in pkgsCross (e.g. different attr name), set it
+                    manually or use a nixpkgs overlay so the package is available in
+                    all cross-compilation sets.
                   '';
-                  default = if name == system then containerConfig.package else null;
-                  defaultText = lib.literalExpression "containerConfig.package (native) or null (cross)";
+                  default =
+                    let
+                      crossPkgsAttr = archMap.${name}.crossPkgsAttr or null;
+                      mainPkg = containerConfig.package;
+                      pname = mainPkg.pname or null;
+                      crossPkgSet =
+                        if crossPkgsAttr != null then pkgs.pkgsCross.${crossPkgsAttr} or null else null;
+                      hasAttr =
+                        crossPkgSet != null && pname != null && builtins.hasAttr pname crossPkgSet;
+                    in
+                    if name == system then
+                      mainPkg
+                    else if mainPkg == null then
+                      null
+                    else if hasAttr then
+                      crossPkgSet.${pname}
+                    else
+                      null;
+                  defaultText = lib.literalExpression "auto-inferred via pkgsCross (native) or null (fallback)";
                 };
 
                 # Per-arch dependencies override.
+                # Native: inherits container deps. Cross: auto-inferred per dep.
                 options.dependencies = mkOption {
                   type = types.listOf types.package;
-                  description = "Dependencies for this architecture. Defaults to container dependencies for native arch.";
-                  default = if name == system then (containerConfig.dependencies or [ ]) else [ ];
+                  description = ''
+                    Dependencies for this architecture.
+                    For native arch, defaults to the container's dependencies.
+                    For cross arches, each dependency is auto-inferred via
+                    pkgsCross when possible. Dependencies that fail inference
+                    are silently dropped — override manually if needed.
+                  '';
+                  default =
+                    let
+                      crossPkgsAttr = archMap.${name}.crossPkgsAttr or null;
+                      containerDeps = containerConfig.dependencies or [ ];
+                      crossPkgSet =
+                        if crossPkgsAttr != null then pkgs.pkgsCross.${crossPkgsAttr} or null else null;
+                      inferDep =
+                        dep:
+                        let
+                          pname = dep.pname or null;
+                          hasAttr =
+                            crossPkgSet != null && pname != null && builtins.hasAttr pname crossPkgSet;
+                        in
+                        if hasAttr then crossPkgSet.${pname} else null;
+                    in
+                    if name == system then
+                      containerDeps
+                    else
+                      builtins.filter (d: d != null) (map inferDep containerDeps);
                 };
               }
             );

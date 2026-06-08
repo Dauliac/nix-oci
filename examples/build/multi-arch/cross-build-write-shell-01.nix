@@ -1,7 +1,11 @@
 # Cross-build multi-arch with writeShellApplication.
 #
-# Shows that cross-build works with custom entrypoints and
-# writeShellApplication-based containers.
+# writeShellApplication creates a custom derivation that doesn't exist in
+# pkgsCross, so auto-inference can't resolve it. Use archConfigs to provide
+# the cross-compiled variant manually.
+#
+# For custom packages, consider using a nixpkgs overlay instead — overlays
+# propagate to all pkgsCross sets automatically.
 { ... }:
 {
   config = {
@@ -38,6 +42,7 @@
               ];
               crossBuild.enable = true;
             };
+            # Manual override needed — writeShellApplication isn't in pkgsCross
             archConfigs."aarch64-linux".package = myScriptArm;
           };
         };

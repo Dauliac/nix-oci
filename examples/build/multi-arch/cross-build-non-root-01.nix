@@ -1,7 +1,7 @@
 # Cross-build multi-arch with non-root user.
 #
 # Multi-arch works with all container options including user, labels, etc.
-# Only the package and dependencies change per architecture.
+# Cross package auto-inferred — no archConfigs needed.
 { ... }:
 {
   config = {
@@ -28,7 +28,6 @@
               ];
               crossBuild.enable = true;
             };
-            archConfigs."aarch64-linux".package = pkgs.pkgsCross.aarch64-multiplatform.hello;
           };
         };
       };

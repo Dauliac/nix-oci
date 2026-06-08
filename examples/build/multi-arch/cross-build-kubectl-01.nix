@@ -1,7 +1,7 @@
 # Cross-build multi-arch kubectl image.
 #
-# Builds kubectl for both amd64 and arm64 from a single machine
-# using Nix cross-compilation.
+# Builds kubectl for both amd64 and arm64 from a single machine.
+# Cross package auto-inferred — no archConfigs needed.
 { ... }:
 {
   config = {
@@ -22,9 +22,6 @@
                 "aarch64-linux"
               ];
               crossBuild.enable = true;
-            };
-            archConfigs."aarch64-linux" = {
-              package = pkgs.pkgsCross.aarch64-multiplatform.kubectl;
             };
           };
         };

@@ -110,6 +110,76 @@
   [ "$status" -eq 0 ]
 }
 
+# ── Multi-arch manifest checks ──
+# Build cross-compiled multi-arch OCI layouts and verify manifests with skopeo + jq.
+
+@test "Multi-arch crossBuild has amd64+arm64 manifest" {
+  run nix build '.#oci-multiarch-crossBuild' --no-link --print-out-paths
+  [ "$status" -eq 0 ]
+  layout="$output"
+  manifest=$(skopeo inspect --raw "oci:$layout:latest")
+  arches=$(echo "$manifest" | jq -c '[.manifests[].platform.architecture] | sort')
+  [ "$arches" = '["amd64","arm64"]' ]
+  media=$(echo "$manifest" | jq -r '.mediaType')
+  [ "$media" = "application/vnd.oci.image.index.v1+json" ]
+  os_count=$(echo "$manifest" | jq '[.manifests[].platform.os] | unique | length')
+  [ "$os_count" = "1" ]
+  os=$(echo "$manifest" | jq -r '.manifests[0].platform.os')
+  [ "$os" = "linux" ]
+}
+
+@test "Multi-arch crossBuildKubectl has amd64+arm64 manifest" {
+  run nix build '.#oci-multiarch-crossBuildKubectl' --no-link --print-out-paths
+  [ "$status" -eq 0 ]
+  layout="$output"
+  manifest=$(skopeo inspect --raw "oci:$layout:latest")
+  arches=$(echo "$manifest" | jq -c '[.manifests[].platform.architecture] | sort')
+  [ "$arches" = '["amd64","arm64"]' ]
+  media=$(echo "$manifest" | jq -r '.mediaType')
+  [ "$media" = "application/vnd.oci.image.index.v1+json" ]
+}
+
+@test "Multi-arch crossBuildNonRoot has amd64+arm64 manifest" {
+  run nix build '.#oci-multiarch-crossBuildNonRoot' --no-link --print-out-paths
+  [ "$status" -eq 0 ]
+  layout="$output"
+  manifest=$(skopeo inspect --raw "oci:$layout:latest")
+  arches=$(echo "$manifest" | jq -c '[.manifests[].platform.architecture] | sort')
+  [ "$arches" = '["amd64","arm64"]' ]
+}
+
+@test "Multi-arch crossBuildWithDeps has amd64+arm64 manifest" {
+  run nix build '.#oci-multiarch-crossBuildWithDeps' --no-link --print-out-paths
+  [ "$status" -eq 0 ]
+  layout="$output"
+  manifest=$(skopeo inspect --raw "oci:$layout:latest")
+  arches=$(echo "$manifest" | jq -c '[.manifests[].platform.architecture] | sort')
+  [ "$arches" = '["amd64","arm64"]' ]
+}
+
+@test "Multi-arch singleExtraArch has amd64+arm64 manifest" {
+  run nix build '.#oci-multiarch-singleExtraArch' --no-link --print-out-paths
+  [ "$status" -eq 0 ]
+  layout="$output"
+  manifest=$(skopeo inspect --raw "oci:$layout:latest")
+  arches=$(echo "$manifest" | jq -c '[.manifests[].platform.architecture] | sort')
+  [ "$arches" = '["amd64","arm64"]' ]
+}
+
+@test "Multi-arch per-arch manifests are valid image manifests" {
+  run nix build '.#oci-multiarch-crossBuild' --no-link --print-out-paths
+  [ "$status" -eq 0 ]
+  layout="$output"
+  # Check each per-arch entry in index.json is a valid image manifest
+  for tag in $(jq -r '.manifests[] | select(.mediaType == "application/vnd.oci.image.manifest.v1+json") | .annotations["org.opencontainers.image.ref.name"]' "$layout/index.json"); do
+    arch_manifest=$(skopeo inspect --raw "oci:$layout:$tag")
+    media=$(echo "$arch_manifest" | jq -r '.mediaType')
+    [ "$media" = "application/vnd.oci.image.manifest.v1+json" ]
+    layers=$(echo "$arch_manifest" | jq '.layers | length')
+    [ "$layers" -ge 1 ]
+  done
+}
+
 @test "Nix default template works" {
   local -gx repo_dir
   repo_dir=$(git rev-parse --show-toplevel)

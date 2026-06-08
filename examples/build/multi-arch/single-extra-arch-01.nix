@@ -1,7 +1,6 @@
 # Single extra arch: add arm64 to an amd64-native build via cross-compilation.
 #
-# Only one non-native arch is added. The native arch is automatically
-# included via archConfigs defaults.
+# Cross package auto-inferred — just list the target systems.
 { ... }:
 {
   config = {
@@ -20,7 +19,6 @@
               ];
               crossBuild.enable = true;
             };
-            archConfigs."aarch64-linux".package = pkgs.pkgsCross.aarch64-multiplatform.hello;
           };
         };
       };

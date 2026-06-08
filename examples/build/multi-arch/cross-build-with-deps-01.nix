@@ -1,6 +1,8 @@
-# Cross-build multi-arch with per-arch dependencies.
+# Cross-build multi-arch with dependencies.
 #
-# Shows how to specify cross-compiled dependencies alongside the main package.
+# Both the main package and dependencies are auto-inferred via pkgsCross.
+# Dependencies whose pname doesn't match a pkgsCross attr are silently
+# dropped — override via archConfigs if needed.
 { ... }:
 {
   config = {
@@ -11,8 +13,8 @@
           crossBuildWithDeps = {
             package = pkgs.kubectl;
             dependencies = [
-              pkgs.bash
               pkgs.coreutils
+              pkgs.curl
             ];
             registry = "localhost:5000";
             tags = [ "latest" ];
@@ -22,13 +24,6 @@
                 "aarch64-linux"
               ];
               crossBuild.enable = true;
-            };
-            archConfigs."aarch64-linux" = {
-              package = pkgs.pkgsCross.aarch64-multiplatform.kubectl;
-              dependencies = [
-                pkgs.pkgsCross.aarch64-multiplatform.bash
-                pkgs.pkgsCross.aarch64-multiplatform.coreutils
-              ];
             };
           };
         };

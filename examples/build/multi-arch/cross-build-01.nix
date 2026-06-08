@@ -1,5 +1,8 @@
 # Cross-build multi-arch: single machine builds all arches locally.
 #
+# The cross-compiled package is auto-inferred from the main package's pname
+# via pkgsCross — no archConfigs needed for standard nixpkgs packages.
+#
 # Produces:
 #   - `oci-multiarch-<name>` package (OCI directory layout)
 #   - `oci-push-multiarch-<name>` app (push to registry)
@@ -24,9 +27,7 @@
               ];
               crossBuild.enable = true;
             };
-            archConfigs."aarch64-linux" = {
-              package = pkgs.pkgsCross.aarch64-multiplatform.hello;
-            };
+            # No archConfigs needed — auto-inferred from pkgs.hello.pname
           };
         };
       };
