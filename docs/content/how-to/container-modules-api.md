@@ -179,3 +179,13 @@ See [NixOS options search](https://search.nixos.org/options?query=services.)
 for all available services.
 
 For full option details, see [nix-oci container module options](../reference/nix-oci-container-module-options.html).
+
+## Runnable example
+
+A complete, testable flake for building from NixOS services is available at
+[`examples/_how-to/build-from-nixos-service/`](https://github.com/Dauliac/nix-oci/tree/main/examples/_how-to/build-from-nixos-service).
+
+```bash
+cd examples/_how-to/build-from-nixos-service
+nix flake show
+```

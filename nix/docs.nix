@@ -218,7 +218,7 @@
         docsInputDir = pkgs.runCommand "ndg-input" {
           nativeBuildInputs = [ pkgs.gnused ];
         } ''
-          mkdir -p $out/{how-to,reference,examples}
+          mkdir -p $out/{how-to,explanation,reference,examples}
 
           # Root pages (flat, top of sidebar)
           # README.md and CONTRIBUTING.md are the source of truth, copied here for NDG
@@ -226,10 +226,14 @@
           cp ${../CONTRIBUTING.md} $out/contributing.md
           cp ${../docs/content}/getting-started.md $out/
 
-          # --- How-to guides ---
+          # --- How-to guides (including index.md for sidebar group) ---
           for f in ${../docs/content}/how-to/*.md; do
-            [ "$(basename "$f")" = "index.md" ] && continue
             cp "$f" $out/how-to/
+          done
+
+          # --- Explanation pages (including index.md for sidebar group) ---
+          for f in ${../docs/content}/explanation/*.md; do
+            cp "$f" $out/explanation/
           done
 
           # --- Reference: copy templates and inject generated options at markers ---
@@ -298,8 +302,9 @@
             matches = [
               { path = "getting-started.md"; new_title = "Getting Started"; position = 1; }
               { path = "how-to"; position = 1; }
-              { path = "reference"; position = 2; }
-              { path = "examples"; position = 3; }
+              { path = "explanation"; position = 2; }
+              { path = "reference"; position = 3; }
+              { path = "examples"; position = 4; }
             ];
           };
         };

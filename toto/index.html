@@ -72,6 +72,7 @@
             <div class="sidebar-section-content">
               <ul>
                 <li><a href="index.html">nix-oci</a></li>
+<li><a href="how-to/index.html">Guide</a></li>
 <li><a href="getting-started.html">Getting Started</a></li>
 <li><a href="contributing.html">Contributing</a></li>
 <li class="sidebar-dir-group"><details open><summary><span class="sidebar-dir-label">Examples</span><span class="sidebar-dir-count">9</span></summary><ul>
@@ -113,6 +114,7 @@
 <li><strong>Build OCI images</strong> declaratively from packages or NixOS modules</li>
 <li><strong>Deploy and run</strong> containers on NixOS, Home Manager and system-manager via a unified <code>oci.*</code> API</li>
 <li><strong>Build containers from NixOS services</strong> — write <code>services.nginx.enable = true</code> and get a minimal container image</li>
+<li><strong>Optimized layer sharing</strong> — <a href="https://grahamc.com/blog/nix-and-layered-docker-images">popularity-based store-path layering</a> so images sharing common dependencies share registry layers, dramatically reducing push and pull times</li>
 <li><strong>Multi-arch cross-compilation</strong> — build <code>aarch64</code> images on <code>x86_64</code> without emulation</li>
 <li><strong>Security</strong> — CVE scanning (Trivy, Grype, Vulnix), SBOM generation (Syft), credentials leak detection, image signing (cosign)</li>
 <li><strong>Testing</strong> — Container Structure Tests, dgoss, dive</li>

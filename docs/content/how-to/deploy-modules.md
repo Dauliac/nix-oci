@@ -133,3 +133,13 @@ virtualisation.docker.enable = true;
 ```
 
 For full option reference, see [NixOS module options](../reference/nixos-options.html).
+
+## Runnable example
+
+A complete, testable flake for deploying on NixOS is available at
+[`examples/_how-to/deploy-nixos/`](https://github.com/Dauliac/nix-oci/tree/main/examples/_how-to/deploy-nixos).
+
+```bash
+cd examples/_how-to/deploy-nixos
+nix flake show
+```

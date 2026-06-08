@@ -161,6 +161,8 @@ in
                     "su - testuser -c 'podman run -d --name http-server -p 9090:8080 http-server:latest'"
                 )
                 machine.wait_for_open_port(9090)
+                # Wait for the HTTP server inside the container to be ready
+                machine.wait_until_succeeds("curl -sf http://localhost:9090/index.html", timeout=30)
                 response = machine.succeed("curl -sf http://localhost:9090/index.html")
                 assert "nix-oci-test-ok" in response, f"Bad response: {response}"
 

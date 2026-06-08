@@ -1,0 +1,1968 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flake.parts options</title>
+     
+    
+    <script>
+      document.documentElement.classList.remove("no-js");
+      document.documentElement.classList.add("js");
+      (function () {
+        try {
+          if (localStorage.getItem("sidebar-collapsed") === "true") {
+            document.documentElement.classList.add("sidebar-collapsed");
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="stylesheet" href="../assets/style.css" />
+    <script defer src="../assets/main.js"></script>
+    
+    <script>
+      window.searchNamespace = window.searchNamespace || {};
+      window.searchNamespace.rootPath = "../";
+    </script>
+    <script defer src="../assets/search.js"></script>
+    
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="header-left">
+          <h1 class="site-title">
+            <a href="../index.html">nix-oci</a>
+          </h1>
+
+          <nav class="header-nav">
+  <ul>
+    <li style="display:none;">
+      <a href="../options.html">Options</a>
+    </li>
+    
+    <li><a href="../search.html">Search</a></li>
+    
+  </ul>
+</nav>
+
+        </div>
+        
+        <div class="search-container js-only">
+          <input type="text" id="search-input" placeholder="Search..." />
+          <div id="search-results" class="search-results"></div>
+        </div>
+        
+      </header>
+
+      <div class="layout">
+        <div class="sidebar-toggle js-only" aria-label="Toggle sidebar">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+          >
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path>
+          </svg>
+        </div>
+        <nav class="sidebar">
+          <details class="sidebar-section" data-section="docs" open>
+            <summary>Navigation</summary>
+            <div class="sidebar-section-content">
+              <ul>
+                <li><a href="../index.html">nix-oci</a></li>
+<li><a href="../how-to/index.html">Guide</a></li>
+<li><a href="../getting-started.html">Getting Started</a></li>
+<li><a href="../contributing.html">Contributing</a></li>
+<li class="sidebar-dir-group"><details open><summary><span class="sidebar-dir-label">Examples</span><span class="sidebar-dir-count">9</span></summary><ul>
+<li><a href="../examples/build-basics.html">Build: Basics</a></li>
+<li><a href="../examples/build-container-structure-test.html">Build: container structure test</a></li>
+<li><a href="../examples/build-dgoss.html">Build: dgoss</a></li>
+<li><a href="../examples/build-multi-arch.html">Build: multi arch</a></li>
+<li><a href="../examples/build-nixos-containers.html">Build: nixos containers</a></li>
+<li><a href="../examples/build-trivy.html">Build: trivy</a></li>
+<li><a href="../examples/deploy-home-manager.html">Deploy: Home Manager</a></li>
+<li><a href="../examples/deploy-nixos.html">Deploy: NixOS</a></li>
+<li><a href="../examples/deploy-system-manager.html">Deploy: system-manager</a></li>
+</ul></details></li>
+<li class="sidebar-dir-group"><details open><summary><span class="sidebar-dir-label">How-to</span><span class="sidebar-dir-count">4</span></summary><ul>
+<li><a href="../how-to/nixos-containers.html">How to build and run with flake-parts</a></li>
+<li><a href="../how-to/container-modules-api.html">How to build containers from NixOS services</a></li>
+<li><a href="../how-to/deploy-modules.html">How to deploy containers on NixOS</a></li>
+<li><a href="../how-to/share-containers-across-modules.html">How to share containers between flake-parts and NixOS/Home Manager</a></li>
+</ul></details></li>
+<li class="sidebar-dir-group"><details open><summary><span class="sidebar-dir-label">Reference</span><span class="sidebar-dir-count">5</span></summary><ul>
+<li><a href="../reference/home-manager-options.html">Home Manager Module Options</a></li>
+<li><a href="../reference/nixos-options.html">NixOS Module Options</a></li>
+<li><a href="../reference/flake-parts-options.html">flake.parts Options</a></li>
+<li><a href="../reference/nix-oci-container-module-options.html">nix-oci Container Module Options</a></li>
+<li><a href="../reference/system-manager-options.html">system-manager Module Options</a></li>
+</ul></details></li>
+<li><a href="../search.html">Search</a></li>
+
+              </ul>
+            </div>
+          </details>
+        </nav>
+
+        <main class="content"><html><head></head><body><h1 id="flake-parts-options">flake.parts Options</h1>
+<p>Build-time options for defining OCI images in your flake.</p>
+<p>See also:</p>
+<ul>
+<li><a href="https://flake.parts">flake-parts documentation</a></li>
+<li><a href="https://flake.parts/options/nix-oci.html">nix-oci on flake.parts</a></li>
+<li><a href="https://github.com/nlewo/nix2container">nix2container</a> — the backend used to build images</li>
+<li><a href="https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci">nix-oci source: <code>nix/modules/oci/</code></a></li>
+</ul>
+<h2 id="top-level-options">Top-level Options</h2>
+<p>Set at the flake level (outside <code>perSystem</code>).</p>
+<!-- OPTIONS:toplevel -->
+<h2 id="oci-enabledevshell">oci.enableDevShell</h2>
+<p>Whether to enable the flake development shell.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/enableDevShell.nix">nix/modules/oci/enableDevShell.nix</a></li>
+</ul>
+<h2 id="oci-enableflakeoutputs">oci.enableFlakeOutputs</h2>
+<p>Whether to automatically expose OCI apps, packages, and checks as flake outputs.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>true</code></p>
+<p><em>Example:</em>
+<code>false</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/enableFlakeOutputs.nix">nix/modules/oci/enableFlakeOutputs.nix</a></li>
+</ul>
+<h2 id="oci-enabled">oci.enabled</h2>
+<p>Whether to enable Enable the OCI module…</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Example:</em>
+<code>true</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/enabled.nix">nix/modules/oci/enabled.nix</a></li>
+</ul>
+<h2 id="oci-credentialsleak">oci.credentialsLeak</h2>
+<p>Options for credential leak detection in container images.</p>
+<p><em>Type:</em>
+submodule</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/credentials-leak/options.nix">nix/modules/oci/security/credentials-leak/options.nix</a></li>
+</ul>
+<h2 id="oci-credentialsleak-configpath">oci.credentialsLeak.configPath</h2>
+<p>Path where global credentials leak check configuration files will be stored.</p>
+<p><em>Type:</em>
+absolute path</p>
+<p><em>Default:</em>
+<code>config.oci.rootPath + "/credentials-leak/"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/credentials-leak/options.nix">nix/modules/oci/security/credentials-leak/options.nix</a></li>
+</ul>
+<h2 id="oci-credentialsleak-trivy">oci.credentialsLeak.trivy</h2>
+<p>Configuration for detecting credentials leaks using Trivy.</p>
+<p><em>Type:</em>
+submodule</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/credentials-leak/options.nix">nix/modules/oci/security/credentials-leak/options.nix</a></li>
+</ul>
+<h2 id="oci-credentialsleak-trivy-enabled">oci.credentialsLeak.trivy.enabled</h2>
+<p>Whether to enable credentials leak detection with Trivy.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Example:</em>
+<code>true</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/credentials-leak/options.nix">nix/modules/oci/security/credentials-leak/options.nix</a></li>
+</ul>
+<h2 id="oci-cve">oci.cve</h2>
+<p>Configuration for Common Vulnerabilities and Exposures (CVE) scanning in container images.</p>
+<p><em>Type:</em>
+submodule</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix">nix/modules/oci/security/cve/options.nix</a></li>
+</ul>
+<h2 id="oci-cve-configpath">oci.cve.configPath</h2>
+<p>Path where CVE scanner configuration files will be stored.</p>
+<p><em>Type:</em>
+absolute path</p>
+<p><em>Default:</em>
+<code>cfg.oci.rootPath</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix">nix/modules/oci/security/cve/options.nix</a></li>
+</ul>
+<h2 id="oci-cve-grype">oci.cve.grype</h2>
+<p>Configuration for CVE scanning using Grype.</p>
+<p><em>Type:</em>
+submodule</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix">nix/modules/oci/security/cve/options.nix</a></li>
+</ul>
+<h2 id="oci-cve-grype-enabled">oci.cve.grype.enabled</h2>
+<p>Whether to enable CVE scanning with Grype.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Example:</em>
+<code>true</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix">nix/modules/oci/security/cve/options.nix</a></li>
+</ul>
+<h2 id="oci-cve-grype-config">oci.cve.grype.config</h2>
+<p>Configuration for Grype scanner settings.</p>
+<p><em>Type:</em>
+submodule</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix">nix/modules/oci/security/cve/options.nix</a></li>
+</ul>
+<h2 id="oci-cve-grype-config-enabled">oci.cve.grype.config.enabled</h2>
+<p>Whether to enable Grype configuration file generation.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Example:</em>
+<code>true</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix">nix/modules/oci/security/cve/options.nix</a></li>
+</ul>
+<h2 id="oci-cve-grype-config-rootpath">oci.cve.grype.config.rootPath</h2>
+<p>Path where Grype configuration files will be stored.</p>
+<p><em>Type:</em>
+absolute path</p>
+<p><em>Default:</em>
+<code>config.oci.cve.configPath + "/grype/"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix">nix/modules/oci/security/cve/options.nix</a></li>
+</ul>
+<h2 id="oci-cve-trivy">oci.cve.trivy</h2>
+<p>Configuration for CVE scanning using Trivy.</p>
+<p><em>Type:</em>
+submodule</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix">nix/modules/oci/security/cve/options.nix</a></li>
+</ul>
+<h2 id="oci-cve-trivy-enabled">oci.cve.trivy.enabled</h2>
+<p>Whether to enable CVE scanning with Trivy.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Example:</em>
+<code>true</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix">nix/modules/oci/security/cve/options.nix</a></li>
+</ul>
+<h2 id="oci-cve-trivy-ignore">oci.cve.trivy.ignore</h2>
+<p>Configuration for CVE exclusions in Trivy scans.</p>
+<p><em>Type:</em>
+submodule</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix">nix/modules/oci/security/cve/options.nix</a></li>
+</ul>
+<h2 id="oci-cve-trivy-ignore-extra">oci.cve.trivy.ignore.extra</h2>
+<p>Additional CVE identifiers to ignore globally in Trivy scans.</p>
+<p><em>Type:</em>
+list of string</p>
+<p><em>Default:</em>
+<code>[ ]</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix">nix/modules/oci/security/cve/options.nix</a></li>
+</ul>
+<h2 id="oci-cve-trivy-ignore-fileenabled">oci.cve.trivy.ignore.fileEnabled</h2>
+<p>Whether to enable Trivy CVE ignore file generation.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Example:</em>
+<code>true</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix">nix/modules/oci/security/cve/options.nix</a></li>
+</ul>
+<h2 id="oci-cve-trivy-ignore-rootpath">oci.cve.trivy.ignore.rootPath</h2>
+<p>Path where Trivy CVE ignore files will be stored.</p>
+<p><em>Type:</em>
+absolute path</p>
+<p><em>Default:</em>
+<code>cfg.oci.cve.configPath</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix">nix/modules/oci/security/cve/options.nix</a></li>
+</ul>
+<h2 id="oci-cve-vulnix">oci.cve.vulnix</h2>
+<p>Configuration for Nix-native CVE scanning using vulnix.</p>
+<p><em>Type:</em>
+submodule</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix">nix/modules/oci/security/cve/options.nix</a></li>
+</ul>
+<h2 id="oci-cve-vulnix-enabled">oci.cve.vulnix.enabled</h2>
+<p>Whether to enable CVE scanning with vulnix.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Example:</em>
+<code>true</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix">nix/modules/oci/security/cve/options.nix</a></li>
+</ul>
+<h2 id="oci-cve-vulnix-whitelist">oci.cve.vulnix.whitelist</h2>
+<p>Configuration for vulnix CVE whitelist.</p>
+<p><em>Type:</em>
+submodule</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix">nix/modules/oci/security/cve/options.nix</a></li>
+</ul>
+<h2 id="oci-cve-vulnix-whitelist-enabled">oci.cve.vulnix.whitelist.enabled</h2>
+<p>Whether to enable vulnix whitelist file.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Example:</em>
+<code>true</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix">nix/modules/oci/security/cve/options.nix</a></li>
+</ul>
+<h2 id="oci-cve-vulnix-whitelist-rootpath">oci.cve.vulnix.whitelist.rootPath</h2>
+<p>Path where vulnix whitelist files will be stored.</p>
+<p><em>Type:</em>
+absolute path</p>
+<p><em>Default:</em>
+<code>config.oci.cve.configPath + "/vulnix/"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix">nix/modules/oci/security/cve/options.nix</a></li>
+</ul>
+<h2 id="oci-devshellpackage">oci.devShellPackage</h2>
+<p>The package to use for the development shell.</p>
+<p><em>Type:</em>
+package</p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/devShellPackage.nix">nix/modules/oci/devShellPackage.nix</a></li>
+</ul>
+<h2 id="oci-fromimagemanifestrootpath">oci.fromImageManifestRootPath</h2>
+<p>The root path to store the pulled OCI image manifest JSON lockfiles.</p>
+<p><em>Type:</em>
+absolute path</p>
+<p><em>Default:</em>
+<code>config.oci.rootPath + "/pulledManifestsLocks/"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/fromImageManifestRootPath.nix">nix/modules/oci/fromImageManifestRootPath.nix</a></li>
+</ul>
+<h2 id="oci-registry">oci.registry</h2>
+<p>The OCI registry to use for pushing and pulling images.</p>
+<p><em>Type:</em>
+null or string</p>
+<p><em>Default:</em>
+<code>null</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/registry.nix">nix/modules/oci/registry.nix</a></li>
+</ul>
+<h2 id="oci-rootpath">oci.rootPath</h2>
+<p>The root path to store the Nix OCI resources.</p>
+<p><em>Type:</em>
+absolute path</p>
+<p><em>Default:</em>
+<code>self + "/oci/"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/rootPath.nix">nix/modules/oci/rootPath.nix</a></li>
+</ul>
+<h2 id="oci-sbom">oci.sbom</h2>
+<p>Configuration for Software Bill of Materials (SBOM) generation in container images.</p>
+<p><em>Type:</em>
+submodule</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/sbom/options.nix">nix/modules/oci/security/sbom/options.nix</a></li>
+</ul>
+<h2 id="oci-sbom-path">oci.sbom.path</h2>
+<p>Path where SBOM files will be stored.</p>
+<p><em>Type:</em>
+absolute path</p>
+<p><em>Default:</em>
+<code>cfg.oci.rootPath</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/sbom/options.nix">nix/modules/oci/security/sbom/options.nix</a></li>
+</ul>
+<h2 id="oci-sbom-syft">oci.sbom.syft</h2>
+<p>Configuration for SBOM generation using Syft.</p>
+<p><em>Type:</em>
+submodule</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/sbom/options.nix">nix/modules/oci/security/sbom/options.nix</a></li>
+</ul>
+<h2 id="oci-sbom-syft-enabled">oci.sbom.syft.enabled</h2>
+<p>Whether to enable SBOM generation with Syft.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/sbom/options.nix">nix/modules/oci/security/sbom/options.nix</a></li>
+</ul>
+<h2 id="oci-sbom-syft-config">oci.sbom.syft.config</h2>
+<p>Configuration settings for Syft SBOM generation.</p>
+<p><em>Type:</em>
+submodule</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/sbom/options.nix">nix/modules/oci/security/sbom/options.nix</a></li>
+</ul>
+<h2 id="oci-sbom-syft-config-enabled">oci.sbom.syft.config.enabled</h2>
+<p>Whether to enable Syft configuration file generation.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/sbom/options.nix">nix/modules/oci/security/sbom/options.nix</a></li>
+</ul>
+<h2 id="oci-sbom-syft-config-rootpath">oci.sbom.syft.config.rootPath</h2>
+<p>Path where Syft configuration files will be stored.</p>
+<p><em>Type:</em>
+absolute path</p>
+<p><em>Default:</em>
+<code>cfg.oci.sbom.path</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/sbom/options.nix">nix/modules/oci/security/sbom/options.nix</a></li>
+</ul>
+<h2 id="oci-signing">oci.signing</h2>
+<p>Configuration for OCI image signing using cosign / Sigstore.</p>
+<p><em>Type:</em>
+submodule</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/signing/options.nix">nix/modules/oci/security/signing/options.nix</a></li>
+</ul>
+<h2 id="oci-signing-cosign">oci.signing.cosign</h2>
+<p>Configuration for image signing with cosign.</p>
+<p><em>Type:</em>
+submodule</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/signing/options.nix">nix/modules/oci/security/signing/options.nix</a></li>
+</ul>
+<h2 id="oci-signing-cosign-enabled">oci.signing.cosign.enabled</h2>
+<p>Whether to enable OCI image signing with cosign.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Example:</em>
+<code>true</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/signing/options.nix">nix/modules/oci/security/signing/options.nix</a></li>
+</ul>
+<h2 id="oci-signing-cosign-annotations">oci.signing.cosign.annotations</h2>
+<p>Key-value annotations to attach to every cosign signature.
+These appear in <code>cosign verify</code> output and can be used
+for policy enforcement (e.g. with Kyverno or OPA).</p>
+<p><em>Type:</em>
+attribute set of string</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Example:</em></p>
+<pre><code>{
+  build-system = "nix";
+  repo = "https://github.com/example/repo";
+}
+</code></pre>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/signing/options.nix">nix/modules/oci/security/signing/options.nix</a></li>
+</ul>
+<h2 id="oci-signing-cosign-certificateidentityregexp">oci.signing.cosign.certificateIdentityRegexp</h2>
+<p>Regular expression to match the certificate identity when
+verifying keyless signatures. Required for keyless verification.
+Example: <code>"https://github.com/myorg/.*"</code> or an email pattern.</p>
+<p><em>Type:</em>
+null or string</p>
+<p><em>Default:</em>
+<code>null</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/signing/options.nix">nix/modules/oci/security/signing/options.nix</a></li>
+</ul>
+<h2 id="oci-signing-cosign-certificateoidcissuerregexp">oci.signing.cosign.certificateOidcIssuerRegexp</h2>
+<p>Regular expression to match the OIDC issuer when verifying
+keyless signatures. Required for keyless verification.
+Example: <code>"https://token.actions.githubusercontent.com"</code>.</p>
+<p><em>Type:</em>
+null or string</p>
+<p><em>Default:</em>
+<code>null</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/signing/options.nix">nix/modules/oci/security/signing/options.nix</a></li>
+</ul>
+<h2 id="oci-signing-cosign-key">oci.signing.cosign.key</h2>
+<p>Path or KMS URI for the cosign signing key.
+Supports local files, environment variables, and KMS URIs:</p>
+<ul>
+<li>Local file: <code>./cosign.key</code></li>
+<li>Environment variable: <code>env://COSIGN_PRIVATE_KEY</code></li>
+<li>AWS KMS: <code>awskms://[ENDPOINT]/[ID/ALIAS/ARN]</code></li>
+<li>GCP KMS: <code>gcpkms://projects/[PROJECT]/locations/[LOC]/keyRings/[RING]/cryptoKeys/[KEY]</code></li>
+<li>Azure Key Vault: <code>azurekms://[VAULT_NAME][VAULT_URI]/[KEY]</code></li>
+<li>HashCorp Vault: <code>hashivault://[KEY]</code>
+Only used when <code>keyless</code> is false.</li>
+</ul>
+<p><em>Type:</em>
+null or string</p>
+<p><em>Default:</em>
+<code>null</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/signing/options.nix">nix/modules/oci/security/signing/options.nix</a></li>
+</ul>
+<h2 id="oci-signing-cosign-keyless">oci.signing.cosign.keyless</h2>
+<p>Use keyless (OIDC) signing via Sigstore Fulcio.
+When true, cosign authenticates via an OIDC provider
+(GitHub Actions, Google, Microsoft) and issues ephemeral
+certificates. No key management required.
+When false, <code>key</code> must be set.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>true</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/signing/options.nix">nix/modules/oci/security/signing/options.nix</a></li>
+</ul>
+<h2 id="oci-signing-cosign-verify">oci.signing.cosign.verify</h2>
+<p>Whether to verify the signature immediately after signing.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>true</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/signing/options.nix">nix/modules/oci/security/signing/options.nix</a></li>
+</ul>
+<h2 id="oci-test">oci.test</h2>
+<p>Global configuration for container testing tools.</p>
+<p><em>Type:</em>
+submodule</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/testing/options.nix">nix/modules/oci/testing/options.nix</a></li>
+</ul>
+<h2 id="oci-test-containerstructuretest">oci.test.containerStructureTest</h2>
+<p>Configuration for container-structure-test validation tool.</p>
+<p><em>Type:</em>
+submodule</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/testing/options.nix">nix/modules/oci/testing/options.nix</a></li>
+</ul>
+<h2 id="oci-test-containerstructuretest-enabled">oci.test.containerStructureTest.enabled</h2>
+<p>Whether to enable container-structure-test globally for all containers.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/testing/options.nix">nix/modules/oci/testing/options.nix</a></li>
+</ul>
+<h2 id="oci-test-dgoss">oci.test.dgoss</h2>
+<p>Configuration for dgoss (Docker + goss) testing framework.</p>
+<p><em>Type:</em>
+submodule</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/testing/options.nix">nix/modules/oci/testing/options.nix</a></li>
+</ul>
+<h2 id="oci-test-dgoss-enabled">oci.test.dgoss.enabled</h2>
+<p>Whether to enable dgoss testing globally for all containers.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/testing/options.nix">nix/modules/oci/testing/options.nix</a></li>
+</ul>
+<h2 id="oci-test-dgoss-hermetic">oci.test.dgoss.hermetic</h2>
+<p>Run dgoss as a pure Nix derivation (check) using podman
+inside the Nix sandbox.
+Requires <code>extra-sandbox-paths = /sys/fs/cgroup</code> in nix.conf.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/testing/options.nix">nix/modules/oci/testing/options.nix</a></li>
+</ul>
+<h2 id="oci-test-dive">oci.test.dive</h2>
+<p>Configuration for Dive container image analysis tool.</p>
+<p><em>Type:</em>
+submodule</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/testing/options.nix">nix/modules/oci/testing/options.nix</a></li>
+</ul>
+<h2 id="oci-test-dive-enabled">oci.test.dive.enabled</h2>
+<p>Whether to enable Dive analysis globally for all containers.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/testing/options.nix">nix/modules/oci/testing/options.nix</a></li>
+</ul>
+<h2 id="per-system-options">Per-System Options</h2>
+<p>Set inside <code>perSystem</code>.</p>
+<!-- OPTIONS:persystem -->
+<h2 id="oci-packages-containerstructuretest">oci.packages.containerStructureTest</h2>
+<p>The package to use for container-structure-test.</p>
+<p><em>Type:</em>
+package</p>
+<p><em>Default:</em>
+<code>pkgs.container-structure-test</code></p>
+<p><em>Example:</em>
+<code>pkgs.container-structure-test</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/containerStructureTest.nix">nix/modules/oci/packages/containerStructureTest.nix</a></li>
+</ul>
+<h2 id="oci-packages-cosign">oci.packages.cosign</h2>
+<p>The package to use for cosign.</p>
+<p><em>Type:</em>
+package</p>
+<p><em>Default:</em>
+<code>pkgs.cosign</code></p>
+<p><em>Example:</em>
+<code>pkgs.cosign</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/cosign.nix">nix/modules/oci/packages/cosign.nix</a></li>
+</ul>
+<h2 id="oci-packages-dgoss">oci.packages.dgoss</h2>
+<p>The package to use for dgoss.</p>
+<p><em>Type:</em>
+package</p>
+<p><em>Default:</em>
+<code>pkgs.dgoss</code></p>
+<p><em>Example:</em>
+<code>pkgs.dgoss</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/dgoss.nix">nix/modules/oci/packages/dgoss.nix</a></li>
+</ul>
+<h2 id="oci-packages-dive">oci.packages.dive</h2>
+<p>The package to use for dive.</p>
+<p><em>Type:</em>
+package</p>
+<p><em>Default:</em>
+<code>pkgs.dive</code></p>
+<p><em>Example:</em>
+<code>pkgs.dive</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/dive.nix">nix/modules/oci/packages/dive.nix</a></li>
+</ul>
+<h2 id="oci-packages-grype">oci.packages.grype</h2>
+<p>The package to use for grype.</p>
+<p><em>Type:</em>
+package</p>
+<p><em>Default:</em>
+<code>pkgs.grype</code></p>
+<p><em>Example:</em>
+<code>pkgs.grype</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/grype.nix">nix/modules/oci/packages/grype.nix</a></li>
+</ul>
+<h2 id="oci-packages-nix2container">oci.packages.nix2container</h2>
+<p>The nix2container package.</p>
+<p><em>Type:</em>
+attribute set</p>
+<p><em>Default:</em>
+<code>inputs.nix2container.packages.${system}.nix2container</code></p>
+<p><em>Example:</em>
+<code>inputs.nix2container.packages.${system}.nix2container</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/nix2container.nix">nix/modules/oci/packages/nix2container.nix</a></li>
+</ul>
+<h2 id="oci-packages-podman">oci.packages.podman</h2>
+<p>The package to use for podman.</p>
+<p><em>Type:</em>
+package</p>
+<p><em>Default:</em>
+<code>pkgs.podman</code></p>
+<p><em>Example:</em>
+<code>pkgs.podman</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/podman.nix">nix/modules/oci/packages/podman.nix</a></li>
+</ul>
+<h2 id="oci-packages-regctl">oci.packages.regctl</h2>
+<p>The package to use for regctl (multi-arch manifest tool).</p>
+<p><em>Type:</em>
+package</p>
+<p><em>Default:</em>
+<code>pkgs.regclient</code></p>
+<p><em>Example:</em>
+<code>pkgs.regclient</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/regctl.nix">nix/modules/oci/packages/regctl.nix</a></li>
+</ul>
+<h2 id="oci-packages-skaffold">oci.packages.skaffold</h2>
+<p>The package to use for skaffold.</p>
+<p><em>Type:</em>
+package</p>
+<p><em>Default:</em>
+<code>pkgs.skaffold</code></p>
+<p><em>Example:</em>
+<code>pkgs.skaffold</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/skaffold.nix">nix/modules/oci/packages/skaffold.nix</a></li>
+</ul>
+<h2 id="oci-packages-skopeo">oci.packages.skopeo</h2>
+<p>The package to use for skopeo.</p>
+<p><em>Type:</em>
+package</p>
+<p><em>Default:</em>
+<code>inputs.nix2container.packages.${system}.skopeo-nix2container</code></p>
+<p><em>Example:</em>
+<code>inputs.nix2container.packages.${system}.skopeo-nix2container</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/skopeo.nix">nix/modules/oci/packages/skopeo.nix</a></li>
+</ul>
+<h2 id="oci-packages-syft">oci.packages.syft</h2>
+<p>The package to use for syft.</p>
+<p><em>Type:</em>
+package</p>
+<p><em>Default:</em>
+<code>pkgs.syft</code></p>
+<p><em>Example:</em>
+<code>pkgs.syft</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/syft.nix">nix/modules/oci/packages/syft.nix</a></li>
+</ul>
+<h2 id="oci-packages-trivy">oci.packages.trivy</h2>
+<p>The package to use for trivy.</p>
+<p><em>Type:</em>
+package</p>
+<p><em>Default:</em>
+<code>pkgs.trivy</code></p>
+<p><em>Example:</em>
+<code>pkgs.trivy</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/trivy.nix">nix/modules/oci/packages/trivy.nix</a></li>
+</ul>
+<h2 id="oci-packages-vulnix">oci.packages.vulnix</h2>
+<p>The package to use for vulnix.</p>
+<p><em>Type:</em>
+package</p>
+<p><em>Default:</em>
+<code>pkgs.vulnix</code></p>
+<p><em>Example:</em>
+<code>pkgs.vulnix</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/vulnix.nix">nix/modules/oci/packages/vulnix.nix</a></li>
+</ul>
+<h2 id="oci-containers">oci.containers</h2>
+<p>Container definitions. Each key is a container name.</p>
+<p><em>Type:</em>
+attribute set of (submodule)</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Example:</em></p>
+<pre><code>{
+  my-app = {
+    package = pkgs.hello;
+    dependencies = [ pkgs.bash ];
+  };
+}
+
+</code></pre>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/perContainer.nix">nix/modules/oci/containers/perContainer.nix</a></li>
+</ul>
+<h2 id="oci-debug">oci.debug</h2>
+<p>Add debug build in output.</p>
+<p><em>Type:</em>
+submodule</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/debug/options.nix">nix/modules/oci/debug/options.nix</a></li>
+</ul>
+<h2 id="oci-debug-enabled">oci.debug.enabled</h2>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/debug/options.nix">nix/modules/oci/debug/options.nix</a></li>
+</ul>
+<h2 id="oci-debug-packages">oci.debug.packages</h2>
+<p><em>Type:</em>
+list of package</p>
+<p><em>Default:</em></p>
+<pre><code>with pkgs; [
+  coreutils
+  bash
+  curl
+]
+
+</code></pre>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/debug/options.nix">nix/modules/oci/debug/options.nix</a></li>
+</ul>
+<h2 id="oci-debug-entrypoint">oci.debug.entrypoint</h2>
+<p>Debug entrypoint wrapper configuration.</p>
+<p><em>Type:</em>
+submodule</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/debug/options.nix">nix/modules/oci/debug/options.nix</a></li>
+</ul>
+<h2 id="oci-debug-entrypoint-enabled">oci.debug.entrypoint.enabled</h2>
+<p>Whether to enable debug entrypoint wrapper.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/debug/options.nix">nix/modules/oci/debug/options.nix</a></li>
+</ul>
+<h2 id="oci-debug-entrypoint-wrapper">oci.debug.entrypoint.wrapper</h2>
+<p>Default behavior run sleep infinity fallback if entrypoint fail.</p>
+<p><em>Type:</em>
+package</p>
+<p><em>Default:</em>
+<code>pkgs.writeShellScriptBin "entrypoint" (builtins.readFile ./debug-entrypoint.sh)</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/debug/options.nix">nix/modules/oci/debug/options.nix</a></li>
+</ul>
+<h2 id="oci-flake-packages">oci.flake.packages</h2>
+<p>OCI container packages that can be exposed as flake outputs.</p>
+<p><em>Type:</em>
+attribute set of package <em>(read only)</em></p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/outputs/packages.nix">nix/modules/oci/outputs/packages.nix</a></li>
+</ul>
+<h2 id="oci-flake-apps">oci.flake.apps</h2>
+<p>OCI-related apps that can be exposed as flake outputs.</p>
+<p><em>Type:</em>
+attribute set of (attribute set) <em>(read only)</em></p>
+<p><em>Default:</em>
+Apps for security scanning, SBOM generation, validation, and multi-arch builds, derived from <a href="options.html#opt-perSystem.oci.containers"><code>oci.containers</code></a>.</p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/outputs/apps.nix">nix/modules/oci/outputs/apps.nix</a></li>
+</ul>
+<h2 id="oci-flake-checks">oci.flake.checks</h2>
+<p>OCI-related checks that can be exposed as flake outputs.</p>
+<p><em>Type:</em>
+attribute set of package <em>(read only)</em></p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/outputs/checks.nix">nix/modules/oci/outputs/checks.nix</a></li>
+</ul>
+<h2 id="oci-percontainer">oci.perContainer</h2>
+<p>Per-container module definition.</p>
+<p>Multiple modules can contribute to this option. Each contribution is a
+module that will be evaluated for every container with container-specific
+context.</p>
+<p>The module receives these special arguments:</p>
+<ul>
+<li><code>name</code>: the attribute name of the container (from types.attrsOf)</li>
+<li><code>config</code>: the container’s config (for reading within the module)</li>
+<li><code>globalConfig</code>: the top-level flake config</li>
+<li><code>perSystemConfig</code>: the perSystem config</li>
+<li><code>system</code>: the current system</li>
+<li><code>pkgs</code>: nixpkgs for current system</li>
+<li><code>lib</code>: nixpkgs lib</li>
+</ul>
+<p><em>Type:</em>
+per-container module</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/perContainer.nix">nix/modules/oci/containers/perContainer.nix</a></li>
+</ul>
+<h2 id="container-sub-options">Container Sub-Options</h2>
+<p>Available on each <code>oci.containers.&lt;name&gt;</code>.</p>
+<!-- OPTIONS:container -->
+<h2 id="package">package</h2>
+<p>The main package for the container.</p>
+<p><em>Type:</em>
+null or package</p>
+<p><em>Default:</em>
+<code>null</code></p>
+<p><em>Example:</em>
+<code>pkgs.hello</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/_options/package.nix">nix/modules/oci/containers/_options/package.nix</a></li>
+</ul>
+<h2 id="configfiles">configFiles</h2>
+<p>Configuration file derivations to include in the container root.</p>
+<p><em>Type:</em>
+list of package</p>
+<p><em>Default:</em>
+<code>[ ]</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/_options/config-files.nix">nix/modules/oci/containers/_options/config-files.nix</a></li>
+</ul>
+<h2 id="credentialsleak-trivy-enabled">credentialsLeak.trivy.enabled</h2>
+<p>Whether to enable Trivy credentials leak scanning.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>config.oci.cve.trivy.enabled</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/credentialsLeak/trivy/enabled.nix">nix/modules/oci/containers/credentialsLeak/trivy/enabled.nix</a></li>
+</ul>
+<h2 id="cve-grype-enabled">cve.grype.enabled</h2>
+<p>Whether to run grype.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/grype/enabled.nix">nix/modules/oci/containers/cve/grype/enabled.nix</a></li>
+</ul>
+<h2 id="cve-grype-config-enabled">cve.grype.config.enabled</h2>
+<p>Whether to use a grype config file.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/grype/config/enabled.nix">nix/modules/oci/containers/cve/grype/config/enabled.nix</a></li>
+</ul>
+<h2 id="cve-grype-config-path">cve.grype.config.path</h2>
+<p>Path to the grype config file.</p>
+<p><em>Type:</em>
+absolute path</p>
+<p><em>Default:</em>
+<code>config.oci.rootPath + name + "/cve/grype.yaml"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/grype/config/path.nix">nix/modules/oci/containers/cve/grype/config/path.nix</a></li>
+</ul>
+<h2 id="cve-rootpath">cve.rootPath</h2>
+<p>The root path for CVE configuration files.</p>
+<p><em>Type:</em>
+absolute path</p>
+<p><em>Default:</em>
+<code>config.oci.rootPath + name + "/cve/"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/rootPath.nix">nix/modules/oci/containers/cve/rootPath.nix</a></li>
+</ul>
+<h2 id="cve-trivy-enabled">cve.trivy.enabled</h2>
+<p>Whether to enable Trivy CVE scanning.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/trivy/enabled.nix">nix/modules/oci/containers/cve/trivy/enabled.nix</a></li>
+</ul>
+<h2 id="cve-trivy-ignore-extra">cve.trivy.ignore.extra</h2>
+<p>Extra CVEs to ignore.</p>
+<p><em>Type:</em>
+list of string</p>
+<p><em>Default:</em>
+<code>[ ]</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/trivy/ignore/extra.nix">nix/modules/oci/containers/cve/trivy/ignore/extra.nix</a></li>
+</ul>
+<h2 id="cve-trivy-ignore-fileenabled">cve.trivy.ignore.fileEnabled</h2>
+<p>Whether to enable Enable trivy ignore file.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Example:</em>
+<code>true</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/trivy/ignore/fileEnabled.nix">nix/modules/oci/containers/cve/trivy/ignore/fileEnabled.nix</a></li>
+</ul>
+<h2 id="cve-trivy-ignore-path">cve.trivy.ignore.path</h2>
+<p>Path to the trivy ignore file.</p>
+<p><em>Type:</em>
+null or absolute path</p>
+<p><em>Default:</em>
+<code>config.oci.rootPath + name + "/cve/trivy.ignore"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/trivy/ignore/path.nix">nix/modules/oci/containers/cve/trivy/ignore/path.nix</a></li>
+</ul>
+<h2 id="cve-vulnix-enabled">cve.vulnix.enabled</h2>
+<p>Whether to run vulnix CVE scanning.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/vulnix/enabled.nix">nix/modules/oci/containers/cve/vulnix/enabled.nix</a></li>
+</ul>
+<h2 id="cve-vulnix-whitelist-enabled">cve.vulnix.whitelist.enabled</h2>
+<p>Whether to use a vulnix whitelist file.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/vulnix/whitelist/enabled.nix">nix/modules/oci/containers/cve/vulnix/whitelist/enabled.nix</a></li>
+</ul>
+<h2 id="cve-vulnix-whitelist-path">cve.vulnix.whitelist.path</h2>
+<p>Path to the vulnix whitelist TOML file.</p>
+<p><em>Type:</em>
+absolute path</p>
+<p><em>Default:</em>
+<code>config.oci.rootPath + name + "/cve/vulnix-whitelist.toml"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/vulnix/whitelist/path.nix">nix/modules/oci/containers/cve/vulnix/whitelist/path.nix</a></li>
+</ul>
+<h2 id="debug-enabled">debug.enabled</h2>
+<p>Whether to enable debug build with additional debugging tools.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>config.oci.debug.enabled</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/debug/enabled.nix">nix/modules/oci/containers/debug/enabled.nix</a></li>
+</ul>
+<h2 id="debug-packages">debug.packages</h2>
+<p>List of additional packages to include in debug builds.</p>
+<p><em>Type:</em>
+list of package</p>
+<p><em>Default:</em>
+<code>config.oci.debug.packages</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/debug/packages.nix">nix/modules/oci/containers/debug/packages.nix</a></li>
+</ul>
+<h2 id="debug-entrypoint-enabled">debug.entrypoint.enabled</h2>
+<p>Whether to enable debug entrypoint wrapper.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>config.oci.debug.entrypoint.enabled</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/debug/entrypoint/enabled.nix">nix/modules/oci/containers/debug/entrypoint/enabled.nix</a></li>
+</ul>
+<h2 id="debug-entrypoint-wrapper">debug.entrypoint.wrapper</h2>
+<p>Package containing the debug entrypoint wrapper.</p>
+<p><em>Type:</em>
+package</p>
+<p><em>Default:</em>
+<code>config.oci.debug.entrypoint.wrapper</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/debug/entrypoint/wrapper.nix">nix/modules/oci/containers/debug/entrypoint/wrapper.nix</a></li>
+</ul>
+<h2 id="debug-labels">debug.labels</h2>
+<p>OCI image labels for the debug variant.
+Defaults to the production container’s labels.</p>
+<p><em>Type:</em>
+attribute set of string</p>
+<p><em>Default:</em>
+<code>config.labels</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/debug/labels.nix">nix/modules/oci/containers/debug/labels.nix</a></li>
+</ul>
+<h2 id="dependencies">dependencies</h2>
+<p>Additional dependencies packages to include in the container.</p>
+<p><em>Type:</em>
+list of package</p>
+<p><em>Default:</em>
+<code>[ ]</code></p>
+<p><em>Example:</em>
+<code>[ pkgs.bash pkgs.coreutils ]</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/_options/dependencies.nix">nix/modules/oci/containers/_options/dependencies.nix</a></li>
+</ul>
+<h2 id="entrypoint">entrypoint</h2>
+<p>OCI entrypoint (command + arguments).</p>
+<p><em>Type:</em>
+list of string</p>
+<p><em>Default:</em>
+<code>[ ]</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/_options/entrypoint.nix">nix/modules/oci/containers/_options/entrypoint.nix</a></li>
+</ul>
+<h2 id="fromimage-enabled">fromImage.enabled</h2>
+<p>Whether to use a base image for this container. Defaults to true when imageName is set.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>config.fromImage.imageName != null</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/fromImage/enabled.nix">nix/modules/oci/containers/fromImage/enabled.nix</a></li>
+</ul>
+<h2 id="fromimage-arch">fromImage.arch</h2>
+<p>The architecture of the image.</p>
+<p><em>Type:</em>
+one of “amd64”, “arm64”</p>
+<p><em>Default:</em></p>
+<pre><code>if system == "x86_64-linux" then
+  "amd64"
+else if system == "aarch64-linux" then
+  "arm64"
+else
+  throw "Unsupported system: ${system} as default arch, please set the arch option."
+
+</code></pre>
+<p><em>Example:</em>
+<code>"amd64"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/fromImage/arch.nix">nix/modules/oci/containers/fromImage/arch.nix</a></li>
+</ul>
+<h2 id="fromimage-imagename">fromImage.imageName</h2>
+<p>The name of the base image.</p>
+<p><em>Type:</em>
+null or string</p>
+<p><em>Default:</em>
+<code>null</code></p>
+<p><em>Example:</em>
+<code>"library/alpine"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/fromImage/imageName.nix">nix/modules/oci/containers/fromImage/imageName.nix</a></li>
+</ul>
+<h2 id="fromimage-imagetag">fromImage.imageTag</h2>
+<p>The tag/version of the image.</p>
+<p><em>Type:</em>
+null or string</p>
+<p><em>Default:</em>
+<code>null</code></p>
+<p><em>Example:</em>
+<code>"3.21.2"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/fromImage/imageTag.nix">nix/modules/oci/containers/fromImage/imageTag.nix</a></li>
+</ul>
+<h2 id="fromimage-os">fromImage.os</h2>
+<p>The operating system for the image.</p>
+<p><em>Type:</em>
+value “linux” (singular enum)</p>
+<p><em>Default:</em>
+<code>"linux"</code></p>
+<p><em>Example:</em>
+<code>"linux"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/fromImage/os.nix">nix/modules/oci/containers/fromImage/os.nix</a></li>
+</ul>
+<h2 id="homeconfig-enable">homeConfig.enable</h2>
+<p>Whether to enable home-manager dotfiles for the container user.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Example:</em>
+<code>true</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/homeConfig/enabled.nix">nix/modules/oci/containers/homeConfig/enabled.nix</a></li>
+</ul>
+<h2 id="homeconfig-homemanagerflake">homeConfig.homeManagerFlake</h2>
+<p>The home-manager flake input. Required when homeConfig.enable is true.
+Provides home-manager.nixosModules.home-manager for the NixOS eval.
+Example: homeConfig.homeManagerFlake = inputs.home-manager;</p>
+<p><em>Type:</em>
+null or unspecified value</p>
+<p><em>Default:</em>
+<code>null</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/homeConfig/homeManagerFlake.nix">nix/modules/oci/containers/homeConfig/homeManagerFlake.nix</a></li>
+</ul>
+<h2 id="homeconfig-modules">homeConfig.modules</h2>
+<p>Home-manager modules for this container user’s home directory.
+These configure dotfiles, shell, git, editor, etc.
+Requires homeConfig.homeManagerFlake to be set.</p>
+<p><em>Type:</em>
+list of unspecified value</p>
+<p><em>Default:</em>
+<code>[ ]</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/homeConfig/modules.nix">nix/modules/oci/containers/homeConfig/modules.nix</a></li>
+</ul>
+<h2 id="installnix">installNix</h2>
+<p>Whether to install nix in the container.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Example:</em>
+<code>true</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/installNix.nix">nix/modules/oci/containers/installNix.nix</a></li>
+</ul>
+<h2 id="isroot">isRoot</h2>
+<p>Whether the container process runs as root.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Example:</em>
+<code>true</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/_options/is-root.nix">nix/modules/oci/containers/_options/is-root.nix</a></li>
+</ul>
+<h2 id="labels">labels</h2>
+<p>OCI image labels (metadata key-value pairs).</p>
+<p><em>Type:</em>
+attribute set of string</p>
+<p><em>Default:</em>
+<code>{ }</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/_options/labels.nix">nix/modules/oci/containers/_options/labels.nix</a></li>
+</ul>
+<h2 id="multiarch-enabled">multiArch.enabled</h2>
+<p>Whether multi-arch is enabled. Computed from <code>multiArch.systems != []</code>.</p>
+<p><em>Type:</em>
+boolean <em>(read only)</em></p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/multiArch/systems.nix">nix/modules/oci/containers/multiArch/systems.nix</a></li>
+</ul>
+<h2 id="multiarch-crossbuild-enable">multiArch.crossBuild.enable</h2>
+<p>Enable local cross-compilation for multi-arch images.</p>
+<p>When true, non-native architectures listed in <code>multiArch.systems</code>
+are cross-compiled on the current host and merged into a single
+OCI directory layout.</p>
+<p>Per-arch package overrides are set via <code>archConfigs</code>:
+archConfigs.“aarch64-linux”.package = pkgs.pkgsCross.aarch64-multiplatform.hello;</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/multiArch/crossBuild.nix">nix/modules/oci/containers/multiArch/crossBuild.nix</a></li>
+</ul>
+<h2 id="multiarch-systems">multiArch.systems</h2>
+<p>Target systems for multi-arch image building.</p>
+<p>When non-empty, multi-arch is enabled and the listed systems
+define which architectures will be included in the manifest.</p>
+<p>Supported: aarch64-linux, armv7l-linux, riscv64-linux, x86_64-linux</p>
+<p>Uses Nix system strings (same convention as flake-parts <code>systems</code>).</p>
+<p><em>Type:</em>
+list of string</p>
+<p><em>Default:</em>
+<code>[ ]</code></p>
+<p><em>Example:</em></p>
+<pre><code>[
+  "x86_64-linux"
+  "aarch64-linux"
+]
+</code></pre>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/multiArch/systems.nix">nix/modules/oci/containers/multiArch/systems.nix</a></li>
+</ul>
+<h2 id="multiarch-temptagprefix">multiArch.tempTagPrefix</h2>
+<p>Prefix for temporary architecture-specific tags.</p>
+<p><em>Type:</em>
+string</p>
+<p><em>Default:</em>
+<code>"tmp"</code></p>
+<p><em>Example:</em>
+<code>"arch"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/multiArch/tempTagPrefix.nix">nix/modules/oci/containers/multiArch/tempTagPrefix.nix</a></li>
+</ul>
+<h2 id="name">name</h2>
+<p>OCI image name. Defaults to the container attribute name.</p>
+<p><em>Type:</em>
+string</p>
+<p><em>Default:</em>
+<code>"‹name›"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/_options/name.nix">nix/modules/oci/containers/_options/name.nix</a></li>
+</ul>
+<h2 id="nixosconfig-enable">nixosConfig.enable</h2>
+<p>Whether to enable NixOS module-based configuration for this container.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Example:</em>
+<code>true</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/nixosConfig/enabled.nix">nix/modules/oci/containers/nixosConfig/enabled.nix</a></li>
+</ul>
+<h2 id="nixosconfig-mainservice">nixosConfig.mainService</h2>
+<p>The NixOS service that this container runs.</p>
+<p>When set, the container’s package is auto-derived from the service
+module’s package option, and an entrypoint wrapper script is
+generated from the service’s systemd unit (preStart, ExecStartPre,
+ExecStart, directory creation).</p>
+<p>Cannot be set together with <code>package</code> - they are mutually exclusive
+sources for the container’s main program.</p>
+<p>When null, <code>nixosConfig</code> only provides config files, users/groups,
+and extra packages (environment.systemPackages) as dependencies.</p>
+<p><em>Type:</em>
+null or string</p>
+<p><em>Default:</em>
+<code>null</code></p>
+<p><em>Example:</em>
+<code>"nginx"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/nixosConfig/mainService.nix">nix/modules/oci/containers/nixosConfig/mainService.nix</a></li>
+</ul>
+<h2 id="nixosconfig-modules">nixosConfig.modules</h2>
+<p>NixOS modules to evaluate for this container.</p>
+<p>These modules are evaluated with <code>boot.isContainer = true</code> and
+the resulting config files, packages, users/groups, and entrypoint
+are extracted into the container image.</p>
+<p>Only one service should be enabled per container (no init system).
+Use <code>nixosConfig.mainService</code> to designate which service this
+container runs.</p>
+<p><em>Type:</em>
+list of unspecified value</p>
+<p><em>Default:</em>
+<code>[ ]</code></p>
+<p><em>Example:</em></p>
+<pre><code>[
+  ({ pkgs, ... }: {
+    services.nginx = {
+      enable = true;
+      virtualHosts."app".root = "/var/www";
+    };
+  })
+]
+
+</code></pre>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/nixosConfig/modules.nix">nix/modules/oci/containers/nixosConfig/modules.nix</a></li>
+</ul>
+<h2 id="optimizelayers">optimizeLayers</h2>
+<p>Split container contents into multiple layers using nix2container’s
+store-path popularity algorithm for optimal registry caching.</p>
+<p>When enabled, Nix store paths are sorted by how many other paths
+reference them (popularity). Foundational packages (glibc, openssl, …)
+get their own layers while application-specific paths are clustered
+together. Because store paths are immutable and content-addressed,
+images that share common dependencies automatically share layers in
+the registry, dramatically reducing push and pull times.</p>
+<p>See <a href="https://grahamc.com/blog/nix-and-layered-docker-images">Nix and layered Docker images</a>
+for the original algorithm and <a href="https://github.com/nlewo/nix2container">nix2container</a>
+for the implementation used here.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Example:</em>
+<code>true</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/_options/optimize-layers.nix">nix/modules/oci/containers/_options/optimize-layers.nix</a></li>
+</ul>
+<h2 id="push">push</h2>
+<p>Whether to push the container to the OCI registry.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>false</code></p>
+<p><em>Example:</em>
+<code>true</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/push.nix">nix/modules/oci/containers/push.nix</a></li>
+</ul>
+<h2 id="registry">registry</h2>
+<p>Container registry prefix (e.g., “ghcr.io/my-org” or “my-registry.io/project”).
+If set, the full container name will be “registry/name”.
+If null or empty string, no registry prefix will be added.</p>
+<p><em>Type:</em>
+null or string</p>
+<p><em>Default:</em>
+<code>null</code></p>
+<p><em>Example:</em>
+<code>"ghcr.io/my-org"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/registry.nix">nix/modules/oci/containers/registry.nix</a></li>
+</ul>
+<h2 id="rootpath">rootPath</h2>
+<p>The root path for the container.</p>
+<p><em>Type:</em>
+absolute path</p>
+<p><em>Default:</em>
+<code>config.oci.rootPath + name + "/"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/rootPath.nix">nix/modules/oci/containers/rootPath.nix</a></li>
+</ul>
+<h2 id="sbom-rootpath">sbom.rootPath</h2>
+<p>The root path for the SBOM.</p>
+<p><em>Type:</em>
+absolute path</p>
+<p><em>Default:</em>
+<code>config.oci.rootPath + name + "/sbom/"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/sbom/rootPath.nix">nix/modules/oci/containers/sbom/rootPath.nix</a></li>
+</ul>
+<h2 id="sbom-syft-enabled">sbom.syft.enabled</h2>
+<p>Whether to enable Syft SBOM generation.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>config.oci.sbom.syft.enabled</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/sbom/syft/enabled.nix">nix/modules/oci/containers/sbom/syft/enabled.nix</a></li>
+</ul>
+<h2 id="sbom-syft-config-enabled">sbom.syft.config.enabled</h2>
+<p>Whether to use a syft config file.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>config.oci.sbom.syft.config.enabled</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/sbom/syft/config/enabled.nix">nix/modules/oci/containers/sbom/syft/config/enabled.nix</a></li>
+</ul>
+<h2 id="sbom-syft-config-path">sbom.syft.config.path</h2>
+<p>Path to the syft config file.</p>
+<p><em>Type:</em>
+absolute path</p>
+<p><em>Default:</em>
+<code>config.oci.rootPath + name + "/sbom/syft.yaml"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/sbom/syft/config/path.nix">nix/modules/oci/containers/sbom/syft/config/path.nix</a></li>
+</ul>
+<h2 id="signing-cosign-enabled">signing.cosign.enabled</h2>
+<p>Whether to enable cosign image signing for this container.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>config.oci.signing.cosign.enabled</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/signing/cosign/enabled.nix">nix/modules/oci/containers/signing/cosign/enabled.nix</a></li>
+</ul>
+<h2 id="signing-cosign-annotations">signing.cosign.annotations</h2>
+<p>Key-value annotations to attach to the cosign signature for this container.</p>
+<p><em>Type:</em>
+attribute set of string</p>
+<p><em>Default:</em>
+<code>config.oci.signing.cosign.annotations</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/signing/cosign/annotations.nix">nix/modules/oci/containers/signing/cosign/annotations.nix</a></li>
+</ul>
+<h2 id="signing-cosign-certificateidentityregexp">signing.cosign.certificateIdentityRegexp</h2>
+<p>Regexp to match certificate identity when verifying keyless signatures.</p>
+<p><em>Type:</em>
+null or string</p>
+<p><em>Default:</em>
+<code>config.oci.signing.cosign.certificateIdentityRegexp</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/signing/cosign/certificateIdentityRegexp.nix">nix/modules/oci/containers/signing/cosign/certificateIdentityRegexp.nix</a></li>
+</ul>
+<h2 id="signing-cosign-certificateoidcissuerregexp">signing.cosign.certificateOidcIssuerRegexp</h2>
+<p>Regexp to match OIDC issuer when verifying keyless signatures.</p>
+<p><em>Type:</em>
+null or string</p>
+<p><em>Default:</em>
+<code>config.oci.signing.cosign.certificateOidcIssuerRegexp</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/signing/cosign/certificateOidcIssuerRegexp.nix">nix/modules/oci/containers/signing/cosign/certificateOidcIssuerRegexp.nix</a></li>
+</ul>
+<h2 id="signing-cosign-key">signing.cosign.key</h2>
+<p>Path or KMS URI for cosign key for this container. Only used when keyless is false.</p>
+<p><em>Type:</em>
+null or string</p>
+<p><em>Default:</em>
+<code>config.oci.signing.cosign.key</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/signing/cosign/key.nix">nix/modules/oci/containers/signing/cosign/key.nix</a></li>
+</ul>
+<h2 id="signing-cosign-keyless">signing.cosign.keyless</h2>
+<p>Whether to use keyless (OIDC) signing for this container.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>config.oci.signing.cosign.keyless</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/signing/cosign/keyless.nix">nix/modules/oci/containers/signing/cosign/keyless.nix</a></li>
+</ul>
+<h2 id="signing-cosign-verify">signing.cosign.verify</h2>
+<p>Whether to verify the signature immediately after signing.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>config.oci.signing.cosign.verify</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/signing/cosign/verify.nix">nix/modules/oci/containers/signing/cosign/verify.nix</a></li>
+</ul>
+<h2 id="tag">tag</h2>
+<p>OCI image tag.</p>
+<p><em>Type:</em>
+string</p>
+<p><em>Default:</em>
+<code>"latest"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/_options/tag.nix">nix/modules/oci/containers/_options/tag.nix</a></li>
+</ul>
+<h2 id="tags">tags</h2>
+<p>List of tags for the container. All tags will be pushed to the registry. The first tag is used for the local build.</p>
+<p><em>Type:</em>
+list of string</p>
+<p><em>Default:</em>
+<code>[ tag ]</code></p>
+<p><em>Example:</em></p>
+<pre><code>[
+  "1.0.0"
+  "latest"
+  "stable"
+]
+</code></pre>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/tags.nix">nix/modules/oci/containers/tags.nix</a></li>
+</ul>
+<h2 id="test-containerstructuretest-enabled">test.containerStructureTest.enabled</h2>
+<p>Whether to enable container-structure-test for validating container structure and metadata.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>cfg.oci.test.containerStructureTest.enabled</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/test/containerStructureTest/enabled.nix">nix/modules/oci/containers/test/containerStructureTest/enabled.nix</a></li>
+</ul>
+<h2 id="test-containerstructuretest-configs">test.containerStructureTest.configs</h2>
+<p>List of container-structure-test configuration files to run.</p>
+<p><em>Type:</em>
+list of absolute path</p>
+<p><em>Default:</em>
+<code>[ (cfg.oci.rootPath + name + "/test/container-structure-test.yaml") ]</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/test/containerStructureTest/configs.nix">nix/modules/oci/containers/test/containerStructureTest/configs.nix</a></li>
+</ul>
+<h2 id="test-dgoss-enabled">test.dgoss.enabled</h2>
+<p>Whether to enable dgoss testing for the container.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>cfg.oci.test.dgoss.enabled</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/test/dgoss/enabled.nix">nix/modules/oci/containers/test/dgoss/enabled.nix</a></li>
+</ul>
+<h2 id="test-dgoss-command">test.dgoss.command</h2>
+<p>Override command to pass after the image reference when running
+<code>dgoss run</code>. Empty string (the default) lets the image’s own
+entrypoint/cmd drive the container; in that mode the
+<code>--entrypoint ""</code> flag is NOT passed. Set this to e.g.
+<code>"kubectl version"</code> only if you explicitly want to override the
+entrypoint and your image ships that binary.</p>
+<p><em>Type:</em>
+string</p>
+<p><em>Default:</em>
+<code>""</code></p>
+<p><em>Example:</em>
+<code>"sh -c 'sleep infinity'"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/test/dgoss/command.nix">nix/modules/oci/containers/test/dgoss/command.nix</a></li>
+</ul>
+<h2 id="test-dgoss-hermetic">test.dgoss.hermetic</h2>
+<p>Run dgoss as a pure Nix derivation (check) instead of a flake
+app. Uses podman inside the Nix sandbox.
+Requires <code>extra-sandbox-paths = /sys/fs/cgroup</code> in nix.conf.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>cfg.oci.test.dgoss.hermetic</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/test/dgoss/hermetic.nix">nix/modules/oci/containers/test/dgoss/hermetic.nix</a></li>
+</ul>
+<h2 id="test-dgoss-optionspath">test.dgoss.optionsPath</h2>
+<p>Path to the dgoss configuration file.</p>
+<p><em>Type:</em>
+absolute path</p>
+<p><em>Default:</em>
+<code>config.oci.rootPath + name + "/test/dgoss.yaml"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/test/dgoss/optionsPath.nix">nix/modules/oci/containers/test/dgoss/optionsPath.nix</a></li>
+</ul>
+<h2 id="test-dive-enabled">test.dive.enabled</h2>
+<p>Whether to enable Dive analysis for container image layers and efficiency.</p>
+<p><em>Type:</em>
+boolean</p>
+<p><em>Default:</em>
+<code>cfg.oci.test.dive.enabled</code></p>
+<p><em>Example:</em>
+<code>true</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/test/dive/enabled.nix">nix/modules/oci/containers/test/dive/enabled.nix</a></li>
+</ul>
+<h2 id="test-rootpath">test.rootPath</h2>
+<p>The root path for the test.</p>
+<p><em>Type:</em>
+absolute path</p>
+<p><em>Default:</em>
+<code>config.oci.rootPath + name + "/test/"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/test/rootPath.nix">nix/modules/oci/containers/test/rootPath.nix</a></li>
+</ul>
+<h2 id="user">user</h2>
+<p>User to run the container process as.</p>
+<p><em>Type:</em>
+string</p>
+<p><em>Default:</em>
+<code>"root"</code></p>
+<p><em>Declared by:</em></p>
+<ul>
+<li><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/_options/user.nix">nix/modules/oci/containers/_options/user.nix</a></li>
+</ul>
+</body></html></main>
+      </div>
+
+      <aside class="page-toc">
+        <nav class="page-toc-nav">
+          <h3>On this page</h3>
+          <ul class="page-toc-list">
+            <li><a href="#flake-parts-options">flake.parts Options</a>
+<ul><li><a href="#top-level-options">Top-level Options</a>
+<li><a href="#oci-enabledevshell">oci.enableDevShell</a>
+<li><a href="#oci-enableflakeoutputs">oci.enableFlakeOutputs</a>
+<li><a href="#oci-enabled">oci.enabled</a>
+<li><a href="#oci-credentialsleak">oci.credentialsLeak</a>
+<li><a href="#oci-credentialsleak-configpath">oci.credentialsLeak.configPath</a>
+<li><a href="#oci-credentialsleak-trivy">oci.credentialsLeak.trivy</a>
+<li><a href="#oci-credentialsleak-trivy-enabled">oci.credentialsLeak.trivy.enabled</a>
+<li><a href="#oci-cve">oci.cve</a>
+<li><a href="#oci-cve-configpath">oci.cve.configPath</a>
+<li><a href="#oci-cve-grype">oci.cve.grype</a>
+<li><a href="#oci-cve-grype-enabled">oci.cve.grype.enabled</a>
+<li><a href="#oci-cve-grype-config">oci.cve.grype.config</a>
+<li><a href="#oci-cve-grype-config-enabled">oci.cve.grype.config.enabled</a>
+<li><a href="#oci-cve-grype-config-rootpath">oci.cve.grype.config.rootPath</a>
+<li><a href="#oci-cve-trivy">oci.cve.trivy</a>
+<li><a href="#oci-cve-trivy-enabled">oci.cve.trivy.enabled</a>
+<li><a href="#oci-cve-trivy-ignore">oci.cve.trivy.ignore</a>
+<li><a href="#oci-cve-trivy-ignore-extra">oci.cve.trivy.ignore.extra</a>
+<li><a href="#oci-cve-trivy-ignore-fileenabled">oci.cve.trivy.ignore.fileEnabled</a>
+<li><a href="#oci-cve-trivy-ignore-rootpath">oci.cve.trivy.ignore.rootPath</a>
+<li><a href="#oci-cve-vulnix">oci.cve.vulnix</a>
+<li><a href="#oci-cve-vulnix-enabled">oci.cve.vulnix.enabled</a>
+<li><a href="#oci-cve-vulnix-whitelist">oci.cve.vulnix.whitelist</a>
+<li><a href="#oci-cve-vulnix-whitelist-enabled">oci.cve.vulnix.whitelist.enabled</a>
+<li><a href="#oci-cve-vulnix-whitelist-rootpath">oci.cve.vulnix.whitelist.rootPath</a>
+<li><a href="#oci-devshellpackage">oci.devShellPackage</a>
+<li><a href="#oci-fromimagemanifestrootpath">oci.fromImageManifestRootPath</a>
+<li><a href="#oci-registry">oci.registry</a>
+<li><a href="#oci-rootpath">oci.rootPath</a>
+<li><a href="#oci-sbom">oci.sbom</a>
+<li><a href="#oci-sbom-path">oci.sbom.path</a>
+<li><a href="#oci-sbom-syft">oci.sbom.syft</a>
+<li><a href="#oci-sbom-syft-enabled">oci.sbom.syft.enabled</a>
+<li><a href="#oci-sbom-syft-config">oci.sbom.syft.config</a>
+<li><a href="#oci-sbom-syft-config-enabled">oci.sbom.syft.config.enabled</a>
+<li><a href="#oci-sbom-syft-config-rootpath">oci.sbom.syft.config.rootPath</a>
+<li><a href="#oci-signing">oci.signing</a>
+<li><a href="#oci-signing-cosign">oci.signing.cosign</a>
+<li><a href="#oci-signing-cosign-enabled">oci.signing.cosign.enabled</a>
+<li><a href="#oci-signing-cosign-annotations">oci.signing.cosign.annotations</a>
+<li><a href="#oci-signing-cosign-certificateidentityregexp">oci.signing.cosign.certificateIdentityRegexp</a>
+<li><a href="#oci-signing-cosign-certificateoidcissuerregexp">oci.signing.cosign.certificateOidcIssuerRegexp</a>
+<li><a href="#oci-signing-cosign-key">oci.signing.cosign.key</a>
+<li><a href="#oci-signing-cosign-keyless">oci.signing.cosign.keyless</a>
+<li><a href="#oci-signing-cosign-verify">oci.signing.cosign.verify</a>
+<li><a href="#oci-test">oci.test</a>
+<li><a href="#oci-test-containerstructuretest">oci.test.containerStructureTest</a>
+<li><a href="#oci-test-containerstructuretest-enabled">oci.test.containerStructureTest.enabled</a>
+<li><a href="#oci-test-dgoss">oci.test.dgoss</a>
+<li><a href="#oci-test-dgoss-enabled">oci.test.dgoss.enabled</a>
+<li><a href="#oci-test-dgoss-hermetic">oci.test.dgoss.hermetic</a>
+<li><a href="#oci-test-dive">oci.test.dive</a>
+<li><a href="#oci-test-dive-enabled">oci.test.dive.enabled</a>
+<li><a href="#per-system-options">Per-System Options</a>
+<li><a href="#oci-packages-containerstructuretest">oci.packages.containerStructureTest</a>
+<li><a href="#oci-packages-cosign">oci.packages.cosign</a>
+<li><a href="#oci-packages-dgoss">oci.packages.dgoss</a>
+<li><a href="#oci-packages-dive">oci.packages.dive</a>
+<li><a href="#oci-packages-grype">oci.packages.grype</a>
+<li><a href="#oci-packages-nix2container">oci.packages.nix2container</a>
+<li><a href="#oci-packages-podman">oci.packages.podman</a>
+<li><a href="#oci-packages-regctl">oci.packages.regctl</a>
+<li><a href="#oci-packages-skaffold">oci.packages.skaffold</a>
+<li><a href="#oci-packages-skopeo">oci.packages.skopeo</a>
+<li><a href="#oci-packages-syft">oci.packages.syft</a>
+<li><a href="#oci-packages-trivy">oci.packages.trivy</a>
+<li><a href="#oci-packages-vulnix">oci.packages.vulnix</a>
+<li><a href="#oci-containers">oci.containers</a>
+<li><a href="#oci-debug">oci.debug</a>
+<li><a href="#oci-debug-enabled">oci.debug.enabled</a>
+<li><a href="#oci-debug-packages">oci.debug.packages</a>
+<li><a href="#oci-debug-entrypoint">oci.debug.entrypoint</a>
+<li><a href="#oci-debug-entrypoint-enabled">oci.debug.entrypoint.enabled</a>
+<li><a href="#oci-debug-entrypoint-wrapper">oci.debug.entrypoint.wrapper</a>
+<li><a href="#oci-flake-packages">oci.flake.packages</a>
+<li><a href="#oci-flake-apps">oci.flake.apps</a>
+<li><a href="#oci-flake-checks">oci.flake.checks</a>
+<li><a href="#oci-percontainer">oci.perContainer</a>
+<li><a href="#container-sub-options">Container Sub-Options</a>
+<li><a href="#package">package</a>
+<li><a href="#configfiles">configFiles</a>
+<li><a href="#credentialsleak-trivy-enabled">credentialsLeak.trivy.enabled</a>
+<li><a href="#cve-grype-enabled">cve.grype.enabled</a>
+<li><a href="#cve-grype-config-enabled">cve.grype.config.enabled</a>
+<li><a href="#cve-grype-config-path">cve.grype.config.path</a>
+<li><a href="#cve-rootpath">cve.rootPath</a>
+<li><a href="#cve-trivy-enabled">cve.trivy.enabled</a>
+<li><a href="#cve-trivy-ignore-extra">cve.trivy.ignore.extra</a>
+<li><a href="#cve-trivy-ignore-fileenabled">cve.trivy.ignore.fileEnabled</a>
+<li><a href="#cve-trivy-ignore-path">cve.trivy.ignore.path</a>
+<li><a href="#cve-vulnix-enabled">cve.vulnix.enabled</a>
+<li><a href="#cve-vulnix-whitelist-enabled">cve.vulnix.whitelist.enabled</a>
+<li><a href="#cve-vulnix-whitelist-path">cve.vulnix.whitelist.path</a>
+<li><a href="#debug-enabled">debug.enabled</a>
+<li><a href="#debug-packages">debug.packages</a>
+<li><a href="#debug-entrypoint-enabled">debug.entrypoint.enabled</a>
+<li><a href="#debug-entrypoint-wrapper">debug.entrypoint.wrapper</a>
+<li><a href="#debug-labels">debug.labels</a>
+<li><a href="#dependencies">dependencies</a>
+<li><a href="#entrypoint">entrypoint</a>
+<li><a href="#fromimage-enabled">fromImage.enabled</a>
+<li><a href="#fromimage-arch">fromImage.arch</a>
+<li><a href="#fromimage-imagename">fromImage.imageName</a>
+<li><a href="#fromimage-imagetag">fromImage.imageTag</a>
+<li><a href="#fromimage-os">fromImage.os</a>
+<li><a href="#homeconfig-enable">homeConfig.enable</a>
+<li><a href="#homeconfig-homemanagerflake">homeConfig.homeManagerFlake</a>
+<li><a href="#homeconfig-modules">homeConfig.modules</a>
+<li><a href="#installnix">installNix</a>
+<li><a href="#isroot">isRoot</a>
+<li><a href="#labels">labels</a>
+<li><a href="#multiarch-enabled">multiArch.enabled</a>
+<li><a href="#multiarch-crossbuild-enable">multiArch.crossBuild.enable</a>
+<li><a href="#multiarch-systems">multiArch.systems</a>
+<li><a href="#multiarch-temptagprefix">multiArch.tempTagPrefix</a>
+<li><a href="#name">name</a>
+<li><a href="#nixosconfig-enable">nixosConfig.enable</a>
+<li><a href="#nixosconfig-mainservice">nixosConfig.mainService</a>
+<li><a href="#nixosconfig-modules">nixosConfig.modules</a>
+<li><a href="#optimizelayers">optimizeLayers</a>
+<li><a href="#push">push</a>
+<li><a href="#registry">registry</a>
+<li><a href="#rootpath">rootPath</a>
+<li><a href="#sbom-rootpath">sbom.rootPath</a>
+<li><a href="#sbom-syft-enabled">sbom.syft.enabled</a>
+<li><a href="#sbom-syft-config-enabled">sbom.syft.config.enabled</a>
+<li><a href="#sbom-syft-config-path">sbom.syft.config.path</a>
+<li><a href="#signing-cosign-enabled">signing.cosign.enabled</a>
+<li><a href="#signing-cosign-annotations">signing.cosign.annotations</a>
+<li><a href="#signing-cosign-certificateidentityregexp">signing.cosign.certificateIdentityRegexp</a>
+<li><a href="#signing-cosign-certificateoidcissuerregexp">signing.cosign.certificateOidcIssuerRegexp</a>
+<li><a href="#signing-cosign-key">signing.cosign.key</a>
+<li><a href="#signing-cosign-keyless">signing.cosign.keyless</a>
+<li><a href="#signing-cosign-verify">signing.cosign.verify</a>
+<li><a href="#tag">tag</a>
+<li><a href="#tags">tags</a>
+<li><a href="#test-containerstructuretest-enabled">test.containerStructureTest.enabled</a>
+<li><a href="#test-containerstructuretest-configs">test.containerStructureTest.configs</a>
+<li><a href="#test-dgoss-enabled">test.dgoss.enabled</a>
+<li><a href="#test-dgoss-command">test.dgoss.command</a>
+<li><a href="#test-dgoss-hermetic">test.dgoss.hermetic</a>
+<li><a href="#test-dgoss-optionspath">test.dgoss.optionsPath</a>
+<li><a href="#test-dive-enabled">test.dive.enabled</a>
+<li><a href="#test-rootpath">test.rootPath</a>
+<li><a href="#user">user</a>
+</li></ul></li>
+          </ul>
+        </nav>
+      </aside>
+
+      <footer>
+  <p>Generated with ndg</p>
+</footer>
+
+    </div>
+
+    <script>
+      // Close directory groups by default and reorder them
+      document.addEventListener("DOMContentLoaded", function () {
+        var groups = document.querySelectorAll(".sidebar-dir-group > details");
+        // Desired order: how-to, reference, examples (alphabetical puts examples first)
+        var order = { "how-to": 1, "reference": 2, "examples": 3 };
+        var parent = groups.length > 0 ? groups[0].parentElement.parentElement : null;
+        var sorted = [];
+
+        groups.forEach(function (d) {
+          // Close all groups by default
+          d.removeAttribute("open");
+          // Extract group name from label
+          var label = d.querySelector(".sidebar-dir-label");
+          if (label) {
+            var name = label.textContent.toLowerCase();
+            sorted.push({ el: d.parentElement, name: name });
+          }
+        });
+
+        // Reorder groups in the DOM
+        if (parent && sorted.length > 0) {
+          sorted.sort(function (a, b) {
+            return (order[a.name] || 99) - (order[b.name] || 99);
+          });
+          sorted.forEach(function (item) {
+            parent.appendChild(item.el);
+          });
+        }
+      });
+    </script>
+
+    
+  </body>
+</html>

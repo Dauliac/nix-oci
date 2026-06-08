@@ -300,3 +300,13 @@ For option details, see:
 - [flake.parts options](../reference/flake-parts-options.html)
 - [NixOS module options](../reference/nixos-options.html)
 - [Home Manager module options](../reference/home-manager-options.html)
+
+## Runnable example
+
+A complete, testable flake for sharing containers is available at
+[`examples/_how-to/share-containers/`](https://github.com/Dauliac/nix-oci/tree/main/examples/_how-to/share-containers).
+
+```bash
+cd examples/_how-to/share-containers
+nix flake show
+```

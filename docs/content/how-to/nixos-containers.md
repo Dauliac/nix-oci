@@ -154,3 +154,13 @@ nix flake check
 This runs all enabled tests (CST, dive, dgoss) as Nix checks.
 
 For full option details, see [flake.parts options](../reference/flake-parts-options.html).
+
+## Runnable example
+
+A complete, testable flake for flake-parts basics is available at
+[`examples/_how-to/flake-parts-basics/`](https://github.com/Dauliac/nix-oci/tree/main/examples/_how-to/flake-parts-basics).
+
+```bash
+cd examples/_how-to/flake-parts-basics
+nix flake show
+```
