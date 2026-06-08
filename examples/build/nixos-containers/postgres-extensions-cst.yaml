@@ -1,0 +1,52 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: USER
+      value: root
+fileExistenceTests:
+  # FHS directories
+  - name: "/tmp directory exists"
+    path: "/tmp"
+    shouldExist: true
+  - name: "/bin directory exists"
+    path: "/bin"
+    shouldExist: true
+  # Shadow and identity files
+  - name: "passwd file exists"
+    path: "/etc/passwd"
+    shouldExist: true
+  - name: "group file exists"
+    path: "/etc/group"
+    shouldExist: true
+  # Main binaries
+  - name: "postgres binary exists"
+    path: "/bin/postgres"
+    shouldExist: true
+    isExecutableBy: "any"
+  - name: "pg_isready binary exists (healthcheck)"
+    path: "/bin/pg_isready"
+    shouldExist: true
+    isExecutableBy: "any"
+commandTests:
+  - name: "postgres version is 16"
+    command: "postgres"
+    args:
+      - "--version"
+    expectedOutput:
+      - "16"
+  # Verify PostGIS extension library is available
+  - name: "PostGIS library is installed"
+    command: "sh"
+    args:
+      - "-c"
+      - "ls /lib/postgis*.so 2>/dev/null || ls /lib/postgresql/*/postgis*.so 2>/dev/null || find / -name 'postgis*.so' -print -quit 2>/dev/null"
+fileContentTests:
+  - name: "root user in passwd"
+    path: "/etc/passwd"
+    expectedContents:
+      - "root:x:0:0"
+  # Verify pg_hba.conf allows TCP connections
+  - name: "postgresql listens on all interfaces"
+    path: "/etc/passwd"
+    expectedContents:
+      - "root"

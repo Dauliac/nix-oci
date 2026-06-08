@@ -72,7 +72,17 @@ in
           logDirs = toList (sc.LogsDirectory or null);
           preStart = svc.preStart or "";
           execStartPre = toList (sc.ExecStartPre or null);
-          execStart = sc.ExecStart or null;
+          execStart =
+            let
+              raw = sc.ExecStart or null;
+            in
+            if builtins.isList raw then
+              let
+                parts = builtins.filter (x: x != null && x != "") raw;
+              in
+              if parts == [ ] then null else lib.concatStringsSep " " parts
+            else
+              raw;
           serviceType = sc.Type or "simple";
           environment = svc.environment or { };
           killSignal = sc.KillSignal or null;

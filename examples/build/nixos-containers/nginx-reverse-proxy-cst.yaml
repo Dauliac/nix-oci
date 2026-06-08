@@ -1,0 +1,60 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: USER
+      value: root
+    - key: GATEWAY_ENV
+      value: production
+fileExistenceTests:
+  # FHS directories
+  - name: "/tmp directory exists"
+    path: "/tmp"
+    shouldExist: true
+  - name: "/bin directory exists"
+    path: "/bin"
+    shouldExist: true
+  # Main binary
+  - name: "nginx binary exists and is executable"
+    path: "/bin/nginx"
+    shouldExist: true
+    isExecutableBy: "any"
+  # Shadow and identity files
+  - name: "passwd file exists"
+    path: "/etc/passwd"
+    shouldExist: true
+  - name: "group file exists"
+    path: "/etc/group"
+    shouldExist: true
+  # Custom error pages
+  - name: "404 error page exists"
+    path: "/var/www/errors/404.html"
+    shouldExist: true
+  - name: "502 error page exists"
+    path: "/var/www/errors/502.html"
+    shouldExist: true
+  - name: "503 error page exists"
+    path: "/var/www/errors/503.html"
+    shouldExist: true
+  - name: "429 error page exists"
+    path: "/var/www/errors/429.html"
+    shouldExist: true
+commandTests:
+  - name: "curl is available (healthcheck tool)"
+    command: "curl"
+    args:
+      - "--version"
+    expectedOutput:
+      - "curl"
+fileContentTests:
+  - name: "root user in passwd"
+    path: "/etc/passwd"
+    expectedContents:
+      - "root:x:0:0"
+  - name: "404 page has correct content"
+    path: "/var/www/errors/404.html"
+    expectedContents:
+      - "Not Found"
+  - name: "429 page mentions rate limiting"
+    path: "/var/www/errors/429.html"
+    expectedContents:
+      - "Rate limit"

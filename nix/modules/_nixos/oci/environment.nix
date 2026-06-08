@@ -36,6 +36,7 @@
         wantedNames = builtins.filter (n: etc ? ${n}) [
           "nsswitch.conf"
           "ssl/certs/ca-bundle.crt"
+          "nix/nix.conf"
         ];
       in
       map (name: config.oci.lib.mkEtcDerivation name etc.${name}) wantedNames;
@@ -46,12 +47,28 @@
     internal = true;
     readOnly = true;
     description = "Container environment variables as KEY=VALUE strings.";
-    default = [
-      "PATH=/bin"
-      "USER=${config.oci.container.user}"
-      "HOME=${config.oci.lib.homeDir}"
-      "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
-    ];
+    default =
+      let
+        cfg = config.oci.container;
+        home = config.oci.lib.homeDir;
+        basePath = "/bin";
+        path =
+          if cfg.installNix or false then
+            "${basePath}:${home}/.nix-profile/bin:/nix/var/nix/profiles/default/bin"
+          else
+            basePath;
+      in
+      [
+        "PATH=${path}"
+        "USER=${cfg.user}"
+        "HOME=${home}"
+        "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
+      ]
+      ++ lib.optionals (cfg.installNix or false) [
+        "LANG=C.UTF-8"
+        "LC_ALL=C.UTF-8"
+        "NIX_PAGER=cat"
+      ];
   };
 
   config = {

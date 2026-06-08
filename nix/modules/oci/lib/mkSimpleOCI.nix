@@ -39,6 +39,20 @@
             optimized = oci.optimizeLayers or false;
             layerStrategy = oci.layerStrategy or "fine-grained";
 
+            # Auto-generated labels (OCI standard + build info + hardening + PSS).
+            # Merge order: auto-labels < NixOS-eval hardening labels < user labels.
+            generatedLabels = ociLib.mkAutoLabels {
+              name = oci.name;
+              tag = oci.tag;
+              package = oci.package;
+              isRoot = oci.isRoot or false;
+              optimizeLayers = optimized;
+              inherit layerStrategy;
+              hardening = oci.hardening or { enable = false; };
+              system = pkgs.stdenv.hostPlatform.system;
+              autoLabels = oci.autoLabels or true;
+            };
+
             appCopyToRoot = [ out.rootFilesystem ] ++ lib.optional (oci.package != null) oci.package;
 
             layers =
@@ -63,7 +77,7 @@
                 Env = out.envVars;
               }
               // {
-                Labels = (oci.labels or { }) // (out.hardening.labels or { });
+                Labels = generatedLabels // (out.hardening.labels or { }) // (oci.labels or { });
               }
               // (
                 let

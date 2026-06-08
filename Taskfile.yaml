@@ -11,3 +11,26 @@ tasks:
     cmds:
       - |
         bats main.bats --timing --trace --print-output-on-failure
+  docs:build:
+    desc: Build the nix-oci documentation site with NDG
+    cmds:
+      - nix build .#legacyPackages.x86_64-linux.docs --out-link result-docs
+  docs:serve:
+    desc: Build and serve the nix-oci documentation site locally
+    deps: ['docs:build']
+    cmds:
+      - |
+        echo "Serving docs at http://localhost:8000"
+        python3 -m http.server 8000 --directory result-docs
+  flake-parts-website:build:
+    desc: Build the flake.parts website (includes nix-oci options)
+    dir: ./docs/flake-parts-website
+    cmds:
+      - nix build --out-link ../../result-flake-parts-website
+  flake-parts-website:serve:
+    desc: Build and serve the flake.parts website locally
+    deps: ['flake-parts-website:build']
+    cmds:
+      - |
+        echo "Serving flake.parts website at http://localhost:8001"
+        python3 -m http.server 8001 --directory result-flake-parts-website

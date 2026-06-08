@@ -1,4 +1,9 @@
 # OCI mkNixOCI - Build a container with Nix support and build users
+#
+# Uses NixOS eval outputs for all image content — same normalized flow as
+# mkSimpleOCI. Nix-specific additions (nixbld users, nix.conf, nix packages)
+# are handled by _nixos/oci/nix-support.nix in the NixOS eval.
+# The only builder-specific parts are /nix/var dirs and permissions.
 { lib, ... }:
 {
   config.perSystem =
@@ -24,118 +29,71 @@
             oci = perSystemConfig.containers.${containerId};
             # Force-evaluate nixosConfig assertions/warnings
             _nixosChecks = oci.nixosConfig._checks or "";
+            nixosEval = oci.nixosConfig.eval;
+            out = nixosEval.oci.container._output;
             fullName =
               if oci.registry != null && oci.registry != "" then "${oci.registry}/${oci.name}" else oci.name;
             optimized = oci.optimizeLayers or false;
             layerStrategy = oci.layerStrategy or "fine-grained";
-          in
-          assert _nixosChecks == "" || _nixosChecks != "";
-          let
-            pkg = if oci.package != null then [ oci.package ] else [ ];
-            deps = oci.dependencies or [ ];
-            appPaths = if optimized then pkg ++ [ pkgs.cacert ] else pkg ++ deps ++ [ pkgs.cacert ];
-            appPackages = pkgs.buildEnv {
-              name = "app-root";
-              paths = appPaths;
-              pathsToLink = [
-                "/bin"
-                "/lib"
-                "/etc"
-              ];
-              ignoreCollisions = true;
-            };
-            home = if oci.user == "root" then "/root" else "/home/${oci.user}";
-            homeDir = pkgs.runCommand "home-dir" { } ''
-              mkdir -p $out${home}
-            '';
-            nixVarDirs = pkgs.runCommand "nix-var-dirs" { } ''
-              mkdir -p $out/nix/var/nix/profiles/per-user/${oci.user}
-              mkdir -p $out/nix/var/nix/gcroots/per-user/${oci.user}
-              mkdir -p $out/nix/var/nix/temproots
-            '';
-            configFiles = oci.configFiles or [ ];
 
-            # The Nix layer (bash, coreutils, nix, shadow setup) is built
-            # directly via buildLayer — it's the foundation that everything
-            # else deduplicates against.
-            nixLayer = ociLib.mkNixOCILayer {
-              inherit perSystemConfig;
-              user = oci.user;
-              inherit home;
+            # Auto-generated labels (OCI standard + build info + hardening + PSS).
+            # Merge order: auto-labels < NixOS-eval hardening labels < user labels.
+            generatedLabels = ociLib.mkAutoLabels {
+              name = oci.name;
+              tag = oci.tag;
+              package = oci.package;
+              isRoot = oci.isRoot or false;
+              optimizeLayers = optimized;
+              inherit layerStrategy;
+              hardening = oci.hardening or { enable = false; };
+              system = pkgs.stdenv.hostPlatform.system;
+              autoLabels = oci.autoLabels or true;
             };
 
-            # Config files as a layer-def for the fold chain
-            configFilesLayerDefs = if configFiles != [ ] then [ { copyToRoot = configFiles; } ] else [ ];
+            # Nix-specific: /nix/var directories and permissions from NixOS eval
+            nixVarDirs = out.nixVarDirs;
+            nixPerms = out.nixPerms or [ ];
+
+            # Root filesystem from NixOS eval — includes shadow files (with nixbld
+            # users), etc files (nix.conf, nsswitch, certs), packages (nix, bash,
+            # coreutils), dependencies, configFiles, home dir.
+            appCopyToRoot =
+              [ out.rootFilesystem ]
+              ++ lib.optional (oci.package != null) oci.package
+              ++ lib.optional (nixVarDirs != null) nixVarDirs;
 
             layers =
               if optimized then
                 ociLib.mkImageLayers {
                   nix2container = perSystemConfig.packages.nix2container;
                   inherit layerStrategy;
-                  # nixLayer is already built — inject as a known layer so
-                  # the fold deduplicates against its store paths.
-                  prependBuiltLayers = [ nixLayer ];
-                  prependLayerDefs = configFilesLayerDefs;
-                  dependencies = deps;
-                  copyToRoot = [
-                    appPackages
-                    homeDir
-                    nixVarDirs
-                  ];
+                  dependencies = oci.dependencies;
+                  copyToRoot = appCopyToRoot;
                 }
               else
-                [ nixLayer ]
-                ++ (
-                  if configFiles != [ ] then
-                    [
-                      (perSystemConfig.packages.nix2container.buildLayer {
-                        copyToRoot = configFiles;
-                      })
-                    ]
-                  else
-                    [ ]
-                );
+                [ ];
           in
+          assert _nixosChecks == "" || _nixosChecks != "";
           perSystemConfig.packages.nix2container.buildImage (
             {
               inherit (oci) tag;
               name = fullName;
-              copyToRoot = [
-                appPackages
-                homeDir
-                nixVarDirs
-              ];
-              perms = lib.optionals (oci.user != "root") [
-                {
-                  path = nixVarDirs;
-                  regex = "/nix/var/nix/.*";
-                  mode = "0755";
-                  uid = 4000;
-                  gid = 4000;
-                }
-              ];
+              copyToRoot = appCopyToRoot;
+              perms = nixPerms;
               inherit layers;
               config = {
-                inherit (oci) entrypoint;
+                entrypoint = if out.entrypoint != [ ] then out.entrypoint else oci.entrypoint;
                 User = oci.user;
-                Env = [
-                  "PATH=/bin:${home}/.nix-profile/bin:/nix/var/nix/profiles/default/bin"
-                  "LANG=C.UTF-8"
-                  "LC_ALL=C.UTF-8"
-                  "NIX_PAGER=cat"
-                  "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
-                  "USER=${oci.user}"
-                  "HOME=${home}"
-                ];
+                Env = out.envVars;
               }
-              // lib.optionalAttrs (oci.labels != { }) {
-                Labels = oci.labels;
+              // {
+                Labels = generatedLabels // (out.hardening.labels or { }) // (oci.labels or { });
               }
               // (
                 let
-                  hc = oci.healthcheck or null;
+                  hc = out.healthcheck or null;
                 in
-                lib.optionalAttrs (hc != null && (hc.command or [ ]) != [ ]) {
+                lib.optionalAttrs (hc != null) {
                   Healthcheck = {
                     Test = [ "CMD" ] ++ hc.command;
                     Interval = hc.interval * 1000000000;
@@ -145,15 +103,15 @@
                   };
                 }
               )
-              // lib.optionalAttrs ((oci.stopSignal or null) != null) {
-                StopSignal = oci.stopSignal;
+              // lib.optionalAttrs ((out.stopSignal or null) != null) {
+                StopSignal = out.stopSignal;
               }
-              // lib.optionalAttrs ((oci.workingDir or null) != null) {
-                WorkingDir = oci.workingDir;
+              // lib.optionalAttrs ((out.workingDir or null) != null) {
+                WorkingDir = out.workingDir;
               }
               // (
                 let
-                  vols = oci.declaredVolumes or [ ];
+                  vols = out.declaredVolumes or [ ];
                 in
                 lib.optionalAttrs (vols != [ ]) {
                   Volumes = builtins.listToAttrs (map (v: lib.nameValuePair v { }) vols);

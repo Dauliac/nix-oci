@@ -118,6 +118,7 @@ in
                       user = containerUser;
                       isRoot = containerIsRoot;
                       mainService = nixosCfg.mainService or null;
+                      installNix = config.installNix or false;
                       # dependencies, configFiles, hardening don't depend on eval — safe to pass
                       dependencies = config.dependencies;
                       configFiles = config.configFiles;
@@ -148,6 +149,12 @@ in
             description = "The fully evaluated NixOS configuration for this container.";
             default = evalResult;
           };
+
+          # Write the smart containerUser back to the flake-parts user option.
+          # This ensures all image builders (mkSimpleOCI, mkNixOCI, mkDebugOCI)
+          # read the same user that the NixOS eval used for /etc/passwd.
+          # Priority 50 (mkDefault) so explicit user = "foo" still wins.
+          config.user = lib.mkDefault containerUser;
         };
     };
 }

@@ -39,38 +39,44 @@ in
               oci = perSystemConfig.containers.${containerId};
               fullName =
                 if oci.registry != null && oci.registry != "" then "${oci.registry}/${oci.name}" else oci.name;
-              home = if oci.user == "root" then "/root" else "/home/${oci.user}";
 
               # Reuse the NixOS eval from the native container (shadow,
               # certs, nsswitch are arch-independent)
               nixosEval = oci.nixosConfig.eval;
+              out = nixosEval.oci.container._output;
 
-              root = ociLib.mkNixOSRoot {
-                inherit nixosEval;
-                package = crossPackage;
-                inherit (oci) user;
-                dependencies = crossDependencies;
+              # Cross root: shadow/etc from eval + cross-compiled package/deps
+              root = pkgs.buildEnv {
+                name = "root";
+                paths =
+                  (lib.optional (crossPackage != null) crossPackage)
+                  ++ crossDependencies
+                  ++ out.shadowFiles
+                  ++ out.etcFiles
+                  ++ [
+                    nixosEval.oci.lib.mkHomeDirDrv
+                    (pkgs.runCommand "fhs-tmp" { } "mkdir -p $out/tmp $out/var/tmp")
+                  ];
+                pathsToLink = [
+                  "/bin"
+                  "/lib"
+                  "/etc"
+                  "/home"
+                  "/root"
+                  "/tmp"
+                  "/var"
+                ];
               };
-
-              nixosEnvVars = nixosEval.environment.variables or { };
-              wantedEnvVars = [ "SSL_CERT_FILE" ];
-              filteredEnvVars = lib.filterAttrs (k: _: builtins.elem k wantedEnvVars) nixosEnvVars;
-              envList = [
-                "PATH=/bin"
-                "USER=${oci.user}"
-                "HOME=${home}"
-              ]
-              ++ (lib.mapAttrsToList (k: v: "${k}=${v}") filteredEnvVars);
             in
             perSystemConfig.packages.nix2container.buildImage {
               inherit (oci) tag;
               inherit arch;
               name = fullName;
-              copyToRoot = [ root ] ++ (oci.configFiles or [ ]);
+              copyToRoot = [ root ];
               config = {
-                inherit (oci) entrypoint;
+                entrypoint = if out.entrypoint != [ ] then out.entrypoint else oci.entrypoint;
                 User = oci.user;
-                Env = envList;
+                Env = out.envVars;
               }
               // lib.optionalAttrs (oci.labels != { }) {
                 Labels = oci.labels;

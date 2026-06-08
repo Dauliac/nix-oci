@@ -178,17 +178,53 @@ image).
 ### Labels
 
 Labels flow **only** to the OCI image manifest — they are pure metadata
-with no deploy-time effect.
+with no deploy-time effect. nix-oci automatically generates labels from
+package metadata and container configuration; user-provided labels always
+override auto-generated ones.
 
 ```mermaid
-flowchart LR
-    User["oci.containers.my-app.labels<br/>{ &quot;org.opencontainers.image.source&quot;<br/>= &quot;https://github.com/…&quot;; }"]
-    OCI["OCI config.Labels"]
+flowchart TD
+    subgraph auto ["Auto-generated (when autoLabels = true)"]
+        direction TB
+        OCI_STD["OCI standard annotations<br/>org.opencontainers.image.*<br/>(title, version, description,<br/>licenses, base.name, url, authors)"]
+        BUILD["Build info<br/>io.github.dauliac.nix-oci.build.*<br/>(system, optimized-layers,<br/>layer-strategy, reproducible)"]
+        HARD["Hardening hints<br/>io.github.dauliac.nix-oci.hardening.*<br/>(enabled, capabilities, seccomp,<br/>landlock, read-only-rootfs)"]
+        PSS["K8s PSS level<br/>io.github.dauliac.nix-oci.kubernetes<br/>.pod-security-standard<br/>(restricted / baseline / privileged)"]
+        RT["Runtime info<br/>io.github.dauliac.nix-oci.runtime.*<br/>(user, is-root)"]
+    end
 
-    User -->|"passed as-is"| OCI
+    User["oci.containers.my-app.labels<br/>(user-provided, always wins)"]
 
-    style OCI fill:#1e1e2e,stroke:#89b4fa,color:#cdd6f4
+    Merged["OCI config.Labels<br/>(auto // user)"]
+
+    OCI_STD --> Merged
+    BUILD --> Merged
+    HARD --> Merged
+    PSS --> Merged
+    RT --> Merged
+    User -->|"overrides"| Merged
+
+    style auto fill:#1e1e2e,stroke:#f9e2ae,color:#cdd6f4
+    style Merged fill:#1e1e2e,stroke:#89b4fa,color:#cdd6f4
 ```
+
+#### Auto-generated label sources
+
+| Label namespace | Source | Example |
+|---|---|---|
+| `org.opencontainers.image.title` | `config.name` | `"caddy"` |
+| `org.opencontainers.image.version` | `config.tag` or `package.version` | `"2.7.6"` |
+| `org.opencontainers.image.description` | `package.meta.description` | `"Fast web server"` |
+| `org.opencontainers.image.licenses` | `package.meta.license` (SPDX) | `"Apache-2.0"` |
+| `org.opencontainers.image.url` | `package.meta.homepage` | `"https://…"` |
+| `org.opencontainers.image.authors` | `package.meta.maintainers` | `"Jane Doe"` |
+| `org.opencontainers.image.base.name` | Always `"scratch"` | `"scratch"` |
+| `…nix-oci.build.system` | Build platform | `"x86_64-linux"` |
+| `…nix-oci.build.optimized-layers` | `optimizeLayers` | `"true"` |
+| `…nix-oci.hardening.*` | `hardening` config | various |
+| `…nix-oci.kubernetes.pod-security-standard` | Computed from hardening | `"restricted"` |
+
+To disable auto-labeling, set `autoLabels = false` on the container.
 
 ### Config files
 
@@ -350,6 +386,14 @@ flowchart TD
         nm[name / tag]
         auto[autoStart]
         vols[volumes]
+        hard[hardening]
+    end
+
+    subgraph autolabels ["Auto-generated labels"]
+        ociStd["org.opencontainers.image.*"]
+        buildMeta["…nix-oci.build.*"]
+        hardLabels["…nix-oci.hardening.*"]
+        pss["…nix-oci.kubernetes.pss"]
     end
 
     subgraph oci ["OCI image config"]
@@ -384,7 +428,15 @@ flowchart TD
     ports --> fw
     env --> oEnv
     env --> runner
-    labels --> oLabels
+    pkg -.->|"meta.*"| ociStd
+    nm -.->|"name, tag"| ociStd
+    hard -.-> hardLabels
+    hard -.-> pss
+    ociStd --> oLabels
+    buildMeta --> oLabels
+    hardLabels --> oLabels
+    pss --> oLabels
+    labels -->|"overrides"| oLabels
     hc --> oHC
     hc -->|"sdnotify=healthy<br/>Type=notify"| runner
     ss --> oSS
@@ -400,6 +452,7 @@ flowchart TD
     shadow --> root
 
     style user fill:#1e1e2e,stroke:#cdd6f4,color:#cdd6f4
+    style autolabels fill:#1e1e2e,stroke:#f5c2e7,color:#cdd6f4
     style oci fill:#1e1e2e,stroke:#89b4fa,color:#cdd6f4
     style rootfs fill:#1e1e2e,stroke:#f9e2ae,color:#cdd6f4
     style services fill:#1e1e2e,stroke:#a6da95,color:#cdd6f4

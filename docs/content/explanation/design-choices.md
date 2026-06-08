@@ -337,6 +337,78 @@ This tells container orchestrators which paths contain persistent data
 that should survive container restarts — without requiring the user to
 repeat this information.
 
+## Automatic OCI labels
+
+Every container image built by nix-oci is automatically annotated with
+standardised OCI labels derived from package metadata, build context,
+and security configuration. User-provided labels always override
+auto-generated ones.
+
+### OCI standard annotations
+
+nix-oci populates the [`org.opencontainers.image.*`](https://specs.opencontainers.org/image-spec/annotations/)
+namespace from data already present in the Nix package:
+
+| OCI annotation | Nix source |
+|---|---|
+| `title` | `config.name` (container attr name) |
+| `version` | `config.tag` or `package.version` |
+| `description` | `package.meta.description` |
+| `licenses` | `package.meta.license` (SPDX expression) |
+| `url` | `package.meta.homepage` |
+| `authors` | `package.meta.maintainers` |
+| `documentation` | `package.meta.changelog` |
+| `base.name` | Always `"scratch"` (distroless) |
+
+### Build metadata
+
+Labels under `io.github.dauliac.nix-oci.build.*` record how the image
+was constructed:
+
+- `system` — build platform (e.g. `x86_64-linux`)
+- `optimized-layers` — whether layer deduplication was enabled
+- `layer-strategy` — `fine-grained` or `minimal`
+- `reproducible` — always `true` (nix-oci guarantees bit-for-bit builds)
+
+### Hardening and Kubernetes Pod Security Standard
+
+When `hardening.enable = true`, labels under
+`io.github.dauliac.nix-oci.hardening.*` describe the container's security
+posture: dropped capabilities, seccomp profile, Landlock status,
+read-only rootfs, etc.
+
+nix-oci also computes a **Kubernetes Pod Security Standard level** from
+the hardening configuration:
+
+| PSS level | Required configuration |
+|---|---|
+| **restricted** | `!isRoot` + `noNewPrivileges` + `capabilities.drop = ["ALL"]` + `seccomp.enable` + `readOnlyRootfs` |
+| **baseline** | `hardening.enable = true` (some restrictions) |
+| **privileged** | No hardening |
+
+This label (`io.github.dauliac.nix-oci.kubernetes.pod-security-standard`)
+enables Kubernetes admission controllers like
+[Kyverno](https://kyverno.io/policies/other/require-image-source/require-image-source/)
+or OPA/Gatekeeper to enforce policies based on the image's declared
+security posture.
+
+### Why it matters
+
+- **Compliance**: Kyverno and OPA/Gatekeeper can enforce that images
+  carry `org.opencontainers.image.source` or meet a minimum PSS level.
+  Auto-labeling makes nix-oci images pass these checks without manual
+  annotation.
+- **Single source of truth**: labels are derived from the same Nix
+  expressions that define the package and container — no drift between
+  the image and its metadata.
+- **Fleet visibility**: tools like `skopeo inspect`, Trivy, and
+  container registries display OCI annotations. Auto-labeling makes
+  every image self-describing.
+- **Reproducible metadata**: all auto-generated labels are deterministic
+  (no timestamps, no impure inputs) — they don't break bit-for-bit
+  reproducibility.
+- **Opt-out**: set `autoLabels = false` to disable all auto-generation.
+
 ## Environment variable dual-write
 
 Environment variables declared in `environment` are written to **both**

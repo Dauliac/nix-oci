@@ -46,19 +46,43 @@ in
                 };
               };
               user = "podman";
+              root = pkgs.buildEnv {
+                name = "root";
+                paths = [
+                  package
+                  pkgs.podman
+                  podmanConfig
+                ]
+                ++ dependencies
+                ++ [
+                  (pkgs.writeTextDir "etc/passwd" ''
+                    root:x:0:0::/root:${pkgs.runtimeShell}
+                    ${user}:x:4000:4000::/home/${user}:${pkgs.runtimeShell}
+                  '')
+                  (pkgs.writeTextDir "etc/shadow" ''
+                    root:!x:::::::
+                    ${user}:!:::::::
+                  '')
+                  (pkgs.writeTextDir "etc/group" ''
+                    root:x:0:
+                    ${user}:x:4000:
+                  '')
+                  (pkgs.runCommand "home-${user}" { } "mkdir -p $out/home/${user}")
+                  pkgs.cacert
+                  (pkgs.runCommand "fhs-tmp" { } "mkdir -p $out/tmp $out/var/tmp")
+                ];
+                pathsToLink = [
+                  "/bin"
+                  "/lib"
+                  "/etc"
+                ];
+              };
             in
             perSystemConfig.packages.nix2container.buildImage {
               name = "podman";
               inherit tag;
               copyToRoot = [
-                (ociLib.mkRoot {
-                  inherit user package;
-                  dependencies = [
-                    pkgs.podman
-                    podmanConfig
-                  ]
-                  ++ dependencies;
-                })
+                root
                 entrypointScript
               ];
               config = {

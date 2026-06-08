@@ -45,6 +45,19 @@
 
             debugLabels = oci.debug.labels or oci.labels;
 
+            # Auto-generated labels for debug images.
+            generatedLabels = ociLib.mkAutoLabels {
+              name = oci.name;
+              tag = oci.tag + "-debug";
+              package = oci.package;
+              isRoot = oci.isRoot or false;
+              optimizeLayers = optimized;
+              inherit layerStrategy;
+              hardening = oci.hardening or { enable = false; };
+              system = pkgs.stdenv.hostPlatform.system;
+              autoLabels = oci.autoLabels or true;
+            };
+
             # --- Optimized path: layer the debug on top of production layers ---
             #
             # For mkSimpleOCI-based images:
@@ -176,8 +189,8 @@
                       "HOME=${home}"
                     ];
                   }
-                  // lib.optionalAttrs (debugLabels != { }) {
-                    Labels = debugLabels;
+                  // {
+                    Labels = generatedLabels // debugLabels;
                   };
                 }
                 // lib.optionalAttrs (layerStrategy == "fine-grained") {
@@ -204,8 +217,8 @@
                     User = oci.user;
                     Env = out.envVars;
                   }
-                  // lib.optionalAttrs (debugLabels != { }) {
-                    Labels = debugLabels;
+                  // {
+                    Labels = generatedLabels // debugLabels;
                   };
                 }
                 // lib.optionalAttrs (fromImage != null) {

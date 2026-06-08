@@ -3,6 +3,8 @@ metadataTest:
   labels:
     - key: "io.github.dauliac.nix-oci.hardening.enabled"
       value: "true"
+    - key: "io.github.dauliac.nix-oci.hardening.tls-trust-store-removed"
+      value: "true"
   envVars:
     - key: USER
       value: root
@@ -18,3 +20,19 @@ fileContentTests:
     path: "/etc/ssl/certs/ca-bundle.crt"
     expectedContents:
       - "TLS trust store removed by nix-oci hardening"
+commandTests:
+  - name: "ca-bundle.crt contains no real certificates"
+    command: "grep"
+    args: ["-c", "BEGIN CERTIFICATE", "/etc/ssl/certs/ca-bundle.crt"]
+    # grep returns 1 when no match — proves all real CA certs are gone
+    exitCode: 1
+  - name: "ca-bundle.crt is tiny (just the comment, not kilobytes of certs)"
+    command: "sh"
+    args:
+      - "-c"
+      # Real ca-bundle is ~200KB+. Our neutered file is <100 bytes.
+      # `wc -c` prints byte count; `test` asserts it's under 200.
+      - "test $(wc -c < /etc/ssl/certs/ca-bundle.crt) -lt 200"
+  - name: "busybox runs"
+    command: "busybox"
+    args: ["--help"]

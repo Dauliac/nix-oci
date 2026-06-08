@@ -1,0 +1,75 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: USER
+      value: root
+    - key: SSL_CERT_FILE
+      value: /etc/ssl/certs/ca-bundle.crt
+fileExistenceTests:
+  # FHS directories
+  - name: "/tmp directory exists"
+    path: "/tmp"
+    shouldExist: true
+  - name: "/var/tmp directory exists"
+    path: "/var/tmp"
+    shouldExist: true
+  - name: "/bin directory exists"
+    path: "/bin"
+    shouldExist: true
+  - name: "/root home directory exists"
+    path: "/root"
+    shouldExist: true
+  # Shadow and identity files
+  - name: "passwd file exists"
+    path: "/etc/passwd"
+    shouldExist: true
+  - name: "group file exists"
+    path: "/etc/group"
+    shouldExist: true
+  - name: "shadow file exists"
+    path: "/etc/shadow"
+    shouldExist: true
+  # NSS and TLS
+  - name: "nsswitch.conf exists"
+    path: "/etc/nsswitch.conf"
+    shouldExist: true
+  - name: "SSL CA bundle exists"
+    path: "/etc/ssl/certs/ca-bundle.crt"
+    shouldExist: true
+  # Main binary with custom modules compiled in
+  - name: "nginx binary exists and is executable"
+    path: "/bin/nginx"
+    shouldExist: true
+    isExecutableBy: "any"
+commandTests:
+  # Verify custom modules are compiled in
+  - name: "nginx -V includes brotli module"
+    command: "nginx"
+    args:
+      - "-V"
+    expectedError:
+      - "brotli"
+  - name: "nginx -V includes vts module"
+    command: "nginx"
+    args:
+      - "-V"
+    expectedError:
+      - "vhost_traffic_status"
+  - name: "nginx -V includes more-headers module"
+    command: "nginx"
+    args:
+      - "-V"
+    expectedError:
+      - "headers-more"
+  # Healthcheck tool
+  - name: "curl is available (healthcheck tool)"
+    command: "curl"
+    args:
+      - "--version"
+    expectedOutput:
+      - "curl"
+fileContentTests:
+  - name: "root user in passwd"
+    path: "/etc/passwd"
+    expectedContents:
+      - "root:x:0:0"

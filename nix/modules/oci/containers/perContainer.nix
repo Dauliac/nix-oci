@@ -66,6 +66,7 @@ let
   # Including them as staticModules makes getSubOptions visible to nixosOptionsDoc
   # (e.g. for the flake.parts website documentation).
   optionModules = [
+    ./_options/auto-labels.nix
     ./_options/config-files.nix
     ./_options/declared-volumes.nix
     ./_options/dependencies.nix
