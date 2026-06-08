@@ -70,6 +70,11 @@
   [ "$status" -eq 0 ]
 }
 
+@test "CST crossBuildKubectl" {
+  run nix run '.#oci-container-structure-test-crossBuildKubectl'
+  [ "$status" -eq 0 ]
+}
+
 @test "Nix default template works" {
   local -gx repo_dir
   repo_dir=$(git rev-parse --show-toplevel)

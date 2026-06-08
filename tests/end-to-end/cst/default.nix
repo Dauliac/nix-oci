@@ -53,6 +53,14 @@
               ];
             };
           };
+          crossBuildKubectl = {
+            test.containerStructureTest = {
+              enabled = true;
+              configs = [
+                ./crossBuildKubectl.yaml
+              ];
+            };
+          };
         };
       };
   };

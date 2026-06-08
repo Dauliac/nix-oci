@@ -1,0 +1,15 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: USER
+      value: kubectl
+fileExistenceTests:
+  - name: "kubectl binary exists"
+    path: "/bin/kubectl"
+    shouldExist: true
+commandTests:
+  - name: "kubectl version"
+    command: "kubectl"
+    args:
+      - "version"
+      - "--client"

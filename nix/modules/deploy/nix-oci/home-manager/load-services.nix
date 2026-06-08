@@ -33,7 +33,8 @@
             Service = {
               Type = "oneshot";
               RemainAfterExit = true;
-              Environment = [ "PATH=${lib.makeBinPath [ pkgs.shadow ]}:/run/wrappers/bin:$PATH" ];
+              # Rootless podman needs setuid newuidmap/newgidmap from NixOS wrappers
+              Environment = [ "PATH=/run/wrappers/bin:/run/current-system/sw/bin" ];
               ExecStart = "${copyScript}/bin/${copyScript.name}";
             };
           }
