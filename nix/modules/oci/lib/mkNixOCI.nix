@@ -46,6 +46,8 @@
               optimizeLayers = optimized;
               inherit layerStrategy;
               hardening = oci.hardening or { enable = false; };
+              ports = oci.ports or [ ];
+              dependencies = oci.dependencies or [ ];
               system = pkgs.stdenv.hostPlatform.system;
               autoLabels = oci.autoLabels or true;
             };
@@ -57,21 +59,43 @@
             # Root filesystem from NixOS eval — includes shadow files (with nixbld
             # users), etc files (nix.conf, nsswitch, certs), packages (nix, bash,
             # coreutils), dependencies, configFiles, home dir.
-            appCopyToRoot =
-              [ out.rootFilesystem ]
-              ++ lib.optional (oci.package != null) oci.package
-              ++ lib.optional (nixVarDirs != null) nixVarDirs;
+            appCopyToRoot = [
+              out.rootFilesystem
+            ]
+            ++ lib.optional (oci.package != null) oci.package
+            ++ lib.optional (nixVarDirs != null) nixVarDirs;
+
+            # hwcaps layers from the host arch's archConfigs entry
+            hostArch = pkgs.stdenv.hostPlatform.system;
+            archPerf =
+              if oci.archConfigs ? ${hostArch} then
+                oci.archConfigs.${hostArch}.performance or { }
+              else
+                { };
+            hwcapsLayers = lib.optionals (archPerf.hwcaps.enable or false) (
+              map (
+                level:
+                ociLib.mkHwcapsLayer {
+                  nix2container = perSystemConfig.packages.nix2container;
+                  inherit level;
+                  libraries = archPerf.hwcaps.libraries or [ ];
+                }
+              ) (archPerf.hwcaps.levels or [ ])
+            );
 
             layers =
-              if optimized then
-                ociLib.mkImageLayers {
-                  nix2container = perSystemConfig.packages.nix2container;
-                  inherit layerStrategy;
-                  dependencies = oci.dependencies;
-                  copyToRoot = appCopyToRoot;
-                }
-              else
-                [ ];
+              (
+                if optimized then
+                  ociLib.mkImageLayers {
+                    nix2container = perSystemConfig.packages.nix2container;
+                    inherit layerStrategy;
+                    dependencies = oci.dependencies;
+                    copyToRoot = appCopyToRoot;
+                  }
+                else
+                  [ ]
+              )
+              ++ hwcapsLayers;
           in
           assert _nixosChecks == "" || _nixosChecks != "";
           perSystemConfig.packages.nix2container.buildImage (
@@ -87,7 +111,7 @@
                 Env = out.envVars;
               }
               // {
-                Labels = generatedLabels // (out.hardening.labels or { }) // (oci.labels or { });
+                Labels = generatedLabels // (out.hardening.labels or { }) // (out.performance.labels or { }) // (oci.labels or { });
               }
               // (
                 let

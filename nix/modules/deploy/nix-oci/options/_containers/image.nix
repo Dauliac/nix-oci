@@ -54,6 +54,8 @@ let
       isRoot
       optimizeLayers
       hardening
+      ports
+      dependencies
       ;
     layerStrategy = config.layerStrategy or "fine-grained";
     system = pkgs.stdenv.hostPlatform.system;

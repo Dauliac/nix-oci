@@ -174,8 +174,9 @@ let
           pkgs,
         }:
         lib.optionals hardening.enable (
+          # NOTE: /etc/resolv.conf is NOT written — container runtimes always
+          # bind-mount it at startup, masking any image content.
           lib.optionals hardening.disableDns [
-            (pkgs.writeTextDir "etc/resolv.conf" "# DNS disabled by nix-oci hardening\n")
             (pkgs.writeTextDir "etc/nsswitch.conf" ''
               passwd:    files
               group:     files
@@ -224,13 +225,17 @@ let
           hardening ? {
             enable = false;
           },
+          ports ? [ ],
+          dependencies ? [ ],
           system ? "unknown",
           autoLabels ? true,
         }:
         let
           ns = "io.github.dauliac.nix-oci";
           meta = if package != null then (package.meta or { }) else { };
-          version = package.version or null;
+          pname = if package != null then (package.pname or null) else null;
+          version = if package != null then (package.version or null) else null;
+          mainProgram = if package != null then (meta.mainProgram or (package.pname or null)) else null;
           description = meta.description or null;
           homepage = meta.homepage or null;
           changelog = meta.changelog or null;
@@ -317,13 +322,57 @@ let
             "${ns}.kubernetes.pod-security-standard" = pssLevel;
           };
 
+          uid = if isRoot then "0" else "4000";
+          gid = if isRoot then "0" else "4000";
+          kubernetesSecurityContext = {
+            "${ns}.kubernetes.run-as-user" = uid;
+            "${ns}.kubernetes.run-as-group" = gid;
+            "${ns}.kubernetes.fs-group" = gid;
+          }
+          // lib.optionalAttrs (hardeningEnabled && (hardening.seccomp.enable or false)) {
+            "${ns}.kubernetes.seccomp-profile-type" = "RuntimeDefault";
+          };
+
+          parsePort = portSpec:
+            let
+              parts = lib.splitString ":" portSpec;
+              raw = if builtins.length parts >= 2 then builtins.elemAt parts 1 else builtins.head parts;
+              portAndProto = lib.splitString "/" raw;
+              port = builtins.head portAndProto;
+              proto = if builtins.length portAndProto >= 2 then builtins.elemAt portAndProto 1 else "tcp";
+            in { inherit port proto; };
+          parsedPorts = map parsePort ports;
+          tcpPorts = map (p: p.port) (builtins.filter (p: p.proto == "tcp") parsedPorts);
+          udpPorts = map (p: p.port) (builtins.filter (p: p.proto == "udp") parsedPorts);
+          networkLabels =
+            lib.optionalAttrs (tcpPorts != [ ]) { "${ns}.network.tcp-ports" = lib.concatStringsSep "," tcpPorts; }
+            // lib.optionalAttrs (udpPorts != [ ]) { "${ns}.network.udp-ports" = lib.concatStringsSep "," udpPorts; };
+
+          nixIdentity =
+            lib.optionalAttrs (pname != null) { "${ns}.nix.pname" = pname; }
+            // lib.optionalAttrs (version != null) { "${ns}.nix.version" = version; }
+            // lib.optionalAttrs (mainProgram != null) { "${ns}.nix.main-program" = mainProgram; }
+            // lib.optionalAttrs (dependencies != [ ]) { "${ns}.nix.dependency-count" = toString (builtins.length dependencies); };
+
+          knownVulns = meta.knownVulnerabilities or [ ];
+          rawProvenance = meta.sourceProvenance or [ ];
+          provenanceNames = builtins.filter (x: x != null) (map (p: p.shortName or (p.name or null)) rawProvenance);
+          securityLabels =
+            lib.optionalAttrs (knownVulns != [ ]) {
+              "${ns}.security.known-vulnerabilities" = lib.concatStringsSep "," knownVulns;
+              "${ns}.security.insecure" = "true";
+            }
+            // lib.optionalAttrs (provenanceNames != [ ]) {
+              "${ns}.provenance.source-type" = lib.concatStringsSep "," provenanceNames;
+            };
+
           runtimeInfo = {
             "${ns}.runtime.user" = if isRoot then "root" else "non-root";
             "${ns}.runtime.is-root" = lib.boolToString isRoot;
           };
         in
         if autoLabels then
-          ociAnnotations // buildInfo // hardeningLabels // pssLabel // runtimeInfo
+          ociAnnotations // buildInfo // hardeningLabels // pssLabel // kubernetesSecurityContext // networkLabels // nixIdentity // securityLabels // runtimeInfo
         else
           { };
 

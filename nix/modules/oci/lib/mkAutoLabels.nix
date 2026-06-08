@@ -1,12 +1,18 @@
 # OCI mkAutoLabels - Generate automatic OCI labels from container config
 #
-# Produces three categories of labels:
+# Produces labels in these categories:
 #   1. OCI standard annotations (org.opencontainers.image.*)
-#      Derived from package metadata (pname, version, description, license, etc.)
 #   2. Build info (io.github.dauliac.nix-oci.build.*)
-#      System, layer strategy, reproducibility flag
 #   3. Hardening hints (io.github.dauliac.nix-oci.hardening.*)
-#      Security posture + Kubernetes Pod Security Standard level
+#   4. Kubernetes hints (io.github.dauliac.nix-oci.kubernetes.*)
+#      PSS level, SecurityContext fields (runAsUser, seccompProfileType, etc.)
+#   5. Network hints (io.github.dauliac.nix-oci.network.*)
+#      TCP/UDP ports derived from the ports option
+#   6. Nix identity (io.github.dauliac.nix-oci.nix.*)
+#      pname, version, mainProgram, dependency count
+#   7. Nixpkgs security (io.github.dauliac.nix-oci.security.*)
+#      knownVulnerabilities, insecure flag, source provenance
+#   8. Runtime info (io.github.dauliac.nix-oci.runtime.*)
 #
 # All labels are gated behind the `autoLabels` toggle.
 # User-provided labels are NOT merged here — callers do `mkAutoLabels // userLabels`.
@@ -24,7 +30,11 @@
           - OCI standard annotations (`org.opencontainers.image.*`)
           - Build metadata (`io.github.dauliac.nix-oci.build.*`)
           - Hardening hints (`io.github.dauliac.nix-oci.hardening.*`)
-          - Kubernetes PSS level (`io.github.dauliac.nix-oci.kubernetes.pod-security-standard`)
+          - Kubernetes hints (`io.github.dauliac.nix-oci.kubernetes.*`)
+          - Network hints (`io.github.dauliac.nix-oci.network.*`)
+          - Nix identity (`io.github.dauliac.nix-oci.nix.*`)
+          - Nixpkgs security (`io.github.dauliac.nix-oci.security.*`)
+          - Runtime info (`io.github.dauliac.nix-oci.runtime.*`)
 
           Callers merge: `mkAutoLabels args // userLabels` (user wins).
         '';
@@ -39,6 +49,8 @@
             hardening ? {
               enable = false;
             },
+            ports ? [ ],
+            dependencies ? [ ],
             system ? "unknown",
             autoLabels ? true,
           }:
@@ -47,8 +59,10 @@
 
             # -- Helpers to safely extract package metadata --
             meta = if package != null then (package.meta or { }) else { };
-            pname = package.pname or (package.name or null);
-            version = package.version or null;
+            pname = if package != null then (package.pname or null) else null;
+            version = if package != null then (package.version or null) else null;
+            mainProgram =
+              if package != null then (meta.mainProgram or (package.pname or null)) else null;
             description = meta.description or null;
             homepage = meta.homepage or null;
             changelog = meta.changelog or null;
@@ -74,34 +88,33 @@
             authors = if maintainerNames == [ ] then null else lib.concatStringsSep ", " maintainerNames;
 
             # -- OCI standard annotations --
-            ociAnnotations = {
-              "org.opencontainers.image.title" = name;
-            }
-            // lib.optionalAttrs (tag != "latest") {
-              "org.opencontainers.image.version" = tag;
-            }
-            // lib.optionalAttrs (version != null && tag == "latest") {
-              "org.opencontainers.image.version" = version;
-            }
-            // lib.optionalAttrs (description != null) {
-              "org.opencontainers.image.description" = description;
-            }
-            // lib.optionalAttrs (spdxId != null) {
-              "org.opencontainers.image.licenses" = spdxId;
-            }
-            // lib.optionalAttrs (homepage != null) {
-              "org.opencontainers.image.url" = homepage;
-            }
-            // lib.optionalAttrs (authors != null) {
-              "org.opencontainers.image.authors" = authors;
-            }
-            // lib.optionalAttrs (changelog != null) {
-              "org.opencontainers.image.documentation" = changelog;
-            }
-            // {
-              # Always "scratch" — nix-oci is distroless by construction
-              "org.opencontainers.image.base.name" = "scratch";
-            };
+            ociAnnotations =
+              {
+                "org.opencontainers.image.title" = name;
+                # Always "scratch" — nix-oci is distroless by construction
+                "org.opencontainers.image.base.name" = "scratch";
+              }
+              // lib.optionalAttrs (tag != "latest") {
+                "org.opencontainers.image.version" = tag;
+              }
+              // lib.optionalAttrs (version != null && tag == "latest") {
+                "org.opencontainers.image.version" = version;
+              }
+              // lib.optionalAttrs (description != null) {
+                "org.opencontainers.image.description" = description;
+              }
+              // lib.optionalAttrs (spdxId != null) {
+                "org.opencontainers.image.licenses" = spdxId;
+              }
+              // lib.optionalAttrs (homepage != null) {
+                "org.opencontainers.image.url" = homepage;
+              }
+              // lib.optionalAttrs (authors != null) {
+                "org.opencontainers.image.authors" = authors;
+              }
+              // lib.optionalAttrs (changelog != null) {
+                "org.opencontainers.image.documentation" = changelog;
+              };
 
             # -- Build info --
             buildInfo = {
@@ -140,10 +153,6 @@
             );
 
             # -- Kubernetes Pod Security Standard level --
-            #
-            # Restricted: non-root + drop ALL + no new privs + seccomp + read-only rootfs
-            # Baseline:   hardening enabled with some restrictions
-            # Privileged: no hardening or running as root without restrictions
             pssLevel =
               if
                 hardeningEnabled
@@ -163,14 +172,94 @@
               "${ns}.kubernetes.pod-security-standard" = pssLevel;
             };
 
+            # -- Kubernetes SecurityContext hints --
+            # These let Kyverno/Gatekeeper auto-generate SecurityContext via mutation.
+            uid = if isRoot then "0" else "4000";
+            gid = if isRoot then "0" else "4000";
+            kubernetesSecurityContext =
+              {
+                "${ns}.kubernetes.run-as-user" = uid;
+                "${ns}.kubernetes.run-as-group" = gid;
+                "${ns}.kubernetes.fs-group" = gid;
+              }
+              // lib.optionalAttrs (hardeningEnabled && (hardening.seccomp.enable or false)) {
+                "${ns}.kubernetes.seccomp-profile-type" = "RuntimeDefault";
+              };
+
+            # -- Network hints --
+            # Parse "host:container/proto" port specs into tcp/udp port lists.
+            # Kyverno can use these to auto-generate NetworkPolicy rules.
+            parsePort =
+              portSpec:
+              let
+                parts = lib.splitString ":" portSpec;
+                raw = if builtins.length parts >= 2 then builtins.elemAt parts 1 else builtins.head parts;
+                portAndProto = lib.splitString "/" raw;
+                port = builtins.head portAndProto;
+                proto =
+                  if builtins.length portAndProto >= 2 then builtins.elemAt portAndProto 1 else "tcp";
+              in
+              {
+                inherit port proto;
+              };
+            parsedPorts = map parsePort ports;
+            tcpPorts = map (p: p.port) (builtins.filter (p: p.proto == "tcp") parsedPorts);
+            udpPorts = map (p: p.port) (builtins.filter (p: p.proto == "udp") parsedPorts);
+            networkLabels =
+              lib.optionalAttrs (tcpPorts != [ ]) {
+                "${ns}.network.tcp-ports" = lib.concatStringsSep "," tcpPorts;
+              }
+              // lib.optionalAttrs (udpPorts != [ ]) {
+                "${ns}.network.udp-ports" = lib.concatStringsSep "," udpPorts;
+              };
+
+            # -- Nix package identity --
+            nixIdentity =
+              lib.optionalAttrs (pname != null) {
+                "${ns}.nix.pname" = pname;
+              }
+              // lib.optionalAttrs (version != null) {
+                "${ns}.nix.version" = version;
+              }
+              // lib.optionalAttrs (mainProgram != null) {
+                "${ns}.nix.main-program" = mainProgram;
+              }
+              // lib.optionalAttrs (dependencies != [ ]) {
+                "${ns}.nix.dependency-count" = toString (builtins.length dependencies);
+              };
+
+            # -- Nixpkgs security metadata --
+            knownVulns = meta.knownVulnerabilities or [ ];
+            rawProvenance = meta.sourceProvenance or [ ];
+            provenanceNames = builtins.filter (x: x != null) (
+              map (p: p.shortName or (p.name or null)) rawProvenance
+            );
+            securityLabels =
+              lib.optionalAttrs (knownVulns != [ ]) {
+                "${ns}.security.known-vulnerabilities" = lib.concatStringsSep "," knownVulns;
+                "${ns}.security.insecure" = "true";
+              }
+              // lib.optionalAttrs (provenanceNames != [ ]) {
+                "${ns}.provenance.source-type" = lib.concatStringsSep "," provenanceNames;
+              };
+
             # -- Runtime info --
             runtimeInfo = {
               "${ns}.runtime.user" = if isRoot then "root" else "non-root";
               "${ns}.runtime.is-root" = lib.boolToString isRoot;
             };
+
           in
           if autoLabels then
-            ociAnnotations // buildInfo // hardeningLabels // pssLabel // runtimeInfo
+            ociAnnotations
+            // buildInfo
+            // hardeningLabels
+            // pssLabel
+            // kubernetesSecurityContext
+            // networkLabels
+            // nixIdentity
+            // securityLabels
+            // runtimeInfo
           else
             { };
       };

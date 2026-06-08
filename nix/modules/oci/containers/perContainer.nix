@@ -91,6 +91,12 @@ let
     ./_options/hardening/capabilities.nix
     ./_options/hardening/rootfs.nix
     ./_options/hardening/privileges.nix
+    ./_options/performance/enable.nix
+    ./_options/performance/allocator.nix
+    ./_options/performance/glibc-tunables.nix
+    ./_options/performance/compression.nix
+    ./_options/performance/march.nix
+    ./_options/performance/hwcaps.nix
   ];
 
   mkPerContainerType = module: deferredModuleWith { staticModules = [ module ] ++ optionModules; };

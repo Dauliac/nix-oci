@@ -1,11 +1,16 @@
-# nginx: run in foreground (daemon off) + auto-derive healthcheck + stop signal.
+# nginx: foreground mode + injected health endpoint + stop signal.
 #
-# NixOS nginx uses Type=forking with a PIDFile. In containers there is
-# no init system, so we inject "daemon off;" to keep the master process
-# in the foreground.
+# NixOS nginx uses Type=forking. In containers we inject "daemon off;"
+# to keep the master process in the foreground.
 #
-# Healthcheck: scans virtualHosts for known health paths (/health, /healthz,
-# /nginx_status, stub_status), determines port/protocol from listen directives.
+# Healthcheck strategy (priority order):
+# 1. User-defined health endpoint (scan for /health, /healthz, /nginx_status, stub_status)
+# 2. Inject internal stub_status server on 127.0.0.1:10246 (localhost-only,
+#    no access logs, zero interference with user vhosts)
+#
+# stub_status proves nginx is genuinely processing requests — not just
+# that the process is alive. It also provides connection metrics.
+#
 # StopSignal: SIGQUIT for graceful worker shutdown (finish current requests).
 {
   config,
@@ -21,6 +26,7 @@ let
 
   vhostList = lib.attrValues nginxCfg.virtualHosts;
 
+  # Known health endpoint paths, in priority order
   healthPaths = [
     "/health"
     "/healthz"
@@ -42,14 +48,13 @@ let
     )
   ) vhostList;
 
-  healthPath =
-    if hasStubStatus then
-      "/nginx_status"
-    else if healthLocation != null then
-      healthLocation.path
-    else
-      "/";
+  # Does the user already have a usable health endpoint?
+  hasUserHealthEndpoint = hasStubStatus || healthLocation != null;
 
+  # Internal health server port — high port, localhost-only, works with non-root
+  internalHealthPort = 10246;
+
+  # Determine port and protocol for user-defined endpoints
   firstVhost = if vhostList != [ ] then builtins.head vhostList else null;
   listenDirs = firstVhost.listen or [ ];
   firstListen = if listenDirs != [ ] then builtins.head listenDirs else null;
@@ -66,22 +71,51 @@ let
 
   protocol = if ssl then "https" else "http";
 
+  # Health path for user-defined endpoints
+  userHealthPath =
+    if hasStubStatus then
+      "/nginx_status"
+    else if healthLocation != null then
+      healthLocation.path
+    else
+      "/";
+
+  # Final healthcheck URL: use user endpoint if available, otherwise internal
+  healthUrl =
+    if hasUserHealthEndpoint then
+      "${protocol}://localhost:${toString port}${userHealthPath}"
+    else
+      "http://127.0.0.1:${toString internalHealthPort}/";
+
   healthCmd = [
     "${pkgs.curl}/bin/curl"
     "-f"
     "--max-time"
     "5"
   ]
-  ++ lib.optionals ssl [ "-k" ]
-  ++ [ "${protocol}://localhost:${toString port}${healthPath}" ];
+  ++ lib.optionals (hasUserHealthEndpoint && ssl) [ "-k" ]
+  ++ [ healthUrl ];
 in
 {
   config = lib.mkIf isNginx {
     services.nginx.appendConfig = lib.mkDefault "daemon off;";
+
+    # Inject internal stub_status server when user has no health endpoint.
+    # Uses appendHttpConfig to add a raw server{} block inside the http{}
+    # context — doesn't pollute virtualHosts or interfere with user config.
+    services.nginx.appendHttpConfig = lib.mkIf (!hasUserHealthEndpoint) ''
+      server {
+          listen 127.0.0.1:${toString internalHealthPort};
+          server_name _;
+          location / {
+              stub_status on;
+              access_log off;
+          }
+      }
+    '';
+
     oci.container.healthcheck.command = lib.mkDefault healthCmd;
-    # SIGQUIT: graceful shutdown — finish serving current requests, then exit.
     oci.container.stopSignal = lib.mkDefault "SIGQUIT";
-    # curl must be in the container image for the healthcheck to work.
     environment.systemPackages = [ pkgs.curl ];
   };
 }

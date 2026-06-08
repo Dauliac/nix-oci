@@ -1,9 +1,8 @@
 # OCI mkDebugOCI - Build a debug variant that shares layers with production
 #
-# Instead of rebuilding the entire image from scratch, the debug image is
-# assembled by taking the production image's layer stack and appending a
-# thin debug layer on top. Because the debug layer is folded after the
-# production layers, nix2container deduplicates all shared store paths.
+# Uses NixOS eval outputs for all image content — same normalized flow as
+# mkSimpleOCI and mkNixOCI. No separate installNix/simple paths needed;
+# the NixOS eval already includes Nix packages when installNix=true.
 #
 # Result in the registry:
 #   Prod:  [deps] [app]
@@ -35,17 +34,22 @@
             optimized = oci.optimizeLayers or false;
             layerStrategy = oci.layerStrategy or "fine-grained";
 
+            # NixOS eval outputs — single source of truth
+            nixosEval = oci.nixosConfig.eval;
+            out = nixosEval.oci.container._output;
+
             entrypointWrapper = if oci.debug.entrypoint.enabled then oci.debug.entrypoint.wrapper else null;
 
+            # Wrap the NixOS eval entrypoint (service-derived) with debug wrapper
+            prodEntrypoint = if out.entrypoint != [ ] then out.entrypoint else oci.entrypoint;
             debugEntrypoint =
               if oci.debug.entrypoint.enabled then
-                [ "${oci.debug.entrypoint.wrapper}/bin/entrypoint" ] ++ oci.entrypoint
+                [ "${oci.debug.entrypoint.wrapper}/bin/entrypoint" ] ++ prodEntrypoint
               else
-                oci.entrypoint;
+                prodEntrypoint;
 
             debugLabels = oci.debug.labels or oci.labels;
 
-            # Auto-generated labels for debug images.
             generatedLabels = ociLib.mkAutoLabels {
               name = oci.name;
               tag = oci.tag + "-debug";
@@ -54,43 +58,11 @@
               optimizeLayers = optimized;
               inherit layerStrategy;
               hardening = oci.hardening or { enable = false; };
+              ports = oci.ports or [ ];
+              dependencies = oci.dependencies or [ ];
               system = pkgs.stdenv.hostPlatform.system;
               autoLabels = oci.autoLabels or true;
             };
-
-            # --- Optimized path: layer the debug on top of production layers ---
-            #
-            # For mkSimpleOCI-based images:
-            nixosEval = oci.nixosConfig.eval;
-            out = nixosEval.oci.container._output;
-            simpleAppCopyToRoot = [ out.rootFilesystem ] ++ lib.optional (oci.package != null) oci.package;
-
-            # For mkNixOCI-based images:
-            installNix = oci.installNix or false;
-            pkg = if oci.package != null then [ oci.package ] else [ ];
-            deps = oci.dependencies or [ ];
-            nixAppPaths = if optimized then pkg ++ [ pkgs.cacert ] else pkg ++ deps ++ [ pkgs.cacert ];
-            nixAppPackages = pkgs.buildEnv {
-              name = "app-root";
-              paths = nixAppPaths;
-              pathsToLink = [
-                "/bin"
-                "/lib"
-                "/etc"
-              ];
-              ignoreCollisions = true;
-            };
-            home = if oci.user == "root" then "/root" else "/home/${oci.user}";
-            homeDir = pkgs.runCommand "home-dir" { } ''
-              mkdir -p $out${home}
-            '';
-            nixVarDirs = pkgs.runCommand "nix-var-dirs" { } ''
-              mkdir -p $out/nix/var/nix/profiles/per-user/${oci.user}
-              mkdir -p $out/nix/var/nix/gcroots/per-user/${oci.user}
-              mkdir -p $out/nix/var/nix/temproots
-            '';
-            configFiles = oci.configFiles or [ ];
-            configFilesLayerDefs = if configFiles != [ ] then [ { copyToRoot = configFiles; } ] else [ ];
 
             fullName =
               if oci.registry != null && oci.registry != "" then "${oci.registry}/${oci.name}" else oci.name;
@@ -103,38 +75,29 @@
                   inherit perSystemConfig containerId globalConfig;
                 };
 
-            # Build all layers including debug, with full deduplication
+            deps = oci.dependencies or [ ];
+
+            # Nix-specific dirs from eval (null when installNix=false)
+            nixVarDirs = out.nixVarDirs or null;
+            nixPerms = out.nixPerms or [ ];
+
+            # Root filesystem from NixOS eval — same for all builder types
+            appCopyToRoot = [
+              out.rootFilesystem
+            ]
+            ++ lib.optional (oci.package != null) oci.package
+            ++ lib.optional (nixVarDirs != null) nixVarDirs;
+
             debugDef = {
               packages = oci.debug.packages;
               inherit entrypointWrapper;
             };
 
-            # Simple (non-Nix) path
-            simpleLayers = ociLib.mkImageLayers {
+            layers = ociLib.mkImageLayers {
               nix2container = perSystemConfig.packages.nix2container;
               inherit layerStrategy;
               dependencies = deps;
-              copyToRoot = simpleAppCopyToRoot;
-              debug = debugDef;
-            };
-
-            # Nix path
-            nixLayer = ociLib.mkNixOCILayer {
-              inherit perSystemConfig;
-              user = oci.user;
-              inherit home;
-            };
-            nixLayers = ociLib.mkImageLayers {
-              nix2container = perSystemConfig.packages.nix2container;
-              inherit layerStrategy;
-              prependBuiltLayers = [ nixLayer ];
-              prependLayerDefs = configFilesLayerDefs;
-              dependencies = deps;
-              copyToRoot = [
-                nixAppPackages
-                homeDir
-                nixVarDirs
-              ];
+              copyToRoot = appCopyToRoot;
               debug = debugDef;
             };
 
@@ -155,81 +118,30 @@
             };
           in
           if optimized then
-            # Optimized: share layers with production, append debug layer
-            if installNix then
-              perSystemConfig.packages.nix2container.buildImage (
-                {
-                  tag = oci.tag + "-debug";
-                  name = fullName;
-                  copyToRoot = [
-                    nixAppPackages
-                    homeDir
-                    nixVarDirs
-                  ];
-                  perms = lib.optionals (oci.user != "root") [
-                    {
-                      path = nixVarDirs;
-                      regex = "/nix/var/nix/.*";
-                      mode = "0755";
-                      uid = 4000;
-                      gid = 4000;
-                    }
-                  ];
-                  layers = nixLayers;
-                  config = {
-                    entrypoint = debugEntrypoint;
-                    User = oci.user;
-                    Env = [
-                      "PATH=/bin:${home}/.nix-profile/bin:/nix/var/nix/profiles/default/bin"
-                      "LANG=C.UTF-8"
-                      "LC_ALL=C.UTF-8"
-                      "NIX_PAGER=cat"
-                      "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
-                      "USER=${oci.user}"
-                      "HOME=${home}"
-                    ];
-                  }
-                  // {
-                    Labels = generatedLabels // debugLabels;
-                  };
+            perSystemConfig.packages.nix2container.buildImage (
+              {
+                tag = oci.tag + "-debug";
+                name = fullName;
+                copyToRoot = appCopyToRoot;
+                perms = nixPerms;
+                inherit layers;
+                config = {
+                  entrypoint = debugEntrypoint;
+                  User = oci.user;
+                  Env = out.envVars;
                 }
-                // lib.optionalAttrs (layerStrategy == "fine-grained") {
-                  maxLayers = 40;
-                }
-              )
-            else
-              perSystemConfig.packages.nix2container.buildImage (
-                {
-                  tag = oci.tag + "-debug";
-                  name = fullName;
-                  layers = simpleLayers;
-                  config = {
-                    entrypoint =
-                      if out.entrypoint != [ ] then
-                        (
-                          if oci.debug.entrypoint.enabled then
-                            [ "${oci.debug.entrypoint.wrapper}/bin/entrypoint" ] ++ out.entrypoint
-                          else
-                            out.entrypoint
-                        )
-                      else
-                        debugEntrypoint;
-                    User = oci.user;
-                    Env = out.envVars;
-                  }
-                  // {
-                    Labels = generatedLabels // debugLabels;
-                  };
-                }
-                // lib.optionalAttrs (fromImage != null) {
-                  inherit fromImage;
-                }
-                // lib.optionalAttrs (layerStrategy == "fine-grained") {
-                  maxLayers = 40;
-                }
-              )
+                // {
+                  Labels = generatedLabels // (out.hardening.labels or { }) // debugLabels;
+                };
+              }
+              // lib.optionalAttrs (fromImage != null) {
+                inherit fromImage;
+              }
+              // lib.optionalAttrs (layerStrategy == "fine-grained") {
+                maxLayers = 40;
+              }
+            )
           else
-            # Non-optimized fallback: rebuild entire image with merged deps
             ociLib.mkNixOrSimpleOCI {
               perSystemConfig = fallbackPerSystemConfig;
               inherit containerId globalConfig;

@@ -187,10 +187,13 @@ flowchart TD
     subgraph auto ["Auto-generated (when autoLabels = true)"]
         direction TB
         OCI_STD["OCI standard annotations<br/>org.opencontainers.image.*<br/>(title, version, description,<br/>licenses, base.name, url, authors)"]
-        BUILD["Build info<br/>io.github.dauliac.nix-oci.build.*<br/>(system, optimized-layers,<br/>layer-strategy, reproducible)"]
-        HARD["Hardening hints<br/>io.github.dauliac.nix-oci.hardening.*<br/>(enabled, capabilities, seccomp,<br/>landlock, read-only-rootfs)"]
-        PSS["K8s PSS level<br/>io.github.dauliac.nix-oci.kubernetes<br/>.pod-security-standard<br/>(restricted / baseline / privileged)"]
-        RT["Runtime info<br/>io.github.dauliac.nix-oci.runtime.*<br/>(user, is-root)"]
+        BUILD["Build info<br/>…nix-oci.build.*<br/>(system, optimized-layers,<br/>layer-strategy, reproducible)"]
+        HARD["Hardening hints<br/>…nix-oci.hardening.*<br/>(enabled, capabilities, seccomp,<br/>landlock, read-only-rootfs)"]
+        K8S["K8s hints<br/>…nix-oci.kubernetes.*<br/>(PSS level, run-as-user/group,<br/>fs-group, seccomp-profile-type)"]
+        NET["Network hints<br/>…nix-oci.network.*<br/>(tcp-ports, udp-ports)"]
+        NIX["Nix identity<br/>…nix-oci.nix.*<br/>(pname, version,<br/>main-program, dependency-count)"]
+        SEC["Nixpkgs security<br/>…nix-oci.security.*<br/>(known-vulnerabilities, insecure,<br/>provenance.source-type)"]
+        RT["Runtime info<br/>…nix-oci.runtime.*<br/>(user, is-root)"]
     end
 
     User["oci.containers.my-app.labels<br/>(user-provided, always wins)"]
@@ -200,7 +203,10 @@ flowchart TD
     OCI_STD --> Merged
     BUILD --> Merged
     HARD --> Merged
-    PSS --> Merged
+    K8S --> Merged
+    NET --> Merged
+    NIX --> Merged
+    SEC --> Merged
     RT --> Merged
     User -->|"overrides"| Merged
 
@@ -223,8 +229,18 @@ flowchart TD
 | `…nix-oci.build.optimized-layers` | `optimizeLayers` | `"true"` |
 | `…nix-oci.hardening.*` | `hardening` config | various |
 | `…nix-oci.kubernetes.pod-security-standard` | Computed from hardening | `"restricted"` |
+| `…nix-oci.kubernetes.run-as-user` | `isRoot` (UID 4000 or 0) | `"4000"` |
+| `…nix-oci.kubernetes.seccomp-profile-type` | `hardening.seccomp` | `"RuntimeDefault"` |
+| `…nix-oci.network.tcp-ports` | `ports` option (parsed) | `"8080,443"` |
+| `…nix-oci.nix.pname` | `package.pname` | `"nginx"` |
+| `…nix-oci.nix.version` | `package.version` | `"1.27.3"` |
+| `…nix-oci.nix.main-program` | `package.meta.mainProgram` | `"nginx"` |
+| `…nix-oci.nix.dependency-count` | `builtins.length dependencies` | `"5"` |
+| `…nix-oci.security.known-vulnerabilities` | `package.meta.knownVulnerabilities` | `"CVE-…"` |
+| `…nix-oci.provenance.source-type` | `package.meta.sourceProvenance` | `"fromSource"` |
 
 To disable auto-labeling, set `autoLabels = false` on the container.
+See [Automatic OCI labels](./automatic-labeling.md) for full details.
 
 ### Config files
 
@@ -393,7 +409,10 @@ flowchart TD
         ociStd["org.opencontainers.image.*"]
         buildMeta["…nix-oci.build.*"]
         hardLabels["…nix-oci.hardening.*"]
-        pss["…nix-oci.kubernetes.pss"]
+        k8sLabels["…nix-oci.kubernetes.*<br/>(PSS, SecurityContext)"]
+        netLabels["…nix-oci.network.*"]
+        nixLabels["…nix-oci.nix.*"]
+        secLabels["…nix-oci.security.*"]
     end
 
     subgraph oci ["OCI image config"]
@@ -429,13 +448,21 @@ flowchart TD
     env --> oEnv
     env --> runner
     pkg -.->|"meta.*"| ociStd
+    pkg -.->|"pname, version"| nixLabels
+    pkg -.->|"knownVulns"| secLabels
     nm -.->|"name, tag"| ociStd
     hard -.-> hardLabels
-    hard -.-> pss
+    hard -.-> k8sLabels
+    usr -.-> k8sLabels
+    ports -.->|"parsed"| netLabels
+    deps -.->|"count"| nixLabels
     ociStd --> oLabels
     buildMeta --> oLabels
     hardLabels --> oLabels
-    pss --> oLabels
+    k8sLabels --> oLabels
+    netLabels --> oLabels
+    nixLabels --> oLabels
+    secLabels --> oLabels
     labels -->|"overrides"| oLabels
     hc --> oHC
     hc -->|"sdnotify=healthy<br/>Type=notify"| runner

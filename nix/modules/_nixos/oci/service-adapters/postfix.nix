@@ -1,8 +1,13 @@
-# Postfix: run in foreground
+# Postfix: foreground mode + healthcheck via postfix status + stop signal.
 #
-# NixOS postfix uses Type=forking with "postfix start" which spawns
-# the master daemon and exits. Postfix 3.4+ supports "postfix start-fg"
-# which keeps the master process in the foreground.
+# NixOS postfix uses Type=forking with "postfix start". Postfix 3.4+
+# supports "postfix start-fg" which keeps the master in the foreground.
+#
+# Healthcheck: "postfix status" checks if the mail system is running.
+# This is the canonical Postfix health check — it queries the master
+# process via the Postfix command interface.
+#
+# StopSignal: SIGTERM — postfix master exits cleanly on SIGTERM.
 {
   config,
   lib,
@@ -10,12 +15,20 @@
 }:
 let
   cfg = config.oci.container;
+  isPostfix = cfg.mainService == "postfix";
+  postfixPkg = config.services.postfix.package;
 in
 {
-  config = lib.mkIf (cfg.mainService == "postfix") {
+  config = lib.mkIf isPostfix {
     systemd.services.postfix.serviceConfig = {
       Type = lib.mkForce "simple";
-      ExecStart = lib.mkForce "${config.services.postfix.package}/bin/postfix start-fg";
+      ExecStart = lib.mkForce "${postfixPkg}/bin/postfix start-fg";
     };
+
+    oci.container.healthcheck.command = lib.mkDefault [
+      "${postfixPkg}/bin/postfix"
+      "status"
+    ];
+    oci.container.stopSignal = lib.mkDefault "SIGTERM";
   };
 }

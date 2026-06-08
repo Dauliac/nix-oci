@@ -316,6 +316,7 @@ in
         };
       };
       default = { };
+      description = "Seccomp syscall filtering configuration.";
     };
     landlock = lib.mkOption {
       type = lib.types.submodule {
@@ -323,30 +324,37 @@ in
           enable = lib.mkOption {
             type = lib.types.bool;
             default = false;
+            description = "Enable Landlock LSM restrictions.";
           };
           allowedReadPaths = lib.mkOption {
             type = lib.types.listOf lib.types.str;
             default = [ ];
+            description = "Filesystem paths allowed for reading.";
           };
           allowedWritePaths = lib.mkOption {
             type = lib.types.listOf lib.types.str;
             default = [ ];
+            description = "Filesystem paths allowed for writing.";
           };
           allowedExecutePaths = lib.mkOption {
             type = lib.types.listOf lib.types.str;
             default = [ ];
+            description = "Filesystem paths allowed for execution.";
           };
           allowedTcpConnect = lib.mkOption {
             type = lib.types.listOf lib.types.port;
             default = [ ];
+            description = "TCP ports allowed for outgoing connections.";
           };
           allowedTcpBind = lib.mkOption {
             type = lib.types.listOf lib.types.port;
             default = [ ];
+            description = "TCP ports allowed for binding.";
           };
         };
       };
       default = { };
+      description = "Landlock LSM access control configuration.";
     };
   };
 
@@ -374,10 +382,10 @@ in
       readOnly = true;
       description = "Hardened /etc config file derivations.";
       default = lib.optionals cfg.enable (
-        lib.optionals cfg.disableDns [
-          (pkgs.writeTextDir "etc/resolv.conf" "# DNS disabled by nix-oci hardening\n")
-        ]
-        ++ lib.optionals cfg.noTlsTrustStore [
+        # NOTE: /etc/resolv.conf is NOT written here — container runtimes
+        # always bind-mount it at startup, masking any image content.
+        # DNS restriction is enforced via nsswitch.conf (hosts: files only).
+        lib.optionals cfg.noTlsTrustStore [
           (pkgs.writeTextDir "etc/ssl/certs/ca-bundle.crt" "# TLS trust store removed by nix-oci hardening\n")
         ]
       );
