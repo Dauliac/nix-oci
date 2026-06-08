@@ -1,0 +1,12 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: USER
+      value: hello
+fileExistenceTests:
+  - name: "hello binary exists"
+    path: "/bin/hello"
+    shouldExist: true
+commandTests:
+  - name: "hello runs"
+    command: "hello"

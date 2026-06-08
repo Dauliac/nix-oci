@@ -1,0 +1,49 @@
+schemaVersion: 2.0.0
+metadataTest:
+  labels:
+    - key: "io.github.dauliac.nix-oci.hardening.enabled"
+      value: "true"
+    - key: "io.github.dauliac.nix-oci.hardening.dns-disabled"
+      value: "true"
+  envVars:
+    - key: USER
+      value: root
+fileExistenceTests:
+  - name: "resolv.conf exists"
+    path: "/etc/resolv.conf"
+    shouldExist: true
+  - name: "nsswitch.conf exists"
+    path: "/etc/nsswitch.conf"
+    shouldExist: true
+  - name: "busybox binary exists"
+    path: "/bin/busybox"
+    shouldExist: true
+fileContentTests:
+  - name: "resolv.conf has hardening marker"
+    path: "/etc/resolv.conf"
+    expectedContents:
+      - "DNS disabled by nix-oci hardening"
+  - name: "nsswitch.conf has files-only hosts (no dns backend)"
+    path: "/etc/nsswitch.conf"
+    expectedContents:
+      - "hosts:"
+      - "files"
+    excludedContents:
+      - "hosts:     files dns"
+commandTests:
+  - name: "resolv.conf contains no nameserver entries"
+    command: "grep"
+    args: ["-c", "nameserver", "/etc/resolv.conf"]
+    # grep returns 1 when no match found — proves no DNS servers configured
+    exitCode: 1
+  - name: "nsswitch hosts line does not contain dns"
+    command: "sh"
+    args:
+      - "-c"
+      # Extract the hosts line, then assert 'dns' is NOT a word in it.
+      # grep -w 'dns' returns 1 (no match) when dns backend is absent.
+      - "grep '^hosts:' /etc/nsswitch.conf | grep -w dns"
+    exitCode: 1
+  - name: "busybox runs"
+    command: "busybox"
+    args: ["--help"]

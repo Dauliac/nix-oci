@@ -1,0 +1,14 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: USER
+      value: hello-app
+fileExistenceTests:
+  - name: "hello-app binary exists"
+    path: "/bin/hello-app"
+    shouldExist: true
+commandTests:
+  - name: "hello-app runs"
+    command: "hello-app"
+    expectedOutput:
+      - "Hello from writeShellApplication!"

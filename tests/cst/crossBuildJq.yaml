@@ -1,0 +1,14 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: USER
+      value: jq
+fileExistenceTests:
+  - name: "jq binary exists"
+    path: "/bin/jq"
+    shouldExist: true
+commandTests:
+  - name: "jq version"
+    command: "jq"
+    args:
+      - "--version"

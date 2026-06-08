@@ -1,0 +1,11 @@
+schemaVersion: "2.0.0"
+commandTests:
+  - name: "postgres binary is available"
+    command: "postgres"
+    args: ["--version"]
+    expectedOutput: ["postgres"]
+    exitCode: 0
+fileExistenceTests:
+  - name: "pg_hba.conf exists"
+    path: "/etc/postgresql/pg_hba.conf"
+    shouldExist: true
