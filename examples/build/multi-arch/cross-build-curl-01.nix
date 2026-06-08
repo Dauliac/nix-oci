@@ -1,6 +1,6 @@
-# Cross-build multi-arch kubectl image.
+# Cross-build multi-arch curl image.
 #
-# Builds kubectl for both amd64 and arm64 from a single machine.
+# Builds curl for both amd64 and arm64 from a single machine.
 # Cross package auto-inferred — no archConfigs needed.
 { ... }:
 {
@@ -9,8 +9,8 @@
       { pkgs, ... }:
       {
         config.oci.containers = {
-          crossBuildKubectl = {
-            package = pkgs.kubectl;
+          crossBuildCurl = {
+            package = pkgs.curl;
             registry = "localhost:5000";
             tags = [
               "1.0.0"

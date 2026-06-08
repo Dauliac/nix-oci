@@ -11,7 +11,7 @@
       {
         config.oci.containers = {
           crossBuildWithDeps = {
-            package = pkgs.kubectl;
+            package = pkgs.hello;
             dependencies = [
               pkgs.coreutils
               pkgs.curl
