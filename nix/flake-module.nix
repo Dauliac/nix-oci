@@ -4,6 +4,8 @@ inputs: {
   imports = [
     # Import nix-lib for library management (typing, testing, docs)
     inputs.nix-lib.flakeModules.default
+    # Enable typed flake.modules.{nixos,homeManager,...} output
+    inputs.flake-parts.flakeModules.modules
     # Auto-discover all modules using import-tree
     (inputs.import-tree ./modules)
   ];
