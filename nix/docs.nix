@@ -34,7 +34,6 @@
             {
               imports = [
                 (import ./flake-module.nix inputs)
-                ./module.nix
               ];
               systems = [ system ];
             };
@@ -95,6 +94,8 @@
           builtins.removeAttrs allOpts [
             "perTag"
             "tagConfigs"
+            "perArch"
+            "archConfigs"
             "_containerName"
             "_module"
           ];
@@ -105,25 +106,73 @@
         };
 
         # --- Deploy module options (oci.*) ---
-        # Extract the composed NixOS deploy module from the flake-parts eval,
-        # then evaluate it standalone to get its options.
-        # The composed module needs pkgs and nix2container as module args.
-        deployNixosModule = flakePartsEval.config.flake.modules.nixos.nix-oci;
+        # The deploy submodule imports shared options (_options/) + deploy extensions (_containers/).
+        # We resolve import-tree here and provide nix2container + ociLib via specialArgs.
+        sharedOptions = import-tree ./modules/oci/containers/_options;
+        deployExtensions = import-tree ./modules/deploy/nix-oci/options/_containers;
+
+        # Minimal ociLib stub for option declarations (only needed for default values)
+        ociLib = {
+          parseContainerPort = _: "";
+          mkExposedPorts = _: { };
+          parseHostPort = _: 0;
+          mkShadowSetup = _: [ ];
+          mkRoot = _: null;
+        };
+
+        deployOptionModules = [
+          (
+            { lib, ... }:
+            {
+              options.oci.enable = lib.mkEnableOption "nix-oci container deployment";
+            }
+          )
+          (
+            { lib, ... }:
+            {
+              options.oci.backend = lib.mkOption {
+                type = lib.types.enum [
+                  "docker"
+                  "podman"
+                ];
+                default = "podman";
+                description = "Container runtime backend to load and run images.";
+              };
+            }
+          )
+          (
+            { lib, ... }:
+            {
+              options.oci.containers = lib.mkOption {
+                type = lib.types.attrsOf (
+                  lib.types.submoduleWith {
+                    modules = [
+                      sharedOptions
+                      deployExtensions
+                    ];
+                    specialArgs = {
+                      inherit pkgs ociLib;
+                      nix2container =
+                        inputs.nix2container.packages.${system}.nix2container;
+                    };
+                  }
+                );
+                default = { };
+                description = ''
+                  OCI containers to build, load, and optionally run.
+                  Each entry builds an image via nix2container and creates
+                  a systemd service to load it into the container runtime.
+                '';
+              };
+            }
+          )
+        ];
 
         deployEval = lib.evalModules {
-          modules = [
-            deployNixosModule
+          modules = deployOptionModules ++ [
             {
               options._module.args = lib.mkOption { internal = true; };
-              config._module = {
-                check = false;
-                args = {
-                  pkgs = lib.modules.mkForce pkgs;
-                  nix2container = lib.modules.mkForce
-                    inputs.nix2container.packages.${system}.nix2container;
-                  inherit import-tree;
-                };
-              };
+              config._module.check = false;
             }
           ];
         };
@@ -174,86 +223,44 @@
             > $out
         '';
 
-        # --- Build the input directory ---
-        docsInputDir = pkgs.runCommand "ndg-input" { } ''
-          mkdir -p $out/examples
+        # Diataxis layout with NDG group_by_dir:
+        #   Root (flat): index.md (overview), getting-started.md (tutorial)
+        #   ▼ How-to:    task-oriented guides
+        #   ▼ Reference: markdown templates with <!-- OPTIONS:* --> markers replaced by generated content
+        #   ▼ Examples:   all examples with [category] prefix
+        docsInputDir = pkgs.runCommand "ndg-input" {
+          nativeBuildInputs = [ pkgs.gnused ];
+        } ''
+          mkdir -p $out/{how-to,reference,examples}
 
-          # Copy static content pages
-          cp -r ${../docs/content}/* $out/
+          # Root pages (flat, top of sidebar)
+          # README.md and CONTRIBUTING.md are the source of truth, copied here for NDG
+          cp ${../README.md} $out/index.md
+          cp ${../CONTRIBUTING.md} $out/contributing.md
+          cp ${../docs/content}/getting-started.md $out/
 
-          # Generate options reference pages
-          {
-            echo '+++'
-            echo 'title = "Flake-Parts Options (Top-level)"'
-            echo 'description = "Options set at the flake level"'
-            echo '+++'
-            echo ""
-            echo "# Flake-Parts Options (Top-level)"
-            echo ""
-            echo "These options are set at the flake level (outside \`perSystem\`)."
-            echo ""
-            cat ${topLevelDoc.optionsCommonMark}
-          } > $out/options-toplevel.md
+          # --- How-to guides ---
+          for f in ${../docs/content}/how-to/*.md; do
+            [ "$(basename "$f")" = "index.md" ] && continue
+            cp "$f" $out/how-to/
+          done
 
-          {
-            echo '+++'
-            echo 'title = "Flake-Parts Options (Per-System)"'
-            echo 'description = "Options set inside perSystem"'
-            echo '+++'
-            echo ""
-            echo "# Flake-Parts Options (Per-System)"
-            echo ""
-            echo "These options are set inside \`perSystem\`."
-            echo ""
-            cat ${perSystemDoc.optionsCommonMark}
-          } > $out/options-persystem.md
+          # --- Reference: copy templates and inject generated options at markers ---
+          for f in ${../docs/content}/reference/*.md; do
+            cp "$f" $out/reference/
+          done
+          chmod -R u+w $out/reference
 
-          {
-            echo '+++'
-            echo 'title = "Container Options"'
-            echo 'description = "Options on each oci.containers.<name>"'
-            echo '+++'
-            echo ""
-            echo "# Container Options"
-            echo ""
-            echo "These options are available on each container defined in \`oci.containers.<name>\`."
-            echo ""
-            cat ${containerDoc.optionsCommonMark}
-          } > $out/options-container.md
+          sed -i '/<!-- OPTIONS:toplevel -->/r ${topLevelDoc.optionsCommonMark}' $out/reference/flake-parts-options.md
+          sed -i '/<!-- OPTIONS:persystem -->/r ${perSystemDoc.optionsCommonMark}' $out/reference/flake-parts-options.md
+          sed -i '/<!-- OPTIONS:container -->/r ${containerDoc.optionsCommonMark}' $out/reference/flake-parts-options.md
+          sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/nixos-options.md
+          sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/home-manager-options.md
+          sed -i '/<!-- OPTIONS:nixos-container -->/r ${nixosContainerDoc.optionsCommonMark}' $out/reference/nix-oci-container-module-options.md
 
-          {
-            echo '+++'
-            echo 'title = "Deploy Module Options"'
-            echo 'description = "services.nix-oci.* options for NixOS and Home Manager"'
-            echo '+++'
-            echo ""
-            echo "# Deploy Module Options"
-            echo ""
-            echo "These options are available under \`services.nix-oci.*\` in both NixOS and Home Manager modules."
-            echo ""
-            cat ${deployDoc.optionsCommonMark}
-          } > $out/options-deploy.md
-
-          {
-            echo '+++'
-            echo 'title = "NixOS Container Module Options"'
-            echo 'description = "oci.container.* options inside nixosConfig"'
-            echo '+++'
-            echo ""
-            echo "# NixOS Container Module Options"
-            echo ""
-            echo "These options are available inside \`nixosConfig.modules\` under the \`oci.container.*\` namespace."
-            echo ""
-            cat ${nixosContainerDoc.optionsCommonMark}
-          } > $out/options-nixos-container.md
-
-          # Convert examples to markdown
-          for f in $(find ${../examples} -name '*.nix' -type f | sort); do
-            relpath="''${f#${../examples}/}"
-            name="''${relpath%.nix}"
-            safe_name="$(echo "$name" | tr '/' '-')"
-            title="$(echo "$safe_name" | tr '-' ' ')"
-
+          # --- Examples (single group, all categories with prefix) ---
+          nix_to_md() {
+            local src="$1" dest="$2" title="$3"
             {
               echo "+++"
               echo "title = \"$title\""
@@ -262,26 +269,30 @@
               echo "# $title"
               echo ""
               echo '```nix'
-              cat "$f"
+              cat "$src"
               echo '```'
-            } > "$out/examples/$safe_name.md"
+            } > "$dest"
+          }
+
+          for f in $(find ${../examples}/build -name '*.nix' -type f | sort); do
+            relpath="''${f#${../examples}/build/}"
+            name="''${relpath%.nix}"
+            safe_name="build-$(echo "$name" | tr '/' '-')"
+            title="[build] $(echo "$name" | tr '/' '-' | tr '-' ' ')"
+            nix_to_md "$f" "$out/examples/$safe_name.md" "$title"
           done
 
-          # Generate examples index
-          {
-            echo '+++'
-            echo 'title = "Examples"'
-            echo 'description = "Example configurations"'
-            echo '+++'
-            echo ""
-            echo "# Examples"
-            echo ""
-            for f in $(find $out/examples -name '*.md' -type f | sort); do
-              name="$(basename "$f" .md)"
-              title="$(echo "$name" | tr '-' ' ')"
-              echo "- [$title](./examples/$name.md)"
-            done
-          } > $out/examples-index.md
+          for f in $(find ${../examples}/deploy-nixos -name '*.nix' -type f | sort); do
+            name="$(basename "$f" .nix)"
+            title="[deploy-nixos] $(echo "$name" | tr '-' ' ')"
+            nix_to_md "$f" "$out/examples/deploy-nixos-$name.md" "$title"
+          done
+
+          for f in $(find ${../examples}/deploy-home-manager -name '*.nix' -type f | sort); do
+            name="$(basename "$f" .nix)"
+            title="[deploy-hm] $(echo "$name" | tr '-' ' ')"
+            nix_to_md "$f" "$out/examples/deploy-hm-$name.md" "$title"
+          done
         '';
 
         # --- NDG site build (using CLI directly) ---
@@ -292,13 +303,24 @@
           module_options = "${mergedOptionsJSON}";
           search.enable = true;
           highlight_code = true;
-          sidebar.options.depth = 3;
+          sidebar = {
+            options.depth = 3;
+            ordering = "custom";
+            group_by_dir = true;
+            matches = [
+              { path = "getting-started.md"; new_title = "Getting Started"; position = 1; }
+              { path = "how-to"; position = 1; }
+              { path = "reference"; position = 2; }
+              { path = "examples"; position = 3; }
+            ];
+          };
         };
 
         docs = pkgs.runCommandLocal "nix-oci-docs" {
           nativeBuildInputs = [ ndg ];
         } ''
           ndg --config-file "${ndgConfig}" --verbose html \
+            --template-dir ${../docs/templates} \
             --jobs $NIX_BUILD_CORES --output-dir "$out"
         '';
       in

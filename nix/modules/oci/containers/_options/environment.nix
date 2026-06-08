@@ -1,10 +1,10 @@
-# Per-container: runtime environment variables for the runner service.
+# Shared: runtime environment variables.
 { lib, ... }:
 {
   options.environment = lib.mkOption {
     type = lib.types.attrsOf lib.types.str;
     default = { };
-    description = "Environment variables passed to the container at runtime.";
+    description = "Environment variables baked into the OCI manifest and passed to the runner.";
     example = {
       RUST_LOG = "info";
     };

@@ -56,7 +56,6 @@ in
               };
 
               documentation.enable = false;
-              environment.noXlibs = true;
 
               # --- Home-manager: testuser with rootless podman ---
               users.users.testuser = {

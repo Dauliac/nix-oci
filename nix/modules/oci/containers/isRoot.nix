@@ -1,8 +1,5 @@
-# Container isRoot option
-{ lib, ... }:
-let
-  inherit (lib) mkOption types;
-in
+# Container isRoot option (flake-parts wrapper)
+{ ... }:
 {
   config.perSystem =
     { ... }:
@@ -10,12 +7,7 @@ in
       oci.perContainer =
         { ... }:
         {
-          options.isRoot = mkOption {
-            type = types.bool;
-            description = "Whether the container is a root container.";
-            default = false;
-            example = true;
-          };
+          imports = [ ./_options/is-root.nix ];
         };
     };
 }

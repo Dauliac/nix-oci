@@ -1,11 +1,6 @@
-# Container entrypoint option
-{
-  lib,
-  config,
-  ...
-}:
+# Container entrypoint option (flake-parts wrapper with computed default)
+{ config, ... }:
 let
-  inherit (lib) mkOption types;
   cfg = config;
 in
 {
@@ -13,19 +8,12 @@ in
     { ... }:
     {
       oci.perContainer =
-        { config, ... }:
+        { config, lib, ... }:
         {
-          options.entrypoint = mkOption {
-            type = types.listOf types.str;
-            description = "The entrypoint command and arguments for the container. Will be automatically generated from the package if not specified.";
-            default = cfg.lib.flake.oci.mkOCIEntrypoint { inherit (config) package; };
-            defaultText = lib.literalExpression "cfg.lib.flake.oci.mkOCIEntrypoint { inherit package; }";
-            example = [
-              "/bin/sh"
-              "-c"
-              "echo hello"
-            ];
-          };
+          imports = [ ./_options/entrypoint.nix ];
+          config.entrypoint = lib.mkDefault (
+            cfg.lib.flake.oci.mkOCIEntrypoint { inherit (config) package; }
+          );
         };
     };
 }

@@ -8,4 +8,5 @@ in
 {
   flake.modules.nixos.nix-oci-enable = mod;
   flake.modules.homeManager.nix-oci-enable = mod;
+  flake.modules.systemManager.nix-oci-enable = mod;
 }

@@ -1,8 +1,5 @@
-# Container package option
-{ lib, ... }:
-let
-  inherit (lib) mkOption types;
-in
+# Container package option (flake-parts wrapper)
+{ ... }:
 {
   config.perSystem =
     { ... }:
@@ -10,12 +7,7 @@ in
       oci.perContainer =
         { ... }:
         {
-          options.package = mkOption {
-            type = types.nullOr types.package;
-            description = "The main package for the container";
-            default = null;
-            example = lib.literalExpression "pkgs.hello";
-          };
+          imports = [ ./_options/package.nix ];
         };
     };
 }

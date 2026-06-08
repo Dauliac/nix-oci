@@ -12,4 +12,5 @@ in
 {
   flake.modules.nixos.nix-oci-backend = mod;
   flake.modules.homeManager.nix-oci-backend = mod;
+  flake.modules.systemManager.nix-oci-backend = mod;
 }

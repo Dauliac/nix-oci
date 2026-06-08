@@ -1,11 +1,6 @@
-# Container user option
-{
-  lib,
-  config,
-  ...
-}:
+# Container user option (flake-parts wrapper with computed default)
+{ config, ... }:
 let
-  inherit (lib) mkOption types;
   cfg = config;
 in
 {
@@ -13,16 +8,12 @@ in
     { ... }:
     {
       oci.perContainer =
-        { config, ... }:
+        { config, lib, ... }:
         {
-          options.user = mkOption {
-            type = types.nullOr types.str;
-            description = "The user to run the container as. If null, will be automatically determined based on isRoot setting.";
-            default = cfg.lib.flake.oci.mkOCIUser {
-              inherit (config) name isRoot;
-            };
-            defaultText = lib.literalExpression "cfg.lib.flake.oci.mkOCIUser { inherit name isRoot; }";
-          };
+          imports = [ ./_options/user.nix ];
+          config.user = lib.mkDefault (
+            cfg.lib.flake.oci.mkOCIUser { inherit (config) name isRoot; }
+          );
         };
     };
 }

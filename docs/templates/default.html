@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ title }}</title>
+    {{ meta_tags_html | safe }} {{ opengraph_html | safe }}
+    {{ favicon_links | safe }}
+    <script>
+      document.documentElement.classList.remove("no-js");
+      document.documentElement.classList.add("js");
+      (function () {
+        try {
+          if (localStorage.getItem("sidebar-collapsed") === "true") {
+            document.documentElement.classList.add("sidebar-collapsed");
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="stylesheet" href="{{ stylesheet_path }}" />
+    <script defer src="{{ main_js_path }}"></script>
+    {% if generate_search %}
+    <script>
+      window.searchNamespace = window.searchNamespace || {};
+      window.searchNamespace.rootPath = "{{ root_prefix }}";
+    </script>
+    <script defer src="{{ search_js_path }}"></script>
+    {% endif %}
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="header-left">
+          <h1 class="site-title">
+            <a href="{{ index_path }}">{{ site_title }}</a>
+          </h1>
+
+          {{ navbar_html|safe }}
+        </div>
+        {% if generate_search %}
+        <div class="search-container js-only">
+          <input type="text" id="search-input" placeholder="Search..." />
+          <div id="search-results" class="search-results"></div>
+        </div>
+        {% endif %}
+      </header>
+
+      <div class="layout">
+        <div class="sidebar-toggle js-only" aria-label="Toggle sidebar">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+          >
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path>
+          </svg>
+        </div>
+        <nav class="sidebar">
+          <details class="sidebar-section" data-section="docs" open>
+            <summary>Navigation</summary>
+            <div class="sidebar-section-content">
+              <ul>
+                {{ doc_nav|safe }}
+              </ul>
+            </div>
+          </details>
+        </nav>
+
+        <main class="content">{{ content|safe }}</main>
+      </div>
+
+      <aside class="page-toc">
+        <nav class="page-toc-nav">
+          <h3>On this page</h3>
+          <ul class="page-toc-list">
+            {{ toc|safe }}
+          </ul>
+        </nav>
+      </aside>
+
+      {{ footer_html|safe }}
+    </div>
+
+    <script>
+      // Close directory groups by default and reorder them
+      document.addEventListener("DOMContentLoaded", function () {
+        var groups = document.querySelectorAll(".sidebar-dir-group > details");
+        // Desired order: how-to, reference, examples (alphabetical puts examples first)
+        var order = { "how-to": 1, "reference": 2, "examples": 3 };
+        var parent = groups.length > 0 ? groups[0].parentElement.parentElement : null;
+        var sorted = [];
+
+        groups.forEach(function (d) {
+          // Close all groups by default
+          d.removeAttribute("open");
+          // Extract group name from label
+          var label = d.querySelector(".sidebar-dir-label");
+          if (label) {
+            var name = label.textContent.toLowerCase();
+            sorted.push({ el: d.parentElement, name: name });
+          }
+        });
+
+        // Reorder groups in the DOM
+        if (parent && sorted.length > 0) {
+          sorted.sort(function (a, b) {
+            return (order[a.name] || 99) - (order[b.name] || 99);
+          });
+          sorted.forEach(function (item) {
+            parent.appendChild(item.el);
+          });
+        }
+      });
+    </script>
+
+    {{ custom_scripts|safe }}
+  </body>
+</html>

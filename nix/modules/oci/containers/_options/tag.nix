@@ -1,4 +1,4 @@
-# Per-container: image tag.
+# Shared: image tag.
 { lib, ... }:
 {
   options.tag = lib.mkOption {

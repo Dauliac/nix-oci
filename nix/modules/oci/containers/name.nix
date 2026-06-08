@@ -1,11 +1,6 @@
-# Container name option
-{
-  lib,
-  config,
-  ...
-}:
+# Container name option (flake-parts wrapper with computed default)
+{ config, ... }:
 let
-  inherit (lib) mkOption types;
   cfg = config;
 in
 {
@@ -13,17 +8,12 @@ in
     { ... }:
     {
       oci.perContainer =
-        { config, ... }:
+        { config, lib, ... }:
         {
-          options.name = mkOption {
-            type = types.nullOr types.str;
-            description = "Name of the container. If null, the name will be automatically generated from the package or base image.";
-            default = cfg.lib.flake.oci.mkOCIName {
-              inherit (config) package fromImage;
-            };
-            defaultText = lib.literalExpression "cfg.lib.flake.oci.mkOCIName { inherit package fromImage; }";
-            example = "my-app";
-          };
+          imports = [ ./_options/name.nix ];
+          config.name = lib.mkDefault (
+            cfg.lib.flake.oci.mkOCIName { inherit (config) package fromImage; }
+          );
         };
     };
 }

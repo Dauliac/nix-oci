@@ -28,6 +28,7 @@
           ./cst
         ];
         config = {
+          _module.args.import-tree = nix-oci.inputs.import-tree;
           systems = [
             "x86_64-linux"
             "aarch64-linux"

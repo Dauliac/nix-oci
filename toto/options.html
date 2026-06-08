@@ -1,0 +1,3931 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>nix-oci - Options</title>
+     
+    
+    <script>
+      document.documentElement.classList.remove("no-js");
+      document.documentElement.classList.add("js");
+      // Apply sidebar state immediately to prevent flash
+      (function () {
+        try {
+          if (localStorage.getItem("sidebar-collapsed") === "true") {
+            document.documentElement.classList.add("sidebar-collapsed");
+          }
+        } catch (e) {
+          // localStorage unavailable
+        }
+      })();
+    </script>
+    <link rel="stylesheet" href="assets/style.css" />
+    <script defer src="assets/main.js"></script>
+    
+    <script defer src="assets/search.js"></script>
+    
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="header-left">
+          <h1 class="site-title">
+            <a href="index.html">nix-oci</a>
+          </h1>
+        </div>
+        <nav class="header-nav">
+  <ul>
+    <li class="active">
+      <a href="options.html">Options</a>
+    </li>
+    
+    <li><a href="search.html">Search</a></li>
+    
+  </ul>
+</nav>
+ 
+        <div class="search-container js-only">
+          <input type="text" id="search-input" placeholder="Search..." />
+          <div id="search-results" class="search-results"></div>
+        </div>
+        
+      </header>
+
+      <div class="layout">
+        <div class="sidebar-toggle js-only" aria-label="Toggle sidebar">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+          >
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path>
+          </svg>
+        </div>
+        <nav id="sidebar" class="sidebar">
+          <details class="sidebar-section" data-section="docs" open>
+            <summary>Documents</summary>
+            <div class="sidebar-section-content">
+              <ul>
+                <li><a href="index.html">nix-oci</a></li>
+<li><a href="getting-started.html">Getting Started</a></li>
+<li><a href="contributing.html">Contributing</a></li>
+<li class="sidebar-dir-group"><details open><summary><span class="sidebar-dir-label">Examples</span><span class="sidebar-dir-count">41</span></summary><ul>
+<li><a href="examples/build-container-structure-test-minimalist-with-container-structure-test-01.html">[build] container structure test minimalist with container structure test 01</a></li>
+<li><a href="examples/build-dgoss-minimalist-with-dgoss-01.html">[build] dgoss minimalist with dgoss 01</a></li>
+<li><a href="examples/build-minimalist-01.html">[build] minimalist 01</a></li>
+<li><a href="examples/build-minimalist-with-credentials-leak-trivy-01.html">[build] minimalist with credentials leak trivy 01</a></li>
+<li><a href="examples/build-minimalist-with-cve-grype-01.html">[build] minimalist with cve grype 01</a></li>
+<li><a href="examples/build-minimalist-with-cve-vulnix-01.html">[build] minimalist with cve vulnix 01</a></li>
+<li><a href="examples/build-minimalist-with-debug-01.html">[build] minimalist with debug 01</a></li>
+<li><a href="examples/build-minimalist-with-dependencies-01.html">[build] minimalist with dependencies 01</a></li>
+<li><a href="examples/build-minimalist-with-dive-01.html">[build] minimalist with dive 01</a></li>
+<li><a href="examples/build-minimalist-with-install-nix-01.html">[build] minimalist with install nix 01</a></li>
+<li><a href="examples/build-minimalist-with-name-01.html">[build] minimalist with name 01</a></li>
+<li><a href="examples/build-minimalist-with-optimized-layers-01.html">[build] minimalist with optimized layers 01</a></li>
+<li><a href="examples/build-minimalist-with-sbom-syft-01.html">[build] minimalist with sbom syft 01</a></li>
+<li><a href="examples/build-multi-arch-ci-multi-arch-01.html">[build] multi arch ci multi arch 01</a></li>
+<li><a href="examples/build-multi-arch-ci-multi-arch-custom-tags-01.html">[build] multi arch ci multi arch custom tags 01</a></li>
+<li><a href="examples/build-multi-arch-ci-multi-arch-single-system-01.html">[build] multi arch ci multi arch single system 01</a></li>
+<li><a href="examples/build-multi-arch-cross-build-01.html">[build] multi arch cross build 01</a></li>
+<li><a href="examples/build-multi-arch-cross-build-kubectl-01.html">[build] multi arch cross build kubectl 01</a></li>
+<li><a href="examples/build-multi-arch-cross-build-non-root-01.html">[build] multi arch cross build non root 01</a></li>
+<li><a href="examples/build-multi-arch-cross-build-with-deps-01.html">[build] multi arch cross build with deps 01</a></li>
+<li><a href="examples/build-multi-arch-cross-build-write-shell-01.html">[build] multi arch cross build write shell 01</a></li>
+<li><a href="examples/build-multi-arch-single-extra-arch-01.html">[build] multi arch single extra arch 01</a></li>
+<li><a href="examples/build-nixos-containers-with-nixos-caddy-cst-01.html">[build] nixos containers with nixos caddy cst 01</a></li>
+<li><a href="examples/build-nixos-containers-with-nixos-dnsmasq-cst-01.html">[build] nixos containers with nixos dnsmasq cst 01</a></li>
+<li><a href="examples/build-nixos-containers-with-nixos-nginx-cst-01.html">[build] nixos containers with nixos nginx cst 01</a></li>
+<li><a href="examples/build-nixos-containers-with-nixos-nginx-deps-cst-01.html">[build] nixos containers with nixos nginx deps cst 01</a></li>
+<li><a href="examples/build-nixos-containers-with-nixos-nginx-nonroot-cst-01.html">[build] nixos containers with nixos nginx nonroot cst 01</a></li>
+<li><a href="examples/build-nixos-containers-with-nixos-nginx-syspackages-cst-01.html">[build] nixos containers with nixos nginx syspackages cst 01</a></li>
+<li><a href="examples/build-nixos-containers-with-nixos-redis-cst-01.html">[build] nixos containers with nixos redis cst 01</a></li>
+<li><a href="examples/build-trivy-minimalist-with-cve-trivy-ignore-01.html">[build] trivy minimalist with cve trivy ignore 01</a></li>
+<li><a href="examples/build-trivy-minimalist-with-cve-trivy-ignore-02.html">[build] trivy minimalist with cve trivy ignore 02</a></li>
+<li><a href="examples/build-with-dockerhub-from-01.html">[build] with dockerhub from 01</a></li>
+<li><a href="examples/build-with-dockerhub-from-and-name-and-tag-override-01.html">[build] with dockerhub from and name and tag override 01</a></li>
+<li><a href="examples/build-with-dockerhub-from-and-package-01.html">[build] with dockerhub from and package 01</a></li>
+<li><a href="examples/build-with-dockerhub-from-and-tag-override-01.html">[build] with dockerhub from and tag override 01</a></li>
+<li><a href="examples/build-with-nixos-nginx-01.html">[build] with nixos nginx 01</a></li>
+<li><a href="examples/build-with-root-user-and-package-01.html">[build] with root user and package 01</a></li>
+<li><a href="examples/build-write-shell-application-01.html">[build] write shell application 01</a></li>
+<li><a href="examples/build-write-shell-script-bin-01.html">[build] write shell script bin 01</a></li>
+<li><a href="examples/deploy-hm-http-server.html">[deploy-hm] http server</a></li>
+<li><a href="examples/deploy-nixos-http-server.html">[deploy-nixos] http server</a></li>
+</ul></details></li>
+<li class="sidebar-dir-group"><details open><summary><span class="sidebar-dir-label">How-to</span><span class="sidebar-dir-count">3</span></summary><ul>
+<li><a href="how-to/container-modules-api.html">Container Modules API</a></li>
+<li><a href="how-to/deploy-modules.html">Deploy Modules</a></li>
+<li><a href="how-to/nixos-containers.html">NixOS Container Modules</a></li>
+</ul></details></li>
+<li class="sidebar-dir-group"><details open><summary><span class="sidebar-dir-label">Reference</span><span class="sidebar-dir-count">4</span></summary><ul>
+<li><a href="reference/home-manager-options.html">Home Manager Module Options</a></li>
+<li><a href="reference/nixos-options.html">NixOS Module Options</a></li>
+<li><a href="reference/flake-parts-options.html">flake.parts Options</a></li>
+<li><a href="reference/nix-oci-container-module-options.html">nix-oci Container Module Options</a></li>
+</ul></details></li>
+<li><a href="search.html">Search</a></li>
+
+              </ul>
+            </div>
+          </details>
+
+          <details class="sidebar-section" data-section="toc" open>
+            <summary>Contents</summary>
+            <div class="sidebar-section-content">
+              <ul class="toc-list">
+  
+  
+  <li>
+    <a href='#option-configFiles' title="configFiles">
+      configFiles
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-credentialsLeak.trivy.enabled' title="credentialsLeak.trivy.enabled">
+      credentialsLeak.trivy.enabled
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-cve.grype.enabled' title="cve.grype.enabled">
+      cve.grype.enabled
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-cve.rootPath' title="cve.rootPath">
+      cve.rootPath
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-cve.trivy.enabled' title="cve.trivy.enabled">
+      cve.trivy.enabled
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-cve.vulnix.enabled' title="cve.vulnix.enabled">
+      cve.vulnix.enabled
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-debug.enabled' title="debug.enabled">
+      debug.enabled
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-debug.entrypoint.enabled' title="debug.entrypoint.enabled">
+      debug.entrypoint.enabled
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-debug.entrypoint.wrapper' title="debug.entrypoint.wrapper">
+      debug.entrypoint.wrapper
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-debug.labels' title="debug.labels">
+      debug.labels
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-debug.packages' title="debug.packages">
+      debug.packages
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-dependencies' title="dependencies">
+      dependencies
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-entrypoint' title="entrypoint">
+      entrypoint
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-fromImage.arch' title="fromImage.arch">
+      fromImage.arch
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-fromImage.enabled' title="fromImage.enabled">
+      fromImage.enabled
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-fromImage.imageName' title="fromImage.imageName">
+      fromImage.imageName
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-fromImage.imageTag' title="fromImage.imageTag">
+      fromImage.imageTag
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-fromImage.os' title="fromImage.os">
+      fromImage.os
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-homeConfig.enable' title="homeConfig.enable">
+      homeConfig.enable
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-homeConfig.homeManagerFlake' title="homeConfig.homeManagerFlake">
+      homeConfig.homeManagerFlake
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-homeConfig.modules' title="homeConfig.modules">
+      homeConfig.modules
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-installNix' title="installNix">
+      installNix
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-isRoot' title="isRoot">
+      isRoot
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-labels' title="labels">
+      labels
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-multiArch.crossBuild.enable' title="multiArch.crossBuild.enable">
+      multiArch.crossBuild.enable
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-multiArch.enabled' title="multiArch.enabled">
+      multiArch.enabled
+      
+      <span class="toc-readonly">read-only</span>
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-multiArch.systems' title="multiArch.systems">
+      multiArch.systems
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-multiArch.tempTagPrefix' title="multiArch.tempTagPrefix">
+      multiArch.tempTagPrefix
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-name' title="name">
+      name
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-nixosConfig.enable' title="nixosConfig.enable">
+      nixosConfig.enable
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-nixosConfig.mainService' title="nixosConfig.mainService">
+      nixosConfig.mainService
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-nixosConfig.modules' title="nixosConfig.modules">
+      nixosConfig.modules
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.backend' title="oci.backend">
+      oci.backend
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.container.configFiles' title="oci.container.configFiles">
+      oci.container.configFiles
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.container.dependencies' title="oci.container.dependencies">
+      oci.container.dependencies
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.container.entrypoint' title="oci.container.entrypoint">
+      oci.container.entrypoint
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.container.gid' title="oci.container.gid">
+      oci.container.gid
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.container.isRoot' title="oci.container.isRoot">
+      oci.container.isRoot
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.container.mainService' title="oci.container.mainService">
+      oci.container.mainService
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.container.package' title="oci.container.package">
+      oci.container.package
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.container.uid' title="oci.container.uid">
+      oci.container.uid
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.container.user' title="oci.container.user">
+      oci.container.user
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.containers' title="oci.containers">
+      oci.containers
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.credentialsLeak' title="oci.credentialsLeak">
+      oci.credentialsLeak
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.credentialsLeak.configPath' title="oci.credentialsLeak.configPath">
+      oci.credentialsLeak.configPath
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.cve' title="oci.cve">
+      oci.cve
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.cve.configPath' title="oci.cve.configPath">
+      oci.cve.configPath
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.debug' title="oci.debug">
+      oci.debug
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.debug.enabled' title="oci.debug.enabled">
+      oci.debug.enabled
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.debug.packages' title="oci.debug.packages">
+      oci.debug.packages
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.devShellPackage' title="oci.devShellPackage">
+      oci.devShellPackage
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.enable' title="oci.enable">
+      oci.enable
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.enableDevShell' title="oci.enableDevShell">
+      oci.enableDevShell
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.enableFlakeOutputs' title="oci.enableFlakeOutputs">
+      oci.enableFlakeOutputs
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.enabled' title="oci.enabled">
+      oci.enabled
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.flake.apps' title="oci.flake.apps">
+      oci.flake.apps
+      
+      <span class="toc-readonly">read-only</span>
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.flake.checks' title="oci.flake.checks">
+      oci.flake.checks
+      
+      <span class="toc-readonly">read-only</span>
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.flake.packages' title="oci.flake.packages">
+      oci.flake.packages
+      
+      <span class="toc-readonly">read-only</span>
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.fromImageManifestRootPath' title="oci.fromImageManifestRootPath">
+      oci.fromImageManifestRootPath
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.packages.containerStructureTest' title="oci.packages.containerStructureTest">
+      oci.packages.containerStructureTest
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.packages.cosign' title="oci.packages.cosign">
+      oci.packages.cosign
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.packages.dgoss' title="oci.packages.dgoss">
+      oci.packages.dgoss
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.packages.dive' title="oci.packages.dive">
+      oci.packages.dive
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.packages.grype' title="oci.packages.grype">
+      oci.packages.grype
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.packages.nix2container' title="oci.packages.nix2container">
+      oci.packages.nix2container
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.packages.podman' title="oci.packages.podman">
+      oci.packages.podman
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.packages.regctl' title="oci.packages.regctl">
+      oci.packages.regctl
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.packages.skaffold' title="oci.packages.skaffold">
+      oci.packages.skaffold
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.packages.skopeo' title="oci.packages.skopeo">
+      oci.packages.skopeo
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.packages.syft' title="oci.packages.syft">
+      oci.packages.syft
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.packages.trivy' title="oci.packages.trivy">
+      oci.packages.trivy
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.packages.vulnix' title="oci.packages.vulnix">
+      oci.packages.vulnix
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.perContainer' title="oci.perContainer">
+      oci.perContainer
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.registry' title="oci.registry">
+      oci.registry
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.rootPath' title="oci.rootPath">
+      oci.rootPath
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.sbom' title="oci.sbom">
+      oci.sbom
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.sbom.path' title="oci.sbom.path">
+      oci.sbom.path
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.signing' title="oci.signing">
+      oci.signing
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-oci.test' title="oci.test">
+      oci.test
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-optimizeLayers' title="optimizeLayers">
+      optimizeLayers
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-package' title="package">
+      package
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-push' title="push">
+      push
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-registry' title="registry">
+      registry
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-rootPath' title="rootPath">
+      rootPath
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-sbom.rootPath' title="sbom.rootPath">
+      sbom.rootPath
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-sbom.syft.enabled' title="sbom.syft.enabled">
+      sbom.syft.enabled
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-signing.cosign.annotations' title="signing.cosign.annotations">
+      signing.cosign.annotations
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-signing.cosign.certificateIdentityRegexp' title="signing.cosign.certificateIdentityRegexp">
+      signing.cosign.certificateIdentityRegexp
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-signing.cosign.certificateOidcIssuerRegexp' title="signing.cosign.certificateOidcIssuerRegexp">
+      signing.cosign.certificateOidcIssuerRegexp
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-signing.cosign.enabled' title="signing.cosign.enabled">
+      signing.cosign.enabled
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-signing.cosign.key' title="signing.cosign.key">
+      signing.cosign.key
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-signing.cosign.keyless' title="signing.cosign.keyless">
+      signing.cosign.keyless
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-signing.cosign.verify' title="signing.cosign.verify">
+      signing.cosign.verify
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-tag' title="tag">
+      tag
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-tags' title="tags">
+      tags
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-test.containerStructureTest.configs' title="test.containerStructureTest.configs">
+      test.containerStructureTest.configs
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-test.containerStructureTest.enabled' title="test.containerStructureTest.enabled">
+      test.containerStructureTest.enabled
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-test.dgoss.command' title="test.dgoss.command">
+      test.dgoss.command
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-test.dgoss.enabled' title="test.dgoss.enabled">
+      test.dgoss.enabled
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-test.dgoss.hermetic' title="test.dgoss.hermetic">
+      test.dgoss.hermetic
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-test.dgoss.optionsPath' title="test.dgoss.optionsPath">
+      test.dgoss.optionsPath
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-test.dive.enabled' title="test.dive.enabled">
+      test.dive.enabled
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-test.rootPath' title="test.rootPath">
+      test.rootPath
+      
+      
+    </a>
+  </li>
+  
+  <li>
+    <a href='#option-user' title="user">
+      user
+      
+      
+    </a>
+  </li>
+  
+
+  
+  
+  <li>
+    <details class="toc-category">
+      <summary title="cve.grype.config">
+        <span>cve.grype.config</span>
+        <span class="toc-count">2</span>
+      </summary>
+      <ul>
+        
+
+        
+        <li>
+          <a href='#option-cve.grype.config.enabled' title="cve.grype.config.enabled">
+            enabled
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-cve.grype.config.path' title="cve.grype.config.path">
+            path
+            
+            
+          </a>
+        </li>
+        
+      </ul>
+    </details>
+  </li>
+  
+  <li>
+    <details class="toc-category">
+      <summary title="cve.trivy.ignore">
+        <span>cve.trivy.ignore</span>
+        <span class="toc-count">3</span>
+      </summary>
+      <ul>
+        
+
+        
+        <li>
+          <a href='#option-cve.trivy.ignore.extra' title="cve.trivy.ignore.extra">
+            extra
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-cve.trivy.ignore.fileEnabled' title="cve.trivy.ignore.fileEnabled">
+            fileEnabled
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-cve.trivy.ignore.path' title="cve.trivy.ignore.path">
+            path
+            
+            
+          </a>
+        </li>
+        
+      </ul>
+    </details>
+  </li>
+  
+  <li>
+    <details class="toc-category">
+      <summary title="cve.vulnix.whitelist">
+        <span>cve.vulnix.whitelist</span>
+        <span class="toc-count">2</span>
+      </summary>
+      <ul>
+        
+
+        
+        <li>
+          <a href='#option-cve.vulnix.whitelist.enabled' title="cve.vulnix.whitelist.enabled">
+            enabled
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-cve.vulnix.whitelist.path' title="cve.vulnix.whitelist.path">
+            path
+            
+            
+          </a>
+        </li>
+        
+      </ul>
+    </details>
+  </li>
+  
+  <li>
+    <details class="toc-category">
+      <summary title="oci.containers.&lt;name&gt;">
+        <span>oci.containers.&lt;name&gt;</span>
+        <span class="toc-count">13</span>
+      </summary>
+      <ul>
+        
+
+        
+        <li>
+          <a href='#option-oci.containers._name_.autoStart' title="oci.containers.&lt;name&gt;.autoStart">
+            autoStart
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.containers._name_.dependencies' title="oci.containers.&lt;name&gt;.dependencies">
+            dependencies
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.containers._name_.entrypoint' title="oci.containers.&lt;name&gt;.entrypoint">
+            entrypoint
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.containers._name_.environment' title="oci.containers.&lt;name&gt;.environment">
+            environment
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.containers._name_.image' title="oci.containers.&lt;name&gt;.image">
+            image
+            
+            <span class="toc-readonly">read-only</span>
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.containers._name_.isRoot' title="oci.containers.&lt;name&gt;.isRoot">
+            isRoot
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.containers._name_.name' title="oci.containers.&lt;name&gt;.name">
+            name
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.containers._name_.optimizeLayers' title="oci.containers.&lt;name&gt;.optimizeLayers">
+            optimizeLayers
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.containers._name_.package' title="oci.containers.&lt;name&gt;.package">
+            package
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.containers._name_.ports' title="oci.containers.&lt;name&gt;.ports">
+            ports
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.containers._name_.tag' title="oci.containers.&lt;name&gt;.tag">
+            tag
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.containers._name_.user' title="oci.containers.&lt;name&gt;.user">
+            user
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.containers._name_.volumes' title="oci.containers.&lt;name&gt;.volumes">
+            volumes
+            
+            
+          </a>
+        </li>
+        
+      </ul>
+    </details>
+  </li>
+  
+  <li>
+    <details class="toc-category">
+      <summary title="oci.credentialsLeak.trivy">
+        <span>oci.credentialsLeak.trivy</span>
+        <span class="toc-count">2</span>
+      </summary>
+      <ul>
+        
+        <li>
+          <a href='#option-oci.credentialsLeak.trivy' class="parent-option" title="oci.credentialsLeak.trivy">
+            oci.credentialsLeak.trivy
+            
+            
+          </a>
+        </li>
+        
+
+        
+        <li>
+          <a href='#option-oci.credentialsLeak.trivy.enabled' title="oci.credentialsLeak.trivy.enabled">
+            enabled
+            
+            
+          </a>
+        </li>
+        
+      </ul>
+    </details>
+  </li>
+  
+  <li>
+    <details class="toc-category">
+      <summary title="oci.cve.grype">
+        <span>oci.cve.grype</span>
+        <span class="toc-count">5</span>
+      </summary>
+      <ul>
+        
+        <li>
+          <a href='#option-oci.cve.grype' class="parent-option" title="oci.cve.grype">
+            oci.cve.grype
+            
+            
+          </a>
+        </li>
+        
+
+        
+        <li>
+          <a href='#option-oci.cve.grype.config' title="oci.cve.grype.config">
+            config
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.cve.grype.config.enabled' title="oci.cve.grype.config.enabled">
+            config.enabled
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.cve.grype.config.rootPath' title="oci.cve.grype.config.rootPath">
+            config.rootPath
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.cve.grype.enabled' title="oci.cve.grype.enabled">
+            enabled
+            
+            
+          </a>
+        </li>
+        
+      </ul>
+    </details>
+  </li>
+  
+  <li>
+    <details class="toc-category">
+      <summary title="oci.cve.trivy">
+        <span>oci.cve.trivy</span>
+        <span class="toc-count">6</span>
+      </summary>
+      <ul>
+        
+        <li>
+          <a href='#option-oci.cve.trivy' class="parent-option" title="oci.cve.trivy">
+            oci.cve.trivy
+            
+            
+          </a>
+        </li>
+        
+
+        
+        <li>
+          <a href='#option-oci.cve.trivy.enabled' title="oci.cve.trivy.enabled">
+            enabled
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.cve.trivy.ignore' title="oci.cve.trivy.ignore">
+            ignore
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.cve.trivy.ignore.extra' title="oci.cve.trivy.ignore.extra">
+            ignore.extra
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.cve.trivy.ignore.fileEnabled' title="oci.cve.trivy.ignore.fileEnabled">
+            ignore.fileEnabled
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.cve.trivy.ignore.rootPath' title="oci.cve.trivy.ignore.rootPath">
+            ignore.rootPath
+            
+            
+          </a>
+        </li>
+        
+      </ul>
+    </details>
+  </li>
+  
+  <li>
+    <details class="toc-category">
+      <summary title="oci.cve.vulnix">
+        <span>oci.cve.vulnix</span>
+        <span class="toc-count">5</span>
+      </summary>
+      <ul>
+        
+        <li>
+          <a href='#option-oci.cve.vulnix' class="parent-option" title="oci.cve.vulnix">
+            oci.cve.vulnix
+            
+            
+          </a>
+        </li>
+        
+
+        
+        <li>
+          <a href='#option-oci.cve.vulnix.enabled' title="oci.cve.vulnix.enabled">
+            enabled
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.cve.vulnix.whitelist' title="oci.cve.vulnix.whitelist">
+            whitelist
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.cve.vulnix.whitelist.enabled' title="oci.cve.vulnix.whitelist.enabled">
+            whitelist.enabled
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.cve.vulnix.whitelist.rootPath' title="oci.cve.vulnix.whitelist.rootPath">
+            whitelist.rootPath
+            
+            
+          </a>
+        </li>
+        
+      </ul>
+    </details>
+  </li>
+  
+  <li>
+    <details class="toc-category">
+      <summary title="oci.debug.entrypoint">
+        <span>oci.debug.entrypoint</span>
+        <span class="toc-count">3</span>
+      </summary>
+      <ul>
+        
+        <li>
+          <a href='#option-oci.debug.entrypoint' class="parent-option" title="oci.debug.entrypoint">
+            oci.debug.entrypoint
+            
+            
+          </a>
+        </li>
+        
+
+        
+        <li>
+          <a href='#option-oci.debug.entrypoint.enabled' title="oci.debug.entrypoint.enabled">
+            enabled
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.debug.entrypoint.wrapper' title="oci.debug.entrypoint.wrapper">
+            wrapper
+            
+            
+          </a>
+        </li>
+        
+      </ul>
+    </details>
+  </li>
+  
+  <li>
+    <details class="toc-category">
+      <summary title="oci.sbom.syft">
+        <span>oci.sbom.syft</span>
+        <span class="toc-count">5</span>
+      </summary>
+      <ul>
+        
+        <li>
+          <a href='#option-oci.sbom.syft' class="parent-option" title="oci.sbom.syft">
+            oci.sbom.syft
+            
+            
+          </a>
+        </li>
+        
+
+        
+        <li>
+          <a href='#option-oci.sbom.syft.config' title="oci.sbom.syft.config">
+            config
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.sbom.syft.config.enabled' title="oci.sbom.syft.config.enabled">
+            config.enabled
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.sbom.syft.config.rootPath' title="oci.sbom.syft.config.rootPath">
+            config.rootPath
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.sbom.syft.enabled' title="oci.sbom.syft.enabled">
+            enabled
+            
+            
+          </a>
+        </li>
+        
+      </ul>
+    </details>
+  </li>
+  
+  <li>
+    <details class="toc-category">
+      <summary title="oci.signing.cosign">
+        <span>oci.signing.cosign</span>
+        <span class="toc-count">8</span>
+      </summary>
+      <ul>
+        
+        <li>
+          <a href='#option-oci.signing.cosign' class="parent-option" title="oci.signing.cosign">
+            oci.signing.cosign
+            
+            
+          </a>
+        </li>
+        
+
+        
+        <li>
+          <a href='#option-oci.signing.cosign.annotations' title="oci.signing.cosign.annotations">
+            annotations
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.signing.cosign.certificateIdentityRegexp' title="oci.signing.cosign.certificateIdentityRegexp">
+            certificateIdentityRegexp
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.signing.cosign.certificateOidcIssuerRegexp' title="oci.signing.cosign.certificateOidcIssuerRegexp">
+            certificateOidcIssuerRegexp
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.signing.cosign.enabled' title="oci.signing.cosign.enabled">
+            enabled
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.signing.cosign.key' title="oci.signing.cosign.key">
+            key
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.signing.cosign.keyless' title="oci.signing.cosign.keyless">
+            keyless
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.signing.cosign.verify' title="oci.signing.cosign.verify">
+            verify
+            
+            
+          </a>
+        </li>
+        
+      </ul>
+    </details>
+  </li>
+  
+  <li>
+    <details class="toc-category">
+      <summary title="oci.test.containerStructureTest">
+        <span>oci.test.containerStructureTest</span>
+        <span class="toc-count">2</span>
+      </summary>
+      <ul>
+        
+        <li>
+          <a href='#option-oci.test.containerStructureTest' class="parent-option" title="oci.test.containerStructureTest">
+            oci.test.containerStructureTest
+            
+            
+          </a>
+        </li>
+        
+
+        
+        <li>
+          <a href='#option-oci.test.containerStructureTest.enabled' title="oci.test.containerStructureTest.enabled">
+            enabled
+            
+            
+          </a>
+        </li>
+        
+      </ul>
+    </details>
+  </li>
+  
+  <li>
+    <details class="toc-category">
+      <summary title="oci.test.dgoss">
+        <span>oci.test.dgoss</span>
+        <span class="toc-count">3</span>
+      </summary>
+      <ul>
+        
+        <li>
+          <a href='#option-oci.test.dgoss' class="parent-option" title="oci.test.dgoss">
+            oci.test.dgoss
+            
+            
+          </a>
+        </li>
+        
+
+        
+        <li>
+          <a href='#option-oci.test.dgoss.enabled' title="oci.test.dgoss.enabled">
+            enabled
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-oci.test.dgoss.hermetic' title="oci.test.dgoss.hermetic">
+            hermetic
+            
+            
+          </a>
+        </li>
+        
+      </ul>
+    </details>
+  </li>
+  
+  <li>
+    <details class="toc-category">
+      <summary title="oci.test.dive">
+        <span>oci.test.dive</span>
+        <span class="toc-count">2</span>
+      </summary>
+      <ul>
+        
+        <li>
+          <a href='#option-oci.test.dive' class="parent-option" title="oci.test.dive">
+            oci.test.dive
+            
+            
+          </a>
+        </li>
+        
+
+        
+        <li>
+          <a href='#option-oci.test.dive.enabled' title="oci.test.dive.enabled">
+            enabled
+            
+            
+          </a>
+        </li>
+        
+      </ul>
+    </details>
+  </li>
+  
+  <li>
+    <details class="toc-category">
+      <summary title="sbom.syft.config">
+        <span>sbom.syft.config</span>
+        <span class="toc-count">2</span>
+      </summary>
+      <ul>
+        
+
+        
+        <li>
+          <a href='#option-sbom.syft.config.enabled' title="sbom.syft.config.enabled">
+            enabled
+            
+            
+          </a>
+        </li>
+        
+        <li>
+          <a href='#option-sbom.syft.config.path' title="sbom.syft.config.path">
+            path
+            
+            
+          </a>
+        </li>
+        
+      </ul>
+    </details>
+  </li>
+  
+</ul>
+
+            </div>
+          </details>
+        </nav>
+
+        <main class="content">
+          <h1>nix-oci Options</h1>
+
+          
+          <div class="search-form js-only">
+            <input
+              type="text"
+              id="options-filter"
+              placeholder="Filter options..."
+            />
+          </div>
+          
+
+          <div class="options-container"><div class="option" id="option-package">
+  <h3 class="option-name">
+    <a href="#option-package" class="option-anchor">package</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>null or package</code></div>
+  <div class="option-description"><html><head></head><body><p>The main package for the container</p>
+</body></html></div>
+  <div class="option-default">Default: <code>null</code></div>
+  <div class="option-example">Example: <code>pkgs.hello</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/package.nix" target="_blank">nix/modules/oci/containers/package.nix</a></code></div>
+</div>
+<div class="option" id="option-configFiles">
+  <h3 class="option-name">
+    <a href="#option-configFiles" class="option-anchor">configFiles</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>list of package</code></div>
+  <div class="option-description"><html><head></head><body><p>Config file derivations to emplace in the container image.</p>
+<p>Each entry should be a derivation producing a directory tree
+rooted at $out (e.g., pkgs.writeTextDir "etc/foo.conf" "...").
+These are merged into the container root filesystem.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>[ ]</code></div>
+  <div class="option-example">Example: <pre><code>[
+  (pkgs.writeTextDir "etc/containers/policy.json"
+    (builtins.toJSON { default = [{ type = "insecureAcceptAnything"; }]; }))
+]
+</code></pre></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/configFiles.nix" target="_blank">nix/modules/oci/containers/configFiles.nix</a></code></div>
+</div>
+<div class="option" id="option-credentialsLeak.trivy.enabled">
+  <h3 class="option-name">
+    <a href="#option-credentialsLeak.trivy.enabled" class="option-anchor">credentialsLeak.trivy.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable Trivy credentials leak scanning.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.cve.trivy.enabled</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/credentialsLeak/trivy/enabled.nix" target="_blank">nix/modules/oci/containers/credentialsLeak/trivy/enabled.nix</a></code></div>
+</div>
+<div class="option" id="option-cve.grype.config.enabled">
+  <h3 class="option-name">
+    <a href="#option-cve.grype.config.enabled" class="option-anchor">cve.grype.config.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to use a grype config file.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/grype/config/enabled.nix" target="_blank">nix/modules/oci/containers/cve/grype/config/enabled.nix</a></code></div>
+</div>
+<div class="option" id="option-cve.grype.config.path">
+  <h3 class="option-name">
+    <a href="#option-cve.grype.config.path" class="option-anchor">cve.grype.config.path</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>absolute path</code></div>
+  <div class="option-description"><html><head></head><body><p>Path to the grype config file.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.rootPath + name + "/cve/grype.yaml"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/grype/config/path.nix" target="_blank">nix/modules/oci/containers/cve/grype/config/path.nix</a></code></div>
+</div>
+<div class="option" id="option-cve.grype.enabled">
+  <h3 class="option-name">
+    <a href="#option-cve.grype.enabled" class="option-anchor">cve.grype.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to run grype.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/grype/enabled.nix" target="_blank">nix/modules/oci/containers/cve/grype/enabled.nix</a></code></div>
+</div>
+<div class="option" id="option-cve.rootPath">
+  <h3 class="option-name">
+    <a href="#option-cve.rootPath" class="option-anchor">cve.rootPath</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>absolute path</code></div>
+  <div class="option-description"><html><head></head><body><p>The root path for CVE configuration files.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.rootPath + name + "/cve/"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/rootPath.nix" target="_blank">nix/modules/oci/containers/cve/rootPath.nix</a></code></div>
+</div>
+<div class="option" id="option-cve.trivy.enabled">
+  <h3 class="option-name">
+    <a href="#option-cve.trivy.enabled" class="option-anchor">cve.trivy.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable Trivy CVE scanning.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/trivy/enabled.nix" target="_blank">nix/modules/oci/containers/cve/trivy/enabled.nix</a></code></div>
+</div>
+<div class="option" id="option-cve.trivy.ignore.extra">
+  <h3 class="option-name">
+    <a href="#option-cve.trivy.ignore.extra" class="option-anchor">cve.trivy.ignore.extra</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>list of string</code></div>
+  <div class="option-description"><html><head></head><body><p>Extra CVEs to ignore.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>[ ]</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/trivy/ignore/extra.nix" target="_blank">nix/modules/oci/containers/cve/trivy/ignore/extra.nix</a></code></div>
+</div>
+<div class="option" id="option-cve.trivy.ignore.fileEnabled">
+  <h3 class="option-name">
+    <a href="#option-cve.trivy.ignore.fileEnabled" class="option-anchor">cve.trivy.ignore.fileEnabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable Enable trivy ignore file.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-example">Example: <code>true</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/trivy/ignore/fileEnabled.nix" target="_blank">nix/modules/oci/containers/cve/trivy/ignore/fileEnabled.nix</a></code></div>
+</div>
+<div class="option" id="option-cve.trivy.ignore.path">
+  <h3 class="option-name">
+    <a href="#option-cve.trivy.ignore.path" class="option-anchor">cve.trivy.ignore.path</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>null or absolute path</code></div>
+  <div class="option-description"><html><head></head><body><p>Path to the trivy ignore file.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.rootPath + name + "/cve/trivy.ignore"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/trivy/ignore/path.nix" target="_blank">nix/modules/oci/containers/cve/trivy/ignore/path.nix</a></code></div>
+</div>
+<div class="option" id="option-cve.vulnix.enabled">
+  <h3 class="option-name">
+    <a href="#option-cve.vulnix.enabled" class="option-anchor">cve.vulnix.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to run vulnix CVE scanning.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/vulnix/enabled.nix" target="_blank">nix/modules/oci/containers/cve/vulnix/enabled.nix</a></code></div>
+</div>
+<div class="option" id="option-cve.vulnix.whitelist.enabled">
+  <h3 class="option-name">
+    <a href="#option-cve.vulnix.whitelist.enabled" class="option-anchor">cve.vulnix.whitelist.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to use a vulnix whitelist file.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/vulnix/whitelist/enabled.nix" target="_blank">nix/modules/oci/containers/cve/vulnix/whitelist/enabled.nix</a></code></div>
+</div>
+<div class="option" id="option-cve.vulnix.whitelist.path">
+  <h3 class="option-name">
+    <a href="#option-cve.vulnix.whitelist.path" class="option-anchor">cve.vulnix.whitelist.path</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>absolute path</code></div>
+  <div class="option-description"><html><head></head><body><p>Path to the vulnix whitelist TOML file.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.rootPath + name + "/cve/vulnix-whitelist.toml"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/cve/vulnix/whitelist/path.nix" target="_blank">nix/modules/oci/containers/cve/vulnix/whitelist/path.nix</a></code></div>
+</div>
+<div class="option" id="option-debug.enabled">
+  <h3 class="option-name">
+    <a href="#option-debug.enabled" class="option-anchor">debug.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable debug build with additional debugging tools.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.debug.enabled</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/debug/enabled.nix" target="_blank">nix/modules/oci/containers/debug/enabled.nix</a></code></div>
+</div>
+<div class="option" id="option-debug.entrypoint.enabled">
+  <h3 class="option-name">
+    <a href="#option-debug.entrypoint.enabled" class="option-anchor">debug.entrypoint.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable debug entrypoint wrapper.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.debug.entrypoint.enabled</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/debug/entrypoint/enabled.nix" target="_blank">nix/modules/oci/containers/debug/entrypoint/enabled.nix</a></code></div>
+</div>
+<div class="option" id="option-debug.entrypoint.wrapper">
+  <h3 class="option-name">
+    <a href="#option-debug.entrypoint.wrapper" class="option-anchor">debug.entrypoint.wrapper</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>package</code></div>
+  <div class="option-description"><html><head></head><body><p>Package containing the debug entrypoint wrapper.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.debug.entrypoint.wrapper</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/debug/entrypoint/wrapper.nix" target="_blank">nix/modules/oci/containers/debug/entrypoint/wrapper.nix</a></code></div>
+</div>
+<div class="option" id="option-debug.labels">
+  <h3 class="option-name">
+    <a href="#option-debug.labels" class="option-anchor">debug.labels</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>attribute set of string</code></div>
+  <div class="option-description"><html><head></head><body><p>OCI image labels for the debug variant.
+Defaults to the production container's labels.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.labels</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/debug/labels.nix" target="_blank">nix/modules/oci/containers/debug/labels.nix</a></code></div>
+</div>
+<div class="option" id="option-debug.packages">
+  <h3 class="option-name">
+    <a href="#option-debug.packages" class="option-anchor">debug.packages</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>list of package</code></div>
+  <div class="option-description"><html><head></head><body><p>List of additional packages to include in debug builds.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.debug.packages</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/debug/packages.nix" target="_blank">nix/modules/oci/containers/debug/packages.nix</a></code></div>
+</div>
+<div class="option" id="option-dependencies">
+  <h3 class="option-name">
+    <a href="#option-dependencies" class="option-anchor">dependencies</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>list of package</code></div>
+  <div class="option-description"><html><head></head><body><p>Additional dependencies packages to include in the container.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>[ ]</code></div>
+  <div class="option-example">Example: <code>[ pkgs.bash pkgs.coreutils ]</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/dependencies.nix" target="_blank">nix/modules/oci/containers/dependencies.nix</a></code></div>
+</div>
+<div class="option" id="option-entrypoint">
+  <h3 class="option-name">
+    <a href="#option-entrypoint" class="option-anchor">entrypoint</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>list of string</code></div>
+  <div class="option-description"><html><head></head><body><p>The entrypoint command and arguments for the container. Will be automatically generated from the package if not specified.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>cfg.lib.flake.oci.mkOCIEntrypoint { inherit package; }</code></div>
+  <div class="option-example">Example: <pre><code>[
+  "/bin/sh"
+  "-c"
+  "echo hello"
+]</code></pre></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/entrypoint.nix" target="_blank">nix/modules/oci/containers/entrypoint.nix</a></code></div>
+</div>
+<div class="option" id="option-fromImage.arch">
+  <h3 class="option-name">
+    <a href="#option-fromImage.arch" class="option-anchor">fromImage.arch</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>one of "amd64", "arm64"</code></div>
+  <div class="option-description"><html><head></head><body><p>The architecture of the image.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>if system == "x86_64-linux" then
+  "amd64"
+else if system == "aarch64-linux" then
+  "arm64"
+else
+  throw "Unsupported system: ${system} as default arch, please set the arch option."
+</code></div>
+  <div class="option-example">Example: <code>"amd64"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/fromImage/arch.nix" target="_blank">nix/modules/oci/containers/fromImage/arch.nix</a></code></div>
+</div>
+<div class="option" id="option-fromImage.enabled">
+  <h3 class="option-name">
+    <a href="#option-fromImage.enabled" class="option-anchor">fromImage.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to use a base image for this container. Defaults to true when imageName is set.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.fromImage.imageName != null</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/fromImage/enabled.nix" target="_blank">nix/modules/oci/containers/fromImage/enabled.nix</a></code></div>
+</div>
+<div class="option" id="option-fromImage.imageName">
+  <h3 class="option-name">
+    <a href="#option-fromImage.imageName" class="option-anchor">fromImage.imageName</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>null or string</code></div>
+  <div class="option-description"><html><head></head><body><p>The name of the base image.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>null</code></div>
+  <div class="option-example">Example: <code>"library/alpine"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/fromImage/imageName.nix" target="_blank">nix/modules/oci/containers/fromImage/imageName.nix</a></code></div>
+</div>
+<div class="option" id="option-fromImage.imageTag">
+  <h3 class="option-name">
+    <a href="#option-fromImage.imageTag" class="option-anchor">fromImage.imageTag</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>null or string</code></div>
+  <div class="option-description"><html><head></head><body><p>The tag/version of the image.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>null</code></div>
+  <div class="option-example">Example: <code>"3.21.2"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/fromImage/imageTag.nix" target="_blank">nix/modules/oci/containers/fromImage/imageTag.nix</a></code></div>
+</div>
+<div class="option" id="option-fromImage.os">
+  <h3 class="option-name">
+    <a href="#option-fromImage.os" class="option-anchor">fromImage.os</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>value "linux" (singular enum)</code></div>
+  <div class="option-description"><html><head></head><body><p>The operating system for the image.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>"linux"</code></div>
+  <div class="option-example">Example: <code>"linux"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/fromImage/os.nix" target="_blank">nix/modules/oci/containers/fromImage/os.nix</a></code></div>
+</div>
+<div class="option" id="option-homeConfig.enable">
+  <h3 class="option-name">
+    <a href="#option-homeConfig.enable" class="option-anchor">homeConfig.enable</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable home-manager dotfiles for the container user.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-example">Example: <code>true</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/homeConfig/enabled.nix" target="_blank">nix/modules/oci/containers/homeConfig/enabled.nix</a></code></div>
+</div>
+<div class="option" id="option-homeConfig.homeManagerFlake">
+  <h3 class="option-name">
+    <a href="#option-homeConfig.homeManagerFlake" class="option-anchor">homeConfig.homeManagerFlake</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>null or unspecified value</code></div>
+  <div class="option-description"><html><head></head><body><p>The home-manager flake input. Required when homeConfig.enable is true.
+Provides home-manager.nixosModules.home-manager for the NixOS eval.
+Example: homeConfig.homeManagerFlake = inputs.home-manager;</p>
+</body></html></div>
+  <div class="option-default">Default: <code>null</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/homeConfig/homeManagerFlake.nix" target="_blank">nix/modules/oci/containers/homeConfig/homeManagerFlake.nix</a></code></div>
+</div>
+<div class="option" id="option-homeConfig.modules">
+  <h3 class="option-name">
+    <a href="#option-homeConfig.modules" class="option-anchor">homeConfig.modules</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>list of unspecified value</code></div>
+  <div class="option-description"><html><head></head><body><p>Home-manager modules for this container user's home directory.
+These configure dotfiles, shell, git, editor, etc.
+Requires homeConfig.homeManagerFlake to be set.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>[ ]</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/homeConfig/modules.nix" target="_blank">nix/modules/oci/containers/homeConfig/modules.nix</a></code></div>
+</div>
+<div class="option" id="option-installNix">
+  <h3 class="option-name">
+    <a href="#option-installNix" class="option-anchor">installNix</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to install nix in the container.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-example">Example: <code>true</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/installNix.nix" target="_blank">nix/modules/oci/containers/installNix.nix</a></code></div>
+</div>
+<div class="option" id="option-isRoot">
+  <h3 class="option-name">
+    <a href="#option-isRoot" class="option-anchor">isRoot</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether the container is a root container.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-example">Example: <code>true</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/isRoot.nix" target="_blank">nix/modules/oci/containers/isRoot.nix</a></code></div>
+</div>
+<div class="option" id="option-labels">
+  <h3 class="option-name">
+    <a href="#option-labels" class="option-anchor">labels</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>attribute set of string</code></div>
+  <div class="option-description"><html><head></head><body><p>OCI image labels (Config.Labels).</p>
+<p>Key-value string pairs embedded in the image configuration.
+Keys should follow reverse domain notation
+(e.g. <code>org.opencontainers.image.title</code>).</p>
+<p>These labels are set at image build time and are immutable
+once the image is produced.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-example">Example: <pre><code>{
+  "org.opencontainers.image.title" = "my-app";
+  "org.opencontainers.image.version" = "1.0.0";
+}</code></pre></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/labels.nix" target="_blank">nix/modules/oci/containers/labels.nix</a></code></div>
+</div>
+<div class="option" id="option-multiArch.crossBuild.enable">
+  <h3 class="option-name">
+    <a href="#option-multiArch.crossBuild.enable" class="option-anchor">multiArch.crossBuild.enable</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Enable local cross-compilation for multi-arch images.</p>
+<p>When true, non-native architectures listed in <code>multiArch.systems</code>
+are cross-compiled on the current host and merged into a single
+OCI directory layout.</p>
+<p>Per-arch package overrides are set via <code>archConfigs</code>:
+archConfigs."aarch64-linux".package = pkgs.pkgsCross.aarch64-multiplatform.hello;</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/multiArch/crossBuild.nix" target="_blank">nix/modules/oci/containers/multiArch/crossBuild.nix</a></code></div>
+</div>
+<div class="option" id="option-multiArch.enabled">
+  <h3 class="option-name">
+    <a href="#option-multiArch.enabled" class="option-anchor">multiArch.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-metadata">read-only</div>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether multi-arch is enabled. Computed from <code>multiArch.systems != []</code>.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/multiArch/systems.nix" target="_blank">nix/modules/oci/containers/multiArch/systems.nix</a></code></div>
+</div>
+<div class="option" id="option-multiArch.systems">
+  <h3 class="option-name">
+    <a href="#option-multiArch.systems" class="option-anchor">multiArch.systems</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>list of string</code></div>
+  <div class="option-description"><html><head></head><body><p>Target systems for multi-arch image building.</p>
+<p>When non-empty, multi-arch is enabled and the listed systems
+define which architectures will be included in the manifest.</p>
+<p>Supported: aarch64-linux, armv7l-linux, riscv64-linux, x86_64-linux</p>
+<p>Uses Nix system strings (same convention as flake-parts <code>systems</code>).</p>
+</body></html></div>
+  <div class="option-default">Default: <code>[ ]</code></div>
+  <div class="option-example">Example: <pre><code>[
+  "x86_64-linux"
+  "aarch64-linux"
+]</code></pre></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/multiArch/systems.nix" target="_blank">nix/modules/oci/containers/multiArch/systems.nix</a></code></div>
+</div>
+<div class="option" id="option-multiArch.tempTagPrefix">
+  <h3 class="option-name">
+    <a href="#option-multiArch.tempTagPrefix" class="option-anchor">multiArch.tempTagPrefix</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>string</code></div>
+  <div class="option-description"><html><head></head><body><p>Prefix for temporary architecture-specific tags.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>"tmp"</code></div>
+  <div class="option-example">Example: <code>"arch"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/multiArch/tempTagPrefix.nix" target="_blank">nix/modules/oci/containers/multiArch/tempTagPrefix.nix</a></code></div>
+</div>
+<div class="option" id="option-name">
+  <h3 class="option-name">
+    <a href="#option-name" class="option-anchor">name</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>null or string</code></div>
+  <div class="option-description"><html><head></head><body><p>Name of the container. If null, the name will be automatically generated from the package or base image.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>cfg.lib.flake.oci.mkOCIName { inherit package fromImage; }</code></div>
+  <div class="option-example">Example: <code>"my-app"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/name.nix" target="_blank">nix/modules/oci/containers/name.nix</a></code></div>
+</div>
+<div class="option" id="option-nixosConfig.enable">
+  <h3 class="option-name">
+    <a href="#option-nixosConfig.enable" class="option-anchor">nixosConfig.enable</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable NixOS module-based configuration for this container.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-example">Example: <code>true</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/nixosConfig/enabled.nix" target="_blank">nix/modules/oci/containers/nixosConfig/enabled.nix</a></code></div>
+</div>
+<div class="option" id="option-nixosConfig.mainService">
+  <h3 class="option-name">
+    <a href="#option-nixosConfig.mainService" class="option-anchor">nixosConfig.mainService</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>null or string</code></div>
+  <div class="option-description"><html><head></head><body><p>The NixOS service that this container runs.</p>
+<p>When set, the container's package is auto-derived from the service
+module's package option, and an entrypoint wrapper script is
+generated from the service's systemd unit (preStart, ExecStartPre,
+ExecStart, directory creation).</p>
+<p>Cannot be set together with <code>package</code> - they are mutually exclusive
+sources for the container's main program.</p>
+<p>When null, <code>nixosConfig</code> only provides config files, users/groups,
+and extra packages (environment.systemPackages) as dependencies.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>null</code></div>
+  <div class="option-example">Example: <code>"nginx"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/nixosConfig/mainService.nix" target="_blank">nix/modules/oci/containers/nixosConfig/mainService.nix</a></code></div>
+</div>
+<div class="option" id="option-nixosConfig.modules">
+  <h3 class="option-name">
+    <a href="#option-nixosConfig.modules" class="option-anchor">nixosConfig.modules</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>list of unspecified value</code></div>
+  <div class="option-description"><html><head></head><body><p>NixOS modules to evaluate for this container.</p>
+<p>These modules are evaluated with <code>boot.isContainer = true</code> and
+the resulting config files, packages, users/groups, and entrypoint
+are extracted into the container image.</p>
+<p>Only one service should be enabled per container (no init system).
+Use <code>nixosConfig.mainService</code> to designate which service this
+container runs.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>[ ]</code></div>
+  <div class="option-example">Example: <pre><code>[
+  ({ pkgs, ... }: {
+    services.nginx = {
+      enable = true;
+      virtualHosts."app".root = "/var/www";
+    };
+  })
+]
+</code></pre></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/nixosConfig/modules.nix" target="_blank">nix/modules/oci/containers/nixosConfig/modules.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.backend">
+  <h3 class="option-name">
+    <a href="#option-oci.backend" class="option-anchor">oci.backend</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>one of "docker", "podman"</code></div>
+  <div class="option-description"><html><head></head><body><p>Container runtime backend to load and run images.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>"podman"</code></div>
+  <div class="option-declared">Declared in: <code>oci.backend</code></div>
+</div>
+<div class="option" id="option-oci.container.configFiles">
+  <h3 class="option-name">
+    <a href="#option-oci.container.configFiles" class="option-anchor">oci.container.configFiles</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>list of package</code></div>
+  <div class="option-description"><html><head></head><body><p>Additional config file derivations for the root filesystem.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>[ ]</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/_nixos/oci/root-filesystem.nix" target="_blank">nix/modules/_nixos/oci/root-filesystem.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.container.dependencies">
+  <h3 class="option-name">
+    <a href="#option-oci.container.dependencies" class="option-anchor">oci.container.dependencies</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>list of package</code></div>
+  <div class="option-description"><html><head></head><body><p>Additional packages to include in the root filesystem.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>[ ]</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/_nixos/oci/root-filesystem.nix" target="_blank">nix/modules/_nixos/oci/root-filesystem.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.container.entrypoint">
+  <h3 class="option-name">
+    <a href="#option-oci.container.entrypoint" class="option-anchor">oci.container.entrypoint</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>list of string</code></div>
+  <div class="option-description"><html><head></head><body><p>Container entrypoint. Auto-derived from mainService when set.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>[ ]</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/_nixos/oci/entrypoint.nix" target="_blank">nix/modules/_nixos/oci/entrypoint.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.container.gid">
+  <h3 class="option-name">
+    <a href="#option-oci.container.gid" class="option-anchor">oci.container.gid</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>signed integer</code></div>
+  <div class="option-description"><html><head></head><body><p>GID for non-root container user.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>4000</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/_nixos/oci/users.nix" target="_blank">nix/modules/_nixos/oci/users.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.container.isRoot">
+  <h3 class="option-name">
+    <a href="#option-oci.container.isRoot" class="option-anchor">oci.container.isRoot</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether the container runs as root.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/_nixos/oci/users.nix" target="_blank">nix/modules/_nixos/oci/users.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.container.mainService">
+  <h3 class="option-name">
+    <a href="#option-oci.container.mainService" class="option-anchor">oci.container.mainService</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>null or string</code></div>
+  <div class="option-description"><html><head></head><body><p>NixOS service to extract entrypoint from.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>null</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/_nixos/oci/entrypoint.nix" target="_blank">nix/modules/_nixos/oci/entrypoint.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.container.package">
+  <h3 class="option-name">
+    <a href="#option-oci.container.package" class="option-anchor">oci.container.package</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>null or package</code></div>
+  <div class="option-description"><html><head></head><body><p>Main package for the container.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>null</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/_nixos/oci/root-filesystem.nix" target="_blank">nix/modules/_nixos/oci/root-filesystem.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.container.uid">
+  <h3 class="option-name">
+    <a href="#option-oci.container.uid" class="option-anchor">oci.container.uid</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>signed integer</code></div>
+  <div class="option-description"><html><head></head><body><p>UID for non-root container user.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>4000</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/_nixos/oci/users.nix" target="_blank">nix/modules/_nixos/oci/users.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.container.user">
+  <h3 class="option-name">
+    <a href="#option-oci.container.user" class="option-anchor">oci.container.user</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>string</code></div>
+  <div class="option-description"><html><head></head><body><p>Container user name.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>"root"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/_nixos/oci/users.nix" target="_blank">nix/modules/_nixos/oci/users.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.containers">
+  <h3 class="option-name">
+    <a href="#option-oci.containers" class="option-anchor">oci.containers</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>attribute set of (submodule)</code></div>
+  <div class="option-description"><html><head></head><body><p>OCI containers to build, load, and optionally run.
+Each entry builds an image via nix2container and creates
+a systemd service to load it into the container runtime.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-example">Example: <pre><code>{
+  my-app = {
+    package = pkgs.hello;
+    dependencies = [ pkgs.bash ];
+  };
+}
+</code></pre></div>
+  <div class="option-declared">Declared in: <code>oci.containers</code></div>
+</div>
+<div class="option" id="option-oci.containers._name_.autoStart">
+  <h3 class="option-name">
+    <a href="#option-oci.containers._name_.autoStart" class="option-anchor">oci.containers.&lt;name&gt;.autoStart</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>When true, creates a runner service that starts the container
+after the image is loaded. The runner depends on the loader service.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/deploy/nix-oci/options/_containers/auto-start.nix" target="_blank">nix/modules/deploy/nix-oci/options/_containers/auto-start.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.containers._name_.dependencies">
+  <h3 class="option-name">
+    <a href="#option-oci.containers._name_.dependencies" class="option-anchor">oci.containers.&lt;name&gt;.dependencies</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>list of package</code></div>
+  <div class="option-description"><html><head></head><body><p>Additional packages included in the container root filesystem.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>[ ]</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/deploy/nix-oci/options/_containers/dependencies.nix" target="_blank">nix/modules/deploy/nix-oci/options/_containers/dependencies.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.containers._name_.entrypoint">
+  <h3 class="option-name">
+    <a href="#option-oci.containers._name_.entrypoint" class="option-anchor">oci.containers.&lt;name&gt;.entrypoint</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>list of string</code></div>
+  <div class="option-description"><html><head></head><body><p>OCI entrypoint (command + arguments).
+When empty, defaults to the package's main program.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>[ ]</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/deploy/nix-oci/options/_containers/entrypoint.nix" target="_blank">nix/modules/deploy/nix-oci/options/_containers/entrypoint.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.containers._name_.environment">
+  <h3 class="option-name">
+    <a href="#option-oci.containers._name_.environment" class="option-anchor">oci.containers.&lt;name&gt;.environment</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>attribute set of string</code></div>
+  <div class="option-description"><html><head></head><body><p>Environment variables passed to the container at runtime.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-example">Example: <pre><code>{
+  RUST_LOG = "info";
+}</code></pre></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/deploy/nix-oci/options/_containers/environment.nix" target="_blank">nix/modules/deploy/nix-oci/options/_containers/environment.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.containers._name_.image">
+  <h3 class="option-name">
+    <a href="#option-oci.containers._name_.image" class="option-anchor">oci.containers.&lt;name&gt;.image</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-metadata">read-only</div>
+  <div class="option-type">Type: <code>package</code></div>
+  <div class="option-description"><html><head></head><body><p>Built OCI image (computed from package + dependencies via nix2container).</p>
+</body></html></div>
+  <div class="option-default">Default: <code>&lt;derivation image--name-.json&gt;</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/deploy/nix-oci/options/_containers/image.nix" target="_blank">nix/modules/deploy/nix-oci/options/_containers/image.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.containers._name_.isRoot">
+  <h3 class="option-name">
+    <a href="#option-oci.containers._name_.isRoot" class="option-anchor">oci.containers.&lt;name&gt;.isRoot</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether the container process runs as root.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>true</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/deploy/nix-oci/options/_containers/is-root.nix" target="_blank">nix/modules/deploy/nix-oci/options/_containers/is-root.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.containers._name_.name">
+  <h3 class="option-name">
+    <a href="#option-oci.containers._name_.name" class="option-anchor">oci.containers.&lt;name&gt;.name</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>string</code></div>
+  <div class="option-description"><html><head></head><body><p>OCI image name. Defaults to the container attribute name.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>"‹name›"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/deploy/nix-oci/options/_containers/name.nix" target="_blank">nix/modules/deploy/nix-oci/options/_containers/name.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.containers._name_.optimizeLayers">
+  <h3 class="option-name">
+    <a href="#option-oci.containers._name_.optimizeLayers" class="option-anchor">oci.containers.&lt;name&gt;.optimizeLayers</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Split container into multiple layers for better local caching.
+Defaults to true for deploy (no push cost, shared layers save disk).</p>
+</body></html></div>
+  <div class="option-default">Default: <code>true</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/deploy/nix-oci/options/_containers/optimize-layers.nix" target="_blank">nix/modules/deploy/nix-oci/options/_containers/optimize-layers.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.containers._name_.package">
+  <h3 class="option-name">
+    <a href="#option-oci.containers._name_.package" class="option-anchor">oci.containers.&lt;name&gt;.package</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>package</code></div>
+  <div class="option-description"><html><head></head><body><p>The main application package to containerize.</p>
+</body></html></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/deploy/nix-oci/options/_containers/package.nix" target="_blank">nix/modules/deploy/nix-oci/options/_containers/package.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.containers._name_.ports">
+  <h3 class="option-name">
+    <a href="#option-oci.containers._name_.ports" class="option-anchor">oci.containers.&lt;name&gt;.ports</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>list of string</code></div>
+  <div class="option-description"><html><head></head><body><p>Port mappings for the container runner (e.g. <code>["8080:8080"]</code>).
+Only used when <code>autoStart = true</code>.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>[ ]</code></div>
+  <div class="option-example">Example: <pre><code>[
+  "8080:8080"
+  "443:443"
+]</code></pre></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/deploy/nix-oci/options/_containers/ports.nix" target="_blank">nix/modules/deploy/nix-oci/options/_containers/ports.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.containers._name_.tag">
+  <h3 class="option-name">
+    <a href="#option-oci.containers._name_.tag" class="option-anchor">oci.containers.&lt;name&gt;.tag</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>string</code></div>
+  <div class="option-description"><html><head></head><body><p>OCI image tag.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>"latest"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/deploy/nix-oci/options/_containers/tag.nix" target="_blank">nix/modules/deploy/nix-oci/options/_containers/tag.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.containers._name_.user">
+  <h3 class="option-name">
+    <a href="#option-oci.containers._name_.user" class="option-anchor">oci.containers.&lt;name&gt;.user</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>string</code></div>
+  <div class="option-description"><html><head></head><body><p>User to run the container process as.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>"root"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/deploy/nix-oci/options/_containers/user.nix" target="_blank">nix/modules/deploy/nix-oci/options/_containers/user.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.containers._name_.volumes">
+  <h3 class="option-name">
+    <a href="#option-oci.containers._name_.volumes" class="option-anchor">oci.containers.&lt;name&gt;.volumes</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>list of string</code></div>
+  <div class="option-description"><html><head></head><body><p>Volume mounts for the container runner (e.g. <code>["/data:/data"]</code>).
+Only used when <code>autoStart = true</code>.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>[ ]</code></div>
+  <div class="option-example">Example: <pre><code>[
+  "/var/lib/app:/data"
+]</code></pre></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/deploy/nix-oci/options/_containers/volumes.nix" target="_blank">nix/modules/deploy/nix-oci/options/_containers/volumes.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.credentialsLeak">
+  <h3 class="option-name">
+    <a href="#option-oci.credentialsLeak" class="option-anchor">oci.credentialsLeak</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>submodule</code></div>
+  <div class="option-description"><html><head></head><body><p>Options for credential leak detection in container images.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/credentials-leak/options.nix" target="_blank">nix/modules/oci/security/credentials-leak/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.credentialsLeak.configPath">
+  <h3 class="option-name">
+    <a href="#option-oci.credentialsLeak.configPath" class="option-anchor">oci.credentialsLeak.configPath</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>absolute path</code></div>
+  <div class="option-description"><html><head></head><body><p>Path where global credentials leak check configuration files will be stored.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.rootPath + "/credentials-leak/"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/credentials-leak/options.nix" target="_blank">nix/modules/oci/security/credentials-leak/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.credentialsLeak.trivy">
+  <h3 class="option-name">
+    <a href="#option-oci.credentialsLeak.trivy" class="option-anchor">oci.credentialsLeak.trivy</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>submodule</code></div>
+  <div class="option-description"><html><head></head><body><p>Configuration for detecting credentials leaks using Trivy.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/credentials-leak/options.nix" target="_blank">nix/modules/oci/security/credentials-leak/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.credentialsLeak.trivy.enabled">
+  <h3 class="option-name">
+    <a href="#option-oci.credentialsLeak.trivy.enabled" class="option-anchor">oci.credentialsLeak.trivy.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable credentials leak detection with Trivy.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-example">Example: <code>true</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/credentials-leak/options.nix" target="_blank">nix/modules/oci/security/credentials-leak/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.cve">
+  <h3 class="option-name">
+    <a href="#option-oci.cve" class="option-anchor">oci.cve</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>submodule</code></div>
+  <div class="option-description"><html><head></head><body><p>Configuration for Common Vulnerabilities and Exposures (CVE) scanning in container images.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix" target="_blank">nix/modules/oci/security/cve/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.cve.configPath">
+  <h3 class="option-name">
+    <a href="#option-oci.cve.configPath" class="option-anchor">oci.cve.configPath</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>absolute path</code></div>
+  <div class="option-description"><html><head></head><body><p>Path where CVE scanner configuration files will be stored.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>cfg.oci.rootPath</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix" target="_blank">nix/modules/oci/security/cve/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.cve.grype">
+  <h3 class="option-name">
+    <a href="#option-oci.cve.grype" class="option-anchor">oci.cve.grype</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>submodule</code></div>
+  <div class="option-description"><html><head></head><body><p>Configuration for CVE scanning using Grype.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix" target="_blank">nix/modules/oci/security/cve/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.cve.grype.config">
+  <h3 class="option-name">
+    <a href="#option-oci.cve.grype.config" class="option-anchor">oci.cve.grype.config</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>submodule</code></div>
+  <div class="option-description"><html><head></head><body><p>Configuration for Grype scanner settings.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix" target="_blank">nix/modules/oci/security/cve/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.cve.grype.config.enabled">
+  <h3 class="option-name">
+    <a href="#option-oci.cve.grype.config.enabled" class="option-anchor">oci.cve.grype.config.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable Grype configuration file generation.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-example">Example: <code>true</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix" target="_blank">nix/modules/oci/security/cve/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.cve.grype.config.rootPath">
+  <h3 class="option-name">
+    <a href="#option-oci.cve.grype.config.rootPath" class="option-anchor">oci.cve.grype.config.rootPath</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>absolute path</code></div>
+  <div class="option-description"><html><head></head><body><p>Path where Grype configuration files will be stored.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.cve.configPath + "/grype/"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix" target="_blank">nix/modules/oci/security/cve/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.cve.grype.enabled">
+  <h3 class="option-name">
+    <a href="#option-oci.cve.grype.enabled" class="option-anchor">oci.cve.grype.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable CVE scanning with Grype.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-example">Example: <code>true</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix" target="_blank">nix/modules/oci/security/cve/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.cve.trivy">
+  <h3 class="option-name">
+    <a href="#option-oci.cve.trivy" class="option-anchor">oci.cve.trivy</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>submodule</code></div>
+  <div class="option-description"><html><head></head><body><p>Configuration for CVE scanning using Trivy.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix" target="_blank">nix/modules/oci/security/cve/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.cve.trivy.enabled">
+  <h3 class="option-name">
+    <a href="#option-oci.cve.trivy.enabled" class="option-anchor">oci.cve.trivy.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable CVE scanning with Trivy.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-example">Example: <code>true</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix" target="_blank">nix/modules/oci/security/cve/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.cve.trivy.ignore">
+  <h3 class="option-name">
+    <a href="#option-oci.cve.trivy.ignore" class="option-anchor">oci.cve.trivy.ignore</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>submodule</code></div>
+  <div class="option-description"><html><head></head><body><p>Configuration for CVE exclusions in Trivy scans.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix" target="_blank">nix/modules/oci/security/cve/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.cve.trivy.ignore.extra">
+  <h3 class="option-name">
+    <a href="#option-oci.cve.trivy.ignore.extra" class="option-anchor">oci.cve.trivy.ignore.extra</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>list of string</code></div>
+  <div class="option-description"><html><head></head><body><p>Additional CVE identifiers to ignore globally in Trivy scans.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>[ ]</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix" target="_blank">nix/modules/oci/security/cve/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.cve.trivy.ignore.fileEnabled">
+  <h3 class="option-name">
+    <a href="#option-oci.cve.trivy.ignore.fileEnabled" class="option-anchor">oci.cve.trivy.ignore.fileEnabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable Trivy CVE ignore file generation.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-example">Example: <code>true</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix" target="_blank">nix/modules/oci/security/cve/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.cve.trivy.ignore.rootPath">
+  <h3 class="option-name">
+    <a href="#option-oci.cve.trivy.ignore.rootPath" class="option-anchor">oci.cve.trivy.ignore.rootPath</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>absolute path</code></div>
+  <div class="option-description"><html><head></head><body><p>Path where Trivy CVE ignore files will be stored.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>cfg.oci.cve.configPath</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix" target="_blank">nix/modules/oci/security/cve/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.cve.vulnix">
+  <h3 class="option-name">
+    <a href="#option-oci.cve.vulnix" class="option-anchor">oci.cve.vulnix</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>submodule</code></div>
+  <div class="option-description"><html><head></head><body><p>Configuration for Nix-native CVE scanning using vulnix.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix" target="_blank">nix/modules/oci/security/cve/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.cve.vulnix.enabled">
+  <h3 class="option-name">
+    <a href="#option-oci.cve.vulnix.enabled" class="option-anchor">oci.cve.vulnix.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable CVE scanning with vulnix.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-example">Example: <code>true</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix" target="_blank">nix/modules/oci/security/cve/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.cve.vulnix.whitelist">
+  <h3 class="option-name">
+    <a href="#option-oci.cve.vulnix.whitelist" class="option-anchor">oci.cve.vulnix.whitelist</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>submodule</code></div>
+  <div class="option-description"><html><head></head><body><p>Configuration for vulnix CVE whitelist.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix" target="_blank">nix/modules/oci/security/cve/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.cve.vulnix.whitelist.enabled">
+  <h3 class="option-name">
+    <a href="#option-oci.cve.vulnix.whitelist.enabled" class="option-anchor">oci.cve.vulnix.whitelist.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable vulnix whitelist file.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-example">Example: <code>true</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix" target="_blank">nix/modules/oci/security/cve/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.cve.vulnix.whitelist.rootPath">
+  <h3 class="option-name">
+    <a href="#option-oci.cve.vulnix.whitelist.rootPath" class="option-anchor">oci.cve.vulnix.whitelist.rootPath</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>absolute path</code></div>
+  <div class="option-description"><html><head></head><body><p>Path where vulnix whitelist files will be stored.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.cve.configPath + "/vulnix/"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/cve/options.nix" target="_blank">nix/modules/oci/security/cve/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.debug">
+  <h3 class="option-name">
+    <a href="#option-oci.debug" class="option-anchor">oci.debug</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>submodule</code></div>
+  <div class="option-description"><html><head></head><body><p>Add debug build in output.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/debug/options.nix" target="_blank">nix/modules/oci/debug/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.debug.enabled">
+  <h3 class="option-name">
+    <a href="#option-oci.debug.enabled" class="option-anchor">oci.debug.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body></body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/debug/options.nix" target="_blank">nix/modules/oci/debug/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.debug.entrypoint">
+  <h3 class="option-name">
+    <a href="#option-oci.debug.entrypoint" class="option-anchor">oci.debug.entrypoint</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>submodule</code></div>
+  <div class="option-description"><html><head></head><body><p>Debug entrypoint wrapper configuration.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/debug/options.nix" target="_blank">nix/modules/oci/debug/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.debug.entrypoint.enabled">
+  <h3 class="option-name">
+    <a href="#option-oci.debug.entrypoint.enabled" class="option-anchor">oci.debug.entrypoint.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable debug entrypoint wrapper.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/debug/options.nix" target="_blank">nix/modules/oci/debug/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.debug.entrypoint.wrapper">
+  <h3 class="option-name">
+    <a href="#option-oci.debug.entrypoint.wrapper" class="option-anchor">oci.debug.entrypoint.wrapper</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>package</code></div>
+  <div class="option-description"><html><head></head><body><p>Default behavior run sleep infinity fallback if entrypoint fail.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>pkgs.writeShellScriptBin "entrypoint" (builtins.readFile ./debug-entrypoint.sh)</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/debug/options.nix" target="_blank">nix/modules/oci/debug/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.debug.packages">
+  <h3 class="option-name">
+    <a href="#option-oci.debug.packages" class="option-anchor">oci.debug.packages</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>list of package</code></div>
+  <div class="option-description"><html><head></head><body></body></html></div>
+  <div class="option-default">Default: <code>with pkgs; [
+  coreutils
+  bash
+  curl
+]
+</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/debug/options.nix" target="_blank">nix/modules/oci/debug/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.devShellPackage">
+  <h3 class="option-name">
+    <a href="#option-oci.devShellPackage" class="option-anchor">oci.devShellPackage</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>package</code></div>
+  <div class="option-description"><html><head></head><body><p>The package to use for the development shell.</p>
+</body></html></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/devShellPackage.nix" target="_blank">nix/modules/oci/devShellPackage.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.enable">
+  <h3 class="option-name">
+    <a href="#option-oci.enable" class="option-anchor">oci.enable</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable nix-oci container deployment.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-example">Example: <code>true</code></div>
+  <div class="option-declared">Declared in: <code>oci.enable</code></div>
+</div>
+<div class="option" id="option-oci.enableDevShell">
+  <h3 class="option-name">
+    <a href="#option-oci.enableDevShell" class="option-anchor">oci.enableDevShell</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable the flake development shell.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/enableDevShell.nix" target="_blank">nix/modules/oci/enableDevShell.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.enableFlakeOutputs">
+  <h3 class="option-name">
+    <a href="#option-oci.enableFlakeOutputs" class="option-anchor">oci.enableFlakeOutputs</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to automatically expose OCI apps, packages, and checks as flake outputs.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>true</code></div>
+  <div class="option-example">Example: <code>false</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/enableFlakeOutputs.nix" target="_blank">nix/modules/oci/enableFlakeOutputs.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.enabled">
+  <h3 class="option-name">
+    <a href="#option-oci.enabled" class="option-anchor">oci.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable Enable the OCI module..</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-example">Example: <code>true</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/enabled.nix" target="_blank">nix/modules/oci/enabled.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.flake.apps">
+  <h3 class="option-name">
+    <a href="#option-oci.flake.apps" class="option-anchor">oci.flake.apps</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-metadata">read-only</div>
+  <div class="option-type">Type: <code>attribute set of (attribute set)</code></div>
+  <div class="option-description"><html><head></head><body><p>OCI-related apps that can be exposed as flake outputs.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>Apps for security scanning, SBOM generation, validation, and multi-arch builds, derived from [`oci.containers`](#opt-perSystem.oci.containers).</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/outputs/apps.nix" target="_blank">nix/modules/oci/outputs/apps.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.flake.checks">
+  <h3 class="option-name">
+    <a href="#option-oci.flake.checks" class="option-anchor">oci.flake.checks</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-metadata">read-only</div>
+  <div class="option-type">Type: <code>attribute set of package</code></div>
+  <div class="option-description"><html><head></head><body><p>OCI-related checks that can be exposed as flake outputs.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/outputs/checks.nix" target="_blank">nix/modules/oci/outputs/checks.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.flake.packages">
+  <h3 class="option-name">
+    <a href="#option-oci.flake.packages" class="option-anchor">oci.flake.packages</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-metadata">read-only</div>
+  <div class="option-type">Type: <code>attribute set of package</code></div>
+  <div class="option-description"><html><head></head><body><p>OCI container packages that can be exposed as flake outputs.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/outputs/packages.nix" target="_blank">nix/modules/oci/outputs/packages.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.fromImageManifestRootPath">
+  <h3 class="option-name">
+    <a href="#option-oci.fromImageManifestRootPath" class="option-anchor">oci.fromImageManifestRootPath</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>absolute path</code></div>
+  <div class="option-description"><html><head></head><body><p>The root path to store the pulled OCI image manifest JSON lockfiles.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.rootPath + "/pulledManifestsLocks/"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/fromImageManifestRootPath.nix" target="_blank">nix/modules/oci/fromImageManifestRootPath.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.packages.containerStructureTest">
+  <h3 class="option-name">
+    <a href="#option-oci.packages.containerStructureTest" class="option-anchor">oci.packages.containerStructureTest</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>package</code></div>
+  <div class="option-description"><html><head></head><body><p>The package to use for container-structure-test.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>pkgs.container-structure-test</code></div>
+  <div class="option-example">Example: <code>pkgs.container-structure-test</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/containerStructureTest.nix" target="_blank">nix/modules/oci/packages/containerStructureTest.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.packages.cosign">
+  <h3 class="option-name">
+    <a href="#option-oci.packages.cosign" class="option-anchor">oci.packages.cosign</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>package</code></div>
+  <div class="option-description"><html><head></head><body><p>The package to use for cosign.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>pkgs.cosign</code></div>
+  <div class="option-example">Example: <code>pkgs.cosign</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/cosign.nix" target="_blank">nix/modules/oci/packages/cosign.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.packages.dgoss">
+  <h3 class="option-name">
+    <a href="#option-oci.packages.dgoss" class="option-anchor">oci.packages.dgoss</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>package</code></div>
+  <div class="option-description"><html><head></head><body><p>The package to use for dgoss.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>pkgs.dgoss</code></div>
+  <div class="option-example">Example: <code>pkgs.dgoss</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/dgoss.nix" target="_blank">nix/modules/oci/packages/dgoss.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.packages.dive">
+  <h3 class="option-name">
+    <a href="#option-oci.packages.dive" class="option-anchor">oci.packages.dive</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>package</code></div>
+  <div class="option-description"><html><head></head><body><p>The package to use for dive.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>pkgs.dive</code></div>
+  <div class="option-example">Example: <code>pkgs.dive</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/dive.nix" target="_blank">nix/modules/oci/packages/dive.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.packages.grype">
+  <h3 class="option-name">
+    <a href="#option-oci.packages.grype" class="option-anchor">oci.packages.grype</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>package</code></div>
+  <div class="option-description"><html><head></head><body><p>The package to use for grype.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>pkgs.grype</code></div>
+  <div class="option-example">Example: <code>pkgs.grype</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/grype.nix" target="_blank">nix/modules/oci/packages/grype.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.packages.nix2container">
+  <h3 class="option-name">
+    <a href="#option-oci.packages.nix2container" class="option-anchor">oci.packages.nix2container</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>attribute set</code></div>
+  <div class="option-description"><html><head></head><body><p>The nix2container package.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>inputs.nix2container.packages.${system}.nix2container</code></div>
+  <div class="option-example">Example: <code>inputs.nix2container.packages.${system}.nix2container</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/nix2container.nix" target="_blank">nix/modules/oci/packages/nix2container.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.packages.podman">
+  <h3 class="option-name">
+    <a href="#option-oci.packages.podman" class="option-anchor">oci.packages.podman</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>package</code></div>
+  <div class="option-description"><html><head></head><body><p>The package to use for podman.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>pkgs.podman</code></div>
+  <div class="option-example">Example: <code>pkgs.podman</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/podman.nix" target="_blank">nix/modules/oci/packages/podman.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.packages.regctl">
+  <h3 class="option-name">
+    <a href="#option-oci.packages.regctl" class="option-anchor">oci.packages.regctl</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>package</code></div>
+  <div class="option-description"><html><head></head><body><p>The package to use for regctl (multi-arch manifest tool).</p>
+</body></html></div>
+  <div class="option-default">Default: <code>pkgs.regclient</code></div>
+  <div class="option-example">Example: <code>pkgs.regclient</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/regctl.nix" target="_blank">nix/modules/oci/packages/regctl.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.packages.skaffold">
+  <h3 class="option-name">
+    <a href="#option-oci.packages.skaffold" class="option-anchor">oci.packages.skaffold</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>package</code></div>
+  <div class="option-description"><html><head></head><body><p>The package to use for skaffold.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>pkgs.skaffold</code></div>
+  <div class="option-example">Example: <code>pkgs.skaffold</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/skaffold.nix" target="_blank">nix/modules/oci/packages/skaffold.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.packages.skopeo">
+  <h3 class="option-name">
+    <a href="#option-oci.packages.skopeo" class="option-anchor">oci.packages.skopeo</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>package</code></div>
+  <div class="option-description"><html><head></head><body><p>The package to use for skopeo.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>inputs.nix2container.packages.${system}.skopeo-nix2container</code></div>
+  <div class="option-example">Example: <code>inputs.nix2container.packages.${system}.skopeo-nix2container</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/skopeo.nix" target="_blank">nix/modules/oci/packages/skopeo.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.packages.syft">
+  <h3 class="option-name">
+    <a href="#option-oci.packages.syft" class="option-anchor">oci.packages.syft</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>package</code></div>
+  <div class="option-description"><html><head></head><body><p>The package to use for syft.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>pkgs.syft</code></div>
+  <div class="option-example">Example: <code>pkgs.syft</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/syft.nix" target="_blank">nix/modules/oci/packages/syft.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.packages.trivy">
+  <h3 class="option-name">
+    <a href="#option-oci.packages.trivy" class="option-anchor">oci.packages.trivy</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>package</code></div>
+  <div class="option-description"><html><head></head><body><p>The package to use for trivy.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>pkgs.trivy</code></div>
+  <div class="option-example">Example: <code>pkgs.trivy</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/trivy.nix" target="_blank">nix/modules/oci/packages/trivy.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.packages.vulnix">
+  <h3 class="option-name">
+    <a href="#option-oci.packages.vulnix" class="option-anchor">oci.packages.vulnix</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>package</code></div>
+  <div class="option-description"><html><head></head><body><p>The package to use for vulnix.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>pkgs.vulnix</code></div>
+  <div class="option-example">Example: <code>pkgs.vulnix</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/packages/vulnix.nix" target="_blank">nix/modules/oci/packages/vulnix.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.perContainer">
+  <h3 class="option-name">
+    <a href="#option-oci.perContainer" class="option-anchor">oci.perContainer</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>per-container module</code></div>
+  <div class="option-description"><html><head></head><body><p>Per-container module definition.</p>
+<p>Multiple modules can contribute to this option. Each contribution is a
+module that will be evaluated for every container with container-specific
+context.</p>
+<p>The module receives these special arguments:</p>
+<ul>
+<li><code>name</code>: the attribute name of the container (from types.attrsOf)</li>
+<li><code>config</code>: the container's config (for reading within the module)</li>
+<li><code>globalConfig</code>: the top-level flake config</li>
+<li><code>perSystemConfig</code>: the perSystem config</li>
+<li><code>system</code>: the current system</li>
+<li><code>pkgs</code>: nixpkgs for current system</li>
+<li><code>lib</code>: nixpkgs lib</li>
+</ul>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/perContainer.nix" target="_blank">nix/modules/oci/containers/perContainer.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.registry">
+  <h3 class="option-name">
+    <a href="#option-oci.registry" class="option-anchor">oci.registry</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>null or string</code></div>
+  <div class="option-description"><html><head></head><body><p>The OCI registry to use for pushing and pulling images.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>null</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/registry.nix" target="_blank">nix/modules/oci/registry.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.rootPath">
+  <h3 class="option-name">
+    <a href="#option-oci.rootPath" class="option-anchor">oci.rootPath</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>absolute path</code></div>
+  <div class="option-description"><html><head></head><body><p>The root path to store the Nix OCI resources.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>self + "/oci/"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/rootPath.nix" target="_blank">nix/modules/oci/rootPath.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.sbom">
+  <h3 class="option-name">
+    <a href="#option-oci.sbom" class="option-anchor">oci.sbom</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>submodule</code></div>
+  <div class="option-description"><html><head></head><body><p>Configuration for Software Bill of Materials (SBOM) generation in container images.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/sbom/options.nix" target="_blank">nix/modules/oci/security/sbom/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.sbom.path">
+  <h3 class="option-name">
+    <a href="#option-oci.sbom.path" class="option-anchor">oci.sbom.path</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>absolute path</code></div>
+  <div class="option-description"><html><head></head><body><p>Path where SBOM files will be stored.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>cfg.oci.rootPath</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/sbom/options.nix" target="_blank">nix/modules/oci/security/sbom/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.sbom.syft">
+  <h3 class="option-name">
+    <a href="#option-oci.sbom.syft" class="option-anchor">oci.sbom.syft</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>submodule</code></div>
+  <div class="option-description"><html><head></head><body><p>Configuration for SBOM generation using Syft.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/sbom/options.nix" target="_blank">nix/modules/oci/security/sbom/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.sbom.syft.config">
+  <h3 class="option-name">
+    <a href="#option-oci.sbom.syft.config" class="option-anchor">oci.sbom.syft.config</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>submodule</code></div>
+  <div class="option-description"><html><head></head><body><p>Configuration settings for Syft SBOM generation.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/sbom/options.nix" target="_blank">nix/modules/oci/security/sbom/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.sbom.syft.config.enabled">
+  <h3 class="option-name">
+    <a href="#option-oci.sbom.syft.config.enabled" class="option-anchor">oci.sbom.syft.config.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable Syft configuration file generation.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/sbom/options.nix" target="_blank">nix/modules/oci/security/sbom/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.sbom.syft.config.rootPath">
+  <h3 class="option-name">
+    <a href="#option-oci.sbom.syft.config.rootPath" class="option-anchor">oci.sbom.syft.config.rootPath</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>absolute path</code></div>
+  <div class="option-description"><html><head></head><body><p>Path where Syft configuration files will be stored.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>cfg.oci.sbom.path</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/sbom/options.nix" target="_blank">nix/modules/oci/security/sbom/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.sbom.syft.enabled">
+  <h3 class="option-name">
+    <a href="#option-oci.sbom.syft.enabled" class="option-anchor">oci.sbom.syft.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable SBOM generation with Syft.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/sbom/options.nix" target="_blank">nix/modules/oci/security/sbom/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.signing">
+  <h3 class="option-name">
+    <a href="#option-oci.signing" class="option-anchor">oci.signing</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>submodule</code></div>
+  <div class="option-description"><html><head></head><body><p>Configuration for OCI image signing using cosign / Sigstore.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/signing/options.nix" target="_blank">nix/modules/oci/security/signing/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.signing.cosign">
+  <h3 class="option-name">
+    <a href="#option-oci.signing.cosign" class="option-anchor">oci.signing.cosign</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>submodule</code></div>
+  <div class="option-description"><html><head></head><body><p>Configuration for image signing with cosign.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/signing/options.nix" target="_blank">nix/modules/oci/security/signing/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.signing.cosign.annotations">
+  <h3 class="option-name">
+    <a href="#option-oci.signing.cosign.annotations" class="option-anchor">oci.signing.cosign.annotations</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>attribute set of string</code></div>
+  <div class="option-description"><html><head></head><body><p>Key-value annotations to attach to every cosign signature.
+These appear in <code>cosign verify</code> output and can be used
+for policy enforcement (e.g. with Kyverno or OPA).</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-example">Example: <pre><code>{
+  build-system = "nix";
+  repo = "https://github.com/example/repo";
+}</code></pre></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/signing/options.nix" target="_blank">nix/modules/oci/security/signing/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.signing.cosign.certificateIdentityRegexp">
+  <h3 class="option-name">
+    <a href="#option-oci.signing.cosign.certificateIdentityRegexp" class="option-anchor">oci.signing.cosign.certificateIdentityRegexp</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>null or string</code></div>
+  <div class="option-description"><html><head></head><body><p>Regular expression to match the certificate identity when
+verifying keyless signatures. Required for keyless verification.
+Example: <code>"https://github.com/myorg/.*"</code> or an email pattern.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>null</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/signing/options.nix" target="_blank">nix/modules/oci/security/signing/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.signing.cosign.certificateOidcIssuerRegexp">
+  <h3 class="option-name">
+    <a href="#option-oci.signing.cosign.certificateOidcIssuerRegexp" class="option-anchor">oci.signing.cosign.certificateOidcIssuerRegexp</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>null or string</code></div>
+  <div class="option-description"><html><head></head><body><p>Regular expression to match the OIDC issuer when verifying
+keyless signatures. Required for keyless verification.
+Example: <code>"https://token.actions.githubusercontent.com"</code>.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>null</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/signing/options.nix" target="_blank">nix/modules/oci/security/signing/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.signing.cosign.enabled">
+  <h3 class="option-name">
+    <a href="#option-oci.signing.cosign.enabled" class="option-anchor">oci.signing.cosign.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable OCI image signing with cosign.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-example">Example: <code>true</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/signing/options.nix" target="_blank">nix/modules/oci/security/signing/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.signing.cosign.key">
+  <h3 class="option-name">
+    <a href="#option-oci.signing.cosign.key" class="option-anchor">oci.signing.cosign.key</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>null or string</code></div>
+  <div class="option-description"><html><head></head><body><p>Path or KMS URI for the cosign signing key.
+Supports local files, environment variables, and KMS URIs:</p>
+<ul>
+<li>Local file: <code>./cosign.key</code></li>
+<li>Environment variable: <code>env://COSIGN_PRIVATE_KEY</code></li>
+<li>AWS KMS: <code>awskms://[ENDPOINT]/[ID/ALIAS/ARN]</code></li>
+<li>GCP KMS: <code>gcpkms://projects/[PROJECT]/locations/[LOC]/keyRings/[RING]/cryptoKeys/[KEY]</code></li>
+<li>Azure Key Vault: <code>azurekms://[VAULT_NAME][VAULT_URI]/[KEY]</code></li>
+<li>HashCorp Vault: <code>hashivault://[KEY]</code>
+Only used when <code>keyless</code> is false.</li>
+</ul>
+</body></html></div>
+  <div class="option-default">Default: <code>null</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/signing/options.nix" target="_blank">nix/modules/oci/security/signing/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.signing.cosign.keyless">
+  <h3 class="option-name">
+    <a href="#option-oci.signing.cosign.keyless" class="option-anchor">oci.signing.cosign.keyless</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Use keyless (OIDC) signing via Sigstore Fulcio.
+When true, cosign authenticates via an OIDC provider
+(GitHub Actions, Google, Microsoft) and issues ephemeral
+certificates. No key management required.
+When false, <code>key</code> must be set.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>true</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/signing/options.nix" target="_blank">nix/modules/oci/security/signing/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.signing.cosign.verify">
+  <h3 class="option-name">
+    <a href="#option-oci.signing.cosign.verify" class="option-anchor">oci.signing.cosign.verify</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to verify the signature immediately after signing.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>true</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/security/signing/options.nix" target="_blank">nix/modules/oci/security/signing/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.test">
+  <h3 class="option-name">
+    <a href="#option-oci.test" class="option-anchor">oci.test</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>submodule</code></div>
+  <div class="option-description"><html><head></head><body><p>Global configuration for container testing tools.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/testing/options.nix" target="_blank">nix/modules/oci/testing/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.test.containerStructureTest">
+  <h3 class="option-name">
+    <a href="#option-oci.test.containerStructureTest" class="option-anchor">oci.test.containerStructureTest</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>submodule</code></div>
+  <div class="option-description"><html><head></head><body><p>Configuration for container-structure-test validation tool.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/testing/options.nix" target="_blank">nix/modules/oci/testing/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.test.containerStructureTest.enabled">
+  <h3 class="option-name">
+    <a href="#option-oci.test.containerStructureTest.enabled" class="option-anchor">oci.test.containerStructureTest.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable container-structure-test globally for all containers.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/testing/options.nix" target="_blank">nix/modules/oci/testing/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.test.dgoss">
+  <h3 class="option-name">
+    <a href="#option-oci.test.dgoss" class="option-anchor">oci.test.dgoss</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>submodule</code></div>
+  <div class="option-description"><html><head></head><body><p>Configuration for dgoss (Docker + goss) testing framework.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/testing/options.nix" target="_blank">nix/modules/oci/testing/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.test.dgoss.enabled">
+  <h3 class="option-name">
+    <a href="#option-oci.test.dgoss.enabled" class="option-anchor">oci.test.dgoss.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable dgoss testing globally for all containers.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/testing/options.nix" target="_blank">nix/modules/oci/testing/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.test.dgoss.hermetic">
+  <h3 class="option-name">
+    <a href="#option-oci.test.dgoss.hermetic" class="option-anchor">oci.test.dgoss.hermetic</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Run dgoss as a pure Nix derivation (check) using podman
+inside the Nix sandbox.
+Requires <code>extra-sandbox-paths = /sys/fs/cgroup</code> in nix.conf.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/testing/options.nix" target="_blank">nix/modules/oci/testing/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.test.dive">
+  <h3 class="option-name">
+    <a href="#option-oci.test.dive" class="option-anchor">oci.test.dive</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>submodule</code></div>
+  <div class="option-description"><html><head></head><body><p>Configuration for Dive container image analysis tool.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>{ }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/testing/options.nix" target="_blank">nix/modules/oci/testing/options.nix</a></code></div>
+</div>
+<div class="option" id="option-oci.test.dive.enabled">
+  <h3 class="option-name">
+    <a href="#option-oci.test.dive.enabled" class="option-anchor">oci.test.dive.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable Dive analysis globally for all containers.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/testing/options.nix" target="_blank">nix/modules/oci/testing/options.nix</a></code></div>
+</div>
+<div class="option" id="option-optimizeLayers">
+  <h3 class="option-name">
+    <a href="#option-optimizeLayers" class="option-anchor">optimizeLayers</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Split container contents into multiple layers for better registry caching.</p>
+<p>When enabled, dependencies are placed in a separate layer from the
+application package, and both are further split by popularity
+(inspired by Nixery/grahamc's layering strategy). This means:</p>
+<ul>
+<li>Stable dependencies produce cached layers shared across rebuilds</li>
+<li>Only the thin application layer is pushed on code changes</li>
+</ul>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-example">Example: <code>true</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/optimizeLayers.nix" target="_blank">nix/modules/oci/containers/optimizeLayers.nix</a></code></div>
+</div>
+<div class="option" id="option-push">
+  <h3 class="option-name">
+    <a href="#option-push" class="option-anchor">push</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to push the container to the OCI registry.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>false</code></div>
+  <div class="option-example">Example: <code>true</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/push.nix" target="_blank">nix/modules/oci/containers/push.nix</a></code></div>
+</div>
+<div class="option" id="option-registry">
+  <h3 class="option-name">
+    <a href="#option-registry" class="option-anchor">registry</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>null or string</code></div>
+  <div class="option-description"><html><head></head><body><p>Container registry prefix (e.g., "ghcr.io/my-org" or "my-registry.io/project").
+If set, the full container name will be "registry/name".
+If null or empty string, no registry prefix will be added.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>null</code></div>
+  <div class="option-example">Example: <code>"ghcr.io/my-org"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/registry.nix" target="_blank">nix/modules/oci/containers/registry.nix</a></code></div>
+</div>
+<div class="option" id="option-rootPath">
+  <h3 class="option-name">
+    <a href="#option-rootPath" class="option-anchor">rootPath</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>absolute path</code></div>
+  <div class="option-description"><html><head></head><body><p>The root path for the container.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.rootPath + name + "/"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/rootPath.nix" target="_blank">nix/modules/oci/containers/rootPath.nix</a></code></div>
+</div>
+<div class="option" id="option-sbom.rootPath">
+  <h3 class="option-name">
+    <a href="#option-sbom.rootPath" class="option-anchor">sbom.rootPath</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>absolute path</code></div>
+  <div class="option-description"><html><head></head><body><p>The root path for the SBOM.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.rootPath + name + "/sbom/"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/sbom/rootPath.nix" target="_blank">nix/modules/oci/containers/sbom/rootPath.nix</a></code></div>
+</div>
+<div class="option" id="option-sbom.syft.config.enabled">
+  <h3 class="option-name">
+    <a href="#option-sbom.syft.config.enabled" class="option-anchor">sbom.syft.config.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to use a syft config file.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.sbom.syft.config.enabled</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/sbom/syft/config/enabled.nix" target="_blank">nix/modules/oci/containers/sbom/syft/config/enabled.nix</a></code></div>
+</div>
+<div class="option" id="option-sbom.syft.config.path">
+  <h3 class="option-name">
+    <a href="#option-sbom.syft.config.path" class="option-anchor">sbom.syft.config.path</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>absolute path</code></div>
+  <div class="option-description"><html><head></head><body><p>Path to the syft config file.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.rootPath + name + "/sbom/syft.yaml"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/sbom/syft/config/path.nix" target="_blank">nix/modules/oci/containers/sbom/syft/config/path.nix</a></code></div>
+</div>
+<div class="option" id="option-sbom.syft.enabled">
+  <h3 class="option-name">
+    <a href="#option-sbom.syft.enabled" class="option-anchor">sbom.syft.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable Syft SBOM generation.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.sbom.syft.enabled</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/sbom/syft/enabled.nix" target="_blank">nix/modules/oci/containers/sbom/syft/enabled.nix</a></code></div>
+</div>
+<div class="option" id="option-signing.cosign.annotations">
+  <h3 class="option-name">
+    <a href="#option-signing.cosign.annotations" class="option-anchor">signing.cosign.annotations</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>attribute set of string</code></div>
+  <div class="option-description"><html><head></head><body><p>Key-value annotations to attach to the cosign signature for this container.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.signing.cosign.annotations</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/signing/cosign/annotations.nix" target="_blank">nix/modules/oci/containers/signing/cosign/annotations.nix</a></code></div>
+</div>
+<div class="option" id="option-signing.cosign.certificateIdentityRegexp">
+  <h3 class="option-name">
+    <a href="#option-signing.cosign.certificateIdentityRegexp" class="option-anchor">signing.cosign.certificateIdentityRegexp</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>null or string</code></div>
+  <div class="option-description"><html><head></head><body><p>Regexp to match certificate identity when verifying keyless signatures.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.signing.cosign.certificateIdentityRegexp</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/signing/cosign/certificateIdentityRegexp.nix" target="_blank">nix/modules/oci/containers/signing/cosign/certificateIdentityRegexp.nix</a></code></div>
+</div>
+<div class="option" id="option-signing.cosign.certificateOidcIssuerRegexp">
+  <h3 class="option-name">
+    <a href="#option-signing.cosign.certificateOidcIssuerRegexp" class="option-anchor">signing.cosign.certificateOidcIssuerRegexp</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>null or string</code></div>
+  <div class="option-description"><html><head></head><body><p>Regexp to match OIDC issuer when verifying keyless signatures.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.signing.cosign.certificateOidcIssuerRegexp</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/signing/cosign/certificateOidcIssuerRegexp.nix" target="_blank">nix/modules/oci/containers/signing/cosign/certificateOidcIssuerRegexp.nix</a></code></div>
+</div>
+<div class="option" id="option-signing.cosign.enabled">
+  <h3 class="option-name">
+    <a href="#option-signing.cosign.enabled" class="option-anchor">signing.cosign.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable cosign image signing for this container.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.signing.cosign.enabled</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/signing/cosign/enabled.nix" target="_blank">nix/modules/oci/containers/signing/cosign/enabled.nix</a></code></div>
+</div>
+<div class="option" id="option-signing.cosign.key">
+  <h3 class="option-name">
+    <a href="#option-signing.cosign.key" class="option-anchor">signing.cosign.key</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>null or string</code></div>
+  <div class="option-description"><html><head></head><body><p>Path or KMS URI for cosign key for this container. Only used when keyless is false.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.signing.cosign.key</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/signing/cosign/key.nix" target="_blank">nix/modules/oci/containers/signing/cosign/key.nix</a></code></div>
+</div>
+<div class="option" id="option-signing.cosign.keyless">
+  <h3 class="option-name">
+    <a href="#option-signing.cosign.keyless" class="option-anchor">signing.cosign.keyless</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to use keyless (OIDC) signing for this container.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.signing.cosign.keyless</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/signing/cosign/keyless.nix" target="_blank">nix/modules/oci/containers/signing/cosign/keyless.nix</a></code></div>
+</div>
+<div class="option" id="option-signing.cosign.verify">
+  <h3 class="option-name">
+    <a href="#option-signing.cosign.verify" class="option-anchor">signing.cosign.verify</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to verify the signature immediately after signing.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.signing.cosign.verify</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/signing/cosign/verify.nix" target="_blank">nix/modules/oci/containers/signing/cosign/verify.nix</a></code></div>
+</div>
+<div class="option" id="option-tag">
+  <h3 class="option-name">
+    <a href="#option-tag" class="option-anchor">tag</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>null or string</code></div>
+  <div class="option-description"><html><head></head><body><p>Tag of the container.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>cfg.lib.flake.oci.mkOCITag { inherit package fromImage; }</code></div>
+  <div class="option-example">Example: <code>"1.0.0"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/tag.nix" target="_blank">nix/modules/oci/containers/tag.nix</a></code></div>
+</div>
+<div class="option" id="option-tags">
+  <h3 class="option-name">
+    <a href="#option-tags" class="option-anchor">tags</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>list of string</code></div>
+  <div class="option-description"><html><head></head><body><p>List of tags for the container. All tags will be pushed to the registry. The first tag is used for the local build.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>[ tag ]</code></div>
+  <div class="option-example">Example: <pre><code>[
+  "1.0.0"
+  "latest"
+  "stable"
+]</code></pre></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/tags.nix" target="_blank">nix/modules/oci/containers/tags.nix</a></code></div>
+</div>
+<div class="option" id="option-test.containerStructureTest.configs">
+  <h3 class="option-name">
+    <a href="#option-test.containerStructureTest.configs" class="option-anchor">test.containerStructureTest.configs</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>list of absolute path</code></div>
+  <div class="option-description"><html><head></head><body><p>List of container-structure-test configuration files to run.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>[ (cfg.oci.rootPath + name + "/test/container-structure-test.yaml") ]</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/test/containerStructureTest/configs.nix" target="_blank">nix/modules/oci/containers/test/containerStructureTest/configs.nix</a></code></div>
+</div>
+<div class="option" id="option-test.containerStructureTest.enabled">
+  <h3 class="option-name">
+    <a href="#option-test.containerStructureTest.enabled" class="option-anchor">test.containerStructureTest.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable container-structure-test for validating container structure and metadata.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>cfg.oci.test.containerStructureTest.enabled</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/test/containerStructureTest/enabled.nix" target="_blank">nix/modules/oci/containers/test/containerStructureTest/enabled.nix</a></code></div>
+</div>
+<div class="option" id="option-test.dgoss.command">
+  <h3 class="option-name">
+    <a href="#option-test.dgoss.command" class="option-anchor">test.dgoss.command</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>string</code></div>
+  <div class="option-description"><html><head></head><body><p>Override command to pass after the image reference when running
+<code>dgoss run</code>. Empty string (the default) lets the image's own
+entrypoint/cmd drive the container; in that mode the
+<code>--entrypoint ""</code> flag is NOT passed. Set this to e.g.
+<code>"kubectl version"</code> only if you explicitly want to override the
+entrypoint and your image ships that binary.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>""</code></div>
+  <div class="option-example">Example: <code>"sh -c 'sleep infinity'"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/test/dgoss/command.nix" target="_blank">nix/modules/oci/containers/test/dgoss/command.nix</a></code></div>
+</div>
+<div class="option" id="option-test.dgoss.enabled">
+  <h3 class="option-name">
+    <a href="#option-test.dgoss.enabled" class="option-anchor">test.dgoss.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable dgoss testing for the container.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>cfg.oci.test.dgoss.enabled</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/test/dgoss/enabled.nix" target="_blank">nix/modules/oci/containers/test/dgoss/enabled.nix</a></code></div>
+</div>
+<div class="option" id="option-test.dgoss.hermetic">
+  <h3 class="option-name">
+    <a href="#option-test.dgoss.hermetic" class="option-anchor">test.dgoss.hermetic</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Run dgoss as a pure Nix derivation (check) instead of a flake
+app. Uses podman inside the Nix sandbox.
+Requires <code>extra-sandbox-paths = /sys/fs/cgroup</code> in nix.conf.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>cfg.oci.test.dgoss.hermetic</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/test/dgoss/hermetic.nix" target="_blank">nix/modules/oci/containers/test/dgoss/hermetic.nix</a></code></div>
+</div>
+<div class="option" id="option-test.dgoss.optionsPath">
+  <h3 class="option-name">
+    <a href="#option-test.dgoss.optionsPath" class="option-anchor">test.dgoss.optionsPath</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>absolute path</code></div>
+  <div class="option-description"><html><head></head><body><p>Path to the dgoss configuration file.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.rootPath + name + "/test/dgoss.yaml"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/test/dgoss/optionsPath.nix" target="_blank">nix/modules/oci/containers/test/dgoss/optionsPath.nix</a></code></div>
+</div>
+<div class="option" id="option-test.dive.enabled">
+  <h3 class="option-name">
+    <a href="#option-test.dive.enabled" class="option-anchor">test.dive.enabled</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>boolean</code></div>
+  <div class="option-description"><html><head></head><body><p>Whether to enable Dive analysis for container image layers and efficiency.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>cfg.oci.test.dive.enabled</code></div>
+  <div class="option-example">Example: <code>true</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/test/dive/enabled.nix" target="_blank">nix/modules/oci/containers/test/dive/enabled.nix</a></code></div>
+</div>
+<div class="option" id="option-test.rootPath">
+  <h3 class="option-name">
+    <a href="#option-test.rootPath" class="option-anchor">test.rootPath</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>absolute path</code></div>
+  <div class="option-description"><html><head></head><body><p>The root path for the test.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>config.oci.rootPath + name + "/test/"</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/test/rootPath.nix" target="_blank">nix/modules/oci/containers/test/rootPath.nix</a></code></div>
+</div>
+<div class="option" id="option-user">
+  <h3 class="option-name">
+    <a href="#option-user" class="option-anchor">user</a>
+    <span class="copy-link" title="Copy link to this option"></span>
+    <span class="copy-feedback">Link copied!</span>
+  </h3>
+  <div class="option-type">Type: <code>null or string</code></div>
+  <div class="option-description"><html><head></head><body><p>The user to run the container as. If null, will be automatically determined based on isRoot setting.</p>
+</body></html></div>
+  <div class="option-default">Default: <code>cfg.lib.flake.oci.mkOCIUser { inherit name isRoot; }</code></div>
+  <div class="option-declared">Declared in: <code><a href="https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/user.nix" target="_blank">nix/modules/oci/containers/user.nix</a></code></div>
+</div>
+</div>
+
+          <div class="footnotes-container">
+            <!-- Footnotes will be appended here -->
+          </div>
+        </main>
+      </div>
+
+      <footer>
+  <p>Generated with ndg</p>
+</footer>
+
+    </div>
+
+    
+  </body>
+</html>

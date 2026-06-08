@@ -1,13 +1,15 @@
-# oci.containers — registered for both NixOS and home-manager.
+# oci.containers — registered for NixOS, home-manager, and system-manager.
 #
-# Submodule options are auto-discovered from _containers/ via import-tree.
+# Submodule imports SHARED option definitions from oci/containers/_options/
+# (same source of truth as flake-parts) + deploy-specific extensions from _containers/.
 # nix2container and ociLib are threaded into the submodule via specialArgs.
 { import-tree, ... }:
 let
-  containerSubmodule = import-tree ./_containers;
+  # Shared core options (package, dependencies, isRoot, entrypoint, user, name, tag, etc.)
+  sharedOptions = import-tree ../../../oci/containers/_options;
+  # Deploy-specific extensions (autoStart, volumes, image, image-ref, _defaults)
+  deployExtensions = import-tree ./_containers;
 
-  # Build ociLib from lib — these mirror the nix-lib functions in oci/lib/ports.nix
-  # but are computed here so the NixOS submodule can use them without flake-parts config.
   mkOciLib =
     lib:
     let
@@ -30,9 +32,76 @@ let
           clean = builtins.head (lib.splitString "/" raw);
         in
         lib.toInt clean;
+
+      mkShadowSetup =
+        {
+          isRoot,
+          user,
+          runtimeShell,
+          pkgs,
+        }:
+        if isRoot then
+          [
+            (pkgs.writeTextDir "etc/passwd" "root:x:0:0::/root:${runtimeShell}\n")
+            (pkgs.writeTextDir "etc/shadow" "root:!x:::::::\n")
+            (pkgs.writeTextDir "etc/group" "root:x:0:\n")
+          ]
+        else
+          [
+            (pkgs.writeTextDir "etc/passwd" ''
+              root:x:0:0::/root:${runtimeShell}
+              ${user}:x:4000:4000::/home/${user}:${runtimeShell}
+            '')
+            (pkgs.writeTextDir "etc/shadow" ''
+              root:!x:::::::
+              ${user}:!:::::::
+            '')
+            (pkgs.writeTextDir "etc/group" ''
+              root:x:0:
+              ${user}:x:4000:
+            '')
+            (pkgs.runCommand "home-${user}" { } ''
+              mkdir -p $out/home/${user}
+            '')
+          ];
+
+      mkRoot =
+        {
+          name,
+          package,
+          dependencies,
+          configFiles,
+          isRoot,
+          user,
+          pkgs,
+        }:
+        pkgs.buildEnv {
+          name = "oci-root-${name}";
+          paths =
+            (lib.optional (package != null) package)
+            ++ dependencies
+            ++ configFiles
+            ++ (mkShadowSetup {
+              inherit isRoot user pkgs;
+              runtimeShell = pkgs.runtimeShell;
+            });
+          pathsToLink = [
+            "/bin"
+            "/lib"
+            "/etc"
+            "/home"
+          ];
+          ignoreCollisions = true;
+        };
     in
     {
-      inherit parseContainerPort mkExposedPorts parseHostPort;
+      inherit
+        parseContainerPort
+        mkExposedPorts
+        parseHostPort
+        mkShadowSetup
+        mkRoot
+        ;
     };
 
   mod =
@@ -49,7 +118,10 @@ let
       options.oci.containers = lib.mkOption {
         type = lib.types.attrsOf (
           lib.types.submoduleWith {
-            modules = [ containerSubmodule ];
+            modules = [
+              sharedOptions
+              deployExtensions
+            ];
             specialArgs = {
               inherit pkgs nix2container ociLib;
             };
@@ -67,4 +139,5 @@ in
 {
   flake.modules.nixos.nix-oci-containers = mod;
   flake.modules.homeManager.nix-oci-containers = mod;
+  flake.modules.systemManager.nix-oci-containers = mod;
 }

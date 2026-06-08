@@ -1,8 +1,5 @@
-# Container dependencies option
-{ lib, ... }:
-let
-  inherit (lib) mkOption types;
-in
+# Container dependencies option (flake-parts wrapper)
+{ ... }:
 {
   config.perSystem =
     { ... }:
@@ -10,12 +7,7 @@ in
       oci.perContainer =
         { ... }:
         {
-          options.dependencies = mkOption {
-            type = types.listOf types.package;
-            description = "Additional dependencies packages to include in the container.";
-            default = [ ];
-            example = lib.literalExpression "[ pkgs.bash pkgs.coreutils ]";
-          };
+          imports = [ ./_options/dependencies.nix ];
         };
     };
 }

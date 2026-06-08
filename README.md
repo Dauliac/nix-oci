@@ -1,65 +1,115 @@
 # nix-oci
 
-**nix-oci** is a [flake-parts](https://github.com/hercules-ci/flake-parts) module designed to streamline the management of OCI (Open Container Initiative) repositories using the Nix package manager. By leveraging [nix2container](https://github.com/nlewo/nix2container) as its backend, nix-oci facilitates the declarative creation and handling of container images, ensuring reproducibility and efficiency in containerized environments.
+A [flake-parts](https://flake.parts), [NixOS](https://nixos.org/manual/nixos/stable/) and [Home Manager](https://nix-community.github.io/home-manager/) module system for OCI containers, powered by [nix2container](https://github.com/nlewo/nix2container).
+
+nix-oci lets you **build**, **deploy** and **run** containers entirely from Nix — including building images directly from NixOS service definitions.
 
 ## Features
 
-- **Seamless Integration with Container Ecosystem**: nix-oci offers compatibility with tools like Docker and Podman, simplifying integration into existing workflows.
-- **Centralized Build Definitions**: It consolidates build configurations within Nix flakes, reducing redundancy across projects.
-- **Debug-Friendly Images**: The module enables the creation of debug variants of images by incorporating additional tools (e.g., `curl`, `bash`) and setting an infinite sleep as the entrypoint for troubleshooting purposes.
-- **Efficient Monorepo Management**: nix-oci supports building multiple containers within monorepos, sharing common packages in the Nix store to optimize storage and build times.
-- **Minimalistic and Secure Containers**: It promotes the creation of minimalistic containers by allowing users to specify only the necessary packages, facilitating single-binary containers that run as non-root users by default.
-- **Accelerated Builds**: Utilizing the Nix store, nix-oci accelerates build processes by avoiding redundant storage of OCI archives and leveraging existing packages available in the development shell or package outputs.
+- **Build OCI images** declaratively from packages or NixOS modules
+- **Deploy and run** containers on NixOS and Home Manager via a unified `oci.*` API
+- **Build containers from NixOS services** — write `services.nginx.enable = true` and get a minimal container image
+- **Multi-arch cross-compilation** — build `aarch64` images on `x86_64` without emulation
+- **Security** — CVE scanning (Trivy, Grype, Vulnix), SBOM generation (Syft), credentials leak detection, image signing (cosign)
+- **Testing** — Container Structure Tests, dgoss, dive
+- **Debug variants** — add shells and tools to any image for troubleshooting
 
-## Why Use nix-oci?
-
-### Define a Minimalistic Container in Just a Few Lines!
-
-Creating an OCI-compliant container with nix-oci is incredibly simple. If you need a minimalistic, secure container running a single binary, just specify the package and let nix-oci handle the rest:
+## Quick Start: Build an image (flake-parts)
 
 ```nix
-{ ... }:
 {
-  config = {
-    perSystem =
-      { pkgs, ... }:
-      {
-        config.oci.containers = {
-          minimalist = {
-            package = pkgs.kubectl;
-          };
+  inputs.nix-oci.url = "github:Dauliac/nix-oci";
+
+  outputs = inputs:
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [ inputs.nix-oci.modules.flake.nix-oci ];
+
+      oci.enabled = true;
+
+      perSystem = { pkgs, ... }: {
+        oci.containers.hello = {
+          package = pkgs.hello;
         };
       };
-  };
+    };
 }
 ```
 
-That’s it! The image is automatically built with a minimal footprint, runs as a **non-root** user by default, and ensures maximum security and efficiency. Stop writing extensive Dockerfiles—embrace the declarative power of Nix with nix-oci! 🚀
-
-## Getting Started
-
-To quickly start a new project using the nix-oci template, you can initialize a new flake with the following command:
+Or use the template:
 
 ```bash
 nix flake init -t github:Dauliac/nix-oci
 ```
 
-This command sets up a new Nix flake project pre-configured with nix-oci, allowing you to define and build OCI containers efficiently.
+## Quick Start: Deploy a container (NixOS)
 
-For comprehensive examples and test cases, refer to the [examples](./examples) directory in the repository.
+```nix
+{ inputs, pkgs, ... }:
+{
+  imports = [ inputs.nix-oci.modules.nixos.nix-oci ];
 
-## Inspirations
+  oci = {
+    enable = true;
+    backend = "podman";
+    containers.my-server = {
+      package = pkgs.python3Minimal;
+      entrypoint = [ "${pkgs.python3Minimal}/bin/python3" "-m" "http.server" "8080" ];
+      autoStart = true;
+      ports = [ "8080:8080" ];
+    };
+  };
+}
+```
 
-nix-oci draws inspiration from projects such as [skaffold](https://skaffold.dev/) and [treefmt](https://github.com/numtide/treefmt), aiming to simplify recurring challenges in container production for developers and Site Reliability Engineers (SREs).
+## Quick Start: Build from a NixOS service
+
+```nix
+perSystem = { ... }: {
+  oci.containers.my-caddy = {
+    nixosConfig = {
+      enable = true;
+      mainService = "caddy";
+      modules = [
+        ({ ... }: {
+          services.caddy = {
+            enable = true;
+            virtualHosts."localhost:8080".extraConfig = ''
+              respond "Hello from nix-oci!"
+            '';
+          };
+        })
+      ];
+    };
+    isRoot = true;
+  };
+};
+```
+
+## Documentation
+
+- [Full documentation](https://dauliac.github.io/nix-oci/) (built with [NDG](https://github.com/feel-co/ndg))
+- [nix-oci on flake.parts](https://flake.parts/options/nix-oci.html)
+- [NixOS manual](https://nixos.org/manual/nixos/stable/)
+- [Home Manager manual](https://nix-community.github.io/home-manager/)
+- [nix2container](https://github.com/nlewo/nix2container)
+- [flake-parts](https://flake.parts)
+
+## Examples
+
+See the [examples](./examples) directory:
+
+- [`examples/build/`](./examples/build/) — flake-parts image building
+- [`examples/deploy-nixos/`](./examples/deploy-nixos/) — NixOS deployment
+- [`examples/deploy-home-manager/`](./examples/deploy-home-manager/) — Home Manager deployment
 
 ## Contributing
 
-Contributions are welcome! Please refer to the [CONTRIBUTING.md](./CONTRIBUTING.md) file for guidelines on how to get involved.
+Contributions are welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
+MIT — see [LICENSE](./LICENSE).
 
 ## Acknowledgments
 
-Special thanks to the contributors of [nix2container](https://github.com/nlewo/nix2container) and [flake-parts](https://github.com/hercules-ci/flake-parts) for their foundational work that made this project possible.
+Thanks to the contributors of [nix2container](https://github.com/nlewo/nix2container) and [flake-parts](https://github.com/hercules-ci/flake-parts).

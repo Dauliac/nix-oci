@@ -1,4 +1,4 @@
-# Per-container: container user.
+# Shared: container user.
 { lib, ... }:
 {
   options.user = lib.mkOption {

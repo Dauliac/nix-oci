@@ -1,4 +1,4 @@
-# Per-container: image name (defaults to container attribute name).
+# Shared: image name (defaults to container attribute name).
 { name, lib, ... }:
 {
   options.name = lib.mkOption {

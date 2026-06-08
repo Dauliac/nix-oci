@@ -1,8 +1,7 @@
-# Per-container: computed OCI image built from package + dependencies.
+# Per-container: computed OCI image built from shared options via nix2container.
 #
-# Uses nix2container (injected via specialArgs) to build the image.
-# Shadow files for non-root containers. ExposedPorts from ports option.
-# Environment variables baked into the image manifest.
+# Uses ociLib.mkRoot for shadow setup and root filesystem (shared build logic).
+# ExposedPorts from ports, Env from environment, Labels from labels.
 {
   name,
   config,
@@ -13,52 +12,27 @@
   ...
 }:
 let
-  shadowSetup =
-    if config.isRoot then
-      [
-        (pkgs.writeTextDir "etc/passwd" "root:x:0:0::/root:${pkgs.runtimeShell}\n")
-        (pkgs.writeTextDir "etc/shadow" "root:!x:::::::\n")
-        (pkgs.writeTextDir "etc/group" "root:x:0:\n")
-      ]
-    else
-      [
-        (pkgs.writeTextDir "etc/passwd" ''
-          root:x:0:0::/root:${pkgs.runtimeShell}
-          ${config.user}:x:4000:4000::/home/${config.user}:${pkgs.runtimeShell}
-        '')
-        (pkgs.writeTextDir "etc/shadow" ''
-          root:!x:::::::
-          ${config.user}:!:::::::
-        '')
-        (pkgs.writeTextDir "etc/group" ''
-          root:x:0:
-          ${config.user}:x:4000:
-        '')
-        (pkgs.runCommand "home-${config.user}" { } ''
-          mkdir -p $out/home/${config.user}
-        '')
-      ];
-
-  root = pkgs.buildEnv {
-    name = "oci-root-${name}";
-    paths = [ config.package ] ++ config.dependencies ++ shadowSetup;
-    pathsToLink = [
-      "/bin"
-      "/lib"
-      "/etc"
-      "/home"
-    ];
-    ignoreCollisions = true;
+  root = ociLib.mkRoot {
+    inherit name pkgs;
+    inherit (config)
+      package
+      dependencies
+      configFiles
+      isRoot
+      user
+      ;
   };
 
   entrypoint =
     if config.entrypoint != [ ] then
       config.entrypoint
-    else
+    else if config.package != null then
       let
         mainProgram = config.package.meta.mainProgram or config.package.pname or name;
       in
-      [ "${config.package}/bin/${mainProgram}" ];
+      [ "${config.package}/bin/${mainProgram}" ]
+    else
+      [ ];
 
   ociConfig =
     {
@@ -70,6 +44,9 @@ let
     }
     // lib.optionalAttrs (config.environment != { }) {
       Env = lib.mapAttrsToList (k: v: "${k}=${v}") config.environment;
+    }
+    // lib.optionalAttrs (config.labels != { }) {
+      Labels = config.labels;
     };
 in
 {

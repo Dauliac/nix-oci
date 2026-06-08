@@ -1,11 +1,6 @@
-# Container tag option
-{
-  lib,
-  config,
-  ...
-}:
+# Container tag option (flake-parts wrapper with computed default)
+{ config, ... }:
 let
-  inherit (lib) mkOption types;
   cfg = config;
 in
 {
@@ -13,17 +8,12 @@ in
     { ... }:
     {
       oci.perContainer =
-        { config, ... }:
+        { config, lib, ... }:
         {
-          options.tag = mkOption {
-            type = types.nullOr types.str;
-            description = "Tag of the container.";
-            default = cfg.lib.flake.oci.mkOCITag {
-              inherit (config) package fromImage;
-            };
-            defaultText = lib.literalExpression "cfg.lib.flake.oci.mkOCITag { inherit package fromImage; }";
-            example = "1.0.0";
-          };
+          imports = [ ./_options/tag.nix ];
+          config.tag = lib.mkDefault (
+            cfg.lib.flake.oci.mkOCITag { inherit (config) package fromImage; }
+          );
         };
     };
 }
