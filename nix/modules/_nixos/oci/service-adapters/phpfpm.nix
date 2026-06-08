@@ -32,21 +32,16 @@ let
     else
       null;
 
-  poolCfg = if poolName != null then config.services.phpfpm.pools.${poolName} or null else null;
+  isPhpFpm = poolName != null && cfg.mainService != null;
 
-  # Determine the listen address from pool settings
-  listenAddr = poolCfg.settings."listen" or "127.0.0.1:9000";
-
-  # cgi-fcgi health check: send a FastCGI request to the ping path
-  healthCmd = [
-    "${pkgs.fcgi}/bin/cgi-fcgi"
-    "-bind"
-    "-connect"
-    listenAddr
-  ];
+  # Read the listen address from pool.socket (read-only, derived from
+  # pool.listen). This avoids reading pool.settings which we also write
+  # to (that would cause infinite recursion).
+  listenAddr =
+    if isPhpFpm then config.services.phpfpm.pools.${poolName}.socket or "127.0.0.1:9000" else "127.0.0.1:9000";
 in
 {
-  config = lib.mkIf (poolCfg != null && cfg.mainService != null) {
+  config = lib.mkIf isPhpFpm {
     # Inject ping endpoint into the pool for health checking.
     # PHP-FPM responds with "pong" to FastCGI requests to this path.
     services.phpfpm.pools.${poolName}.settings = {
@@ -54,7 +49,12 @@ in
       "ping.response" = lib.mkDefault "pong";
     };
 
-    oci.container.healthcheck.command = lib.mkDefault healthCmd;
+    oci.container.healthcheck.command = lib.mkDefault [
+      "${pkgs.fcgi}/bin/cgi-fcgi"
+      "-bind"
+      "-connect"
+      listenAddr
+    ];
     # SIGQUIT: graceful shutdown — finish serving current requests.
     oci.container.stopSignal = lib.mkDefault "SIGQUIT";
     environment.systemPackages = [ pkgs.fcgi ];

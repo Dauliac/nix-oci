@@ -11,6 +11,9 @@
     }:
     {
       treefmt = {
+        settings.global.excludes = [
+          "docs/flake-parts-website/**"
+        ];
         programs = {
           alejandra.enable = true;
           jsonfmt.enable = true;
