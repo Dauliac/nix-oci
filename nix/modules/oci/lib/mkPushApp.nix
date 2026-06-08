@@ -58,6 +58,8 @@
             # registry is types.nullOr types.str — `or ""` does NOT handle null
             # (or only fires for missing attributes, not null values), so guard explicitly.
             registryFallback = if containerConfig.registry != null then containerConfig.registry else "";
+            compression = containerConfig.performance.compression or "gzip";
+            compressFlag = if compression == "zstd" then "--dest-compress-format zstd" else "";
           in
           pkgs.writeShellApplication {
             name = appName;
@@ -90,7 +92,7 @@
               else
                 echo "[${appName}] pushing ${containerId}${lib.optionalString debug " (debug)"} -> $REF"
 
-                skopeo copy --retry-times 3 \
+                skopeo copy --retry-times 3 ${compressFlag} \
                   "nix:${ociOutput}" "$DEST" >&2
 
                 DIGEST="$(skopeo inspect --format '{{.Digest}}' "$DEST" 2>/dev/null || echo 'unknown')"

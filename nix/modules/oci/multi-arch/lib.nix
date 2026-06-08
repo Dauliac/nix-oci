@@ -40,6 +40,8 @@ in
                   "${containerConfig.registry}/${containerConfig.name}"
                 else
                   containerConfig.name;
+              compression = containerConfig.performance.compression or "gzip";
+              compressFlag = if compression == "zstd" then "--dest-compress-format zstd" else "";
             in
             pkgs.writeShellApplication {
               name = "push-tmp-${containerId}";
@@ -58,7 +60,7 @@ in
                   echo "==> Pushing per-arch (${arch}) OCI image to local OCI dir"
                   echo "    source: nix:${ociOutput}"
                   echo "    target: $DEST"
-                  skopeo copy --insecure-policy \
+                  skopeo copy --insecure-policy ${compressFlag} \
                     nix:${ociOutput} \
                     "$DEST"
                   DIGEST="$(skopeo inspect --format '{{.Digest}}' "$DEST" 2>/dev/null || echo 'unknown')"
@@ -68,7 +70,7 @@ in
                   echo "==> Pushing per-arch (${arch}) OCI image"
                   echo "    source: nix:${ociOutput}"
                   echo "    target: $DEST"
-                  skopeo copy \
+                  skopeo copy ${compressFlag} \
                     nix:${ociOutput} \
                     "$DEST"
                   DIGEST="$(skopeo inspect --format '{{.Digest}}' "$DEST" 2>/dev/null || echo 'unknown')"

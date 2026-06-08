@@ -22,18 +22,22 @@
               mainService = "postgresql";
               modules = [
                 (
-                  { pkgs, lib, ... }:
-                  let
-                    # PostgreSQL with extensions compiled in
-                    pgWithExtensions = pkgs.postgresql_16.withPackages (ps: [
-                      ps.postgis
-                      ps.pg_repack
-                    ]);
-                  in
+                  {
+                    pkgs,
+                    lib,
+                    ...
+                  }:
                   {
                     services.postgresql = {
                       enable = true;
-                      package = pgWithExtensions;
+                      package = pkgs.postgresql_16;
+
+                      # Extensions are compiled and linked at build time via the
+                      # NixOS `extensions` option — no `withPackages` wrapper needed.
+                      extensions = ps: [
+                        ps.postgis
+                        ps.pg_repack
+                      ];
                       enableTCPIP = true;
 
                       settings = {
@@ -95,7 +99,8 @@
             ports = [ "5432:5432" ];
             labels = {
               "org.opencontainers.image.title" = "postgres-with-extensions";
-              "org.opencontainers.image.description" = "PostgreSQL 16 with PostGIS, pg_stat_statements, pg_repack";
+              "org.opencontainers.image.description" =
+                "PostgreSQL 16 with PostGIS, pg_stat_statements, pg_repack";
             };
             test.containerStructureTest = {
               enabled = true;

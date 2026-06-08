@@ -20,8 +20,10 @@
           Generate hardened /etc config file derivations from hardening options.
 
           When `disableDns` is set, produces:
-          - Empty `/etc/resolv.conf` (no DNS servers)
           - `/etc/nsswitch.conf` with `hosts: files` only (no dns backend)
+
+          NOTE: `/etc/resolv.conf` is NOT written — container runtimes always
+          bind-mount it at startup, masking any image content.
 
           When `noTlsTrustStore` is set, produces:
           - Empty `/etc/ssl/certs/ca-bundle.crt`
@@ -33,7 +35,6 @@
           { hardening }:
           lib.optionals hardening.enable (
             lib.optionals hardening.disableDns [
-              (pkgs.writeTextDir "etc/resolv.conf" "# DNS disabled by nix-oci hardening\n")
               (pkgs.writeTextDir "etc/nsswitch.conf" ''
                 passwd:    files
                 group:     files

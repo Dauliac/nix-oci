@@ -68,8 +68,8 @@ in
     users.users = {
       nobody = {
         isSystemUser = true;
-        group = "nobody";
-        uid = 65534;
+        group = lib.mkForce "nobody";
+        uid = lib.mkForce 65534;
         home = "/var/empty";
       };
     }

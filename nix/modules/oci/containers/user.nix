@@ -18,8 +18,9 @@
         }:
         {
           imports = [ ./_options/user.nix ];
-          # Lowest-priority fallback — eval.nix sets mkDefault with the smart containerUser
-          config.user = lib.mkDefault (if config.isRoot then "root" else config.name);
+          # Lowest-priority fallback — eval.nix sets mkDefault (1000) with the smart
+          # containerUser. This fallback uses priority 1500 so eval.nix always wins.
+          config.user = lib.mkOverride 1500 (if config.isRoot then "root" else config.name);
         };
     };
 }

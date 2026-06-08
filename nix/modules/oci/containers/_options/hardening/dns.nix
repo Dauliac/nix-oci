@@ -7,13 +7,14 @@
     description = ''
       Disable DNS resolution inside the container.
 
-      Sets `/etc/resolv.conf` to empty and `/etc/nsswitch.conf`
-      hosts line to `files` only. Applications using IP addresses
-      directly are unaffected.
+      Sets `/etc/nsswitch.conf` hosts line to `files` only (no `dns`
+      backend). Applications using IP addresses directly are unaffected.
 
-      In the inner NixOS module, this overrides the default
-      nsswitch.conf to remove the `dns` backend from the `hosts`
-      entry.
+      NOTE: `/etc/resolv.conf` is NOT written into the image because
+      container runtimes (Docker, Podman) always bind-mount it at
+      startup, masking any baked-in content. To fully enforce DNS
+      restriction at runtime, use `--dns=127.0.0.1` or network
+      policies.
     '';
   };
 }

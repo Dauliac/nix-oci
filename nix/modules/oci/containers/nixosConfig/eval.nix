@@ -133,6 +133,16 @@ in
                           landlock
                           ;
                       };
+                      # Forward arch-independent performance options.
+                      # Arch-specific options (march, hwcaps) are consumed directly
+                      # by image builders via archConfigs, not the NixOS eval.
+                      performance = {
+                        inherit (config.performance)
+                          enable
+                          allocator
+                          glibcTunables
+                          ;
+                      };
                     };
                   }
                 )

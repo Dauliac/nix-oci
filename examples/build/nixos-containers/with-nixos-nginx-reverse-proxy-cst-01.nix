@@ -109,14 +109,6 @@
                           error_page 502 /errors/502.html;
                           error_page 503 /errors/503.html;
                           error_page 429 /errors/429.html;
-
-                          # Security headers
-                          add_header X-Content-Type-Options "nosniff" always;
-                          add_header X-Frame-Options "DENY" always;
-                          add_header X-XSS-Protection "1; mode=block" always;
-                          add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-                          add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-                          add_header Content-Security-Policy "default-src 'self'" always;
                         '';
 
                         locations."/errors/" = {
@@ -125,16 +117,24 @@
                         };
 
                         # API endpoints with rate limiting
+                        # Security headers are repeated in each location that uses
+                        # add_header — nginx drops parent add_header directives when
+                        # a location defines its own (by design).
                         locations."/api/" = {
                           proxyPass = "http://api_backend";
                           extraConfig = ''
                             limit_req zone=api burst=20 nodelay;
                             limit_req_status 429;
 
-                            # CORS
+                            # CORS + security headers
                             add_header Access-Control-Allow-Origin "*" always;
                             add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
                             add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
+                            add_header X-Content-Type-Options "nosniff" always;
+                            add_header X-Frame-Options "DENY" always;
+                            add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+                            add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+                            add_header Content-Security-Policy "default-src 'self'" always;
 
                             if ($request_method = OPTIONS) {
                               return 204;
@@ -186,7 +186,8 @@
             };
             labels = {
               "org.opencontainers.image.title" = "nginx-api-gateway";
-              "org.opencontainers.image.description" = "Nginx reverse proxy with rate limiting and custom error pages";
+              "org.opencontainers.image.description" =
+                "Nginx reverse proxy with rate limiting and custom error pages";
             };
             test.containerStructureTest = {
               enabled = true;

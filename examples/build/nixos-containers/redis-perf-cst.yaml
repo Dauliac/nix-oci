@@ -1,0 +1,59 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: USER
+      value: root
+    - key: LD_PRELOAD
+      isRegex: true
+      value: ".*libtcmalloc\\.so"
+    - key: GLIBC_TUNABLES
+      isRegex: true
+      value: "glibc\\.malloc\\.arena_max=2"
+  labels:
+    - key: "io.github.dauliac.nix-oci.performance.enabled"
+      value: "true"
+    - key: "io.github.dauliac.nix-oci.performance.allocator"
+      value: "tcmalloc"
+fileExistenceTests:
+  # FHS directories
+  - name: "/tmp directory exists"
+    path: "/tmp"
+    shouldExist: true
+  - name: "/bin directory exists"
+    path: "/bin"
+    shouldExist: true
+  # Shadow and identity files
+  - name: "passwd file exists"
+    path: "/etc/passwd"
+    shouldExist: true
+  - name: "group file exists"
+    path: "/etc/group"
+    shouldExist: true
+  # Main binary
+  - name: "redis-server binary exists"
+    path: "/bin/redis-server"
+    shouldExist: true
+    isExecutableBy: "any"
+  - name: "redis-cli binary exists"
+    path: "/bin/redis-cli"
+    shouldExist: true
+    isExecutableBy: "any"
+commandTests:
+  # Verify tcmalloc shared library is present in the image
+  - name: "tcmalloc shared library exists"
+    command: "sh"
+    args:
+      - "-c"
+      - "find / -name 'libtcmalloc.so' -print -quit 2>/dev/null | grep -q ."
+    exitCode: 0
+  - name: "redis-server version check"
+    command: "redis-server"
+    args:
+      - "--version"
+    expectedOutput:
+      - "Redis"
+fileContentTests:
+  - name: "root user in passwd"
+    path: "/etc/passwd"
+    expectedContents:
+      - "root:x:0:0"

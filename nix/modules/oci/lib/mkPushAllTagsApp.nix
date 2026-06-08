@@ -76,6 +76,9 @@
 
             registryFallback = if containerConfig.registry != null then containerConfig.registry else "";
 
+            compression = containerConfig.performance.compression or "gzip";
+            compressFlag = if compression == "zstd" then "--dest-compress-format zstd" else "";
+
             mkAdditionalTagScript =
               tag:
               let
@@ -132,7 +135,7 @@
                 echo "CIMERA_OCI_PUSHED_TAG ref=$BASE_REF:${primaryTag} digest=$DIGEST tag=${primaryTag} primary=true"
               else
                 echo "[${appName}] pushing ${containerId}${lib.optionalString debug " (debug)"}: ${primaryTag} -> $BASE_REF:${primaryTag}"
-                skopeo copy --retry-times 3 \
+                skopeo copy --retry-times 3 ${compressFlag} \
                   "nix:${ociOutput}" "$PRIMARY_DEST" >&2
                 DIGEST="$(skopeo inspect --format '{{.Digest}}' \
                   "$PRIMARY_DEST" 2>/dev/null || echo 'unknown')"

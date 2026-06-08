@@ -46,6 +46,7 @@ in
           // config.oci.internal.prefixedDgossApps
           // config.oci.internal.prefixedSBOMSyftApps
           // config.oci.internal.prefixedSigningCosignApps
+          // config.oci.internal.prefixedComplianceTrivyApps
           // config.oci.internal.prefixedPushTmpOCIApps
           // config.oci.internal.prefixedMergeMultiArchApps;
       };

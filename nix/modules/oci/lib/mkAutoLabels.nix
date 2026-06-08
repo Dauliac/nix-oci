@@ -61,8 +61,7 @@
             meta = if package != null then (package.meta or { }) else { };
             pname = if package != null then (package.pname or null) else null;
             version = if package != null then (package.version or null) else null;
-            mainProgram =
-              if package != null then (meta.mainProgram or (package.pname or null)) else null;
+            mainProgram = if package != null then (meta.mainProgram or (package.pname or null)) else null;
             description = meta.description or null;
             homepage = meta.homepage or null;
             changelog = meta.changelog or null;
@@ -88,33 +87,32 @@
             authors = if maintainerNames == [ ] then null else lib.concatStringsSep ", " maintainerNames;
 
             # -- OCI standard annotations --
-            ociAnnotations =
-              {
-                "org.opencontainers.image.title" = name;
-                # Always "scratch" — nix-oci is distroless by construction
-                "org.opencontainers.image.base.name" = "scratch";
-              }
-              // lib.optionalAttrs (tag != "latest") {
-                "org.opencontainers.image.version" = tag;
-              }
-              // lib.optionalAttrs (version != null && tag == "latest") {
-                "org.opencontainers.image.version" = version;
-              }
-              // lib.optionalAttrs (description != null) {
-                "org.opencontainers.image.description" = description;
-              }
-              // lib.optionalAttrs (spdxId != null) {
-                "org.opencontainers.image.licenses" = spdxId;
-              }
-              // lib.optionalAttrs (homepage != null) {
-                "org.opencontainers.image.url" = homepage;
-              }
-              // lib.optionalAttrs (authors != null) {
-                "org.opencontainers.image.authors" = authors;
-              }
-              // lib.optionalAttrs (changelog != null) {
-                "org.opencontainers.image.documentation" = changelog;
-              };
+            ociAnnotations = {
+              "org.opencontainers.image.title" = name;
+              # Always "scratch" — nix-oci is distroless by construction
+              "org.opencontainers.image.base.name" = "scratch";
+            }
+            // lib.optionalAttrs (tag != "latest") {
+              "org.opencontainers.image.version" = tag;
+            }
+            // lib.optionalAttrs (version != null && tag == "latest") {
+              "org.opencontainers.image.version" = version;
+            }
+            // lib.optionalAttrs (description != null) {
+              "org.opencontainers.image.description" = description;
+            }
+            // lib.optionalAttrs (spdxId != null) {
+              "org.opencontainers.image.licenses" = spdxId;
+            }
+            // lib.optionalAttrs (homepage != null) {
+              "org.opencontainers.image.url" = homepage;
+            }
+            // lib.optionalAttrs (authors != null) {
+              "org.opencontainers.image.authors" = authors;
+            }
+            // lib.optionalAttrs (changelog != null) {
+              "org.opencontainers.image.documentation" = changelog;
+            };
 
             # -- Build info --
             buildInfo = {
@@ -176,15 +174,14 @@
             # These let Kyverno/Gatekeeper auto-generate SecurityContext via mutation.
             uid = if isRoot then "0" else "4000";
             gid = if isRoot then "0" else "4000";
-            kubernetesSecurityContext =
-              {
-                "${ns}.kubernetes.run-as-user" = uid;
-                "${ns}.kubernetes.run-as-group" = gid;
-                "${ns}.kubernetes.fs-group" = gid;
-              }
-              // lib.optionalAttrs (hardeningEnabled && (hardening.seccomp.enable or false)) {
-                "${ns}.kubernetes.seccomp-profile-type" = "RuntimeDefault";
-              };
+            kubernetesSecurityContext = {
+              "${ns}.kubernetes.run-as-user" = uid;
+              "${ns}.kubernetes.run-as-group" = gid;
+              "${ns}.kubernetes.fs-group" = gid;
+            }
+            // lib.optionalAttrs (hardeningEnabled && (hardening.seccomp.enable or false)) {
+              "${ns}.kubernetes.seccomp-profile-type" = "RuntimeDefault";
+            };
 
             # -- Network hints --
             # Parse "host:container/proto" port specs into tcp/udp port lists.
@@ -196,8 +193,7 @@
                 raw = if builtins.length parts >= 2 then builtins.elemAt parts 1 else builtins.head parts;
                 portAndProto = lib.splitString "/" raw;
                 port = builtins.head portAndProto;
-                proto =
-                  if builtins.length portAndProto >= 2 then builtins.elemAt portAndProto 1 else "tcp";
+                proto = if builtins.length portAndProto >= 2 then builtins.elemAt portAndProto 1 else "tcp";
               in
               {
                 inherit port proto;
@@ -248,7 +244,6 @@
               "${ns}.runtime.user" = if isRoot then "root" else "non-root";
               "${ns}.runtime.is-root" = lib.boolToString isRoot;
             };
-
           in
           if autoLabels then
             ociAnnotations

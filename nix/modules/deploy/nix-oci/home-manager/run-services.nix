@@ -19,6 +19,12 @@
           enable = true;
           containers = lib.mapAttrs (
             name: container:
+            let
+              perf = container.performance.runtime or { };
+              perfArgs =
+                lib.optional ((perf.ociRuntime or null) != null) "--runtime=${perf.ociRuntime}"
+                ++ map (m: "--tmpfs=${m}") (perf.tmpfsMounts or [ ]);
+            in
             {
               image = container.imageRef;
               extraConfig = {
@@ -36,6 +42,9 @@
             }
             // lib.optionalAttrs (container.volumes != [ ]) {
               volumes = container.volumes;
+            }
+            // lib.optionalAttrs (perfArgs != [ ]) {
+              extraPodmanArgs = perfArgs;
             }
           ) autoStart;
         };

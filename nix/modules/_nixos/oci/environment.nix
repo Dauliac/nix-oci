@@ -33,7 +33,10 @@
     default =
       let
         etc = config.environment.etc;
-        wantedNames = builtins.filter (n: etc ? ${n}) [
+        # Runtime-overridden paths (resolv.conf, hostname, hosts) are excluded
+        # because container runtimes always bind-mount them at startup.
+        runtimeOverridden = config.oci.container.runtimeOverriddenEtcNames;
+        wantedNames = builtins.filter (n: etc ? ${n} && !builtins.elem n runtimeOverridden) [
           "nsswitch.conf"
           "ssl/certs/ca-bundle.crt"
           "nix/nix.conf"
@@ -68,7 +71,8 @@
         "LANG=C.UTF-8"
         "LC_ALL=C.UTF-8"
         "NIX_PAGER=cat"
-      ];
+      ]
+      ++ (cfg._output.performance.envVars or [ ]);
   };
 
   config = {

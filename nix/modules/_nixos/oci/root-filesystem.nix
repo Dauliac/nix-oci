@@ -73,6 +73,7 @@ in
           ++ cfg.dependencies
           ++ cfg.configFiles
           ++ (cfg._output.hardening.configFiles or [ ])
+          ++ (cfg._output.performance.extraDeps or [ ])
           ++ [
             config.oci.lib.mkHomeDirDrv
             (pkgs.runCommand "fhs-tmp" { } "mkdir -p $out/tmp $out/var/tmp")

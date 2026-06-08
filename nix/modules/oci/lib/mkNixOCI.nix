@@ -68,10 +68,7 @@
             # hwcaps layers from the host arch's archConfigs entry
             hostArch = pkgs.stdenv.hostPlatform.system;
             archPerf =
-              if oci.archConfigs ? ${hostArch} then
-                oci.archConfigs.${hostArch}.performance or { }
-              else
-                { };
+              if oci.archConfigs ? ${hostArch} then oci.archConfigs.${hostArch}.performance or { } else { };
             hwcapsLayers = lib.optionals (archPerf.hwcaps.enable or false) (
               map (
                 level:
@@ -111,7 +108,11 @@
                 Env = out.envVars;
               }
               // {
-                Labels = generatedLabels // (out.hardening.labels or { }) // (out.performance.labels or { }) // (oci.labels or { });
+                Labels =
+                  generatedLabels
+                  // (out.hardening.labels or { })
+                  // (out.performance.labels or { })
+                  // (oci.labels or { });
               }
               // (
                 let

@@ -1,19 +1,23 @@
 # OCI perArch - per-architecture module collector inside each container
 #
-# Mirrors the perTag pattern one level deeper. Each container gets:
+# Each container gets:
 #   - `perArch`     — a deferred module type that collects per-arch option contributions
-#   - `archConfigs` — attrsOf perArch, auto-populated from `multiArch.systems`
+#   - `archConfigs` — attrsOf perArch, always seeded with at least the host system
 #
-# Module authors contribute per-arch options by adding to `perArch` inside
-# their `perContainer` contribution:
+# Module authors contribute per-arch options via the top-level `oci.perArchitecture`
+# (preferred) or via `perArch` inside a `perContainer` contribution:
 #
-#   oci.perContainer = { name, config, ... }: {
-#     oci.perArch = { ... }: {
-#       options.myArchOption = mkOption { ... };
-#     };
+#   # Preferred: top-level (parallel to perContainer)
+#   oci.perArchitecture = { name, containerConfig, ... }: {
+#     options.myArchOption = mkOption { ... };
 #   };
 #
-# Users can override individual arch configs declaratively:
+#   # Alternative: nested inside perContainer
+#   oci.perContainer = { ... }: {
+#     perArch = { ... }: { options.myArchOption = mkOption { ... }; };
+#   };
+#
+# Users override individual arch configs declaratively:
 #
 #   oci.containers.myApp.archConfigs."aarch64-linux".package = crossPkg;
 #
@@ -98,7 +102,15 @@ let
       };
     };
 
-  mkPerArchType = module: deferredModuleWith { staticModules = [ module ]; };
+  # Static per-arch option modules (same pattern as optionModules in perContainer.nix).
+  # These are always included in the perArch submodule type, making them
+  # visible to nixosOptionsDoc.
+  archOptionModules = [
+    ../_archOptions/performance/march.nix
+    ../_archOptions/performance/hwcaps.nix
+  ];
+
+  mkPerArchType = module: deferredModuleWith { staticModules = [ module ] ++ archOptionModules; };
 in
 {
   config.perSystem =
@@ -110,6 +122,7 @@ in
           config,
           system,
           pkgs,
+          perSystemConfig,
           ...
         }:
         {
@@ -228,6 +241,9 @@ in
               Multiple modules can contribute to this option. Each contribution
               is a module evaluated for every target architecture with arch-specific context.
 
+              Prefer contributing via the top-level `oci.perArchitecture` (parallel to
+              `oci.perContainer`) unless you need container-level context at definition time.
+
               The module receives these special arguments:
               - `name`            : the system string (key in archConfigs attrsOf)
               - `containerConfig` : the container's evaluated config
@@ -237,8 +253,12 @@ in
             '';
             apply =
               modules:
+              let
+                # Merge modules from the top-level oci.perArchitecture collector
+                perArchitectureModules = perSystemConfig.oci._perArchitectureModules or [ ];
+              in
               types.submoduleWith {
-                inherit modules;
+                modules = modules ++ perArchitectureModules;
                 specialArgs = {
                   inherit system pkgs;
                   containerConfig = config;
@@ -253,17 +273,21 @@ in
             description = ''
               Per-architecture evaluated configs, keyed by Nix system string.
 
-              Auto-populated from the `multiArch.systems` list — no manual
-              declaration needed. Override individual arch settings by
-              addressing the key directly:
+              Always contains at least the host system, even in single-arch mode.
+              Auto-populated from the `multiArch.systems` list when multi-arch is
+              enabled. Override individual arch settings by addressing the key directly:
 
                 oci.containers.myApp.archConfigs."aarch64-linux".package = crossPkg;
             '';
           };
 
-          # Seed archConfigs with one entry per declared system (same pattern
-          # as tagConfigs seeded from tags in perTag.nix).
-          config.archConfigs = lib.genAttrs config.multiArch.systems (_: { });
+          # Always seed archConfigs with at least the host system.
+          # When multiArch.systems is non-empty, those systems are used instead.
+          # This ensures per-arch options (performance.march, etc.) are always
+          # accessible, even in single-arch mode.
+          config.archConfigs = lib.genAttrs (
+            if config.multiArch.systems != [ ] then config.multiArch.systems else [ system ]
+          ) (_: { });
         };
     };
 }

@@ -333,30 +333,42 @@ let
             "${ns}.kubernetes.seccomp-profile-type" = "RuntimeDefault";
           };
 
-          parsePort = portSpec:
+          parsePort =
+            portSpec:
             let
               parts = lib.splitString ":" portSpec;
               raw = if builtins.length parts >= 2 then builtins.elemAt parts 1 else builtins.head parts;
               portAndProto = lib.splitString "/" raw;
               port = builtins.head portAndProto;
               proto = if builtins.length portAndProto >= 2 then builtins.elemAt portAndProto 1 else "tcp";
-            in { inherit port proto; };
+            in
+            {
+              inherit port proto;
+            };
           parsedPorts = map parsePort ports;
           tcpPorts = map (p: p.port) (builtins.filter (p: p.proto == "tcp") parsedPorts);
           udpPorts = map (p: p.port) (builtins.filter (p: p.proto == "udp") parsedPorts);
           networkLabels =
-            lib.optionalAttrs (tcpPorts != [ ]) { "${ns}.network.tcp-ports" = lib.concatStringsSep "," tcpPorts; }
-            // lib.optionalAttrs (udpPorts != [ ]) { "${ns}.network.udp-ports" = lib.concatStringsSep "," udpPorts; };
+            lib.optionalAttrs (tcpPorts != [ ]) {
+              "${ns}.network.tcp-ports" = lib.concatStringsSep "," tcpPorts;
+            }
+            // lib.optionalAttrs (udpPorts != [ ]) {
+              "${ns}.network.udp-ports" = lib.concatStringsSep "," udpPorts;
+            };
 
           nixIdentity =
             lib.optionalAttrs (pname != null) { "${ns}.nix.pname" = pname; }
             // lib.optionalAttrs (version != null) { "${ns}.nix.version" = version; }
             // lib.optionalAttrs (mainProgram != null) { "${ns}.nix.main-program" = mainProgram; }
-            // lib.optionalAttrs (dependencies != [ ]) { "${ns}.nix.dependency-count" = toString (builtins.length dependencies); };
+            // lib.optionalAttrs (dependencies != [ ]) {
+              "${ns}.nix.dependency-count" = toString (builtins.length dependencies);
+            };
 
           knownVulns = meta.knownVulnerabilities or [ ];
           rawProvenance = meta.sourceProvenance or [ ];
-          provenanceNames = builtins.filter (x: x != null) (map (p: p.shortName or (p.name or null)) rawProvenance);
+          provenanceNames = builtins.filter (x: x != null) (
+            map (p: p.shortName or (p.name or null)) rawProvenance
+          );
           securityLabels =
             lib.optionalAttrs (knownVulns != [ ]) {
               "${ns}.security.known-vulnerabilities" = lib.concatStringsSep "," knownVulns;
@@ -372,7 +384,15 @@ let
           };
         in
         if autoLabels then
-          ociAnnotations // buildInfo // hardeningLabels // pssLabel // kubernetesSecurityContext // networkLabels // nixIdentity // securityLabels // runtimeInfo
+          ociAnnotations
+          // buildInfo
+          // hardeningLabels
+          // pssLabel
+          // kubernetesSecurityContext
+          // networkLabels
+          // nixIdentity
+          // securityLabels
+          // runtimeInfo
         else
           { };
 
