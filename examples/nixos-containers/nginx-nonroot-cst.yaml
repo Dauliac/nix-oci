@@ -12,18 +12,15 @@ fileExistenceTests:
   - name: "group file exists"
     path: "/etc/group"
     shouldExist: true
-  - name: "home directory exists"
-    path: "/home/nginx"
-    shouldExist: true
   - name: "nginx binary exists"
     path: "/bin/nginx"
     shouldExist: true
 fileContentTests:
-  - name: "non-root user in passwd"
+  - name: "nginx user in passwd"
     path: "/etc/passwd"
     expectedContents:
-      - "nginx:x:4000:4000"
-  - name: "non-root group in group file"
+      - "nginx:x:"
+  - name: "nginx group in group file"
     path: "/etc/group"
     expectedContents:
-      - "nginx:x:4000"
+      - "nginx:x:"

@@ -99,17 +99,17 @@ in
     }
     // lib.optionalAttrs (!cfg.isRoot) {
       ${cfg.user} = {
-        isNormalUser = true;
-        home = config.oci.lib.homeDir;
-        uid = cfg.uid;
-        group = cfg.user;
+        isNormalUser = lib.mkDefault true;
+        home = lib.mkDefault config.oci.lib.homeDir;
+        uid = lib.mkDefault cfg.uid;
+        group = lib.mkDefault cfg.user;
       };
     };
     users.groups = {
       root.gid = 0;
     }
     // lib.optionalAttrs (!cfg.isRoot) {
-      ${cfg.user}.gid = cfg.gid;
+      ${cfg.user}.gid = lib.mkDefault cfg.gid;
     };
   };
 }
