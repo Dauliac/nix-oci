@@ -27,7 +27,6 @@
                 )
               ];
             };
-            isRoot = true;
             test.containerStructureTest = {
               enabled = true;
               configs = [

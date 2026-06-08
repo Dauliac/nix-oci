@@ -43,7 +43,6 @@
               pkgs.curl
               pkgs.jq
             ];
-            isRoot = true;
             test.containerStructureTest = {
               enabled = true;
               configs = [
