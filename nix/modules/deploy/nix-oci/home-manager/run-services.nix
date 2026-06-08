@@ -1,5 +1,5 @@
 # Home-manager: forward autoStart containers to services.podman.containers.
-# Loader dependency is wired via the podman quadlet's Unit section
+# Loader dependency is wired via the podman quadlet's extraConfig.Unit
 # (NOT via systemd.user.services, which would conflict with the quadlet file).
 { ... }:
 {
@@ -17,9 +17,11 @@
             name: container:
             {
               image = container.imageRef;
-              unit = {
-                After = [ "oci-load-${name}.service" ];
-                Requires = [ "oci-load-${name}.service" ];
+              extraConfig = {
+                Unit = {
+                  After = [ "oci-load-${name}.service" ];
+                  Requires = [ "oci-load-${name}.service" ];
+                };
               };
             }
             // lib.optionalAttrs (container.ports != [ ]) {
