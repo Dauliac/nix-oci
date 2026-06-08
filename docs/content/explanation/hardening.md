@@ -46,8 +46,13 @@ oci.containers.my-app = {
 };
 ```
 
-Setting `hardening.enable = true` activates the full hardening stack
-with sensible defaults. Each sub-feature can be individually tuned.
+Setting [`hardening.enable`](../reference/flake-parts-options.html)
+to `true` activates the full hardening stack with sensible defaults.
+Each sub-feature can be individually tuned. See the
+[flake-parts option reference](../reference/flake-parts-options.html)
+for all available hardening options, or the
+[NixOS container module reference](../reference/nix-oci-container-module-options.html)
+for the inner `oci.container.hardening.*` options.
 
 ## Seccomp: syscall filtering
 
@@ -57,8 +62,9 @@ syscall never executes.
 
 ### Predefined profiles
 
-nix-oci ships three profiles, each using a different filtering
-strategy:
+nix-oci ships three profiles via
+[`hardening.seccomp.profile`](../reference/flake-parts-options.html),
+each using a different filtering strategy:
 
 | Profile | Strategy | Syscalls | Best for |
 |---|---|---|---|
@@ -119,7 +125,8 @@ oci.containers.my-app.nixosConfig = {
 
 ### Custom profiles
 
-For full control, provide an OCI runtime spec JSON file:
+For full control, provide an OCI runtime spec JSON file via
+[`hardening.seccomp.customProfileJson`](../reference/flake-parts-options.html):
 
 ```nix
 hardening.seccomp.customProfileJson = ./my-seccomp-profile.json;
@@ -145,6 +152,8 @@ Key properties:
 
 ### Filesystem restrictions
 
+Configure via [`hardening.landlock`](../reference/flake-parts-options.html):
+
 ```nix
 hardening.landlock = {
   enable = true;
@@ -154,7 +163,7 @@ hardening.landlock = {
 };
 ```
 
-When `allowedReadPaths` is empty and `enable` is true, nix-oci
+When [`allowedReadPaths`](../reference/flake-parts-options.html) is empty and `enable` is true, nix-oci
 auto-populates it from the Nix closure of the container's package
 and dependencies.
 
@@ -213,7 +222,8 @@ restrict access to specific *resources*.
 ## Capabilities: privilege partitioning
 
 Linux capabilities split root's monolithic privilege into ~40
-distinct units. nix-oci defaults to dropping all capabilities:
+distinct units. nix-oci defaults to dropping all capabilities via
+[`hardening.capabilities`](../reference/flake-parts-options.html):
 
 ```nix
 hardening.capabilities = {
@@ -243,6 +253,8 @@ Deploy modules translate these to `--cap-drop ALL --cap-add NET_BIND_SERVICE`.
 
 ## Read-only root filesystem
 
+[`hardening.readOnlyRootfs`](../reference/flake-parts-options.html):
+
 ```nix
 hardening.readOnlyRootfs = true;  # default when hardening is enabled
 ```
@@ -259,6 +271,8 @@ Applications that need writable storage should use declared volumes
 `RuntimeDirectory`, etc.) or explicit `tmpfs` mounts.
 
 ## No-new-privileges
+
+[`hardening.noNewPrivileges`](../reference/flake-parts-options.html):
 
 ```nix
 hardening.noNewPrivileges = true;  # default when hardening is enabled
@@ -278,6 +292,8 @@ Deploy modules translate to `--security-opt=no-new-privileges`.
 
 ### Disable DNS
 
+[`hardening.disableDns`](../reference/flake-parts-options.html):
+
 ```nix
 hardening.disableDns = true;
 ```
@@ -290,6 +306,8 @@ container runtimes always bind-mount it at startup. To fully restrict
 DNS at runtime, use `--dns=127.0.0.1` or network policies.
 
 ### Remove TLS trust store
+
+[`hardening.noTlsTrustStore`](../reference/flake-parts-options.html):
 
 ```nix
 hardening.noTlsTrustStore = true;
