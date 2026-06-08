@@ -39,6 +39,8 @@
                 )
               ];
             };
+            # nginx needs root to bind port 80
+            isRoot = true;
             dependencies = [
               pkgs.curl
               pkgs.jq

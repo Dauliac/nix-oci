@@ -2,7 +2,7 @@ schemaVersion: 2.0.0
 metadataTest:
   envVars:
     - key: USER
-      value: root
+      value: nixosRedisCst
 fileExistenceTests:
   - name: "redis-server binary exists"
     path: "/bin/redis-server"
@@ -13,8 +13,11 @@ fileExistenceTests:
   - name: "SSL CA bundle exists"
     path: "/etc/ssl/certs/ca-bundle.crt"
     shouldExist: true
+  - name: "home directory exists"
+    path: "/home/nixosRedisCst"
+    shouldExist: true
 fileContentTests:
-  - name: "root user in passwd"
+  - name: "non-root user in passwd"
     path: "/etc/passwd"
     expectedContents:
-      - "root:x:0:0"
+      - "nixosRedisCst:x:4000:4000"

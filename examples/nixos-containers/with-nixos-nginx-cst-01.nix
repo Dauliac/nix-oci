@@ -34,6 +34,8 @@
                 )
               ];
             };
+            # nginx needs root to bind port 80 and manage worker processes
+            isRoot = true;
             test.containerStructureTest = {
               enabled = true;
               configs = [
