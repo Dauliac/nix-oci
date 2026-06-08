@@ -304,6 +304,12 @@ in
                       };
                     };
 
+                    # Ensure nix2container's copy-to-podman finds newuidmap/newgidmap
+                    # (NixOS provides them as setuid wrappers in /run/wrappers/bin)
+                    systemd.user.services.nix-oci-load-test-http.Service.Environment = [
+                      "PATH=/run/wrappers/bin:/run/current-system/sw/bin"
+                    ];
+
                     home.stateVersion = "25.11";
                   };
               };

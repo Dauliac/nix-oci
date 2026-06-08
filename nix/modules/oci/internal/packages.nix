@@ -12,7 +12,6 @@ let
     types
     attrsets
     ;
-  archDefs = import ../../_lib/arch.nix;
 in
 {
   options = {
@@ -245,7 +244,7 @@ in
             readOnly = true;
             default =
               let
-                arch = if archDefs.archMap ? ${system} then archDefs.systemToOCIArch system else null;
+                arch = if ociLib.archMap ? ${system} then ociLib.systemToOCIArch system else null;
               in
               if arch == null then
                 { }

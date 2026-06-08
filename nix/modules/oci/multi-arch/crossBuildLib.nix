@@ -6,7 +6,7 @@
 }:
 let
   inherit (lib) types;
-  archDefs = import ../../_lib/arch.nix;
+  # archData replaced by config.lib.oci inside perSystem
 in
 {
   config.perSystem =
@@ -123,7 +123,7 @@ in
                     echo "==> Built multi-arch OCI layout: ${lib.concatStringsSep ", " arches}"
                   '';
 
-              nativeArch = archDefs.systemToOCIArch pkgs.stdenv.hostPlatform.system;
+              nativeArch = ociDeployLib.systemToOCIArch pkgs.stdenv.hostPlatform.system;
 
               # nix2container-compatible passthru scripts
               copyToDockerDaemon = pkgs.writeShellApplication {

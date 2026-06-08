@@ -35,7 +35,26 @@ let
     types
     ;
 
-  archDefs = import ../../../_lib/arch.nix;
+  # Inline arch map — avoids raw `import`, values only used in lazy option defaults.
+  archMap = {
+    "x86_64-linux".ociArch = "amd64";
+    "aarch64-linux".ociArch = "arm64";
+    "armv7l-linux" = {
+      ociArch = "arm";
+      ociVariant = "v7";
+    };
+    "riscv64-linux".ociArch = "riscv64";
+  };
+
+  systemToOCIArch = system: archMap.${system}.ociArch;
+
+  systemToOCIPlatform =
+    system:
+    let
+      entry = archMap.${system};
+      variant = entry.ociVariant or null;
+    in
+    if variant != null then "linux/${entry.ociArch}/${variant}" else "linux/${entry.ociArch}";
 
   deferredModuleWith =
     {
@@ -106,7 +125,7 @@ in
                   readOnly = true;
                   internal = true;
                   description = "Internal: the OCI architecture string.";
-                  default = archDefs.systemToOCIArch name;
+                  default = systemToOCIArch name;
                 };
 
                 # Computed: OCI platform string (e.g. "linux/amd64", "linux/arm/v7").
@@ -115,7 +134,7 @@ in
                   readOnly = true;
                   internal = true;
                   description = "Internal: the OCI platform string.";
-                  default = archDefs.systemToOCIPlatform name;
+                  default = systemToOCIPlatform name;
                 };
 
                 # Whether this is the native (host) architecture.

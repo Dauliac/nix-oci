@@ -1,7 +1,7 @@
 # services.nix-oci.lib — internal helpers, registered for both NixOS and home-manager.
 #
-# Types and descriptions inherited from `_lib/oci.nix` (single source of truth
-# shared with flake-parts `nix-lib.lib.oci`).
+# Functions are defined inline (same implementations registered in
+# flake-parts nix-lib via oci/lib/deploy.nix).
 { ... }:
 let
   mod =
@@ -12,37 +12,52 @@ let
     }:
     let
       cfg = config.services.nix-oci;
-      defs = import ../../../../modules/_lib/oci.nix { inherit lib; };
     in
     {
       options.services.nix-oci.lib = {
         mkImageRef = lib.mkOption {
-          inherit (defs.mkImageRef) type description;
+          type = lib.types.functionTo lib.types.str;
+          description = ''
+            Compute an OCI image reference (`"name:tag"`) from a nix2container
+            `buildImage` derivation and a fallback name.
+          '';
           internal = true;
           readOnly = true;
-          default = defs.mkImageRef.fn;
+          default =
+            {
+              image,
+              name,
+            }:
+            let
+              imageName = image.imageName or name;
+              imageTag = image.imageTag or "latest";
+            in
+            "${imageName}:${imageTag}";
         };
 
         mkLoadServiceName = lib.mkOption {
-          inherit (defs.mkLoadServiceName) type description;
+          type = lib.types.functionTo lib.types.str;
+          description = "Compute the systemd service name for a container load unit.";
           internal = true;
           readOnly = true;
-          default = defs.mkLoadServiceName.fn;
+          default = name: "nix-oci-load-${name}";
         };
 
-        # Partially applied: takes `{ container }` instead of `{ backend, image }`.
+        # Partially applied with cfg.backend.
         # Returns the nix2container passthru copy script (bundles skopeo-nix2container).
         copyScript = lib.mkOption {
           type = lib.types.unspecified;
-          inherit (defs.copyScript) description;
+          description = ''
+            Select the nix2container passthru copy script for the configured backend.
+          '';
           internal = true;
           readOnly = true;
           default =
             { container }:
-            defs.copyScript.fn {
-              backend = cfg.backend;
-              image = container.image;
-            };
+            if cfg.backend == "docker" then
+              container.image.copyToDockerDaemon
+            else
+              container.image.copyToPodman;
         };
       };
     };

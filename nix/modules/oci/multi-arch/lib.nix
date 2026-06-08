@@ -8,7 +8,6 @@
 let
   inherit (lib) types;
   cfg = config;
-  archDefs = import ../../_lib/arch.nix;
 in
 {
   config.perSystem =
@@ -18,6 +17,9 @@ in
       config,
       ...
     }:
+    let
+      ociLib = config.lib.oci or { };
+    in
     {
       nix-lib.lib.oci = {
         mkPushTempOCIApp = {
@@ -95,7 +97,7 @@ in
                   "${containerConfig.registry}/${containerConfig.name}"
                 else
                   containerConfig.name;
-              arches = builtins.map (sys: archDefs.systemToOCIArch sys) systems;
+              arches = builtins.map (sys: ociLib.systemToOCIArch sys) systems;
               primaryTag = builtins.head (
                 lib.attrNames (lib.filterAttrs (_: tc: tc.primary) containerConfig.tagConfigs)
               );

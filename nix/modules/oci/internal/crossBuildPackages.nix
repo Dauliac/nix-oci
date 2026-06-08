@@ -12,7 +12,6 @@ let
     types
     attrsets
     ;
-  archDefs = import ../../_lib/arch.nix;
 in
 {
   options = {
@@ -51,7 +50,7 @@ in
                     inherit containerId;
                     crossPackage = archCfg.package;
                     crossDependencies = archCfg.dependencies;
-                    arch = archDefs.systemToOCIArch targetSystem;
+                    arch = ociLib.systemToOCIArch targetSystem;
                   }
                 ) crossArchConfigs
               ))
@@ -63,7 +62,7 @@ in
             internal = true;
             readOnly = true;
             default =
-              if !(archDefs.archMap ? ${system}) then
+              if !(ociLib.archMap ? ${system}) then
                 { }
               else
                 lib.pipe config.oci.containers [
@@ -71,7 +70,7 @@ in
                   (attrsets.mapAttrs (
                     containerId: _:
                     let
-                      nativeArch = archDefs.systemToOCIArch system;
+                      nativeArch = ociLib.systemToOCIArch system;
                       nativeImage = config.oci.internal.OCIs.${containerId};
                       crossImages = config.oci.internal.crossOCIs.${containerId};
                       allImages = {
