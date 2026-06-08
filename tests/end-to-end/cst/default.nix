@@ -53,11 +53,11 @@
               ];
             };
           };
-          crossBuildCurl = {
+          crossBuildJq = {
             test.containerStructureTest = {
               enabled = true;
               configs = [
-                ./crossBuildCurl.yaml
+                ./crossBuildJq.yaml
               ];
             };
           };

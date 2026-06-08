@@ -70,8 +70,8 @@
   [ "$status" -eq 0 ]
 }
 
-@test "CST crossBuildCurl" {
-  run nix run '.#oci-container-structure-test-crossBuildCurl'
+@test "CST crossBuildJq" {
+  run nix run '.#oci-container-structure-test-crossBuildJq'
   [ "$status" -eq 0 ]
 }
 
@@ -128,8 +128,8 @@
   [ "$os" = "linux" ]
 }
 
-@test "Multi-arch crossBuildCurl has amd64+arm64 manifest" {
-  run nix build '.#oci-multiarch-crossBuildCurl' --no-link --print-out-paths
+@test "Multi-arch crossBuildJq has amd64+arm64 manifest" {
+  run nix build '.#oci-multiarch-crossBuildJq' --no-link --print-out-paths
   [ "$status" -eq 0 ]
   layout="$output"
   manifest=$(skopeo inspect --raw "oci:$layout:latest")

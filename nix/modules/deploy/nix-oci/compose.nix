@@ -45,6 +45,7 @@ in
         smMods.nix-oci-backend
         smMods.nix-oci-containers
         smMods.nix-oci-load-services
+        smMods.nix-oci-run-services
       ];
       _module.args.nix2container =
         inputs.nix2container.packages.${pkgs.system}.nix2container;

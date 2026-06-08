@@ -1,7 +1,7 @@
 # Documentation build module (docs partition only)
 #
 # Builds an NDG site with:
-# - Module options (flake-parts, deploy, NixOS container)
+# - Module options (flake-parts, deploy/NixOS/HM/system-manager, NixOS container)
 # - Markdown content pages
 # - Examples from the examples/ directory
 # - GitHub Actions workflow for Pages deployment
@@ -210,19 +210,6 @@
           transformOptions = cleanupOptions;
         };
 
-        # --- Merged options JSON for NDG sidebar ---
-        mergedOptionsJSON = pkgs.runCommand "merged-options.json" {
-          nativeBuildInputs = [ pkgs.jq ];
-        } ''
-          jq -s '.[0] * .[1] * .[2] * .[3] * .[4]' \
-            ${topLevelDoc.optionsJSON}/share/doc/nixos/options.json \
-            ${perSystemDoc.optionsJSON}/share/doc/nixos/options.json \
-            ${containerDoc.optionsJSON}/share/doc/nixos/options.json \
-            ${deployDoc.optionsJSON}/share/doc/nixos/options.json \
-            ${nixosContainerDoc.optionsJSON}/share/doc/nixos/options.json \
-            > $out
-        '';
-
         # Diataxis layout with NDG group_by_dir:
         #   Root (flat): index.md (overview), getting-started.md (tutorial)
         #   ▼ How-to:    task-oriented guides
@@ -256,11 +243,13 @@
           sed -i '/<!-- OPTIONS:container -->/r ${containerDoc.optionsCommonMark}' $out/reference/flake-parts-options.md
           sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/nixos-options.md
           sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/home-manager-options.md
+          sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/system-manager-options.md
           sed -i '/<!-- OPTIONS:nixos-container -->/r ${nixosContainerDoc.optionsCommonMark}' $out/reference/nix-oci-container-module-options.md
 
-          # --- Examples (single group, all categories with prefix) ---
-          nix_to_md() {
-            local src="$1" dest="$2" title="$3"
+          # --- Examples: one page per directory, all examples on the page ---
+          # Groups: build root files, build/sub-dirs, deploy-nixos, deploy-home-manager
+          gen_examples_page() {
+            local dir="$1" title="$2" dest="$3"
             {
               echo "+++"
               echo "title = \"$title\""
@@ -268,31 +257,32 @@
               echo ""
               echo "# $title"
               echo ""
-              echo '```nix'
-              cat "$src"
-              echo '```'
+              for f in $(find "$dir" -maxdepth 1 -name '*.nix' -type f | sort); do
+                name="$(basename "$f" .nix)"
+                echo "## $name"
+                echo ""
+                echo '```nix'
+                cat "$f"
+                echo '```'
+                echo ""
+              done
             } > "$dest"
           }
 
-          for f in $(find ${../examples}/build -name '*.nix' -type f | sort); do
-            relpath="''${f#${../examples}/build/}"
-            name="''${relpath%.nix}"
-            safe_name="build-$(echo "$name" | tr '/' '-')"
-            title="[build] $(echo "$name" | tr '/' '-' | tr '-' ' ')"
-            nix_to_md "$f" "$out/examples/$safe_name.md" "$title"
+          # Build: root-level examples (minimalist, with-*, write-shell-*)
+          gen_examples_page "${../examples}/build" "Build: Basics" "$out/examples/build-basics.md"
+
+          # Build: subdirectory groups
+          for sub in $(find ${../examples}/build -mindepth 1 -maxdepth 1 -type d | sort); do
+            subname="$(basename "$sub")"
+            pretty="$(echo "$subname" | tr '-' ' ')"
+            gen_examples_page "$sub" "Build: $pretty" "$out/examples/build-$subname.md"
           done
 
-          for f in $(find ${../examples}/deploy-nixos -name '*.nix' -type f | sort); do
-            name="$(basename "$f" .nix)"
-            title="[deploy-nixos] $(echo "$name" | tr '-' ' ')"
-            nix_to_md "$f" "$out/examples/deploy-nixos-$name.md" "$title"
-          done
-
-          for f in $(find ${../examples}/deploy-home-manager -name '*.nix' -type f | sort); do
-            name="$(basename "$f" .nix)"
-            title="[deploy-hm] $(echo "$name" | tr '-' ' ')"
-            nix_to_md "$f" "$out/examples/deploy-hm-$name.md" "$title"
-          done
+          # Deploy
+          gen_examples_page "${../examples}/deploy-nixos" "Deploy: NixOS" "$out/examples/deploy-nixos.md"
+          gen_examples_page "${../examples}/deploy-home-manager" "Deploy: Home Manager" "$out/examples/deploy-home-manager.md"
+          gen_examples_page "${../examples}/deploy-system-manager" "Deploy: system-manager" "$out/examples/deploy-system-manager.md"
         '';
 
         # --- NDG site build (using CLI directly) ---
@@ -300,11 +290,9 @@
           title = "nix-oci";
           input_dir = "${docsInputDir}";
           output_dir = placeholder "out";
-          module_options = "${mergedOptionsJSON}";
           search.enable = true;
           highlight_code = true;
           sidebar = {
-            options.depth = 3;
             ordering = "custom";
             group_by_dir = true;
             matches = [

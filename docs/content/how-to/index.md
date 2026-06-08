@@ -8,5 +8,6 @@ description = "How to use nix-oci"
 Learn how to use nix-oci to build and deploy OCI containers with Nix.
 
 - [Container Modules API](./container-modules-api.md) — Build containers from NixOS service definitions
-- [Deploy Modules](./deploy-modules.md) — Load and run containers on NixOS or Home Manager
+- [Deploy Modules](./deploy-modules.md) — Load and run containers on NixOS, Home Manager or system-manager
+- [Optimize Image Layers](./optimize-layers.md) — Share layers between containers for faster push and pull
 - [NixOS Container Modules](./nixos-containers.md) — Dendritic NixOS modules for container builds

@@ -9,10 +9,11 @@ Contributions are welcome! Here are some ways to help:
 ## Getting started
 
 1. Fork and clone the repository
-2. Enter the dev shell: `nix develop`
-3. Make your changes
-4. Run tests: `nix flake check`
-5. Submit a pull request
+2. Enter the dev shell: `nix develop` (or use [direnv](https://direnv.net/) for automatic activation)
+3. The dev shell provides all required tools (bats, lefthook, task, convco, typos, etc.)
+4. Git hooks are managed by [lefthook](https://github.com/evilmartians/lefthook) — they run automatically on commit (formatting, flake check, tests, commit message linting)
+5. Make your changes
+6. Submit a pull request
 
 ## Repository
 
@@ -31,15 +32,22 @@ Contributions are welcome! Here are some ways to help:
 ## Running tests
 
 ```bash
-# All checks
+# End-to-end tests (preferred way, via Taskfile)
+task test
+
+# All nix checks
 nix flake check
 
 # Integration test (NixOS VM)
 nix build .#checks.x86_64-linux.deploy-integration
-
-# End-to-end tests
-cd tests/end-to-end && bats main.bats
 ```
+
+## Git hooks (lefthook)
+
+Lefthook runs automatically on commit:
+
+- **pre-commit**: `nix fmt`, `nix flake show`, `nix flake check`, `task test`
+- **commit-msg**: [convco](https://convco.github.io/check/) (conventional commits) + typos check
 
 ## Code style
 

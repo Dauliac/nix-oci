@@ -1,14 +1,15 @@
 # nix-oci
 
-A [flake-parts](https://flake.parts), [NixOS](https://nixos.org/manual/nixos/stable/) and [Home Manager](https://nix-community.github.io/home-manager/) module system for OCI containers, powered by [nix2container](https://github.com/nlewo/nix2container).
+A [flake-parts](https://flake.parts), [NixOS](https://nixos.org/manual/nixos/stable/), [Home Manager](https://nix-community.github.io/home-manager/) and [system-manager](https://system-manager.net) module system for OCI containers, powered by [nix2container](https://github.com/nlewo/nix2container).
 
 nix-oci lets you **build**, **deploy** and **run** containers entirely from Nix — including building images directly from NixOS service definitions.
 
 ## Features
 
 - **Build OCI images** declaratively from packages or NixOS modules
-- **Deploy and run** containers on NixOS and Home Manager via a unified `oci.*` API
+- **Deploy and run** containers on NixOS, Home Manager and system-manager via a unified `oci.*` API
 - **Build containers from NixOS services** — write `services.nginx.enable = true` and get a minimal container image
+- **Optimized layer sharing** — [popularity-based store-path layering](https://grahamc.com/blog/nix-and-layered-docker-images) so images sharing common dependencies share registry layers, dramatically reducing push and pull times
 - **Multi-arch cross-compilation** — build `aarch64` images on `x86_64` without emulation
 - **Security** — CVE scanning (Trivy, Grype, Vulnix), SBOM generation (Syft), credentials leak detection, image signing (cosign)
 - **Testing** — Container Structure Tests, dgoss, dive
@@ -91,6 +92,7 @@ perSystem = { ... }: {
 - [nix-oci on flake.parts](https://flake.parts/options/nix-oci.html)
 - [NixOS manual](https://nixos.org/manual/nixos/stable/)
 - [Home Manager manual](https://nix-community.github.io/home-manager/)
+- [system-manager](https://system-manager.net)
 - [nix2container](https://github.com/nlewo/nix2container)
 - [flake-parts](https://flake.parts)
 
@@ -101,6 +103,7 @@ See the [examples](./examples) directory:
 - [`examples/build/`](./examples/build/) — flake-parts image building
 - [`examples/deploy-nixos/`](./examples/deploy-nixos/) — NixOS deployment
 - [`examples/deploy-home-manager/`](./examples/deploy-home-manager/) — Home Manager deployment
+- [`examples/deploy-system-manager/`](./examples/deploy-system-manager/) — system-manager deployment
 
 ## Contributing
 
