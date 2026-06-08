@@ -16,6 +16,7 @@ Each topic has its own detailed page:
 - [Security defaults](./security-defaults.md) — non-root by default, distroless by construction, security tooling, bit-for-bit reproducibility
 - [Automatic OCI labels](./automatic-labeling.md) — OCI standard annotations, build metadata, hardening hints, Kubernetes SecurityContext/PSS, network ports, Nix identity, nixpkgs security
 - [Automatic metadata derivation](./automatic-metadata.md) — healthchecks, stop signals, working directories, volume declarations from NixOS services
+- [Multi-architecture images](./multi-arch-images.md) — CI-parallel native builds or single-machine cross-compilation for multi-arch OCI manifests
 
 The rest of this page covers the remaining design choices that don't
 warrant a full page.
@@ -195,3 +196,4 @@ ensuring they are reproducible across machines and CI environments.
 - [Archive-less container building](./archive-less-container-building.md) — how nix2container avoids tar archives
 - [Optimized layer sharing](./optimize-layers.md) — the two-level layering heuristic
 - [Container metadata wiring](./container-metadata-wiring.md) — how options flow to OCI config, services, and firewall
+- [Multi-architecture images](./multi-arch-images.md) — CI-parallel or cross-build multi-arch workflows
