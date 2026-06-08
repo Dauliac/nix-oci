@@ -24,7 +24,7 @@
       (_: {
         imports = [
           nix-oci.modules.flake.nix-oci
-          (nix-oci.inputs.import-tree ../../examples)
+          (nix-oci.inputs.import-tree ../../examples/build)
           ./cst
         ];
         config = {

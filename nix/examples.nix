@@ -1,5 +1,5 @@
 { inputs, ... }:
 {
-  imports = [ (inputs.import-tree ../examples) ];
-  config.oci.fromImageManifestRootPath = ../examples + "/";
+  imports = [ (inputs.import-tree ../examples/build) ];
+  config.oci.fromImageManifestRootPath = ../examples/build + "/";
 }

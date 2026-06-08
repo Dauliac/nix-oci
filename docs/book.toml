@@ -1,9 +1,0 @@
-[book]
-title = "nix-oci"
-description = "A flake-parts module for building OCI images with Nix"
-authors = ["Dauliac"]
-language = "en"
-src = "src"
-
-[output.html]
-git-repository-url = "https://github.com/Dauliac/nix-oci"

@@ -69,8 +69,9 @@
               (import ./nix/flake-module.nix inputs)
               # Treefmt formatter and check
               ./nix/treefmt.nix
-              # Integration tests (NixOS + home-manager module tests)
-              ./nix/tests/integration.nix
+              # Deploy module integration tests (split per platform)
+              ./nix/tests/deploy-nixos.nix
+              ./nix/tests/deploy-home-manager.nix
             ];
             oci.enabled = true;
             debug = true;

@@ -1,0 +1,3 @@
+[submodule "docs/flake-parts-website"]
+	path = docs/flake-parts-website
+	url = https://github.com/Dauliac/flake.parts-website.git
