@@ -1,5 +1,6 @@
-# Home-manager: forward autoStart containers to services.podman.containers
-# and wire loader as dependency of the runner.
+# Home-manager: forward autoStart containers to services.podman.containers.
+# Loader dependency is wired via the podman quadlet's Unit section
+# (NOT via systemd.user.services, which would conflict with the quadlet file).
 { ... }:
 {
   flake.modules.homeManager.nix-oci-run-services =
@@ -13,9 +14,13 @@
         services.podman = {
           enable = true;
           containers = lib.mapAttrs (
-            _name: container:
+            name: container:
             {
               image = container.imageRef;
+              unit = {
+                After = [ "oci-load-${name}.service" ];
+                Requires = [ "oci-load-${name}.service" ];
+              };
             }
             // lib.optionalAttrs (container.ports != [ ]) {
               ports = container.ports;
@@ -28,17 +33,6 @@
             }
           ) autoStart;
         };
-
-        # Runner depends on loader
-        systemd.user.services = lib.mapAttrs' (
-          name: _:
-          lib.nameValuePair "podman-${name}" {
-            Unit = {
-              After = [ "oci-load-${name}.service" ];
-              Requires = [ "oci-load-${name}.service" ];
-            };
-          }
-        ) autoStart;
       };
     };
 }

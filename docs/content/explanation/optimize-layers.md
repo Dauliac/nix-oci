@@ -1,9 +1,9 @@
 +++
-title = "Optimize image layers"
-description = "How to share layers between containers for faster push and pull"
+title = "Optimized layer sharing"
+description = "How store-path popularity-based layering shares layers between containers"
 +++
 
-# How to optimize image layers
+# Optimized layer sharing
 
 nix-oci can split your container into multiple OCI layers using a
 **store-path popularity algorithm**, so that images sharing common

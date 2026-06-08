@@ -91,6 +91,7 @@ in
 
               environment.systemPackages = with pkgs; [
                 curl
+                iptables
                 (python3.withPackages (ps: [
                   ps.docker
                   ps.urllib3
@@ -110,8 +111,25 @@ in
             with subtest("nixos: load service completes"):
                 machine.wait_for_unit("oci-load-http-server.service")
 
+            with subtest("nixos: load service is oneshot with RemainAfterExit"):
+                props = machine.succeed(
+                    "systemctl show oci-load-http-server.service "
+                    "--property=Type,RemainAfterExit,ActiveState"
+                )
+                assert "Type=oneshot" in props, f"Expected Type=oneshot: {props}"
+                assert "RemainAfterExit=yes" in props, f"Expected RemainAfterExit=yes: {props}"
+                assert "ActiveState=active" in props, f"Expected ActiveState=active: {props}"
+
             with subtest("nixos: container service starts"):
                 machine.wait_for_unit("podman-http-server.service")
+
+            with subtest("nixos: runner service depends on loader"):
+                deps = machine.succeed(
+                    "systemctl show podman-http-server.service "
+                    "--property=After,Requires"
+                )
+                assert "oci-load-http-server.service" in deps, \
+                    f"Runner must depend on loader: {deps}"
 
             with subtest("nixos: image present in podman"):
                 images_json = machine.succeed("podman images --format json")
@@ -124,8 +142,16 @@ in
                 assert any("http-server" in n for n in names), \
                     f"http-server image not found: {names}"
 
+            with subtest("nixos: firewall allows port 8080"):
+                rules = machine.succeed("iptables -L INPUT -n")
+                assert "8080" in rules, \
+                    f"Firewall should allow port 8080: {rules}"
+
             with subtest("nixos: HTTP server responds"):
                 machine.wait_for_open_port(8080)
+                machine.wait_until_succeeds(
+                    "curl -sf http://localhost:8080/index.html", timeout=30
+                )
                 response = machine.succeed("curl -sf http://localhost:8080/index.html")
                 assert "nix-oci-test-ok" in response, f"Bad response: {response}"
 
@@ -143,6 +169,30 @@ in
             with subtest("home-manager: load service completes"):
                 machine.wait_for_unit("oci-load-http-server.service", "testuser")
 
+            with subtest("home-manager: load service is oneshot with RemainAfterExit"):
+                props = machine.succeed(
+                    "su - testuser -c '"
+                    "XDG_RUNTIME_DIR=/run/user/$(id -u) "
+                    "systemctl --user show oci-load-http-server.service "
+                    "--property=Type,RemainAfterExit,ActiveState'"
+                )
+                assert "Type=oneshot" in props, f"Expected Type=oneshot: {props}"
+                assert "RemainAfterExit=yes" in props, f"Expected RemainAfterExit=yes: {props}"
+                assert "ActiveState=active" in props, f"Expected ActiveState=active: {props}"
+
+            with subtest("home-manager: runner service starts"):
+                machine.wait_for_unit("podman-http-server.service", "testuser")
+
+            with subtest("home-manager: runner service depends on loader"):
+                deps = machine.succeed(
+                    "su - testuser -c '"
+                    "XDG_RUNTIME_DIR=/run/user/$(id -u) "
+                    "systemctl --user show podman-http-server.service "
+                    "--property=After,Requires'"
+                )
+                assert "oci-load-http-server.service" in deps, \
+                    f"Runner must depend on loader: {deps}"
+
             with subtest("home-manager: image loaded in rootless podman"):
                 images_json = machine.succeed(
                     "su - testuser -c 'podman images --format json'"
@@ -157,12 +207,10 @@ in
                     f"http-server not found: {names}"
 
             with subtest("home-manager: container runs and serves HTTP"):
-                machine.succeed(
-                    "su - testuser -c 'podman run -d --name http-server -p 9090:8080 http-server:latest'"
-                )
                 machine.wait_for_open_port(9090)
-                # Wait for the HTTP server inside the container to be ready
-                machine.wait_until_succeeds("curl -sf http://localhost:9090/index.html", timeout=30)
+                machine.wait_until_succeeds(
+                    "curl -sf http://localhost:9090/index.html", timeout=30
+                )
                 response = machine.succeed("curl -sf http://localhost:9090/index.html")
                 assert "nix-oci-test-ok" in response, f"Bad response: {response}"
 

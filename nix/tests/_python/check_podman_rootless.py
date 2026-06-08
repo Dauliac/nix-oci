@@ -1,10 +1,12 @@
 """Validate nix-oci container in rootless podman via CLI + JSON parsing.
 
-Checks: image presence, container running, inspect, exec capability.
+Checks: systemd user services, image presence, container running,
+inspect, exec capability.
 Designed to run inside a NixOS VM test as a non-root user.
 """
 
 import json
+import os
 import subprocess
 import sys
 
@@ -19,6 +21,53 @@ def run(cmd: str) -> str:
         sys.exit(1)
     return result.stdout
 
+
+def check_user_service(name: str, expected_active: str = "active") -> None:
+    result = subprocess.run(
+        ["systemctl", "--user", "show", name, "--property=ActiveState"],
+        capture_output=True,
+        text=True,
+        env={**os.environ, "XDG_RUNTIME_DIR": f"/run/user/{os.getuid()}"},
+    )
+    assert result.returncode == 0, f"Failed to query {name}: {result.stderr}"
+    assert f"ActiveState={expected_active}" in result.stdout, (
+        f"{name} not {expected_active}: {result.stdout}"
+    )
+
+
+# --- Systemd user service checks ---
+print("[podman-cli] Checking systemd user services...")
+check_user_service("oci-load-http-server.service", "active")
+check_user_service("podman-http-server.service", "active")
+
+env = {**os.environ, "XDG_RUNTIME_DIR": f"/run/user/{os.getuid()}"}
+
+# Verify loader is oneshot
+result = subprocess.run(
+    ["systemctl", "--user", "show", "oci-load-http-server.service", "--property=Type"],
+    capture_output=True,
+    text=True,
+    env=env,
+)
+assert "Type=oneshot" in result.stdout, f"Expected oneshot: {result.stdout}"
+
+# Verify runner depends on loader
+result = subprocess.run(
+    [
+        "systemctl",
+        "--user",
+        "show",
+        "podman-http-server.service",
+        "--property=After,Requires",
+    ],
+    capture_output=True,
+    text=True,
+    env=env,
+)
+assert "oci-load-http-server.service" in result.stdout, (
+    f"Runner must depend on loader: {result.stdout}"
+)
+print("[podman-cli] Systemd user services: OK")
 
 # --- Image checks ---
 images = json.loads(run("podman images --format json"))
