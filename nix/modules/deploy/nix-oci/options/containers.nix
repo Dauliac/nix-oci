@@ -93,6 +93,70 @@ let
           ];
           ignoreCollisions = true;
         };
+      # Layer-building helpers for deploy images.
+      # Uses the same fold pattern as flake-parts mkImageLayers.
+
+      # Build a deps layer-def (attrset, not built) for the fold chain.
+      mkDepsLayerDef =
+        { pkgs, dependencies }:
+        {
+          copyToRoot = [
+            (pkgs.buildEnv {
+              name = "deps";
+              paths = dependencies;
+              pathsToLink = [
+                "/bin"
+                "/lib"
+                "/etc"
+              ];
+              ignoreCollisions = true;
+            })
+          ];
+          maxLayers = 80;
+        };
+
+      # Build an app layer-def for the fold chain.
+      mkAppLayerDef =
+        { copyToRoot }:
+        {
+          inherit copyToRoot;
+        };
+
+      # Fold layer-defs with deduplication: each layer references all
+      # prior layers so nix2container excludes already-covered store paths.
+      foldImageLayers =
+        { nix2container, layerDefs }:
+        let
+          mergeToLayer =
+            priorLayers: layerDef:
+            let
+              layer = nix2container.buildLayer (layerDef // { layers = priorLayers; });
+            in
+            priorLayers ++ [ layer ];
+        in
+        lib.foldl mergeToLayer [ ] layerDefs;
+
+      # Compose the full deduplicated layer stack for a deploy image.
+      # Ordering: deps (most stable) → app root (changes on rebuild).
+      mkImageLayers =
+        {
+          pkgs,
+          nix2container,
+          dependencies,
+          rootPaths,
+        }:
+        let
+          depsLayerDefs =
+            if dependencies != [ ] then
+              [ (mkDepsLayerDef { inherit pkgs dependencies; }) ]
+            else
+              [ ];
+          appLayerDefs = [ (mkAppLayerDef { copyToRoot = rootPaths; }) ];
+        in
+        foldImageLayers {
+          inherit nix2container;
+          layerDefs = depsLayerDefs ++ appLayerDefs;
+        };
     in
     {
       inherit
@@ -101,6 +165,10 @@ let
         parseHostPort
         mkShadowSetup
         mkRoot
+        mkDepsLayerDef
+        mkAppLayerDef
+        foldImageLayers
+        mkImageLayers
         ;
     };
 

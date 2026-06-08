@@ -37,14 +37,16 @@
                   inherit perSystemConfig containerId globalConfig;
                 };
             optimized = oci.optimizeLayers or false;
-            depsLayers =
-              if optimized && oci.dependencies != [ ] then
-                [
-                  (ociLib.mkDepsLayer {
-                    inherit perSystemConfig;
-                    dependencies = oci.dependencies;
-                  })
-                ]
+
+            appCopyToRoot = [ out.rootFilesystem ] ++ lib.optional (oci.package != null) oci.package;
+
+            layers =
+              if optimized then
+                ociLib.mkImageLayers {
+                  nix2container = perSystemConfig.packages.nix2container;
+                  dependencies = oci.dependencies;
+                  copyToRoot = appCopyToRoot;
+                }
               else
                 [ ];
           in
@@ -53,12 +55,7 @@
             {
               inherit (oci) tag;
               name = fullName;
-              # rootFilesystem has shadow, etc, home, deps, configFiles from NixOS eval.
-              # Package is added separately (can't pass to NixOS eval without cycle).
-              copyToRoot = [ out.rootFilesystem ] ++ lib.optional (oci.package != null) oci.package;
               config = {
-                # Use NixOS-generated entrypoint for service containers,
-                # fall back to flake-parts entrypoint for simple containers
                 entrypoint = if out.entrypoint != [ ] then out.entrypoint else oci.entrypoint;
                 User = oci.user;
                 Env = out.envVars;
@@ -70,10 +67,17 @@
             // lib.optionalAttrs (fromImage != null) {
               inherit fromImage;
             }
-            // lib.optionalAttrs optimized {
-              layers = depsLayers;
-              maxLayers = 40;
-            }
+            // (
+              if optimized then
+                {
+                  inherit layers;
+                  maxLayers = 40;
+                }
+              else
+                {
+                  copyToRoot = appCopyToRoot;
+                }
+            )
           );
       };
     };

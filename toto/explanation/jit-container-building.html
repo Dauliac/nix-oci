@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Just-in-time container building</title>
+    <meta name="description" content="How nix2container builds OCI images without intermediate archives, reducing store bloat and enabling streaming pushes" /> 
+    
+    <script>
+      document.documentElement.classList.remove("no-js");
+      document.documentElement.classList.add("js");
+      (function () {
+        try {
+          if (localStorage.getItem("sidebar-collapsed") === "true") {
+            document.documentElement.classList.add("sidebar-collapsed");
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="stylesheet" href="../assets/style.css" />
+    <script defer src="../assets/main.js"></script>
+    
+    <script>
+      window.searchNamespace = window.searchNamespace || {};
+      window.searchNamespace.rootPath = "../";
+    </script>
+    <script defer src="../assets/search.js"></script>
+    
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="header-left">
+          <h1 class="site-title">
+            <a href="../index.html">nix-oci</a>
+          </h1>
+
+          <nav class="header-nav">
+  <ul>
+    <li style="display:none;">
+      <a href="../options.html">Options</a>
+    </li>
+    
+    <li><a href="../search.html">Search</a></li>
+    
+  </ul>
+</nav>
+
+        </div>
+        
+        <div class="search-container js-only">
+          <input type="text" id="search-input" placeholder="Search..." />
+          <div id="search-results" class="search-results"></div>
+        </div>
+        
+      </header>
+
+      <div class="layout">
+        <div class="sidebar-toggle js-only" aria-label="Toggle sidebar">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+          >
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path>
+          </svg>
+        </div>
+        <nav class="sidebar">
+          <details class="sidebar-section" data-section="docs" open>
+            <summary>Navigation</summary>
+            <div class="sidebar-section-content">
+              <ul>
+                <li><a href="../index.html">nix-oci</a></li>
+<li><a href="../how-to/index.html">Guide</a></li>
+<li><a href="../explanation/index.html">Explanation</a></li>
+<li><a href="../getting-started.html">Getting Started</a></li>
+<li><a href="../contributing.html">Contributing</a></li>
+<li class="sidebar-dir-group"><details open><summary><span class="sidebar-dir-label">Examples</span><span class="sidebar-dir-count">9</span></summary><ul>
+<li><a href="../examples/build-basics.html">Build: Basics</a></li>
+<li><a href="../examples/build-container-structure-test.html">Build: container structure test</a></li>
+<li><a href="../examples/build-dgoss.html">Build: dgoss</a></li>
+<li><a href="../examples/build-multi-arch.html">Build: multi arch</a></li>
+<li><a href="../examples/build-nixos-containers.html">Build: nixos containers</a></li>
+<li><a href="../examples/build-trivy.html">Build: trivy</a></li>
+<li><a href="../examples/deploy-home-manager.html">Deploy: Home Manager</a></li>
+<li><a href="../examples/deploy-nixos.html">Deploy: NixOS</a></li>
+<li><a href="../examples/deploy-system-manager.html">Deploy: system-manager</a></li>
+</ul></details></li>
+<li class="sidebar-dir-group"><details open><summary><span class="sidebar-dir-label">Explanation</span><span class="sidebar-dir-count">2</span></summary><ul>
+<li><a href="../explanation/jit-container-building.html">Just-in-time container building</a></li>
+<li><a href="../explanation/optimize-layers.html">Optimized layer sharing</a></li>
+</ul></details></li>
+<li class="sidebar-dir-group"><details open><summary><span class="sidebar-dir-label">How-to</span><span class="sidebar-dir-count">4</span></summary><ul>
+<li><a href="../how-to/nixos-containers.html">How to build and run with flake-parts</a></li>
+<li><a href="../how-to/container-modules-api.html">How to build containers from NixOS services</a></li>
+<li><a href="../how-to/deploy-modules.html">How to deploy containers on NixOS</a></li>
+<li><a href="../how-to/share-containers-across-modules.html">How to share containers between flake-parts and NixOS/Home Manager</a></li>
+</ul></details></li>
+<li class="sidebar-dir-group"><details open><summary><span class="sidebar-dir-label">Reference</span><span class="sidebar-dir-count">5</span></summary><ul>
+<li><a href="../reference/home-manager-options.html">Home Manager Module Options</a></li>
+<li><a href="../reference/nixos-options.html">NixOS Module Options</a></li>
+<li><a href="../reference/flake-parts-options.html">flake.parts Options</a></li>
+<li><a href="../reference/nix-oci-container-module-options.html">nix-oci Container Module Options</a></li>
+<li><a href="../reference/system-manager-options.html">system-manager Module Options</a></li>
+</ul></details></li>
+<li><a href="../search.html">Search</a></li>
+
+              </ul>
+            </div>
+          </details>
+        </nav>
+
+        <main class="content"><html><head></head><body><h1 id="just-in-time-container-building">Just-in-time container building</h1>
+<p>nix-oci relies on <a href="https://github.com/nlewo/nix2container">nix2container</a> to
+build OCI images using a fundamentally different approach than traditional
+tools: layers are never materialized as tar archives in the Nix store.
+Instead, they exist as <strong>JSON descriptions</strong> of store paths, and actual
+tarballs are generated <strong>just-in-time</strong> — only when loading into a runtime or
+pushing to a registry.</p>
+<h2 id="the-problem-with-archive-based-builds">The problem with archive-based builds</h2>
+<p>Traditional container build tools — whether <code>docker build</code> with a Dockerfile
+or Nix's built-in <code>dockerTools.buildImage</code> — follow the same pattern:</p>
+<ol>
+<li>Collect the filesystem contents.</li>
+<li>Write one or more <strong>tar archives</strong> (layers) to disk.</li>
+<li>Bundle them into an OCI/Docker archive.</li>
+<li>Push or load that archive.</li>
+</ol>
+<p>This creates two problems:</p>
+<ul>
+<li><strong>Store bloat</strong>: every store path that goes into the image is stored
+<em>twice</em> — once as a Nix derivation output and once inside a layer tarball.
+A 500 MB image effectively costs 1 GB of disk.</li>
+<li><strong>Slow rebuilds</strong>: changing a single dependency forces the entire archive to
+be rebuilt and re-written, even if most layers are identical to the previous
+build.</li>
+</ul>
+<p>Nix's <code>dockerTools.streamLayeredImage</code> partially addresses this by streaming
+the archive instead of writing it to the store, but it still computes every
+layer tarball on each invocation and cannot skip layers already present in a
+registry.</p>
+<h2 id="how-nix2container-solves-it">How nix2container solves it</h2>
+<p>nix2container replaces tar archives with lightweight <strong>JSON metadata files</strong>.
+A built image in the Nix store is just a few kilobytes of JSON listing:</p>
+<ul>
+<li>The Nix store paths belonging to each layer.</li>
+<li>Pre-computed <strong>digests and diff IDs</strong> for every layer.</li>
+<li>OCI image configuration (entrypoint, env, labels, etc.).</li>
+</ul>
+<p>No tar archive is written during <code>nix build</code>. The image "recipe" is a
+pure Nix derivation that produces only JSON — this is what we mean by
+<strong>just-in-time</strong> (or archive-less) container building.</p>
+<h3 id="streaming-push-with-skopeo">Streaming push with Skopeo</h3>
+<p>nix2container ships a small Go library (~250 lines) that plugs into
+<a href="https://github.com/containers/skopeo">Skopeo</a> as a custom <code>nix:</code> transport.
+When you push an image:</p>
+<ol>
+<li>Skopeo reads the JSON manifest.</li>
+<li>For each layer, it checks the <strong>pre-computed digest</strong> against the registry.
+Layers that already exist are skipped entirely — no data is generated or
+transferred.</li>
+<li>Only missing layers are <strong>tar-archived on the fly</strong> and streamed directly
+to the registry, without touching the local disk.</li>
+</ol>
+<p>This makes pushes dramatically faster:</p>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th><code>dockerTools.buildImage</code></th>
+<th><code>dockerTools.streamLayeredImage</code></th>
+<th><strong>nix2container</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Rebuild + push</td>
+<td>~10 s</td>
+<td>~7.5 s</td>
+<td><strong>~1.8 s</strong></td>
+</tr>
+</tbody>
+</table>
+<p><em>(Benchmarks from the <a href="https://github.com/nlewo/nix2container">nix2container README</a>.)</em></p>
+<h3 id="loading-into-docker---podman">Loading into Docker / Podman</h3>
+<p>The same principle applies when loading images locally. nix2container
+generates <code>copyToDockerDaemon</code> and <code>copyToPodman</code> scripts that use Skopeo to
+stream layers into the local runtime without creating intermediate files.</p>
+<h2 id="comparison-with-other-nix-container-tools">Comparison with other Nix container tools</h2>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Archive in store</th>
+<th>Incremental push</th>
+<th>Layer optimization</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dockerTools.buildImage</code></td>
+<td>Yes (full OCI tar)</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>dockerTools.buildLayeredImage</code></td>
+<td>Yes (layer tars)</td>
+<td>No</td>
+<td>Popularity-based</td>
+</tr>
+<tr>
+<td><code>dockerTools.streamLayeredImage</code></td>
+<td>No (streamed)</td>
+<td>No (recomputes all)</td>
+<td>Popularity-based</td>
+</tr>
+<tr>
+<td><strong>nix2container</strong></td>
+<td><strong>No (JSON only)</strong></td>
+<td><strong>Yes (digest check)</strong></td>
+<td><strong>Popularity-based</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="outside-the-nix-ecosystem">Outside the Nix ecosystem</h3>
+<p>Other tools that pursue just-in-time or layer-streaming strategies:</p>
+<ul>
+<li><a href="https://ko.build/"><strong>ko</strong></a> — builds Go container images directly from
+source without a Dockerfile; layers are assembled on push.</li>
+<li><a href="https://github.com/GoogleContainerTools/jib"><strong>Jib</strong></a> — builds Java
+container images without Docker, computing layers from build artifacts and
+pushing them individually.</li>
+<li><a href="https://buildpacks.io/"><strong>Buildpacks</strong></a> — auto-detect application type and
+produce images with reusable base layers, though they still write archives
+locally.</li>
+<li><a href="https://nixery.dev/"><strong>Nixery</strong></a> — serves Nix-built images from a registry
+endpoint, computing layers on demand per HTTP request.</li>
+</ul>
+<p>nix2container stands out by combining Nix's reproducibility guarantees with
+truly archive-less builds: the Nix store only ever contains JSON metadata,
+and the actual image bytes are generated at the moment they are needed.</p>
+<h2 id="why-it-matters-for-nix-oci">Why it matters for nix-oci</h2>
+<p>Because nix-oci uses nix2container as its backend:</p>
+<ul>
+<li><strong>Minimal store usage</strong> — building dozens of container variants does not
+bloat your Nix store with duplicate tarballs.</li>
+<li><strong>Fast iteration</strong> — rebuilding after a code change only recomputes the JSON
+manifest; pushing only transfers the changed layer.</li>
+<li><strong>Efficient CI</strong> — CI runners benefit from smaller caches and shorter push
+times, since unchanged layers are never re-uploaded.</li>
+<li><strong>Reproducibility</strong> — the JSON manifest is a pure Nix derivation, so the
+image is bit-for-bit reproducible across machines.</li>
+</ul>
+<h2 id="further-reading">Further reading</h2>
+<ul>
+<li><a href="https://github.com/nlewo/nix2container">nix2container</a> — the backend powering nix-oci</li>
+<li><a href="https://lewo.abesis.fr/posts/nix-build-container-image/">Building container images with Nix</a> — foundational ideas behind the archive-less approach</li>
+<li><a href="./optimize-layers.html">Optimized layer sharing</a> — how nix-oci uses popularity-based layering on top of nix2container</li>
+</ul>
+</body></html></main>
+      </div>
+
+      <aside class="page-toc">
+        <nav class="page-toc-nav">
+          <h3>On this page</h3>
+          <ul class="page-toc-list">
+            <li><a href="#just-in-time-container-building">Just-in-time container building</a>
+<ul><li><a href="#the-problem-with-archive-based-builds">The problem with archive-based builds</a>
+<li><a href="#how-nix2container-solves-it">How nix2container solves it</a>
+<ul><li><a href="#streaming-push-with-skopeo">Streaming push with Skopeo</a>
+<li><a href="#loading-into-docker---podman">Loading into Docker / Podman</a>
+</ul><li><a href="#comparison-with-other-nix-container-tools">Comparison with other Nix container tools</a>
+<ul><li><a href="#outside-the-nix-ecosystem">Outside the Nix ecosystem</a>
+</ul><li><a href="#why-it-matters-for-nix-oci">Why it matters for nix-oci</a>
+<li><a href="#further-reading">Further reading</a>
+</li></ul></li>
+          </ul>
+        </nav>
+      </aside>
+
+      <footer>
+  <p>Generated with ndg</p>
+</footer>
+
+    </div>
+
+    <script>
+      // Close directory groups by default and reorder them
+      document.addEventListener("DOMContentLoaded", function () {
+        var groups = document.querySelectorAll(".sidebar-dir-group > details");
+        // Desired order: how-to, reference, examples (alphabetical puts examples first)
+        var order = { "how-to": 1, "reference": 2, "examples": 3 };
+        var parent = groups.length > 0 ? groups[0].parentElement.parentElement : null;
+        var sorted = [];
+
+        groups.forEach(function (d) {
+          // Close all groups by default
+          d.removeAttribute("open");
+          // Extract group name from label
+          var label = d.querySelector(".sidebar-dir-label");
+          if (label) {
+            var name = label.textContent.toLowerCase();
+            sorted.push({ el: d.parentElement, name: name });
+          }
+        });
+
+        // Reorder groups in the DOM
+        if (parent && sorted.length > 0) {
+          sorted.sort(function (a, b) {
+            return (order[a.name] || 99) - (order[b.name] || 99);
+          });
+          sorted.forEach(function (item) {
+            parent.appendChild(item.el);
+          });
+        }
+      });
+    </script>
+
+    
+  </body>
+</html>

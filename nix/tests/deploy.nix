@@ -143,7 +143,7 @@ in
                     f"http-server image not found: {names}"
 
             with subtest("nixos: firewall allows port 8080"):
-                rules = machine.succeed("iptables -L INPUT -n")
+                rules = machine.succeed("iptables -L nixos-fw -n")
                 assert "8080" in rules, \
                     f"Firewall should allow port 8080: {rules}"
 

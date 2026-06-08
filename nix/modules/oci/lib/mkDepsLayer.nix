@@ -1,8 +1,9 @@
-# OCI mkDepsLayer - Build a cached layer from container dependencies
+# OCI mkDepsLayer - Build a layer definition for container dependencies
 #
-# Separates dependencies into their own nix2container layer with
-# popularity-based splitting (maxLayers) for optimal registry caching.
-# Shared by mkSimpleOCI and mkNixOCI when optimizeLayers is enabled.
+# Returns a layer-def attrset (not a built layer) suitable for use with
+# foldImageLayers. Contains the dependency buildEnv with popularity-based
+# splitting (maxLayers) for optimal registry caching.
+# Shared by mkSimpleOCI, mkNixOCI, and mkImageLayers.
 { lib, ... }:
 {
   config.perSystem =
@@ -14,14 +15,13 @@
     }:
     {
       nix-lib.lib.oci.mkDepsLayer = {
-        type = lib.types.functionTo lib.types.package;
-        description = "Build a cached layer from container dependencies";
+        type = lib.types.functionTo lib.types.attrs;
+        description = "Build a layer definition for container dependencies (for use with foldImageLayers)";
         fn =
           {
-            perSystemConfig,
             dependencies,
           }:
-          perSystemConfig.packages.nix2container.buildLayer {
+          {
             copyToRoot = [
               (pkgs.buildEnv {
                 name = "deps";

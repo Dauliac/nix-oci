@@ -30,11 +30,6 @@
           in
           assert _nixosChecks == "" || _nixosChecks != "";
           let
-            # Application package + dependencies as a buildEnv.
-            # Unlike mkSimpleOCI we do NOT use mkRoot here because mkRoot
-            # includes its own shadow setup (mkRootShadowSetup) which would
-            # overwrite the nixbld users from mkNixOCILayer's mkNixShadowSetup,
-            # causing "group 'nixbld' does not exist" errors.
             pkg = if oci.package != null then [ oci.package ] else [ ];
             deps = oci.dependencies or [ ];
             appPaths = if optimized then pkg ++ [ pkgs.cacert ] else pkg ++ deps ++ [ pkgs.cacert ];
@@ -48,58 +43,70 @@
               ];
               ignoreCollisions = true;
             };
-            depsLayers =
-              if optimized && deps != [ ] then
-                [
-                  (ociLib.mkDepsLayer {
-                    inherit perSystemConfig;
-                    dependencies = deps;
-                  })
-                ]
-              else
-                [ ];
             home = if oci.user == "root" then "/root" else "/home/${oci.user}";
             homeDir = pkgs.runCommand "home-dir" { } ''
               mkdir -p $out${home}
             '';
-            # Nix requires /nix/var/nix/profiles to exist and be writable
-            # by the container user. For non-root users, pre-create it
-            # so `nix eval`/`nix build` don't fail with Permission denied.
             nixVarDirs = pkgs.runCommand "nix-var-dirs" { } ''
               mkdir -p $out/nix/var/nix/profiles/per-user/${oci.user}
               mkdir -p $out/nix/var/nix/gcroots/per-user/${oci.user}
               mkdir -p $out/nix/var/nix/temproots
             '';
             configFiles = oci.configFiles or [ ];
-            configFilesLayer =
+
+            # The Nix layer (bash, coreutils, nix, shadow setup) is built
+            # directly via buildLayer — it's the foundation that everything
+            # else deduplicates against.
+            nixLayer = ociLib.mkNixOCILayer {
+              inherit perSystemConfig;
+              user = oci.user;
+              inherit home;
+            };
+
+            # Config files as a layer-def for the fold chain
+            configFilesLayerDefs =
               if configFiles != [ ] then
-                [
-                  (perSystemConfig.packages.nix2container.buildLayer {
-                    copyToRoot = configFiles;
-                  })
-                ]
+                [ { copyToRoot = configFiles; } ]
               else
                 [ ];
+
+            layers =
+              if optimized then
+                ociLib.mkImageLayers {
+                  nix2container = perSystemConfig.packages.nix2container;
+                  # nixLayer is already built — inject as a known layer so
+                  # the fold deduplicates against its store paths.
+                  prependBuiltLayers = [ nixLayer ];
+                  prependLayerDefs = configFilesLayerDefs;
+                  dependencies = deps;
+                  copyToRoot = [
+                    appPackages
+                    homeDir
+                    nixVarDirs
+                  ];
+                }
+              else
+                [ nixLayer ]
+                ++ (
+                  if configFiles != [ ] then
+                    [
+                      (perSystemConfig.packages.nix2container.buildLayer {
+                        copyToRoot = configFiles;
+                      })
+                    ]
+                  else
+                    [ ]
+                );
           in
           perSystemConfig.packages.nix2container.buildImage (
             {
               inherit (oci) tag;
               name = fullName;
-              # NOTE: initializeNixDatabase is intentionally NOT used.
-              # It registers copyToRoot paths in the nix DB, but copyToRoot
-              # rewrites those paths to / (removing the original store path).
-              # This creates phantom DB entries: the DB claims paths exist but
-              # they don't on disk. When the container rebuilds itself in CI,
-              # nix skips building them (DB says valid) → lstat fails.
-              # Use a binary cache (S3) for substitution instead.
               copyToRoot = [
                 appPackages
                 homeDir
                 nixVarDirs
               ];
-              # Non-root users need write access to the entire Nix state
-              # (/nix/var/nix/ and /nix/store/) for single-user mode.
-              # nix2container's perms sets ownership in the OCI layer.
               perms = lib.optionals (oci.user != "root") [
                 {
                   path = nixVarDirs;
@@ -109,15 +116,7 @@
                   gid = 4000;
                 }
               ];
-              layers = [
-                (ociLib.mkNixOCILayer {
-                  inherit perSystemConfig;
-                  user = oci.user;
-                  inherit home;
-                })
-              ]
-              ++ depsLayers
-              ++ configFilesLayer;
+              inherit layers;
               config = {
                 inherit (oci) entrypoint;
                 User = oci.user;
