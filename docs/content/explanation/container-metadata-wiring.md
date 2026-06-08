@@ -528,11 +528,32 @@ flowchart TD
     style systemd fill:#1e1e2e,stroke:#a6da95,color:#cdd6f4
 ```
 
-| Service | NixOS options introspected | Derived healthcheck |
+#### HTTP services — injected health endpoints
+
+For HTTP servers, adapters **inject** a native health endpoint when the
+user hasn't defined one. This avoids probing `/` (which might 404).
+
+| Service | Injection | Healthcheck target |
 |---|---|---|
-| **nginx** | `virtualHosts.*.listen[].{port, ssl}`, locations (scans for `/health`, `/healthz`, `stub_status`), `onlySSL`/`forceSSL` | `curl -f http[s]://localhost:${port}${bestPath}` |
-| **PostgreSQL** | `settings.port` (default 5432), `package` | `pg_isready -h localhost -p ${port}` |
-| **Redis** | `servers.<name>.port`, `servers.<name>.bind` | `redis-cli -h ${bind} -p ${port} ping` |
+| **nginx** | `stub_status` server on `127.0.0.1:10246` via `appendHttpConfig` (skipped if user has `/health`, `/healthz`, or `stub_status`) | `curl -f http://127.0.0.1:10246/` |
+| **httpd** | `mod_status` at `/_nix_oci_health` via `extraConfig` (`Require local`) | `curl -f http://localhost:${port}/_nix_oci_health?auto` |
+| **Caddy** | None needed — built-in admin API at `localhost:2019` | `curl -f http://localhost:2019/config/` |
+
+#### Non-HTTP services — native CLI tools
+
+| Service | Native tool | Health signal |
+|---|---|---|
+| **PostgreSQL** | `pg_isready -h localhost -p ${port}` | Connection acceptance |
+| **Redis** | `redis-cli -h ${bind} -p ${port} ping` | Server responsiveness |
+| **BIND** | `dig @127.0.0.1 version.bind chaos txt` | DNS resolution |
+| **dnsmasq** | `dig @${addr} -p ${port} localhost` | DNS on configured address |
+| **Postfix** | `postfix status` | Master process status |
+
+All adapters inject the healthcheck tool (curl, dig, etc.) into
+`environment.systemPackages` so it's available inside the container.
+
+See [Automatic metadata derivation](./automatic-metadata.md) for the
+full injection design and priority chain.
 
 ### Explicit healthcheck (non-NixOS containers)
 
@@ -596,9 +617,15 @@ flowchart LR
 
 | Service | Signal | Why |
 |---|---|---|
-| **nginx** | `SIGQUIT` | Graceful worker shutdown — finish serving current requests before exit |
-| **PostgreSQL** | `SIGINT` | Fast shutdown — rollback active transactions, clean exit. `SIGQUIT` (smart shutdown) can hang waiting for clients to disconnect |
+| **nginx** | `SIGQUIT` | Graceful worker shutdown — finish serving current requests |
+| **httpd** | `SIGWINCH` | Graceful stop — finish current requests (not `SIGTERM` which is immediate) |
+| **Caddy** | `SIGTERM` | Graceful with connection draining |
+| **PostgreSQL** | `SIGINT` | Fast shutdown — rollback active transactions. `SIGQUIT` can hang waiting for clients |
 | **Redis** | `SIGTERM` | Save dataset (if configured) and exit gracefully |
+| **BIND** | `SIGTERM` | Clean shutdown |
+| **dnsmasq** | `SIGTERM` | Clean shutdown |
+| **Postfix** | `SIGTERM` | Stop mail system |
+| **vsftpd** | `SIGTERM` | Clean shutdown |
 | *(default)* | `SIGTERM` | Container runtime default when not specified |
 
 Service adapters use `lib.mkDefault`, so the user can always override.

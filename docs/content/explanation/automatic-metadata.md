@@ -32,17 +32,67 @@ oci.containers.db = {
 
 Service adapters in `_nixos/oci/service-adapters/` introspect the
 actual NixOS module configuration to build a healthcheck tailored to
-the service:
+the service. For HTTP servers, adapters **inject native health endpoints**
+into the service configuration when the user hasn't defined one.
 
-| Service | What the adapter inspects | Derived command |
+#### HTTP services — health endpoint injection
+
+HTTP servers need an endpoint to probe. Rather than falling back to `/`
+(which might return 404 or a redirect), adapters inject a proper health
+endpoint automatically:
+
+| Service | What's injected | How | Health signal |
+|---|---|---|---|
+| **nginx** | `stub_status` server on `127.0.0.1:10246` | `appendHttpConfig` (raw `server{}` block) | Active connections + request count — proves nginx is processing |
+| **httpd** | `mod_status` at `/_nix_oci_health` | `extraConfig` with `Require local` | Server uptime + worker status |
+| **Caddy** | Nothing (built-in) | Admin API at `localhost:2019` already exists | Full config introspection |
+
+The nginx injection is the most interesting case:
+
+```nginx
+# Injected via appendHttpConfig — invisible to user's virtualHosts
+server {
+    listen 127.0.0.1:10246;
+    server_name _;
+    location / {
+        stub_status on;
+        access_log off;
+    }
+}
+```
+
+- **Localhost-only** — not externally accessible
+- **Port 10246** — high port, works with non-root containers
+- **No access logs** — doesn't pollute log output
+- **Zero interference** — uses `appendHttpConfig`, not `virtualHosts`
+- **`stub_status`** — proves nginx is genuinely serving, not just alive
+- **Skipped when unnecessary** — if the user defined `/health`, `/healthz`,
+  or a `stub_status` location, the adapter uses that instead
+
+#### Priority chain for nginx healthcheck
+
+1. User-defined health endpoint (`/health`, `/healthz`, `/ready`,
+   `/nginx_status`, or any location with `stub_status`) — uses the
+   user's endpoint at the user's port/protocol
+2. No health endpoint found — injects internal `stub_status` server
+   and targets `http://127.0.0.1:10246/`
+
+#### Non-HTTP services — native CLI tools
+
+Services that don't serve HTTP already have built-in health check tools.
+No injection is needed:
+
+| Service | Native tool | Health signal |
 |---|---|---|
-| **nginx** | `virtualHosts.*.listen` (port, SSL), `locations` (scans for `/health`, `/healthz`, `stub_status`) | `curl -f http[s]://localhost:${port}${bestPath}` |
-| **PostgreSQL** | `settings.port`, `package` | `pg_isready -h localhost -p ${port}` |
-| **Redis** | `servers.<name>.port`, `servers.<name>.bind` | `redis-cli -h ${bind} -p ${port} ping` |
+| **PostgreSQL** | `pg_isready -h localhost -p ${port}` | Connection acceptance (proves DB is ready for queries) |
+| **Redis** | `redis-cli -h ${bind} -p ${port} ping` | Server responsiveness |
+| **BIND** | `dig @127.0.0.1 version.bind chaos txt` | DNS resolution capability |
+| **dnsmasq** | `dig @${addr} -p ${port} localhost` | DNS resolution on configured address |
+| **Postfix** | `postfix status` | Mail system master process status |
 
-The nginx adapter also automatically adds `curl` to
-`environment.systemPackages` so the healthcheck binary is available
-inside the container.
+All adapters also inject the health check tool into
+`environment.systemPackages` (curl for HTTP services, dig for DNS
+services) so the binary is available inside the container image.
 
 ### Why it matters
 
@@ -53,6 +103,9 @@ inside the container.
 - **Correct by construction**: the healthcheck is derived from the same
   NixOS options that configure the service. If you change the PostgreSQL
   port to 5433, the healthcheck automatically updates.
+- **No dummy probes**: instead of blindly curling `/` (which might 404),
+  HTTP adapters inject a purpose-built health endpoint that provides a
+  meaningful signal (connection counts, server status).
 - **Systemd-aware**: with Podman's `--sdnotify=healthy`, the healthcheck
   feeds into systemd's service dependency graph. A database container
   reports as "ready" only when it's actually accepting connections —
@@ -86,9 +139,15 @@ the correct signal is `SIGQUIT`. Service adapters encode this knowledge:
 
 | Service | Signal | Effect |
 |---|---|---|
-| **nginx** | `SIGQUIT` | Finish serving current requests, then exit |
-| **PostgreSQL** | `SIGINT` | Rollback active transactions, clean exit |
-| **Redis** | `SIGTERM` | Save dataset and exit |
+| **nginx** | `SIGQUIT` | Graceful worker shutdown — finish serving current requests |
+| **httpd** | `SIGWINCH` | Graceful stop — finish current requests (not `SIGTERM` which is immediate) |
+| **Caddy** | `SIGTERM` | Graceful with connection draining |
+| **PostgreSQL** | `SIGINT` | Fast shutdown — rollback active transactions, clean exit |
+| **Redis** | `SIGTERM` | Save dataset (if configured) and exit |
+| **BIND** | `SIGTERM` | Clean shutdown |
+| **dnsmasq** | `SIGTERM` | Clean shutdown |
+| **Postfix** | `SIGTERM` | Stop mail system |
+| **vsftpd** | `SIGTERM` | Clean shutdown |
 
 When no adapter is present, the signal is derived from the systemd
 `KillSignal` in the NixOS service config.
