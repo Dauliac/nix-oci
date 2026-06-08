@@ -3,11 +3,14 @@
 # Imports nix/nixos/oci-container.nix, passes container options, merges
 # user's nixosConfig.modules and homeConfig.modules.
 #
+# User derivation leverages Nix laziness to resolve from the service
+# package without an explicit cycle: evalResult.services.${mainService}.package
+# doesn't access oci.container.user, so the circular let-binding never
+# triggers infinite recursion.
+#
 # Cycle-safe reads: isRoot, _containerName, mainService, package (when
 # mainService is null), dependencies, configFiles.
 # NEVER reads: user, name, entrypoint (they depend on eval).
-# package is safe to read ONLY when mainService is null, because
-# integration.nix only sets package from eval when mainService is set.
 {
   lib,
   import-tree,
@@ -36,19 +39,26 @@ in
             else if pkg.pname or null != null then pkg.pname
             else (builtins.parseDrvName (pkg.name or "unknown")).name;
 
-          # Derive container user with this priority:
-          # 1. mainService set → use service name (e.g. "nginx")
-          # 2. package set, no mainService → use package name (e.g. "kubectl")
-          #    Safe: integration.nix only sets package from eval when mainService is set
-          # 3. fallback → _containerName (attrset key)
+          # Derive container user from the actual service package when possible.
+          # Priority: service package → explicit package → _containerName.
           # Truncate to 31 chars — NixOS rejects user/group names longer than that.
+          #
+          # When mainService is set, we read evalResult.services.${mainService}.package.
+          # This is a lazy circular reference (containerUser ↔ evalResult), but safe:
+          # services.*.package defaults to pkgs.<name> and never accesses oci.container.user.
           containerUser =
             if containerIsRoot then "root"
-            else builtins.substring 0 31 (
-              if mainService != null then mainService
-              else if config.package != null then lib.strings.toLower (packageName config.package)
+            else builtins.substring 0 31 (lib.strings.toLower (
+              let
+                servicePkg =
+                  if mainService != null
+                  then evalResult.services.${mainService}.package or null
+                  else null;
+              in
+              if servicePkg != null then packageName servicePkg
+              else if config.package != null then packageName config.package
               else config._containerName
-            );
+            ));
 
           homeManagerModules =
             if homeCfg.enable && homeCfg.homeManagerFlake != null then
