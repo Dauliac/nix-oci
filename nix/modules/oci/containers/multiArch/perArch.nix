@@ -176,10 +176,8 @@ in
                       crossPkgsAttr = archMap.${name}.crossPkgsAttr or null;
                       mainPkg = containerConfig.package;
                       pname = mainPkg.pname or null;
-                      crossPkgSet =
-                        if crossPkgsAttr != null then pkgs.pkgsCross.${crossPkgsAttr} or null else null;
-                      hasAttr =
-                        crossPkgSet != null && pname != null && builtins.hasAttr pname crossPkgSet;
+                      crossPkgSet = if crossPkgsAttr != null then pkgs.pkgsCross.${crossPkgsAttr} or null else null;
+                      hasAttr = crossPkgSet != null && pname != null && builtins.hasAttr pname crossPkgSet;
                     in
                     if name == system then
                       mainPkg
@@ -207,14 +205,12 @@ in
                     let
                       crossPkgsAttr = archMap.${name}.crossPkgsAttr or null;
                       containerDeps = containerConfig.dependencies or [ ];
-                      crossPkgSet =
-                        if crossPkgsAttr != null then pkgs.pkgsCross.${crossPkgsAttr} or null else null;
+                      crossPkgSet = if crossPkgsAttr != null then pkgs.pkgsCross.${crossPkgsAttr} or null else null;
                       inferDep =
                         dep:
                         let
                           pname = dep.pname or null;
-                          hasAttr =
-                            crossPkgSet != null && pname != null && builtins.hasAttr pname crossPkgSet;
+                          hasAttr = crossPkgSet != null && pname != null && builtins.hasAttr pname crossPkgSet;
                         in
                         if hasAttr then crossPkgSet.${pname} else null;
                     in

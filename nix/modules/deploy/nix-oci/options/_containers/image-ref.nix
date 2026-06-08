@@ -1,5 +1,9 @@
 # Per-container: computed image reference ("name:tag").
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  ...
+}:
 {
   options.imageRef = lib.mkOption {
     type = lib.types.str;

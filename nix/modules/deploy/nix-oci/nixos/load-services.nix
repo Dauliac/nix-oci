@@ -2,7 +2,11 @@
 { ... }:
 {
   flake.modules.nixos.nix-oci-load-services =
-    { config, lib, ... }:
+    {
+      config,
+      lib,
+      ...
+    }:
     let
       cfg = config.oci;
       copyScript =

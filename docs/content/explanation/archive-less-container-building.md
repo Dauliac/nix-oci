@@ -1,16 +1,17 @@
 +++
-title = "Just-in-time container building"
+title = "Archive-less container building"
 description = "How nix2container builds OCI images without intermediate archives, reducing store bloat and enabling streaming pushes"
 +++
 
-# Just-in-time container building
+# Archive-less container building
 
-nix-oci relies on [nix2container](https://github.com/nlewo/nix2container) to
-build OCI images using a fundamentally different approach than traditional
+nix-oci relies on [nix2container](https://github.com/nlewo/nix2container) —
+a self-described **"archive-less `dockerTools.buildImage` implementation"** —
+to build OCI images using a fundamentally different approach than traditional
 tools: layers are never materialized as tar archives in the Nix store.
 Instead, they exist as **JSON descriptions** of store paths, and actual
-tarballs are generated **just-in-time** — only when loading into a runtime or
-pushing to a registry.
+tarballs are only produced at the moment they are needed — when loading into
+a runtime or pushing to a registry.
 
 ## The problem with archive-based builds
 
@@ -46,8 +47,8 @@ A built image in the Nix store is just a few kilobytes of JSON listing:
 - OCI image configuration (entrypoint, env, labels, etc.).
 
 No tar archive is written during `nix build`. The image "recipe" is a
-pure Nix derivation that produces only JSON — this is what we mean by
-**just-in-time** (or archive-less) container building.
+pure Nix derivation that produces only JSON — this is what **archive-less**
+container building means.
 
 ### Streaming push with Skopeo
 

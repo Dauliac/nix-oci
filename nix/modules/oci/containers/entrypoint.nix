@@ -8,12 +8,14 @@ in
     { ... }:
     {
       oci.perContainer =
-        { config, lib, ... }:
+        {
+          config,
+          lib,
+          ...
+        }:
         {
           imports = [ ./_options/entrypoint.nix ];
-          config.entrypoint = lib.mkDefault (
-            cfg.lib.flake.oci.mkOCIEntrypoint { inherit (config) package; }
-          );
+          config.entrypoint = lib.mkDefault (cfg.lib.flake.oci.mkOCIEntrypoint { inherit (config) package; });
         };
     };
 }

@@ -6,30 +6,47 @@
 { ... }:
 {
   flake.modules.systemManager.nix-oci-run-services =
-    { config, lib, pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     let
       cfg = config.oci;
       autoStart = lib.filterAttrs (_: c: c.autoStart) cfg.containers;
 
-      mkRunArgs = name: container:
+      mkRunArgs =
+        name: container:
         let
-          portArgs = lib.concatMap (p: [ "-p" p ]) container.ports;
+          portArgs = lib.concatMap (p: [
+            "-p"
+            p
+          ]) container.ports;
           envArgs = lib.concatLists (
-            lib.mapAttrsToList (k: v: [ "-e" "${k}=${v}" ]) container.environment
+            lib.mapAttrsToList (k: v: [
+              "-e"
+              "${k}=${v}"
+            ]) container.environment
           );
-          volumeArgs = lib.concatMap (v: [ "-v" v ]) container.volumes;
+          volumeArgs = lib.concatMap (v: [
+            "-v"
+            v
+          ]) container.volumes;
         in
-        [ "run" "--rm" "--name" name ]
+        [
+          "run"
+          "--rm"
+          "--name"
+          name
+        ]
         ++ portArgs
         ++ envArgs
         ++ volumeArgs
         ++ [ container.imageRef ];
 
       backend =
-        if cfg.backend == "docker" then
-          "${pkgs.docker}/bin/docker"
-        else
-          "${pkgs.podman}/bin/podman";
+        if cfg.backend == "docker" then "${pkgs.docker}/bin/docker" else "${pkgs.podman}/bin/podman";
     in
     {
       config = lib.mkIf (cfg.enable && autoStart != { }) {
@@ -47,9 +64,7 @@
             serviceConfig = {
               Type = "simple";
               Restart = "on-failure";
-              ExecStart = lib.concatStringsSep " " (
-                [ backend ] ++ (mkRunArgs name container)
-              );
+              ExecStart = lib.concatStringsSep " " ([ backend ] ++ (mkRunArgs name container));
               ExecStop = "${backend} stop ${name}";
               ExecStopPost = "-${backend} rm -f ${name}";
             };

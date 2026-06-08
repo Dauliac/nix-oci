@@ -64,11 +64,7 @@
             };
 
             # Config files as a layer-def for the fold chain
-            configFilesLayerDefs =
-              if configFiles != [ ] then
-                [ { copyToRoot = configFiles; } ]
-              else
-                [ ];
+            configFilesLayerDefs = if configFiles != [ ] then [ { copyToRoot = configFiles; } ] else [ ];
 
             layers =
               if optimized then

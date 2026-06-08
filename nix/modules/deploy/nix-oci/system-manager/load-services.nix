@@ -5,7 +5,11 @@
 { ... }:
 {
   flake.modules.systemManager.nix-oci-load-services =
-    { config, lib, ... }:
+    {
+      config,
+      lib,
+      ...
+    }:
     let
       cfg = config.oci;
       copyScript =

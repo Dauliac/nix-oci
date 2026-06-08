@@ -10,7 +10,11 @@
   };
 
   outputs =
-    inputs@{ nixpkgs, nix-oci, ... }:
+    inputs@{
+      nixpkgs,
+      nix-oci,
+      ...
+    }:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [ nix-oci.modules.flake.nix-oci ];
       systems = [ "x86_64-linux" ];

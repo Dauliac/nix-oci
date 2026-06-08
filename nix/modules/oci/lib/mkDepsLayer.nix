@@ -18,9 +18,7 @@
         type = lib.types.functionTo lib.types.attrs;
         description = "Build a layer definition for container dependencies (for use with foldImageLayers)";
         fn =
-          {
-            dependencies,
-          }:
+          { dependencies }:
           {
             copyToRoot = [
               (pkgs.buildEnv {

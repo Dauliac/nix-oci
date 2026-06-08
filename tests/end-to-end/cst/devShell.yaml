@@ -1,44 +1,36 @@
 schemaVersion: "2.0.0"
-
 commandTests:
   - name: "zsh is available"
     command: "zsh"
     args: ["--version"]
     expectedOutput: ["zsh"]
     exitCode: 0
-
   - name: "starship is available"
     command: "starship"
     args: ["--version"]
     expectedOutput: ["starship"]
     exitCode: 0
-
   - name: "neovim is available"
     command: "nvim"
     args: ["--version"]
     expectedOutput: ["NVIM"]
     exitCode: 0
-
   - name: "git is available"
     command: "git"
     args: ["--version"]
     expectedOutput: ["git version"]
     exitCode: 0
-
   - name: "ripgrep is available"
     command: "rg"
     args: ["--version"]
     expectedOutput: ["ripgrep"]
     exitCode: 0
-
 fileExistenceTests:
   - name: "passwd has dev user"
     path: "/etc/passwd"
     shouldExist: true
-
   - name: "dev home directory exists"
     path: "/home/dev"
     shouldExist: true
-
 metadataTest:
   user: "dev"

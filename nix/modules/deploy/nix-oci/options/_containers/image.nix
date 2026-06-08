@@ -1,6 +1,7 @@
 # Per-container: computed OCI image built from shared options via nix2container.
 #
-# Uses ociLib.mkRoot for shadow setup and root filesystem (shared build logic).
+# Uses ociLib.mkRoot for the root filesystem and ociLib.mkImageLayers for
+# deduplicated layering when optimizeLayers is enabled.
 # ExposedPorts from ports, Env from environment, Labels from labels.
 {
   name,
@@ -12,6 +13,7 @@
   ...
 }:
 let
+  # Shadow setup + package + deps + configFiles as a single buildEnv.
   root = ociLib.mkRoot {
     inherit name pkgs;
     inherit (config)
@@ -21,6 +23,14 @@ let
       isRoot
       user
       ;
+  };
+
+  # Separate shadow setup (without deps/package) for optimized layering.
+  # When optimized, deps go into their own layer via mkImageLayers.
+  shadowOnly = ociLib.mkShadowSetup {
+    inherit (config) isRoot user;
+    inherit pkgs;
+    runtimeShell = pkgs.runtimeShell;
   };
 
   entrypoint =
@@ -34,20 +44,33 @@ let
     else
       [ ];
 
-  ociConfig =
-    {
-      entrypoint = entrypoint;
-      User = if config.isRoot then "root" else config.user;
-    }
-    // lib.optionalAttrs (config.ports != [ ]) {
-      ExposedPorts = ociLib.mkExposedPorts config.ports;
-    }
-    // lib.optionalAttrs (config.environment != { }) {
-      Env = lib.mapAttrsToList (k: v: "${k}=${v}") config.environment;
-    }
-    // lib.optionalAttrs (config.labels != { }) {
-      Labels = config.labels;
-    };
+  ociConfig = {
+    entrypoint = entrypoint;
+    User = if config.isRoot then "root" else config.user;
+  }
+  // lib.optionalAttrs (config.ports != [ ]) {
+    ExposedPorts = ociLib.mkExposedPorts config.ports;
+  }
+  // lib.optionalAttrs (config.environment != { }) {
+    Env = lib.mapAttrsToList (k: v: "${k}=${v}") config.environment;
+  }
+  // lib.optionalAttrs (config.labels != { }) {
+    Labels = config.labels;
+  };
+
+  optimized = config.optimizeLayers;
+
+  # When optimized, split into layers: shadow+configFiles as root,
+  # dependencies as a separate layer, package as the top layer.
+  # All chained via foldImageLayers for deduplication.
+  rootPaths =
+    shadowOnly ++ config.configFiles ++ lib.optional (config.package != null) config.package;
+
+  layers = ociLib.mkImageLayers {
+    inherit pkgs nix2container;
+    inherit (config) dependencies;
+    inherit rootPaths;
+  };
 in
 {
   options.image = lib.mkOption {
@@ -58,10 +81,19 @@ in
       {
         name = config.name;
         tag = config.tag;
-        copyToRoot = [ root ];
         config = ociConfig;
       }
-      // lib.optionalAttrs config.optimizeLayers { maxLayers = 40; }
+      // (
+        if optimized then
+          {
+            inherit layers;
+            maxLayers = 40;
+          }
+        else
+          {
+            copyToRoot = [ root ];
+          }
+      )
     );
   };
 }

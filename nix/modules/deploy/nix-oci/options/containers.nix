@@ -22,8 +22,7 @@ let
         if lib.hasInfix "/" raw then raw else "${raw}/tcp";
 
       mkExposedPorts =
-        ports:
-        builtins.listToAttrs (map (p: lib.nameValuePair (parseContainerPort p) { }) ports);
+        ports: builtins.listToAttrs (map (p: lib.nameValuePair (parseContainerPort p) { }) ports);
 
       parseHostPort =
         portSpec:
@@ -98,7 +97,10 @@ let
 
       # Build a deps layer-def (attrset, not built) for the fold chain.
       mkDepsLayerDef =
-        { pkgs, dependencies }:
+        {
+          pkgs,
+          dependencies,
+        }:
         {
           copyToRoot = [
             (pkgs.buildEnv {
@@ -125,7 +127,10 @@ let
       # Fold layer-defs with deduplication: each layer references all
       # prior layers so nix2container excludes already-covered store paths.
       foldImageLayers =
-        { nix2container, layerDefs }:
+        {
+          nix2container,
+          layerDefs,
+        }:
         let
           mergeToLayer =
             priorLayers: layerDef:
@@ -147,10 +152,7 @@ let
         }:
         let
           depsLayerDefs =
-            if dependencies != [ ] then
-              [ (mkDepsLayerDef { inherit pkgs dependencies; }) ]
-            else
-              [ ];
+            if dependencies != [ ] then [ (mkDepsLayerDef { inherit pkgs dependencies; }) ] else [ ];
           appLayerDefs = [ (mkAppLayerDef { copyToRoot = rootPaths; }) ];
         in
         foldImageLayers {

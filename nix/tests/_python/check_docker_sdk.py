@@ -53,7 +53,7 @@ print("[docker-sdk] Systemd services: OK")
 # --- Firewall checks ---
 print("[docker-sdk] Checking firewall rules...")
 result = subprocess.run(
-    ["iptables", "-L", "INPUT", "-n"],
+    ["iptables", "-L", "nixos-fw", "-n"],
     capture_output=True,
     text=True,
 )

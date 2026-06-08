@@ -4,7 +4,11 @@
 { ... }:
 {
   flake.modules.homeManager.nix-oci-run-services =
-    { config, lib, ... }:
+    {
+      config,
+      lib,
+      ...
+    }:
     let
       cfg = config.oci;
       autoStart = lib.filterAttrs (_: c: c.autoStart) cfg.containers;

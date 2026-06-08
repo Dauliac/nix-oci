@@ -152,8 +152,7 @@
                     ];
                     specialArgs = {
                       inherit pkgs ociLib;
-                      nix2container =
-                        inputs.nix2container.packages.${system}.nix2container;
+                      nix2container = inputs.nix2container.packages.${system}.nix2container;
                     };
                   }
                 );
@@ -215,79 +214,82 @@
         #   ▼ How-to:    task-oriented guides
         #   ▼ Reference: markdown templates with <!-- OPTIONS:* --> markers replaced by generated content
         #   ▼ Examples:   all examples with [category] prefix
-        docsInputDir = pkgs.runCommand "ndg-input" {
-          nativeBuildInputs = [ pkgs.gnused ];
-        } ''
-          mkdir -p $out/{how-to,explanation,reference,examples}
-
-          # Root pages (flat, top of sidebar)
-          # README.md and CONTRIBUTING.md are the source of truth, copied here for NDG
-          cp ${../README.md} $out/index.md
-          cp ${../CONTRIBUTING.md} $out/contributing.md
-          cp ${../docs/content}/getting-started.md $out/
-
-          # --- How-to guides (including index.md for sidebar group) ---
-          for f in ${../docs/content}/how-to/*.md; do
-            cp "$f" $out/how-to/
-          done
-
-          # --- Explanation pages (including index.md for sidebar group) ---
-          for f in ${../docs/content}/explanation/*.md; do
-            cp "$f" $out/explanation/
-          done
-
-          # --- Reference: copy templates and inject generated options at markers ---
-          for f in ${../docs/content}/reference/*.md; do
-            cp "$f" $out/reference/
-          done
-          chmod -R u+w $out/reference
-
-          sed -i '/<!-- OPTIONS:toplevel -->/r ${topLevelDoc.optionsCommonMark}' $out/reference/flake-parts-options.md
-          sed -i '/<!-- OPTIONS:persystem -->/r ${perSystemDoc.optionsCommonMark}' $out/reference/flake-parts-options.md
-          sed -i '/<!-- OPTIONS:container -->/r ${containerDoc.optionsCommonMark}' $out/reference/flake-parts-options.md
-          sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/nixos-options.md
-          sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/home-manager-options.md
-          sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/system-manager-options.md
-          sed -i '/<!-- OPTIONS:nixos-container -->/r ${nixosContainerDoc.optionsCommonMark}' $out/reference/nix-oci-container-module-options.md
-
-          # --- Examples: one page per directory, all examples on the page ---
-          # Groups: build root files, build/sub-dirs, deploy-nixos, deploy-home-manager
-          gen_examples_page() {
-            local dir="$1" title="$2" dest="$3"
+        docsInputDir =
+          pkgs.runCommand "ndg-input"
             {
-              echo "+++"
-              echo "title = \"$title\""
-              echo "+++"
-              echo ""
-              echo "# $title"
-              echo ""
-              for f in $(find "$dir" -maxdepth 1 -name '*.nix' -type f | sort); do
-                name="$(basename "$f" .nix)"
-                echo "## $name"
-                echo ""
-                echo '```nix'
-                cat "$f"
-                echo '```'
-                echo ""
+              nativeBuildInputs = [ pkgs.gnused ];
+            }
+            ''
+              mkdir -p $out/{how-to,explanation,reference,examples}
+
+              # Root pages (flat, top of sidebar)
+              # README.md and CONTRIBUTING.md are the source of truth, copied here for NDG
+              cp ${../README.md} $out/index.md
+              cp ${../CONTRIBUTING.md} $out/contributing.md
+              cp ${../docs/content}/getting-started.md $out/
+
+              # --- How-to guides (including index.md for sidebar group) ---
+              for f in ${../docs/content}/how-to/*.md; do
+                cp "$f" $out/how-to/
               done
-            } > "$dest"
-          }
 
-          # Build: root-level examples (minimalist, with-*, write-shell-*)
-          gen_examples_page "${../examples}/build" "Build: Basics" "$out/examples/build-basics.md"
+              # --- Explanation pages (including index.md for sidebar group) ---
+              for f in ${../docs/content}/explanation/*.md; do
+                cp "$f" $out/explanation/
+              done
 
-          # Build: subdirectory groups
-          for sub in $(find ${../examples}/build -mindepth 1 -maxdepth 1 -type d | sort); do
-            subname="$(basename "$sub")"
-            pretty="$(echo "$subname" | tr '-' ' ')"
-            gen_examples_page "$sub" "Build: $pretty" "$out/examples/build-$subname.md"
-          done
+              # --- Reference: copy templates and inject generated options at markers ---
+              for f in ${../docs/content}/reference/*.md; do
+                cp "$f" $out/reference/
+              done
+              chmod -R u+w $out/reference
 
-          # Deploy
-          gen_examples_page "${../examples}/deploy-nixos" "Deploy: NixOS" "$out/examples/deploy-nixos.md"
-          gen_examples_page "${../examples}/deploy-home-manager" "Deploy: Home Manager" "$out/examples/deploy-home-manager.md"
-          gen_examples_page "${../examples}/deploy-system-manager" "Deploy: system-manager" "$out/examples/deploy-system-manager.md"
-        '';
+              sed -i '/<!-- OPTIONS:toplevel -->/r ${topLevelDoc.optionsCommonMark}' $out/reference/flake-parts-options.md
+              sed -i '/<!-- OPTIONS:persystem -->/r ${perSystemDoc.optionsCommonMark}' $out/reference/flake-parts-options.md
+              sed -i '/<!-- OPTIONS:container -->/r ${containerDoc.optionsCommonMark}' $out/reference/flake-parts-options.md
+              sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/nixos-options.md
+              sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/home-manager-options.md
+              sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/system-manager-options.md
+              sed -i '/<!-- OPTIONS:nixos-container -->/r ${nixosContainerDoc.optionsCommonMark}' $out/reference/nix-oci-container-module-options.md
+
+              # --- Examples: one page per directory, all examples on the page ---
+              # Groups: build root files, build/sub-dirs, deploy-nixos, deploy-home-manager
+              gen_examples_page() {
+                local dir="$1" title="$2" dest="$3"
+                {
+                  echo "+++"
+                  echo "title = \"$title\""
+                  echo "+++"
+                  echo ""
+                  echo "# $title"
+                  echo ""
+                  for f in $(find "$dir" -maxdepth 1 -name '*.nix' -type f | sort); do
+                    name="$(basename "$f" .nix)"
+                    echo "## $name"
+                    echo ""
+                    echo '```nix'
+                    cat "$f"
+                    echo '```'
+                    echo ""
+                  done
+                } > "$dest"
+              }
+
+              # Build: root-level examples (minimalist, with-*, write-shell-*)
+              gen_examples_page "${../examples}/build" "Build: Basics" "$out/examples/build-basics.md"
+
+              # Build: subdirectory groups
+              for sub in $(find ${../examples}/build -mindepth 1 -maxdepth 1 -type d | sort); do
+                subname="$(basename "$sub")"
+                pretty="$(echo "$subname" | tr '-' ' ')"
+                gen_examples_page "$sub" "Build: $pretty" "$out/examples/build-$subname.md"
+              done
+
+              # Deploy
+              gen_examples_page "${../examples}/deploy-nixos" "Deploy: NixOS" "$out/examples/deploy-nixos.md"
+              gen_examples_page "${../examples}/deploy-home-manager" "Deploy: Home Manager" "$out/examples/deploy-home-manager.md"
+              gen_examples_page "${../examples}/deploy-system-manager" "Deploy: system-manager" "$out/examples/deploy-system-manager.md"
+            '';
 
         # --- NDG site build (using CLI directly) ---
         ndgConfig = pkgs.writers.writeTOML "ndg.toml" {
@@ -300,22 +302,41 @@
             ordering = "custom";
             group_by_dir = true;
             matches = [
-              { path = "getting-started.md"; new_title = "Getting Started"; position = 1; }
-              { path = "how-to"; position = 1; }
-              { path = "explanation"; position = 2; }
-              { path = "reference"; position = 3; }
-              { path = "examples"; position = 4; }
+              {
+                path = "getting-started.md";
+                new_title = "Getting Started";
+                position = 1;
+              }
+              {
+                path = "how-to";
+                position = 1;
+              }
+              {
+                path = "explanation";
+                position = 2;
+              }
+              {
+                path = "reference";
+                position = 3;
+              }
+              {
+                path = "examples";
+                position = 4;
+              }
             ];
           };
         };
 
-        docs = pkgs.runCommandLocal "nix-oci-docs" {
-          nativeBuildInputs = [ ndg ];
-        } ''
-          ndg --config-file "${ndgConfig}" --verbose html \
-            --template-dir ${../docs/templates} \
-            --jobs $NIX_BUILD_CORES --output-dir "$out"
-        '';
+        docs =
+          pkgs.runCommandLocal "nix-oci-docs"
+            {
+              nativeBuildInputs = [ ndg ];
+            }
+            ''
+              ndg --config-file "${ndgConfig}" --verbose html \
+                --template-dir ${../docs/templates} \
+                --jobs $NIX_BUILD_CORES --output-dir "$out"
+            '';
       in
       {
         legacyPackages = {

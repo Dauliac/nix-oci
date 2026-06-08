@@ -3,7 +3,11 @@
 { ... }:
 {
   flake.modules.nixos.nix-oci-run-services =
-    { config, lib, ... }:
+    {
+      config,
+      lib,
+      ...
+    }:
     let
       cfg = config.oci;
       autoStart = lib.filterAttrs (_: c: c.autoStart) cfg.containers;
@@ -51,8 +55,7 @@
           name: _:
           let
             serviceName =
-              config.virtualisation.oci-containers.containers.${name}.serviceName
-                or "${cfg.backend}-${name}";
+              config.virtualisation.oci-containers.containers.${name}.serviceName or "${cfg.backend}-${name}";
           in
           lib.nameValuePair serviceName {
             after = [ "oci-load-${name}.service" ];

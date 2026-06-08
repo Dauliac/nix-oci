@@ -1,5 +1,9 @@
 # Shared: image name (defaults to container attribute name).
-{ name, lib, ... }:
+{
+  name,
+  lib,
+  ...
+}:
 {
   options.name = lib.mkOption {
     type = lib.types.str;

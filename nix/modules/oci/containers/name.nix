@@ -8,12 +8,14 @@ in
     { ... }:
     {
       oci.perContainer =
-        { config, lib, ... }:
+        {
+          config,
+          lib,
+          ...
+        }:
         {
           imports = [ ./_options/name.nix ];
-          config.name = lib.mkDefault (
-            cfg.lib.flake.oci.mkOCIName { inherit (config) package fromImage; }
-          );
+          config.name = lib.mkDefault (cfg.lib.flake.oci.mkOCIName { inherit (config) package fromImage; });
         };
     };
 }

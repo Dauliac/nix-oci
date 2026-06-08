@@ -2,7 +2,11 @@
 #
 # Injects nix2container (from flake inputs) into the NixOS/HM/SM modules
 # so that _containers/image.nix can build images.
-{ config, inputs, ... }:
+{
+  config,
+  inputs,
+  ...
+}:
 let
   nixosMods = config.flake.modules.nixos;
   hmMods = config.flake.modules.homeManager;
@@ -19,8 +23,7 @@ in
         nixosMods.nix-oci-load-services
         nixosMods.nix-oci-run-services
       ];
-      _module.args.nix2container =
-        inputs.nix2container.packages.${pkgs.system}.nix2container;
+      _module.args.nix2container = inputs.nix2container.packages.${pkgs.system}.nix2container;
     };
 
   flake.modules.homeManager.nix-oci =
@@ -33,8 +36,7 @@ in
         hmMods.nix-oci-load-services
         hmMods.nix-oci-run-services
       ];
-      _module.args.nix2container =
-        inputs.nix2container.packages.${pkgs.system}.nix2container;
+      _module.args.nix2container = inputs.nix2container.packages.${pkgs.system}.nix2container;
     };
 
   flake.modules.systemManager.nix-oci =
@@ -47,7 +49,6 @@ in
         smMods.nix-oci-load-services
         smMods.nix-oci-run-services
       ];
-      _module.args.nix2container =
-        inputs.nix2container.packages.${pkgs.system}.nix2container;
+      _module.args.nix2container = inputs.nix2container.packages.${pkgs.system}.nix2container;
     };
 }

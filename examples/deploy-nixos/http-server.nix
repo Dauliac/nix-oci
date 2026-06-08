@@ -6,7 +6,10 @@
     backend = "podman";
     containers.http-server = {
       package = pkgs.python3Minimal;
-      dependencies = with pkgs; [ bashInteractive coreutils ];
+      dependencies = with pkgs; [
+        bashInteractive
+        coreutils
+      ];
       entrypoint = [
         "${pkgs.writeShellScript "serve" ''
           mkdir -p /tmp/www

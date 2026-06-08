@@ -9,7 +9,11 @@
   };
 
   outputs =
-    { nixpkgs, nix-oci, ... }:
+    {
+      nixpkgs,
+      nix-oci,
+      ...
+    }:
     {
       nixosConfigurations.my-server = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";

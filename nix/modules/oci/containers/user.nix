@@ -8,12 +8,14 @@ in
     { ... }:
     {
       oci.perContainer =
-        { config, lib, ... }:
+        {
+          config,
+          lib,
+          ...
+        }:
         {
           imports = [ ./_options/user.nix ];
-          config.user = lib.mkDefault (
-            cfg.lib.flake.oci.mkOCIUser { inherit (config) name isRoot; }
-          );
+          config.user = lib.mkDefault (cfg.lib.flake.oci.mkOCIUser { inherit (config) name isRoot; });
         };
     };
 }
