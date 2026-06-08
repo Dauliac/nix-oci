@@ -1,0 +1,34 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: USER
+      value: root
+    - key: SSL_CERT_FILE
+      value: /etc/ssl/certs/ca-bundle.crt
+fileExistenceTests:
+  - name: "passwd file exists"
+    path: "/etc/passwd"
+    shouldExist: true
+  - name: "group file exists"
+    path: "/etc/group"
+    shouldExist: true
+  - name: "shadow file exists"
+    path: "/etc/shadow"
+    shouldExist: true
+  - name: "nsswitch.conf exists"
+    path: "/etc/nsswitch.conf"
+    shouldExist: true
+  - name: "SSL CA bundle exists"
+    path: "/etc/ssl/certs/ca-bundle.crt"
+    shouldExist: true
+  - name: "nginx binary exists"
+    path: "/bin/nginx"
+    shouldExist: true
+  - name: "tmp directory exists"
+    path: "/tmp"
+    shouldExist: true
+fileContentTests:
+  - name: "root user in passwd"
+    path: "/etc/passwd"
+    expectedContents:
+      - "root:x:0:0"

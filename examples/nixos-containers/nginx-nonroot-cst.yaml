@@ -1,0 +1,29 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: USER
+      value: nixosNginxNonroot
+    - key: SSL_CERT_FILE
+      value: /etc/ssl/certs/ca-bundle.crt
+fileExistenceTests:
+  - name: "passwd file exists"
+    path: "/etc/passwd"
+    shouldExist: true
+  - name: "group file exists"
+    path: "/etc/group"
+    shouldExist: true
+  - name: "home directory exists"
+    path: "/home/nixosNginxNonroot"
+    shouldExist: true
+  - name: "nginx binary exists"
+    path: "/bin/nginx"
+    shouldExist: true
+fileContentTests:
+  - name: "non-root user in passwd"
+    path: "/etc/passwd"
+    expectedContents:
+      - "nixosNginxNonroot:x:4000:4000"
+  - name: "non-root group in group file"
+    path: "/etc/group"
+    expectedContents:
+      - "nixosNginxNonroot:x:4000"

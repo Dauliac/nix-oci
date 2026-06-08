@@ -1,0 +1,20 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: USER
+      value: root
+fileExistenceTests:
+  - name: "redis-server binary exists"
+    path: "/bin/redis-server"
+    shouldExist: true
+  - name: "passwd file exists"
+    path: "/etc/passwd"
+    shouldExist: true
+  - name: "SSL CA bundle exists"
+    path: "/etc/ssl/certs/ca-bundle.crt"
+    shouldExist: true
+fileContentTests:
+  - name: "root user in passwd"
+    path: "/etc/passwd"
+    expectedContents:
+      - "root:x:0:0"
