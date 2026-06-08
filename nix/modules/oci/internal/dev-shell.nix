@@ -29,6 +29,7 @@ in
               dive
               dgoss
               skaffold
+              cosign
             ];
           };
         };

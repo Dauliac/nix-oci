@@ -36,9 +36,12 @@ in
           # Resolve package identity for user name: pname -> parsed drv name
           # Unlike image naming (which uses mainProgram), user names should
           # reflect the package identity (e.g. "redis" not "redis-cli").
-          packageName = pkg:
-            if pkg.pname or null != null then pkg.pname
-            else (builtins.parseDrvName (pkg.name or "unknown")).name;
+          packageName =
+            pkg:
+            if pkg.pname or null != null then
+              pkg.pname
+            else
+              (builtins.parseDrvName (pkg.name or "unknown")).name;
 
           # Derive container user from the actual service package when possible.
           # Priority: service package → explicit package → _containerName.
@@ -48,20 +51,28 @@ in
           # This is a lazy circular reference (containerUser ↔ evalResult), but safe:
           # services.*.package defaults to pkgs.<name> and never accesses oci.container.user.
           containerUser =
-            if containerIsRoot then "root"
-            else builtins.substring 0 31 (lib.strings.toLower (
-              let
-                # services.${mainService} may not exist for nested services
-                # (e.g. redis-default lives at services.redis.servers.default)
-                servicePkg =
-                  if mainService != null && evalResult.services ? ${mainService}
-                  then evalResult.services.${mainService}.package or null
-                  else null;
-              in
-              if servicePkg != null then packageName servicePkg
-              else if config.package != null then packageName config.package
-              else config._containerName
-            ));
+            if containerIsRoot then
+              "root"
+            else
+              builtins.substring 0 31 (
+                lib.strings.toLower (
+                  let
+                    # services.${mainService} may not exist for nested services
+                    # (e.g. redis-default lives at services.redis.servers.default)
+                    servicePkg =
+                      if mainService != null && evalResult.services ? ${mainService} then
+                        evalResult.services.${mainService}.package or null
+                      else
+                        null;
+                  in
+                  if servicePkg != null then
+                    packageName servicePkg
+                  else if config.package != null then
+                    packageName config.package
+                  else
+                    config._containerName
+                )
+              );
 
           homeManagerModules =
             if homeCfg.enable && homeCfg.homeManagerFlake != null then

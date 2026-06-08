@@ -4,6 +4,9 @@
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
     };
+    home-manager = {
+      url = "github:nix-community/home-manager/release-25.11";
+    };
   };
   outputs = _: { };
 }

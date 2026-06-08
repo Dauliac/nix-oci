@@ -61,11 +61,13 @@ in
     default =
       let
         package' = if cfg.package != null then [ cfg.package ] else [ ];
+        systemPackages = config.environment.systemPackages or [ ];
       in
       pkgs.buildEnv {
         name = "root";
         paths =
           package'
+          ++ systemPackages
           ++ cfg._output.shadowFiles
           ++ cfg._output.etcFiles
           ++ cfg.dependencies

@@ -1,0 +1,17 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: USER
+      value: root
+fileExistenceTests:
+  - name: "dnsmasq binary exists"
+    path: "/bin/dnsmasq"
+    shouldExist: true
+  - name: "passwd file exists"
+    path: "/etc/passwd"
+    shouldExist: true
+commandTests:
+  - name: "dig is available"
+    command: "dig"
+    args:
+      - "-v"

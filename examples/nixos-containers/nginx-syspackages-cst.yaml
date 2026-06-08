@@ -1,0 +1,28 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: USER
+      value: root
+fileExistenceTests:
+  - name: "nginx binary exists"
+    path: "/bin/nginx"
+    shouldExist: true
+commandTests:
+  - name: "curl is available"
+    command: "curl"
+    args:
+      - "--version"
+    expectedOutput:
+      - "curl"
+  - name: "jq is available"
+    command: "jq"
+    args:
+      - "--version"
+    expectedOutput:
+      - "jq"
+  - name: "htop is available"
+    command: "htop"
+    args:
+      - "--version"
+    expectedOutput:
+      - "htop"

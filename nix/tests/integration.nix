@@ -17,6 +17,8 @@
 }:
 let
   # Use the composed modules from the flake-parts fixed-point.
+  # These are defined by nix/modules/deploy/nix-oci/compose.nix and imported
+  # at the top-level via nix/module.nix → import-tree ./modules/deploy.
   nixosModule = config.flake.modules.nixos.nix-oci;
   homeManagerModule = config.flake.modules.homeManager.nix-oci;
 in
@@ -289,9 +291,6 @@ in
               home-manager = {
                 useGlobalPkgs = true;
                 useUserPackages = true;
-                extraSpecialArgs = {
-                  import-tree = inputs.import-tree;
-                };
                 users.testuser =
                   { ... }:
                   {

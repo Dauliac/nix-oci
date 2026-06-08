@@ -1,0 +1,26 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: USER
+      value: root
+fileExistenceTests:
+  - name: "caddy binary exists"
+    path: "/bin/caddy"
+    shouldExist: true
+  - name: "passwd file exists"
+    path: "/etc/passwd"
+    shouldExist: true
+  - name: "SSL CA bundle exists"
+    path: "/etc/ssl/certs/ca-bundle.crt"
+    shouldExist: true
+commandTests:
+  - name: "caddy version"
+    command: "caddy"
+    args:
+      - "version"
+  - name: "curl is available"
+    command: "curl"
+    args:
+      - "--version"
+    expectedOutput:
+      - "curl"

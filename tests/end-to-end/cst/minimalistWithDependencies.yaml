@@ -1,0 +1,26 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: USER
+      value: kubectl
+fileExistenceTests:
+  - name: "kubectl binary exists"
+    path: "/bin/kubectl"
+    shouldExist: true
+  - name: "bash binary exists"
+    path: "/bin/bash"
+    shouldExist: true
+commandTests:
+  - name: "kubectl runs"
+    command: "kubectl"
+    args:
+      - "version"
+      - "--client"
+  - name: "bash runs"
+    command: "bash"
+    args:
+      - "--version"
+  - name: "kubectl-cnpg runs"
+    command: "kubectl-cnpg"
+    args:
+      - "version"

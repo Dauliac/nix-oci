@@ -40,6 +40,36 @@
   [ "$status" -eq 0 ]
 }
 
+@test "CST minimalist" {
+  run nix run '.#oci-container-structure-test-minimalist'
+  [ "$status" -eq 0 ]
+}
+
+@test "CST minimalistWithDependencies" {
+  run nix run '.#oci-container-structure-test-minimalistWithDependencies'
+  [ "$status" -eq 0 ]
+}
+
+@test "CST withRootUserAndPackage" {
+  run nix run '.#oci-container-structure-test-withRootUserAndPackage'
+  [ "$status" -eq 0 ]
+}
+
+@test "CST write-shell-application" {
+  run nix run '.#oci-container-structure-test-write-shell-application'
+  [ "$status" -eq 0 ]
+}
+
+@test "CST write-shell-script-bin" {
+  run nix run '.#oci-container-structure-test-write-shell-script-bin'
+  [ "$status" -eq 0 ]
+}
+
+@test "CST minimalistWithName" {
+  run nix run '.#oci-container-structure-test-minimalistWithName'
+  [ "$status" -eq 0 ]
+}
+
 @test "Nix default template works" {
   local -gx repo_dir
   repo_dir=$(git rev-parse --show-toplevel)

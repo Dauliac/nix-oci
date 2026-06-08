@@ -1,10 +1,15 @@
 # Home-manager: systemd user load services using nix2container passthru copy scripts.
+#
+# Rootless podman needs `newuidmap`/`newgidmap` (from `shadow`) for user
+# namespace UID/GID mapping. The nix2container passthru script doesn't
+# include these, so we prepend them to PATH via the systemd environment.
 { ... }:
 {
   flake.modules.homeManager.nix-oci-load-services =
     {
       config,
       lib,
+      pkgs,
       ...
     }:
     let
@@ -28,6 +33,7 @@
             Service = {
               Type = "oneshot";
               RemainAfterExit = true;
+              Environment = [ "PATH=${lib.makeBinPath [ pkgs.shadow ]}:/run/wrappers/bin:$PATH" ];
               ExecStart = "${copyScript}/bin/${copyScript.name}";
             };
           }

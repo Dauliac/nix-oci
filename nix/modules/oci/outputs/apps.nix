@@ -45,6 +45,7 @@ in
           // config.oci.internal.prefixedCredentialsLeakTrivyApps
           // config.oci.internal.prefixedDgossApps
           // config.oci.internal.prefixedSBOMSyftApps
+          // config.oci.internal.prefixedSigningCosignApps
           // config.oci.internal.prefixedPushTmpOCIApps
           // config.oci.internal.prefixedMergeMultiArchApps;
       };
