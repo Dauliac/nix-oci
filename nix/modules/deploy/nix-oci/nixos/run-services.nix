@@ -1,5 +1,5 @@
-# NixOS: forward autoStart containers to virtualisation.oci-containers
-# and wire loader as dependency of the runner.
+# NixOS: forward autoStart containers to virtualisation.oci-containers,
+# wire loader as dependency of the runner, and open firewall for exposed ports.
 { ... }:
 {
   flake.modules.nixos.nix-oci-run-services =
@@ -7,6 +7,19 @@
     let
       cfg = config.oci;
       autoStart = lib.filterAttrs (_: c: c.autoStart) cfg.containers;
+
+      # Extract all host ports across all autoStart containers for the firewall.
+      allHostPorts = lib.concatMap (
+        container:
+        map (
+          portSpec:
+          let
+            raw = builtins.head (lib.splitString ":" portSpec);
+            clean = builtins.head (lib.splitString "/" raw);
+          in
+          lib.toInt clean
+        ) container.ports
+      ) (lib.attrValues autoStart);
     in
     {
       config = lib.mkIf (cfg.enable && autoStart != { }) {
@@ -29,6 +42,9 @@
             }
           ) autoStart;
         };
+
+        # Auto-open firewall for exposed host ports
+        networking.firewall.allowedTCPPorts = allHostPorts;
 
         # Runner depends on loader
         systemd.services = lib.mapAttrs' (

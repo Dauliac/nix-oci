@@ -1,13 +1,15 @@
 # Per-container: computed OCI image built from package + dependencies.
 #
-# Uses nix2container (injected via _module.args by compose.nix) to build
-# the image. Shadow files are generated for non-root containers.
+# Uses nix2container (injected via specialArgs) to build the image.
+# Shadow files for non-root containers. ExposedPorts from ports option.
+# Environment variables baked into the image manifest.
 {
   name,
   config,
   lib,
   pkgs,
   nix2container,
+  ociLib,
   ...
 }:
 let
@@ -57,6 +59,18 @@ let
         mainProgram = config.package.meta.mainProgram or config.package.pname or name;
       in
       [ "${config.package}/bin/${mainProgram}" ];
+
+  ociConfig =
+    {
+      entrypoint = entrypoint;
+      User = if config.isRoot then "root" else config.user;
+    }
+    // lib.optionalAttrs (config.ports != [ ]) {
+      ExposedPorts = ociLib.mkExposedPorts config.ports;
+    }
+    // lib.optionalAttrs (config.environment != { }) {
+      Env = lib.mapAttrsToList (k: v: "${k}=${v}") config.environment;
+    };
 in
 {
   options.image = lib.mkOption {
@@ -68,10 +82,7 @@ in
         name = config.name;
         tag = config.tag;
         copyToRoot = [ root ];
-        config = {
-          entrypoint = entrypoint;
-          User = if config.isRoot then "root" else config.user;
-        };
+        config = ociConfig;
       }
       // lib.optionalAttrs config.optimizeLayers { maxLayers = 40; }
     );

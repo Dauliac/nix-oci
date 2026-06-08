@@ -34,6 +34,7 @@
             {
               imports = [
                 (import ./flake-module.nix inputs)
+                ./module.nix
               ];
               systems = [ system ];
             };
@@ -103,9 +104,10 @@
           transformOptions = cleanupOptions;
         };
 
-        # --- Deploy module options (services.nix-oci.*) ---
+        # --- Deploy module options (oci.*) ---
         # Extract the composed NixOS deploy module from the flake-parts eval,
         # then evaluate it standalone to get its options.
+        # The composed module needs pkgs and nix2container as module args.
         deployNixosModule = flakePartsEval.config.flake.modules.nixos.nix-oci;
 
         deployEval = lib.evalModules {
@@ -113,14 +115,22 @@
             deployNixosModule
             {
               options._module.args = lib.mkOption { internal = true; };
-              config._module.check = false;
+              config._module = {
+                check = false;
+                args = {
+                  pkgs = lib.modules.mkForce pkgs;
+                  nix2container = lib.modules.mkForce
+                    inputs.nix2container.packages.${system}.nix2container;
+                  inherit import-tree;
+                };
+              };
             }
           ];
         };
 
         deployDoc = pkgs.nixosOptionsDoc {
           options = {
-            inherit (deployEval.options) services;
+            inherit (deployEval.options) oci;
           };
           transformOptions = cleanupOptions;
         };
