@@ -35,6 +35,8 @@
         ./nix/templates.nix
       ];
 
+      _module.args.import-tree = inputs.import-tree;
+
       # Dev-only outputs come from the dev partition
       partitionedAttrs.apps = "dev";
       partitionedAttrs.packages = "dev";

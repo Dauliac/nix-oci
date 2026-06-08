@@ -75,6 +75,41 @@
   [ "$status" -eq 0 ]
 }
 
+@test "CST nixosNginxCst" {
+  run nix run '.#oci-container-structure-test-nixosNginxCst'
+  [ "$status" -eq 0 ]
+}
+
+@test "CST nixosNginxDeps" {
+  run nix run '.#oci-container-structure-test-nixosNginxDeps'
+  [ "$status" -eq 0 ]
+}
+
+@test "CST nixosNginxNonroot" {
+  run nix run '.#oci-container-structure-test-nixosNginxNonroot'
+  [ "$status" -eq 0 ]
+}
+
+@test "CST nixosNginxSyspackages" {
+  run nix run '.#oci-container-structure-test-nixosNginxSyspackages'
+  [ "$status" -eq 0 ]
+}
+
+@test "CST nixosCaddyCst" {
+  run nix run '.#oci-container-structure-test-nixosCaddyCst'
+  [ "$status" -eq 0 ]
+}
+
+@test "CST nixosDnsmasqCst" {
+  run nix run '.#oci-container-structure-test-nixosDnsmasqCst'
+  [ "$status" -eq 0 ]
+}
+
+@test "CST nixosRedisCst" {
+  run nix run '.#oci-container-structure-test-nixosRedisCst'
+  [ "$status" -eq 0 ]
+}
+
 @test "Nix default template works" {
   local -gx repo_dir
   repo_dir=$(git rev-parse --show-toplevel)

@@ -1,12 +1,12 @@
-# Per-container: autoStart option
+# Per-container: whether to auto-start the container after loading.
 { lib, ... }:
 {
   options.autoStart = lib.mkOption {
     type = lib.types.bool;
     default = false;
     description = ''
-      When true, creates a container entry with the correct image reference
-      and wires the load service as a dependency.
+      When true, creates a runner service that starts the container
+      after the image is loaded. The runner depends on the loader service.
     '';
   };
 }

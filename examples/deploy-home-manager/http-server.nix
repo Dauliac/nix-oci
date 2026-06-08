@@ -1,21 +1,20 @@
-# Example: home-manager deploy configuration for nix-oci.
-#
-# Loads an OCI image into rootless podman via user systemd services.
-# The `testImage` argument is the nix2container buildImage output.
-#
-# Usage in a home-manager configuration:
-#   imports = [
-#     inputs.nix-oci.modules.homeManager.nix-oci
-#     (import ./http-server.nix { testImage = myImage; })
-#   ];
-{ testImage }:
-{ ... }:
+# Example: home-manager deploy — HTTP server container via nix-oci.
+{ pkgs, ... }:
 {
-  services.nix-oci = {
+  oci = {
     enable = true;
     backend = "podman";
-    containers.test-http = {
-      image = testImage;
+    containers.http-server = {
+      package = pkgs.python3Minimal;
+      dependencies = with pkgs; [ bashInteractive coreutils ];
+      entrypoint = [
+        "${pkgs.writeShellScript "serve" ''
+          mkdir -p /tmp/www
+          echo "nix-oci-test-ok" > /tmp/www/index.html
+          cd /tmp/www
+          exec python3 -m http.server 8080
+        ''}"
+      ];
     };
   };
 }

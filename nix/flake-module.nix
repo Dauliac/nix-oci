@@ -12,7 +12,6 @@ inputs: {
 
   # Override the package defaults to use our bundled dependencies
   config = {
-    _module.args.import-tree = inputs.import-tree;
     perSystem =
       { system, ... }:
       {

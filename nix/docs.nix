@@ -1,8 +1,8 @@
 # Documentation build module (docs partition only)
 #
-# Builds an mdbook site with:
-# - README as introduction
-# - Module options extracted via nixosOptionsDoc
+# Builds an NDG site with:
+# - Module options (flake-parts, deploy, NixOS container)
+# - Markdown content pages
 # - Examples from the examples/ directory
 # - GitHub Actions workflow for Pages deployment
 {
@@ -20,8 +20,11 @@
         ...
       }:
       let
-        # Evaluate the OCI flake module in isolation to extract option declarations
-        eval =
+        ndg = inputs.ndg.packages.${system}.ndg;
+        import-tree = inputs.import-tree;
+
+        # --- Flake-parts options (oci.*) ---
+        flakePartsEval =
           inputs.flake-parts.lib.evalFlakeModule
             {
               inputs = inputs // {
@@ -35,9 +38,9 @@
               systems = [ system ];
             };
 
-        perSystemOptions = eval.options.perSystem.type.getSubOptions [ ];
+        perSystemOptions = flakePartsEval.options.perSystem.type.getSubOptions [ ];
 
-        # Rewrite /nix/store/<hash>-source/path → clickable GitHub link
+        # Rewrite /nix/store/<hash>-source/path -> clickable GitHub link
         repoUrl = "https://github.com/Dauliac/nix-oci/blob/main";
         cleanupOptions =
           opt:
@@ -51,7 +54,6 @@
               if match != null then
                 let
                   raw = builtins.head match;
-                  # Strip ", via option ..." suffixes from deferred module paths
                   parts = builtins.match "([^,]+),? ?(via .*)?" raw;
                   relPath = if parts != null then builtins.head parts else raw;
                 in
@@ -68,15 +70,15 @@
             declarations = map cleanDecl opt.declarations;
           };
 
-        # Top-level oci options (oci.enabled, etc.)
+        # Top-level oci options
         topLevelDoc = pkgs.nixosOptionsDoc {
           options = {
-            inherit (eval.options) oci;
+            inherit (flakePartsEval.options) oci;
           };
           transformOptions = cleanupOptions;
         };
 
-        # Per-system oci options (oci.containers.*, oci.packages.*, etc.)
+        # Per-system oci options
         perSystemDoc = pkgs.nixosOptionsDoc {
           options = {
             inherit (perSystemOptions) oci;
@@ -84,17 +86,7 @@
           transformOptions = cleanupOptions;
         };
 
-        # Container sub-options (oci.containers.<name>.package, .tag, etc.)
-        #
-        # The `perContainer` option uses a deferredModuleWith pattern:
-        # - getSubOptions on the deferred type only sees static modules
-        # - The real options (package, tag, registry, ...) are contributed
-        #   dynamically and only visible after apply creates a submoduleWith
-        #
-        # We access the resolved type from this partition's own config:
-        # config.oci.perContainer IS the apply'd submoduleWith with all modules.
-        # getSubOptions returns a lazy attrset; we remove perTag/tagConfigs
-        # which have nested deferred modules that need containerConfig.
+        # Container sub-options (from the deferred module)
         containerSubOptions =
           let
             allOpts = config.oci.perContainer.getSubOptions [ ];
@@ -111,96 +103,194 @@
           transformOptions = cleanupOptions;
         };
 
-        docs = pkgs.stdenv.mkDerivation {
-          name = "nix-oci-docs";
-          src = lib.fileset.toSource {
-            root = ../.;
-            fileset = lib.fileset.unions [
-              ../docs/book.toml
-              ../README.md
-              ../examples
-            ];
-          };
-          nativeBuildInputs = [ pkgs.mdbook ];
+        # --- Deploy module options (services.nix-oci.*) ---
+        # Extract the composed NixOS deploy module from the flake-parts eval,
+        # then evaluate it standalone to get its options.
+        deployNixosModule = flakePartsEval.config.flake.modules.nixos.nix-oci;
 
-          buildPhase = ''
-            runHook preBuild
-
-            mkdir -p docs/src/examples
-
-            # Introduction from README
-            cp README.md docs/src/introduction.md
-
-            # Options reference pages
+        deployEval = lib.evalModules {
+          modules = [
+            deployNixosModule
             {
-              echo "# Top-level Options"
-              echo ""
-              echo "These options are set at the flake level."
-              echo ""
-              cat ${topLevelDoc.optionsCommonMark}
-            } > docs/src/options-toplevel.md
-
-            {
-              echo "# Per-System Options"
-              echo ""
-              echo "These options are set inside \`perSystem\`."
-              echo ""
-              cat ${perSystemDoc.optionsCommonMark}
-            } > docs/src/options-persystem.md
-
-            {
-              echo "# Container Options"
-              echo ""
-              echo "These options are available on each container defined in \`oci.containers.<name>\`."
-              echo ""
-              cat ${containerDoc.optionsCommonMark}
-            } > docs/src/options-container.md
-
-            # Convert examples to markdown and collect entries for SUMMARY
-            example_entries=""
-            for f in $(find examples -name '*.nix' -type f | sort); do
-              relpath="''${f#examples/}"
-              name="''${relpath%.nix}"
-              safe_name="$(echo "$name" | tr '/' '-')"
-              title="$(echo "$safe_name" | tr '-' ' ')"
-
-              {
-                echo "# $title"
-                echo ""
-                echo '```nix'
-                cat "$f"
-                echo '```'
-              } > "docs/src/examples/$safe_name.md"
-
-              example_entries="''${example_entries}  - [$title](./examples/$safe_name.md)
-            "
-            done
-
-            # Generate SUMMARY.md
-            {
-              echo "# Summary"
-              echo ""
-              echo "- [Introduction](./introduction.md)"
-              echo "- [Options Reference]()"
-              echo "  - [Top-level Options](./options-toplevel.md)"
-              echo "  - [Per-System Options](./options-persystem.md)"
-              echo "  - [Container Options](./options-container.md)"
-              echo "- [Examples]()"
-              echo "$example_entries"
-            } > docs/src/SUMMARY.md
-
-            # Build the book
-            mdbook build docs
-
-            runHook postBuild
-          '';
-
-          installPhase = ''
-            runHook preInstall
-            cp -r docs/book $out
-            runHook postInstall
-          '';
+              options._module.args = lib.mkOption { internal = true; };
+              config._module.check = false;
+            }
+          ];
         };
+
+        deployDoc = pkgs.nixosOptionsDoc {
+          options = {
+            inherit (deployEval.options) services;
+          };
+          transformOptions = cleanupOptions;
+        };
+
+        # --- NixOS container module options (oci.container.*) ---
+        # Use import-tree to discover _nixos/oci modules, same as eval.nix does.
+        ociNixOSModule = import-tree ./modules/_nixos/oci;
+
+        nixosContainerEval = lib.evalModules {
+          modules = [
+            ociNixOSModule
+            {
+              options._module.args = lib.mkOption { internal = true; };
+              config._module = {
+                check = false;
+                args = {
+                  pkgs = lib.modules.mkForce pkgs;
+                };
+              };
+            }
+          ];
+        };
+
+        nixosContainerDoc = pkgs.nixosOptionsDoc {
+          options = {
+            inherit (nixosContainerEval.options) oci;
+          };
+          transformOptions = cleanupOptions;
+        };
+
+        # --- Merged options JSON for NDG sidebar ---
+        mergedOptionsJSON = pkgs.runCommand "merged-options.json" {
+          nativeBuildInputs = [ pkgs.jq ];
+        } ''
+          jq -s '.[0] * .[1] * .[2] * .[3] * .[4]' \
+            ${topLevelDoc.optionsJSON}/share/doc/nixos/options.json \
+            ${perSystemDoc.optionsJSON}/share/doc/nixos/options.json \
+            ${containerDoc.optionsJSON}/share/doc/nixos/options.json \
+            ${deployDoc.optionsJSON}/share/doc/nixos/options.json \
+            ${nixosContainerDoc.optionsJSON}/share/doc/nixos/options.json \
+            > $out
+        '';
+
+        # --- Build the input directory ---
+        docsInputDir = pkgs.runCommand "ndg-input" { } ''
+          mkdir -p $out/examples
+
+          # Copy static content pages
+          cp -r ${../docs/content}/* $out/
+
+          # Generate options reference pages
+          {
+            echo '+++'
+            echo 'title = "Flake-Parts Options (Top-level)"'
+            echo 'description = "Options set at the flake level"'
+            echo '+++'
+            echo ""
+            echo "# Flake-Parts Options (Top-level)"
+            echo ""
+            echo "These options are set at the flake level (outside \`perSystem\`)."
+            echo ""
+            cat ${topLevelDoc.optionsCommonMark}
+          } > $out/options-toplevel.md
+
+          {
+            echo '+++'
+            echo 'title = "Flake-Parts Options (Per-System)"'
+            echo 'description = "Options set inside perSystem"'
+            echo '+++'
+            echo ""
+            echo "# Flake-Parts Options (Per-System)"
+            echo ""
+            echo "These options are set inside \`perSystem\`."
+            echo ""
+            cat ${perSystemDoc.optionsCommonMark}
+          } > $out/options-persystem.md
+
+          {
+            echo '+++'
+            echo 'title = "Container Options"'
+            echo 'description = "Options on each oci.containers.<name>"'
+            echo '+++'
+            echo ""
+            echo "# Container Options"
+            echo ""
+            echo "These options are available on each container defined in \`oci.containers.<name>\`."
+            echo ""
+            cat ${containerDoc.optionsCommonMark}
+          } > $out/options-container.md
+
+          {
+            echo '+++'
+            echo 'title = "Deploy Module Options"'
+            echo 'description = "services.nix-oci.* options for NixOS and Home Manager"'
+            echo '+++'
+            echo ""
+            echo "# Deploy Module Options"
+            echo ""
+            echo "These options are available under \`services.nix-oci.*\` in both NixOS and Home Manager modules."
+            echo ""
+            cat ${deployDoc.optionsCommonMark}
+          } > $out/options-deploy.md
+
+          {
+            echo '+++'
+            echo 'title = "NixOS Container Module Options"'
+            echo 'description = "oci.container.* options inside nixosConfig"'
+            echo '+++'
+            echo ""
+            echo "# NixOS Container Module Options"
+            echo ""
+            echo "These options are available inside \`nixosConfig.modules\` under the \`oci.container.*\` namespace."
+            echo ""
+            cat ${nixosContainerDoc.optionsCommonMark}
+          } > $out/options-nixos-container.md
+
+          # Convert examples to markdown
+          for f in $(find ${../examples} -name '*.nix' -type f | sort); do
+            relpath="''${f#${../examples}/}"
+            name="''${relpath%.nix}"
+            safe_name="$(echo "$name" | tr '/' '-')"
+            title="$(echo "$safe_name" | tr '-' ' ')"
+
+            {
+              echo "+++"
+              echo "title = \"$title\""
+              echo "+++"
+              echo ""
+              echo "# $title"
+              echo ""
+              echo '```nix'
+              cat "$f"
+              echo '```'
+            } > "$out/examples/$safe_name.md"
+          done
+
+          # Generate examples index
+          {
+            echo '+++'
+            echo 'title = "Examples"'
+            echo 'description = "Example configurations"'
+            echo '+++'
+            echo ""
+            echo "# Examples"
+            echo ""
+            for f in $(find $out/examples -name '*.md' -type f | sort); do
+              name="$(basename "$f" .md)"
+              title="$(echo "$name" | tr '-' ' ')"
+              echo "- [$title](./examples/$name.md)"
+            done
+          } > $out/examples-index.md
+        '';
+
+        # --- NDG site build (using CLI directly) ---
+        ndgConfig = pkgs.writers.writeTOML "ndg.toml" {
+          title = "nix-oci";
+          input_dir = "${docsInputDir}";
+          output_dir = placeholder "out";
+          module_options = "${mergedOptionsJSON}";
+          search.enable = true;
+          highlight_code = true;
+          sidebar.options.depth = 3;
+        };
+
+        docs = pkgs.runCommandLocal "nix-oci-docs" {
+          nativeBuildInputs = [ ndg ];
+        } ''
+          ndg --config-file "${ndgConfig}" --verbose html \
+            --jobs $NIX_BUILD_CORES --output-dir "$out"
+        '';
       in
       {
         legacyPackages = {

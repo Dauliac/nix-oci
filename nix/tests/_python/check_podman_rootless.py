@@ -29,8 +29,8 @@ for img in images:
             image_names.extend(img[key])
 print(f"[podman-cli] Images: {image_names}")
 assert any(
-    "test-http-server" in n for n in image_names
-), f"test-http-server not found in {image_names}"
+    "http-server" in n for n in image_names
+), f"http-server not found in {image_names}"
 
 # --- Container checks ---
 containers = json.loads(run("podman ps --format json"))
@@ -43,18 +43,18 @@ for c in containers:
         container_names.append(name)
 print(f"[podman-cli] Running containers: {container_names}")
 assert any(
-    "test-http" in n for n in container_names
-), f"test-http not found in {container_names}"
+    "http-server" in n for n in container_names
+), f"http-server not found in {container_names}"
 
 # --- Inspect ---
-inspect = json.loads(run("podman inspect test-http"))
+inspect = json.loads(run("podman inspect http-server"))
 state = inspect[0].get("State", {})
 running = state.get("Running", False) or state.get("Status") == "running"
 assert running, f"Container not running: {state}"
-print(f"[podman-cli] Container test-http: running, pid={state.get('Pid', 'N/A')}")
+print(f"[podman-cli] Container http-server: running, pid={state.get('Pid', 'N/A')}")
 
 # --- Exec ---
-output = run("podman exec test-http echo container-exec-ok")
+output = run("podman exec http-server echo container-exec-ok")
 assert "container-exec-ok" in output, f"exec output: {output}"
 print("[podman-cli] Container exec: OK")
 

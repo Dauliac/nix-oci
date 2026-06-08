@@ -1,8 +1,8 @@
-# Deploy module integration test — NixOS + home-manager in a single VM.
+# Deploy integration test — NixOS + home-manager in a single VM.
 #
 # Boots one NixOS VM that validates both:
-# - System-level: nix-oci loads image into podman, auto-starts via oci-containers
-# - User-level:   nix-oci loads image into rootless podman via home-manager
+# - System-level: nix-oci builds+loads image, auto-starts via oci-containers
+# - User-level:   nix-oci builds+loads image into rootless podman via home-manager
 #
 # Run: nix build .#checks.x86_64-linux.deploy-integration -L
 {
@@ -17,22 +17,19 @@ in
 {
   perSystem =
     {
-      config,
       pkgs,
       lib,
       ...
     }:
     let
-      nix2container = config.oci.packages.nix2container;
-      testImage = import ./_fixtures/test-image.nix { inherit pkgs nix2container; };
+      nixosExample = ../../examples/deploy-nixos/http-server.nix;
+      hmExample = ../../examples/deploy-home-manager/http-server.nix;
       dockerSdkCheck = pkgs.writeText "check_docker_sdk.py" (
         builtins.readFile ./_python/check_docker_sdk.py
       );
       podmanCliCheck = pkgs.writeText "check_podman_rootless.py" (
         builtins.readFile ./_python/check_podman_rootless.py
       );
-      nixosExample = import ../../examples/deploy-nixos/http-server.nix { inherit testImage; };
-      hmExample = import ../../examples/deploy-home-manager/http-server.nix { inherit testImage; };
     in
     {
       checks = lib.optionalAttrs pkgs.stdenv.isLinux {
@@ -109,10 +106,10 @@ in
             # ===================================================================
 
             with subtest("nixos: load service completes"):
-                machine.wait_for_unit("nix-oci-load-test-http.service")
+                machine.wait_for_unit("oci-load-http-server.service")
 
             with subtest("nixos: container service starts"):
-                machine.wait_for_unit("podman-test-http.service")
+                machine.wait_for_unit("podman-http-server.service")
 
             with subtest("nixos: image present in podman"):
                 images_json = machine.succeed("podman images --format json")
@@ -122,8 +119,8 @@ in
                     for key in ("Names", "names", "RepoTags"):
                         if key in img and img[key]:
                             names.extend(img[key])
-                assert any("test-http-server" in n for n in names), \
-                    f"test-http-server not found: {names}"
+                assert any("http-server" in n for n in names), \
+                    f"http-server image not found: {names}"
 
             with subtest("nixos: HTTP server responds"):
                 machine.wait_for_open_port(8080)
@@ -142,7 +139,7 @@ in
             machine.wait_for_unit(f"user@{uid}.service")
 
             with subtest("home-manager: load service completes"):
-                machine.wait_for_unit("nix-oci-load-test-http.service", "testuser")
+                machine.wait_for_unit("oci-load-http-server.service", "testuser")
 
             with subtest("home-manager: image loaded in rootless podman"):
                 images_json = machine.succeed(
@@ -154,12 +151,12 @@ in
                     for key in ("Names", "names", "RepoTags"):
                         if key in img and img[key]:
                             names.extend(img[key])
-                assert any("test-http-server" in n for n in names), \
-                    f"test-http-server not found: {names}"
+                assert any("http-server" in n for n in names), \
+                    f"http-server not found: {names}"
 
             with subtest("home-manager: container runs and serves HTTP"):
                 machine.succeed(
-                    "su - testuser -c 'podman run -d --name test-http -p 9090:8080 test-http-server:test'"
+                    "su - testuser -c 'podman run -d --name http-server -p 9090:8080 http-server:latest'"
                 )
                 machine.wait_for_open_port(9090)
                 response = machine.succeed("curl -sf http://localhost:9090/index.html")

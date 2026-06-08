@@ -1,25 +1,30 @@
-# services.nix-oci.containers — registered for both NixOS and home-manager.
+# oci.containers — registered for both NixOS and home-manager.
 #
-# Submodule options are inlined (no import-tree dependency).
-{ ... }:
+# Submodule options are auto-discovered from _containers/ via import-tree.
+# nix2container is threaded into the submodule so _containers/image.nix can build.
+{ import-tree, ... }:
 let
+  containerSubmodule = import-tree ./_containers;
   mod =
-    { lib, ... }:
     {
-      options.services.nix-oci.containers = lib.mkOption {
+      lib,
+      pkgs,
+      nix2container,
+      ...
+    }:
+    {
+      options.oci.containers = lib.mkOption {
         type = lib.types.attrsOf (
-          lib.types.submodule {
-            imports = [
-              ./_containers/image.nix
-              ./_containers/image-ref.nix
-              ./_containers/auto-start.nix
-            ];
+          lib.types.submoduleWith {
+            modules = [ containerSubmodule ];
+            specialArgs = { inherit pkgs nix2container; };
           }
         );
         default = { };
         description = ''
-          Containers to load from the Nix store into the container runtime.
-          Each entry creates a `nix-oci-load-<name>.service` oneshot unit.
+          OCI containers to build, load, and optionally run.
+          Each entry builds an image via nix2container and creates
+          a systemd service to load it into the container runtime.
         '';
       };
     };

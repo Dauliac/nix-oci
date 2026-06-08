@@ -1,26 +1,22 @@
-# Example: NixOS deploy configuration for nix-oci.
-#
-# Loads an OCI image into podman and auto-starts it via virtualisation.oci-containers.
-# The `testImage` argument is the nix2container buildImage output.
-#
-# Usage in a NixOS configuration:
-#   imports = [
-#     inputs.nix-oci.modules.nixos.nix-oci
-#     (import ./http-server.nix { testImage = myImage; })
-#   ];
-{ testImage }:
-{ ... }:
+# Example: NixOS deploy — HTTP server container via nix-oci.
+{ pkgs, ... }:
 {
-  services.nix-oci = {
+  oci = {
     enable = true;
     backend = "podman";
-    containers.test-http = {
-      image = testImage;
+    containers.http-server = {
+      package = pkgs.python3Minimal;
+      dependencies = with pkgs; [ bashInteractive coreutils ];
+      entrypoint = [
+        "${pkgs.writeShellScript "serve" ''
+          mkdir -p /tmp/www
+          echo "nix-oci-test-ok" > /tmp/www/index.html
+          cd /tmp/www
+          exec python3 -m http.server 8080
+        ''}"
+      ];
       autoStart = true;
+      ports = [ "8080:8080" ];
     };
-  };
-
-  virtualisation.oci-containers.containers.test-http = {
-    ports = [ "8080:8080" ];
   };
 }

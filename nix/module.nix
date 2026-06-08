@@ -10,9 +10,5 @@
     (inputs.import-tree ./modules/deploy)
   ];
 
-  config = {
-    _module.args.import-tree = inputs.import-tree;
-
-    flake.modules.flake.nix-oci = import ./flake-module.nix inputs;
-  };
+  config.flake.modules.flake.nix-oci = import ./flake-module.nix inputs;
 }
