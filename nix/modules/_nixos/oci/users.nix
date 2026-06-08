@@ -102,7 +102,7 @@ in
         isNormalUser = lib.mkDefault true;
         home = lib.mkDefault config.oci.lib.homeDir;
         uid = lib.mkDefault cfg.uid;
-        group = lib.mkDefault cfg.user;
+        group = lib.mkForce cfg.user;
       };
     };
     users.groups = {
