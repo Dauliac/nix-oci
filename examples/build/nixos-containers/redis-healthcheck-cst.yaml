@@ -1,0 +1,32 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: USER
+      value: redis
+fileExistenceTests:
+  - name: "redis-server binary exists"
+    path: "/bin/redis-server"
+    shouldExist: true
+    isExecutableBy: "any"
+  - name: "passwd file exists"
+    path: "/etc/passwd"
+    shouldExist: true
+  - name: "group file exists"
+    path: "/etc/group"
+    shouldExist: true
+commandTests:
+  # Verify the healthcheck tool (redis-cli) is available.
+  # redis-cli is part of the redis package — same binary used
+  # by the auto-derived OCI Healthcheck.
+  - name: "redis-cli is available (healthcheck tool)"
+    command: "redis-cli"
+    args:
+      - "--version"
+    expectedOutput:
+      - "redis-cli"
+  - name: "redis-server is available"
+    command: "redis-server"
+    args:
+      - "--version"
+    expectedOutput:
+      - "Redis"

@@ -100,11 +100,16 @@ The result: **zero duplicated store paths** across layers.
 
 ## Layer strategies
 
-The `layerStrategy` option controls how aggressively nix2container
-splits store paths into sub-layers. It only takes effect when
-`optimizeLayers = true`.
+The [`layerStrategy`](../reference/flake-parts-options.html) option
+controls how aggressively nix2container splits store paths into
+sub-layers. It only takes effect when
+[`optimizeLayers`](../reference/flake-parts-options.html) is enabled.
+See the option reference for default values and allowed values
+([flake-parts](../reference/flake-parts-options.html),
+[NixOS](../reference/nixos-options.html),
+[Home Manager](../reference/home-manager-options.html)).
 
-### `"fine-grained"` (default)
+### `"fine-grained"`
 
 Each logical layer is further split using the popularity algorithm.
 Best for registries hosting many images with overlapping dependencies.
@@ -158,6 +163,14 @@ flowchart TD
 
 ## The layer stack
 
+The options that control layer composition
+([`optimizeLayers`](../reference/flake-parts-options.html),
+[`layerStrategy`](../reference/flake-parts-options.html),
+[`dependencies`](../reference/flake-parts-options.html),
+[`debug.enabled`](../reference/flake-parts-options.html))
+are documented in the option reference. This section explains the
+resulting image structure.
+
 ### Production image
 
 ```mermaid
@@ -176,8 +189,8 @@ flowchart TD
 - **App layer** — changes on each rebuild
 - **Deps layer** — stable, shared across images
 
-For Nix-enabled containers (`installNix = true`), a **Nix layer** is
-prepended and all subsequent layers deduplicate against it:
+For Nix-enabled containers ([`installNix`](../reference/flake-parts-options.html)),
+a **Nix layer** is prepended and all subsequent layers deduplicate against it:
 
 ```mermaid
 flowchart TD
@@ -198,9 +211,10 @@ flowchart TD
 
 ### Debug image (layer sharing with production)
 
-When `debug.enabled = true` and `optimizeLayers = true`, the debug image
-is built **on top of** the production layer stack — not rebuilt from
-scratch:
+When [`debug.enabled`](../reference/flake-parts-options.html) and
+[`optimizeLayers`](../reference/flake-parts-options.html) are both set,
+the debug image is built **on top of** the production layer stack — not
+rebuilt from scratch:
 
 ```mermaid
 flowchart TD
@@ -235,6 +249,14 @@ both images to the same registry uploads the shared layers once.
 
 ## Enable it
 
+Set [`optimizeLayers`](../reference/flake-parts-options.html) and
+optionally [`layerStrategy`](../reference/flake-parts-options.html).
+See the option reference for default values per context:
+[flake-parts](../reference/flake-parts-options.html),
+[NixOS deploy](../reference/nixos-options.html),
+[Home Manager deploy](../reference/home-manager-options.html),
+[system-manager deploy](../reference/system-manager-options.html).
+
 ### flake-parts (build-time)
 
 ```nix
@@ -242,21 +264,18 @@ perSystem = { ... }: {
   oci.containers.my-app = {
     package = pkgs.hello;
     optimizeLayers = true;
-    layerStrategy = "minimal"; # or "fine-grained" (default)
+    layerStrategy = "minimal";
   };
 };
 ```
 
 ### Deploy modules (NixOS / Home Manager / system-manager)
 
-Layer optimization is **enabled by default** for deploy containers
-(set in `_defaults.nix`). You can disable it explicitly:
-
 ```nix
 oci.containers.my-app = {
   package = pkgs.hello;
-  optimizeLayers = false; # default is true for deploy
-  layerStrategy = "minimal"; # or "fine-grained" (default)
+  optimizeLayers = true;
+  layerStrategy = "minimal";
 };
 ```
 

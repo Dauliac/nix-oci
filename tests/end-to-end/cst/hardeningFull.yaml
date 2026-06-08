@@ -1,0 +1,46 @@
+schemaVersion: 2.0.0
+metadataTest:
+  labels:
+    - key: "io.github.dauliac.nix-oci.hardening.enabled"
+      value: "true"
+    - key: "io.github.dauliac.nix-oci.hardening.no-new-privileges"
+      value: "true"
+    - key: "io.github.dauliac.nix-oci.hardening.read-only-rootfs"
+      value: "true"
+    - key: "io.github.dauliac.nix-oci.hardening.capabilities-drop"
+      value: "ALL"
+    - key: "io.github.dauliac.nix-oci.hardening.capabilities-add"
+      value: "NET_BIND_SERVICE"
+    - key: "io.github.dauliac.nix-oci.hardening.seccomp-profile"
+      value: "strict"
+  envVars:
+    - key: USER
+      value: root
+fileExistenceTests:
+  - name: "resolv.conf exists"
+    path: "/etc/resolv.conf"
+    shouldExist: true
+  - name: "nsswitch.conf exists"
+    path: "/etc/nsswitch.conf"
+    shouldExist: true
+  - name: "ca-bundle.crt exists (neutered)"
+    path: "/etc/ssl/certs/ca-bundle.crt"
+    shouldExist: true
+  - name: "busybox binary exists"
+    path: "/bin/busybox"
+    shouldExist: true
+fileContentTests:
+  - name: "resolv.conf is empty (DNS disabled)"
+    path: "/etc/resolv.conf"
+    expectedContents:
+      - "DNS disabled by nix-oci hardening"
+  - name: "nsswitch.conf has files-only hosts"
+    path: "/etc/nsswitch.conf"
+    expectedContents:
+      - "hosts:     files"
+    excludedContents:
+      - "hosts:     files dns"
+  - name: "ca-bundle.crt has removal marker"
+    path: "/etc/ssl/certs/ca-bundle.crt"
+    expectedContents:
+      - "TLS trust store removed by nix-oci hardening"

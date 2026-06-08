@@ -44,6 +44,27 @@ let
     else
       [ ];
 
+  # Auto-generated labels (OCI standard + build info + hardening + PSS).
+  # User labels override auto-generated ones via `//` merge order.
+  generatedLabels = ociLib.mkAutoLabels {
+    inherit (config)
+      name
+      tag
+      package
+      isRoot
+      optimizeLayers
+      hardening
+      ;
+    layerStrategy = config.layerStrategy or "fine-grained";
+    system = pkgs.stdenv.hostPlatform.system;
+    autoLabels = config.autoLabels or true;
+  };
+
+  hardenedConfigs = ociLib.mkHardenedConfigs {
+    inherit (config) hardening;
+    inherit pkgs;
+  };
+
   ociConfig = {
     entrypoint = entrypoint;
     User = if config.isRoot then "root" else config.user;
@@ -54,8 +75,26 @@ let
   // lib.optionalAttrs (config.environment != { }) {
     Env = lib.mapAttrsToList (k: v: "${k}=${v}") config.environment;
   }
-  // lib.optionalAttrs (config.labels != { }) {
-    Labels = config.labels;
+  // {
+    Labels = generatedLabels // (config.labels or { });
+  }
+  // lib.optionalAttrs (config.healthcheck.command != [ ]) {
+    Healthcheck = {
+      Test = [ "CMD" ] ++ config.healthcheck.command;
+      Interval = config.healthcheck.interval * 1000000000;
+      Timeout = config.healthcheck.timeout * 1000000000;
+      StartPeriod = config.healthcheck.startPeriod * 1000000000;
+      Retries = config.healthcheck.retries;
+    };
+  }
+  // lib.optionalAttrs (config.stopSignal != null) {
+    StopSignal = config.stopSignal;
+  }
+  // lib.optionalAttrs (config.workingDir != null) {
+    WorkingDir = config.workingDir;
+  }
+  // lib.optionalAttrs (config.declaredVolumes != [ ]) {
+    Volumes = builtins.listToAttrs (map (v: lib.nameValuePair v { }) config.declaredVolumes);
   };
 
   optimized = config.optimizeLayers;
@@ -65,7 +104,10 @@ let
   # dependencies as a separate layer, package as the top layer.
   # All chained via foldImageLayers for deduplication.
   rootPaths =
-    shadowOnly ++ config.configFiles ++ lib.optional (config.package != null) config.package;
+    shadowOnly
+    ++ config.configFiles
+    ++ hardenedConfigs
+    ++ lib.optional (config.package != null) config.package;
 
   layers = ociLib.mkImageLayers {
     inherit pkgs nix2container layerStrategy;

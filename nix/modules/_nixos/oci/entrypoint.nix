@@ -20,6 +20,21 @@ in
       default = null;
       description = "NixOS service to extract entrypoint from.";
     };
+    stopSignal = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Graceful stop signal. Set by service adapters or auto-derived from systemd KillSignal.";
+    };
+    workingDir = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Working directory. Auto-derived from systemd WorkingDirectory, service dataDir, or user home.";
+    };
+    declaredVolumes = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Additional OCI volume mount points (merged with auto-derived from systemd directories).";
+    };
   };
 
   options.oci.lib = {
@@ -60,6 +75,8 @@ in
           execStart = sc.ExecStart or null;
           serviceType = sc.Type or "simple";
           environment = svc.environment or { };
+          killSignal = sc.KillSignal or null;
+          workingDirectory = sc.WorkingDirectory or null;
         };
     };
 
@@ -128,6 +145,60 @@ in
           [ "${config.oci.lib.mkEntrypointScript sd}" ]
         else
           cfg.entrypoint;
+    };
+
+    stopSignal = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      internal = true;
+      readOnly = true;
+      description = "Graceful stop signal derived from systemd KillSignal or service adapter.";
+      default =
+        let
+          sd = cfg._output.serviceData;
+          fromSystemd = if sd != null then sd.killSignal else null;
+        in
+        if cfg.stopSignal != null then cfg.stopSignal else fromSystemd;
+    };
+
+    workingDir = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      internal = true;
+      readOnly = true;
+      description = "Working directory derived from systemd WorkingDirectory, service dataDir, or user home.";
+      default =
+        let
+          sd = cfg._output.serviceData;
+          fromSystemd = if sd != null then sd.workingDirectory else null;
+          fromService =
+            if cfg.mainService != null then config.services.${cfg.mainService}.dataDir or null else null;
+        in
+        if cfg.workingDir != null then
+          cfg.workingDir
+        else if fromSystemd != null then
+          fromSystemd
+        else if fromService != null then
+          fromService
+        else
+          config.oci.lib.homeDir;
+    };
+
+    declaredVolumes = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      internal = true;
+      readOnly = true;
+      description = "OCI volume mount points derived from systemd StateDirectory, RuntimeDirectory, etc.";
+      default =
+        let
+          sd = cfg._output.serviceData;
+        in
+        if sd != null then
+          (map (d: "/run/${d}") sd.runtimeDirs)
+          ++ (map (d: "/var/lib/${d}") sd.stateDirs)
+          ++ (map (d: "/var/cache/${d}") sd.cacheDirs)
+          ++ (map (d: "/var/log/${d}") sd.logDirs)
+          ++ cfg.declaredVolumes
+        else
+          cfg.declaredVolumes;
     };
   };
 }

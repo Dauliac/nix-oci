@@ -1,0 +1,29 @@
+schemaVersion: 2.0.0
+metadataTest:
+  labels:
+    - key: "io.github.dauliac.nix-oci.hardening.enabled"
+      value: "true"
+  envVars:
+    - key: USER
+      value: root
+fileExistenceTests:
+  - name: "resolv.conf exists"
+    path: "/etc/resolv.conf"
+    shouldExist: true
+  - name: "nsswitch.conf exists"
+    path: "/etc/nsswitch.conf"
+    shouldExist: true
+  - name: "busybox binary exists"
+    path: "/bin/busybox"
+    shouldExist: true
+fileContentTests:
+  - name: "resolv.conf is empty (DNS disabled)"
+    path: "/etc/resolv.conf"
+    expectedContents:
+      - "DNS disabled by nix-oci hardening"
+  - name: "nsswitch.conf has files-only hosts"
+    path: "/etc/nsswitch.conf"
+    expectedContents:
+      - "hosts:     files"
+    excludedContents:
+      - "hosts:     files dns"

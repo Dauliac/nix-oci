@@ -44,8 +44,7 @@
               else
                 [ ];
 
-            appLayerDefs =
-              if copyToRoot != [ ] then [ (ociLib.mkAppLayer { inherit copyToRoot; }) ] else [ ];
+            appLayerDefs = if copyToRoot != [ ] then [ (ociLib.mkAppLayer { inherit copyToRoot; }) ] else [ ];
 
             debugLayerDefs =
               if debug != null then

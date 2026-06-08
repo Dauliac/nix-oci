@@ -12,9 +12,7 @@
         type = lib.types.functionTo lib.types.attrs;
         description = "Build a layer definition for the application root filesystem (for use with foldImageLayers)";
         fn =
-          {
-            copyToRoot,
-          }:
+          { copyToRoot }:
           {
             inherit copyToRoot;
           };

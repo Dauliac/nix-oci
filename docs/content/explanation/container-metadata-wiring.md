@@ -23,7 +23,7 @@ flowchart TD
         direction TB
         SharedOpts["Shared options<br/>_options/*.nix"]
         ImageNix["image.nix<br/>(computed, readOnly)"]
-        OCI["OCI image config<br/>(entrypoint, User, Env,<br/>ExposedPorts, Labels)"]
+        OCI["OCI image config<br/>(entrypoint, User, Env,<br/>ExposedPorts, Labels,<br/>Healthcheck, StopSignal,<br/>WorkingDir, Volumes)"]
         Root["Root filesystem<br/>(mkRoot / mkShadowSetup)"]
         SharedOpts --> ImageNix
         ImageNix --> OCI
@@ -298,25 +298,37 @@ no firewall rules, no volumes. The image is loaded but not started.
 ## Service dependency chain
 
 Both NixOS and home-manager wire a strict ordering between the loader
-and runner services.
+and runner services. When a healthcheck is present and the backend is
+Podman, the runner uses `Type=notify` with `--sdnotify=healthy` — systemd
+waits for the healthcheck to pass before considering the service ready.
 
 ```mermaid
 sequenceDiagram
     participant systemd
     participant Loader as oci-load-my-app
-    participant Runner as podman-my-app / docker-my-app
+    participant Runner as podman-my-app
+    participant HC as Healthcheck
 
     systemd->>Loader: Start (oneshot)
     Loader->>Loader: skopeo copy nix:image → runtime
     Loader-->>systemd: ExitCode=0, RemainAfterExit
     systemd->>Runner: Start (After + Requires loader)
-    Runner->>Runner: podman/docker run my-app:latest
+    Runner->>Runner: podman run --sdnotify=healthy
+    Note over Runner: Service status: "starting"
+    loop Every healthcheck.interval
+        Runner->>HC: Execute healthcheck command
+        HC-->>Runner: exit code
+    end
+    HC-->>Runner: First success (exit 0)
+    Runner-->>systemd: sd_notify(READY=1)
+    Note over systemd: Service status: "active"
 ```
 
-| Platform | Loader | Runner | Dependency mechanism |
-|---|---|---|---|
-| NixOS | `systemd.services.oci-load-<name>` | `systemd.services.<backend>-<name>` | `After` + `Requires` on runner |
-| Home-manager | `systemd.user.services.oci-load-<name>` | Podman quadlet | `extraConfig.Unit.After` + `Requires` |
+| Platform | Loader | Runner | Dependency | Health-aware |
+|---|---|---|---|---|
+| NixOS (Podman) | `systemd.services.oci-load-<name>` | `systemd.services.podman-<name>` | `After` + `Requires` | `--sdnotify=healthy` + `Type=notify` |
+| NixOS (Docker) | `systemd.services.oci-load-<name>` | `systemd.services.docker-<name>` | `After` + `Requires` | Healthcheck in image only |
+| Home-manager | `systemd.user.services.oci-load-<name>` | Podman quadlet | `extraConfig.Unit` | Quadlet `Notify=healthy` + `Type=notify` |
 
 ## Complete wiring summary
 
@@ -331,6 +343,10 @@ flowchart TD
         env[environment]
         labels[labels]
         cfg[configFiles]
+        hc[healthcheck]
+        ss[stopSignal]
+        wd[workingDir]
+        dv[declaredVolumes]
         nm[name / tag]
         auto[autoStart]
         vols[volumes]
@@ -342,6 +358,10 @@ flowchart TD
         oExposed[config.ExposedPorts]
         oEnv[config.Env]
         oLabels[config.Labels]
+        oHC[config.Healthcheck]
+        oSS[config.StopSignal]
+        oWD[config.WorkingDir]
+        oVols[config.Volumes]
     end
 
     subgraph rootfs ["Root filesystem / layers"]
@@ -352,7 +372,7 @@ flowchart TD
 
     subgraph services ["Deploy services"]
         loader[oci-load-&lt;name&gt;]
-        runner[runner service]
+        runner[runner service<br/>+ sdnotify=healthy]
         fw[NixOS firewall]
     end
 
@@ -365,6 +385,11 @@ flowchart TD
     env --> oEnv
     env --> runner
     labels --> oLabels
+    hc --> oHC
+    hc -->|"sdnotify=healthy<br/>Type=notify"| runner
+    ss --> oSS
+    wd --> oWD
+    dv --> oVols
     cfg --> root
     pkg --> root
     deps --> layers
@@ -380,9 +405,238 @@ flowchart TD
     style services fill:#1e1e2e,stroke:#a6da95,color:#cdd6f4
 ```
 
-## Note on healthcheck
+## Healthcheck
 
-nix-oci does **not** currently provide a `healthcheck` option. OCI
-healthchecks can be configured at the container runtime level (e.g. via
-NixOS `virtualisation.oci-containers` options or Podman quadlet config)
-but are not wired through the nix-oci module system.
+Healthchecks are the most deeply wired option — they flow from the NixOS
+module configuration through the OCI image manifest into systemd service
+readiness.
+
+### Automatic derivation from NixOS services
+
+When using `nixosConfig` with a `mainService`, service adapters
+**automatically derive** the healthcheck command from the NixOS module
+configuration. No manual healthcheck setup is required.
+
+```mermaid
+flowchart TD
+    NixOS["NixOS module config<br/>(services.nginx, services.postgresql, …)"]
+
+    subgraph adapter ["Service adapter"]
+        Scan["Introspect service config<br/>(ports, endpoints, SSL, bind)"]
+        Derive["Auto-derive healthcheck command"]
+        Scan --> Derive
+    end
+
+    subgraph oci ["OCI image"]
+        HC["config.Healthcheck<br/>Test = [CMD curl -f http://…]<br/>Interval / Timeout / Retries"]
+    end
+
+    subgraph systemd ["Deploy: systemd"]
+        SDNotify["--sdnotify=healthy<br/>(Podman only)"]
+        Type["Type=notify<br/>NotifyAccess=all"]
+        Ready["READY=1 sent when<br/>healthcheck first passes"]
+        SDNotify --> Ready
+        Type --> Ready
+    end
+
+    NixOS --> Scan
+    Derive --> HC
+    HC --> SDNotify
+
+    style adapter fill:#1e1e2e,stroke:#f9e2ae,color:#cdd6f4
+    style oci fill:#1e1e2e,stroke:#89b4fa,color:#cdd6f4
+    style systemd fill:#1e1e2e,stroke:#a6da95,color:#cdd6f4
+```
+
+| Service | NixOS options introspected | Derived healthcheck |
+|---|---|---|
+| **nginx** | `virtualHosts.*.listen[].{port, ssl}`, locations (scans for `/health`, `/healthz`, `stub_status`), `onlySSL`/`forceSSL` | `curl -f http[s]://localhost:${port}${bestPath}` |
+| **PostgreSQL** | `settings.port` (default 5432), `package` | `pg_isready -h localhost -p ${port}` |
+| **Redis** | `servers.<name>.port`, `servers.<name>.bind` | `redis-cli -h ${bind} -p ${port} ping` |
+
+### Explicit healthcheck (non-NixOS containers)
+
+```nix
+oci.containers.my-app = {
+  package = pkgs.myApp;
+  dependencies = [ pkgs.curl ];
+  healthcheck = {
+    command = [ "${pkgs.curl}/bin/curl" "-f" "http://localhost:8080/health" ];
+    interval = 15;   # seconds
+    timeout = 3;
+    startPeriod = 5;
+    retries = 3;
+  };
+};
+```
+
+### Systemd integration (deploy)
+
+When a container has a healthcheck and the backend is Podman, the deploy
+modules wire `--sdnotify=healthy` into the runner service:
+
+| Platform | Mechanism | Effect |
+|---|---|---|
+| **NixOS (Podman)** | `extraOptions = ["--sdnotify=healthy"]` + `Type=notify` | systemd waits for healthcheck to pass |
+| **Home-manager** | Quadlet `Notify=healthy` + `Type=notify` | systemd waits for healthcheck to pass |
+| **Docker** | Healthcheck in image only | No systemd integration |
+
+| Stage | Transformation | File |
+|---|---|---|
+| User/adapter input | `healthcheck.command = [...]` | `_options/healthcheck.nix` or service adapter |
+| OCI image | `config.Healthcheck.Test = ["CMD"] ++ command` | `image.nix`, `mkSimpleOCI.nix`, `mkNixOCI.nix` |
+| NixOS runner | `--sdnotify=healthy` + `Type=notify` | `nixos/run-services.nix` |
+| HM runner | Quadlet `Notify=healthy` + `Type=notify` | `home-manager/run-services.nix` |
+
+## StopSignal
+
+The stop signal tells the container runtime which signal to send for
+**graceful shutdown**. Different services need different signals — using
+the wrong one can cause data loss or abrupt termination.
+
+```mermaid
+flowchart LR
+    subgraph sources ["Signal source (priority order)"]
+        Explicit["Explicit option<br/>stopSignal = &quot;SIGQUIT&quot;"]
+        Adapter["Service adapter<br/>(nginx → SIGQUIT,<br/>PostgreSQL → SIGINT)"]
+        Systemd["systemd KillSignal<br/>(from NixOS service)"]
+    end
+
+    OCI["OCI config.StopSignal"]
+
+    Explicit --> OCI
+    Adapter --> OCI
+    Systemd --> OCI
+
+    style sources fill:#1e1e2e,stroke:#f9e2ae,color:#cdd6f4
+    style OCI fill:#1e1e2e,stroke:#89b4fa,color:#cdd6f4
+```
+
+### Auto-derived signals per service
+
+| Service | Signal | Why |
+|---|---|---|
+| **nginx** | `SIGQUIT` | Graceful worker shutdown — finish serving current requests before exit |
+| **PostgreSQL** | `SIGINT` | Fast shutdown — rollback active transactions, clean exit. `SIGQUIT` (smart shutdown) can hang waiting for clients to disconnect |
+| **Redis** | `SIGTERM` | Save dataset (if configured) and exit gracefully |
+| *(default)* | `SIGTERM` | Container runtime default when not specified |
+
+Service adapters use `lib.mkDefault`, so the user can always override.
+When no adapter sets a signal, the `extractServiceData` function checks
+the systemd `KillSignal` from the NixOS service config.
+
+| Stage | Transformation | File |
+|---|---|---|
+| Service adapter | `oci.container.stopSignal = "SIGQUIT"` | `service-adapters/nginx.nix` etc. |
+| systemd fallback | `serviceConfig.KillSignal` | `entrypoint.nix` (`extractServiceData`) |
+| OCI image | `config.StopSignal = "SIGQUIT"` | `image.nix`, `mkSimpleOCI.nix`, `mkNixOCI.nix` |
+
+## WorkingDir
+
+The working directory sets the initial `$PWD` for the container process.
+
+```mermaid
+flowchart TD
+    subgraph sources ["WorkingDir source (priority order)"]
+        Explicit["Explicit option<br/>workingDir = &quot;/app&quot;"]
+        Systemd["systemd WorkingDirectory"]
+        DataDir["services.&lt;name&gt;.dataDir<br/>(e.g. /var/lib/postgresql)"]
+        Home["User home directory<br/>(/root or /home/&lt;user&gt;)"]
+    end
+
+    OCI["OCI config.WorkingDir"]
+
+    Explicit -->|"1st"| OCI
+    Systemd -->|"2nd"| OCI
+    DataDir -->|"3rd"| OCI
+    Home -->|"4th"| OCI
+
+    style sources fill:#1e1e2e,stroke:#f9e2ae,color:#cdd6f4
+    style OCI fill:#1e1e2e,stroke:#89b4fa,color:#cdd6f4
+```
+
+### Auto-derivation chain (NixOS containers)
+
+For NixOS containers, the working directory is resolved in priority order:
+
+1. **Explicit** `oci.container.workingDir` (user override)
+2. **systemd** `WorkingDirectory` from the service config
+3. **NixOS service** `dataDir` (e.g., PostgreSQL → `/var/lib/postgresql`)
+4. **User home** directory (`/root` or `/home/<user>`)
+
+This means PostgreSQL containers automatically get `WorkingDir = /var/lib/postgresql`
+without any manual configuration.
+
+For non-NixOS containers, `workingDir` defaults to `null` (runtime default,
+typically `/`). Set it explicitly when needed.
+
+| Stage | Transformation | File |
+|---|---|---|
+| NixOS auto-derive | systemd → dataDir → home | `entrypoint.nix` (`_output.workingDir`) |
+| Explicit option | `workingDir = "/app"` | `_options/working-dir.nix` |
+| OCI image | `config.WorkingDir = "/var/lib/postgresql"` | `image.nix`, `mkSimpleOCI.nix`, `mkNixOCI.nix` |
+
+## Declared volumes
+
+OCI `Volumes` declares paths in the image that contain **persistent data**.
+This is image-level metadata — it tells the container runtime which paths
+should be treated as named volumes (surviving container restarts).
+
+This is **separate from** deploy-time `volumes` (host bind mounts like
+`"/data:/data"` passed to the runner service).
+
+```mermaid
+flowchart TD
+    subgraph nixos ["NixOS auto-derivation"]
+        State["StateDirectory<br/>→ /var/lib/&lt;dir&gt;"]
+        Runtime["RuntimeDirectory<br/>→ /run/&lt;dir&gt;"]
+        Cache["CacheDirectory<br/>→ /var/cache/&lt;dir&gt;"]
+        Logs["LogsDirectory<br/>→ /var/log/&lt;dir&gt;"]
+    end
+
+    subgraph explicit ["Explicit"]
+        User["declaredVolumes =<br/>[&quot;/data&quot; &quot;/var/lib/app&quot;]"]
+    end
+
+    OCI["OCI config.Volumes<br/>{ &quot;/var/lib/postgresql&quot;: {},<br/>&quot;/run/postgresql&quot;: {} }"]
+
+    State --> OCI
+    Runtime --> OCI
+    Cache --> OCI
+    Logs --> OCI
+    User --> OCI
+
+    style nixos fill:#1e1e2e,stroke:#f9e2ae,color:#cdd6f4
+    style explicit fill:#1e1e2e,stroke:#cdd6f4,color:#cdd6f4
+    style OCI fill:#1e1e2e,stroke:#89b4fa,color:#cdd6f4
+```
+
+### Auto-derivation from systemd directories
+
+The `extractServiceData` function reads the systemd service config and
+translates directory declarations into OCI volume paths:
+
+| systemd field | OCI Volume path |
+|---|---|
+| `StateDirectory = "postgresql"` | `/var/lib/postgresql` |
+| `RuntimeDirectory = "nginx"` | `/run/nginx` |
+| `CacheDirectory = "nginx"` | `/var/cache/nginx` |
+| `LogsDirectory = "nginx"` | `/var/log/nginx` |
+
+Explicit `declaredVolumes` are merged with auto-derived ones.
+
+### Declared volumes vs deploy volumes
+
+| | `declaredVolumes` | `volumes` |
+|---|---|---|
+| **What** | OCI metadata in image manifest | Host bind mounts at runtime |
+| **Where** | `config.Volumes` in image | `podman run -v` / `docker run -v` |
+| **Purpose** | Tells runtime "this path has persistent data" | Maps host paths into container |
+| **Auto-derived** | Yes (from systemd dirs) | No (user-specified) |
+| **File** | `_options/declared-volumes.nix` | `deploy/_containers/volumes.nix` |
+
+| Stage | Transformation | File |
+|---|---|---|
+| NixOS auto-derive | systemd dirs → path list | `entrypoint.nix` (`_output.declaredVolumes`) |
+| Explicit option | `declaredVolumes = ["/data"]` | `_options/declared-volumes.nix` |
+| OCI image | `config.Volumes = { "/var/lib/postgresql" = {}; }` | `image.nix`, `mkSimpleOCI.nix`, `mkNixOCI.nix` |

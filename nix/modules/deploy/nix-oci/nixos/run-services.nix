@@ -44,6 +44,9 @@
             // lib.optionalAttrs (container.volumes != [ ]) {
               volumes = container.volumes;
             }
+            // lib.optionalAttrs (container.securityOpts or [ ] != [ ]) {
+              extraOptions = container.securityOpts;
+            }
           ) autoStart;
         };
 

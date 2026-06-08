@@ -1,0 +1,32 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: USER
+      value: root
+fileExistenceTests:
+  - name: "nginx binary exists"
+    path: "/bin/nginx"
+    shouldExist: true
+    isExecutableBy: "any"
+  - name: "passwd file exists"
+    path: "/etc/passwd"
+    shouldExist: true
+commandTests:
+  # Verify the healthcheck tool (curl) is available in the image.
+  # The nginx service adapter injects curl via environment.systemPackages
+  # and references it in the OCI Healthcheck config.
+  - name: "curl is available (healthcheck tool)"
+    command: "curl"
+    args:
+      - "--version"
+    expectedOutput:
+      - "curl"
+  # Verify the healthcheck command would succeed against the health endpoint.
+  # We can't start nginx in CST, but we verify the binary is functional.
+  - name: "curl supports -f flag (fail on HTTP error)"
+    command: "curl"
+    args:
+      - "--help"
+      - "all"
+    expectedOutput:
+      - "fail"

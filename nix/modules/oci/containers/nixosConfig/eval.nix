@@ -118,9 +118,20 @@ in
                       user = containerUser;
                       isRoot = containerIsRoot;
                       mainService = nixosCfg.mainService or null;
-                      # dependencies and configFiles don't depend on eval — safe to pass
+                      # dependencies, configFiles, hardening don't depend on eval — safe to pass
                       dependencies = config.dependencies;
                       configFiles = config.configFiles;
+                      # Forward build-time hardening options (not runtime hints like
+                      # capabilities/readOnlyRootfs which are applied by deploy modules).
+                      hardening = {
+                        inherit (config.hardening)
+                          enable
+                          disableDns
+                          noTlsTrustStore
+                          seccomp
+                          landlock
+                          ;
+                      };
                     };
                   }
                 )

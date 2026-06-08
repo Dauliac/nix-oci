@@ -344,10 +344,48 @@
           inherit docs;
         };
 
-        # GitHub Actions workflow for Pages deployment
+        # GitHub Actions workflows
         githubActions = {
           enable = true;
 
+          # CI: run all checks on PRs and main pushes
+          workflows.ci = {
+            name = "CI";
+
+            on = {
+              pullRequest = { };
+              push.branches = [ "main" ];
+            };
+
+            concurrency = {
+              group = "ci-\${{ github.ref }}";
+              cancelInProgress = true;
+            };
+
+            jobs.check = {
+              runsOn = "ubuntu-latest";
+              steps = [
+                {
+                  name = "Checkout";
+                  uses = "actions/checkout@v4";
+                }
+                {
+                  name = "Install Nix";
+                  uses = "DeterminateSystems/nix-installer-action@main";
+                }
+                {
+                  name = "Cache Nix store";
+                  uses = "DeterminateSystems/magic-nix-cache-action@main";
+                }
+                {
+                  name = "Check flake";
+                  run = "nix flake check --print-build-logs";
+                }
+              ];
+            };
+          };
+
+          # Docs: build and deploy to GitHub Pages
           workflows.deploy-docs = {
             name = "Deploy Documentation";
 

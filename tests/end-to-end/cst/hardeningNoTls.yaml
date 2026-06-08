@@ -1,0 +1,20 @@
+schemaVersion: 2.0.0
+metadataTest:
+  labels:
+    - key: "io.github.dauliac.nix-oci.hardening.enabled"
+      value: "true"
+  envVars:
+    - key: USER
+      value: root
+fileExistenceTests:
+  - name: "ca-bundle.crt exists (but neutered)"
+    path: "/etc/ssl/certs/ca-bundle.crt"
+    shouldExist: true
+  - name: "busybox binary exists"
+    path: "/bin/busybox"
+    shouldExist: true
+fileContentTests:
+  - name: "ca-bundle.crt has removal marker"
+    path: "/etc/ssl/certs/ca-bundle.crt"
+    expectedContents:
+      - "TLS trust store removed by nix-oci hardening"

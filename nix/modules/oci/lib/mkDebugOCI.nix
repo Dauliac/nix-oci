@@ -144,44 +144,46 @@
           if optimized then
             # Optimized: share layers with production, append debug layer
             if installNix then
-              perSystemConfig.packages.nix2container.buildImage ({
-                tag = oci.tag + "-debug";
-                name = fullName;
-                copyToRoot = [
-                  nixAppPackages
-                  homeDir
-                  nixVarDirs
-                ];
-                perms = lib.optionals (oci.user != "root") [
-                  {
-                    path = nixVarDirs;
-                    regex = "/nix/var/nix/.*";
-                    mode = "0755";
-                    uid = 4000;
-                    gid = 4000;
-                  }
-                ];
-                layers = nixLayers;
-                config = {
-                  entrypoint = debugEntrypoint;
-                  User = oci.user;
-                  Env = [
-                    "PATH=/bin:${home}/.nix-profile/bin:/nix/var/nix/profiles/default/bin"
-                    "LANG=C.UTF-8"
-                    "LC_ALL=C.UTF-8"
-                    "NIX_PAGER=cat"
-                    "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
-                    "USER=${oci.user}"
-                    "HOME=${home}"
+              perSystemConfig.packages.nix2container.buildImage (
+                {
+                  tag = oci.tag + "-debug";
+                  name = fullName;
+                  copyToRoot = [
+                    nixAppPackages
+                    homeDir
+                    nixVarDirs
                   ];
+                  perms = lib.optionals (oci.user != "root") [
+                    {
+                      path = nixVarDirs;
+                      regex = "/nix/var/nix/.*";
+                      mode = "0755";
+                      uid = 4000;
+                      gid = 4000;
+                    }
+                  ];
+                  layers = nixLayers;
+                  config = {
+                    entrypoint = debugEntrypoint;
+                    User = oci.user;
+                    Env = [
+                      "PATH=/bin:${home}/.nix-profile/bin:/nix/var/nix/profiles/default/bin"
+                      "LANG=C.UTF-8"
+                      "LC_ALL=C.UTF-8"
+                      "NIX_PAGER=cat"
+                      "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
+                      "USER=${oci.user}"
+                      "HOME=${home}"
+                    ];
+                  }
+                  // lib.optionalAttrs (debugLabels != { }) {
+                    Labels = debugLabels;
+                  };
                 }
-                // lib.optionalAttrs (debugLabels != { }) {
-                  Labels = debugLabels;
-                };
-              }
-              // lib.optionalAttrs (layerStrategy == "fine-grained") {
-                maxLayers = 40;
-              })
+                // lib.optionalAttrs (layerStrategy == "fine-grained") {
+                  maxLayers = 40;
+                }
+              )
             else
               perSystemConfig.packages.nix2container.buildImage (
                 {

@@ -67,17 +67,29 @@ let
   # (e.g. for the flake.parts website documentation).
   optionModules = [
     ./_options/config-files.nix
+    ./_options/declared-volumes.nix
     ./_options/dependencies.nix
     ./_options/entrypoint.nix
     ./_options/environment.nix
+    ./_options/healthcheck.nix
     ./_options/is-root.nix
     ./_options/labels.nix
     ./_options/name.nix
     ./_options/optimize-layers.nix
     ./_options/package.nix
     ./_options/ports.nix
+    ./_options/stop-signal.nix
     ./_options/tag.nix
     ./_options/user.nix
+    ./_options/working-dir.nix
+    ./_options/hardening/enable.nix
+    ./_options/hardening/dns.nix
+    ./_options/hardening/tls.nix
+    ./_options/hardening/seccomp.nix
+    ./_options/hardening/landlock.nix
+    ./_options/hardening/capabilities.nix
+    ./_options/hardening/rootfs.nix
+    ./_options/hardening/privileges.nix
   ];
 
   mkPerContainerType = module: deferredModuleWith { staticModules = [ module ] ++ optionModules; };

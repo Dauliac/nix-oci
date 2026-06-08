@@ -4,3 +4,4 @@ result-*
 .ezci/
 .cimera/
 tests/.claude/
+flake-parts-website-preview/

@@ -1,0 +1,37 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: USER
+      value: root
+fileExistenceTests:
+  - name: "passwd file exists"
+    path: "/etc/passwd"
+    shouldExist: true
+  - name: "group file exists"
+    path: "/etc/group"
+    shouldExist: true
+  - name: "shadow file exists"
+    path: "/etc/shadow"
+    shouldExist: true
+  - name: "nsswitch.conf exists"
+    path: "/etc/nsswitch.conf"
+    shouldExist: true
+  - name: "SSL CA bundle exists"
+    path: "/etc/ssl/certs/ca-bundle.crt"
+    shouldExist: true
+commandTests:
+  # Verify the healthcheck tool (pg_isready) is available.
+  # pg_isready is part of the postgresql package — same binary used
+  # by the auto-derived OCI Healthcheck.
+  - name: "pg_isready is available (healthcheck tool)"
+    command: "pg_isready"
+    args:
+      - "--version"
+    expectedOutput:
+      - "pg_isready"
+  - name: "postgres binary is available"
+    command: "postgres"
+    args:
+      - "--version"
+    expectedOutput:
+      - "postgres"

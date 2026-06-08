@@ -77,6 +77,30 @@
               ];
             };
           };
+          hardeningDnsDisabled = {
+            test.containerStructureTest = {
+              enabled = true;
+              configs = [
+                ./hardeningDnsDisabled.yaml
+              ];
+            };
+          };
+          hardeningNoTls = {
+            test.containerStructureTest = {
+              enabled = true;
+              configs = [
+                ./hardeningNoTls.yaml
+              ];
+            };
+          };
+          hardeningFull = {
+            test.containerStructureTest = {
+              enabled = true;
+              configs = [
+                ./hardeningFull.yaml
+              ];
+            };
+          };
         };
       };
   };
