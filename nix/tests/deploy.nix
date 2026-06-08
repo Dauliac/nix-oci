@@ -92,7 +92,6 @@ in
 
               environment.systemPackages = with pkgs; [
                 curl
-                python3Minimal
                 (python3.withPackages (ps: [
                   ps.docker
                   ps.urllib3
