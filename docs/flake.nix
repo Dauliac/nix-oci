@@ -4,6 +4,9 @@
     github-actions-nix = {
       url = "github:synapdeck/github-actions-nix";
     };
+    ndg = {
+      url = "github:feel-co/ndg";
+    };
   };
   outputs = _: { };
 }
