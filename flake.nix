@@ -69,6 +69,8 @@
             imports = [
               # Load the full OCI module system (same as consumers would)
               (import ./nix/flake-module.nix inputs)
+              # Build examples (CST, dgoss, etc.)
+              ./nix/examples.nix
               # Treefmt formatter and check
               ./nix/treefmt.nix
               # Deploy integration test (NixOS + home-manager in one VM)

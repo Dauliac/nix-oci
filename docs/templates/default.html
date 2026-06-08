@@ -114,6 +114,17 @@
       });
     </script>
 
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: false, theme: "neutral" });
+      document.querySelectorAll("code.language-mermaid").forEach(function (el) {
+        var pre = el.parentElement;
+        pre.classList.add("mermaid");
+        pre.textContent = el.textContent;
+      });
+      mermaid.run();
+    </script>
+
     {{ custom_scripts|safe }}
   </body>
 </html>

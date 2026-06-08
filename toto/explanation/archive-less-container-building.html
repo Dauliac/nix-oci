@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Just-in-time container building</title>
+    <title>Archive-less container building</title>
     <meta name="description" content="How nix2container builds OCI images without intermediate archives, reducing store bloat and enabling streaming pushes" /> 
     
     <script>
@@ -88,7 +88,7 @@
 <li><a href="../examples/deploy-system-manager.html">Deploy: system-manager</a></li>
 </ul></details></li>
 <li class="sidebar-dir-group"><details open><summary><span class="sidebar-dir-label">Explanation</span><span class="sidebar-dir-count">2</span></summary><ul>
-<li><a href="../explanation/jit-container-building.html">Just-in-time container building</a></li>
+<li><a href="../explanation/archive-less-container-building.html">Archive-less container building</a></li>
 <li><a href="../explanation/optimize-layers.html">Optimized layer sharing</a></li>
 </ul></details></li>
 <li class="sidebar-dir-group"><details open><summary><span class="sidebar-dir-label">How-to</span><span class="sidebar-dir-count">4</span></summary><ul>
@@ -111,13 +111,14 @@
           </details>
         </nav>
 
-        <main class="content"><html><head></head><body><h1 id="just-in-time-container-building">Just-in-time container building</h1>
-<p>nix-oci relies on <a href="https://github.com/nlewo/nix2container">nix2container</a> to
-build OCI images using a fundamentally different approach than traditional
+        <main class="content"><html><head></head><body><h1 id="archive-less-container-building">Archive-less container building</h1>
+<p>nix-oci relies on <a href="https://github.com/nlewo/nix2container">nix2container</a> —
+a self-described <strong>"archive-less <code>dockerTools.buildImage</code> implementation"</strong> —
+to build OCI images using a fundamentally different approach than traditional
 tools: layers are never materialized as tar archives in the Nix store.
 Instead, they exist as <strong>JSON descriptions</strong> of store paths, and actual
-tarballs are generated <strong>just-in-time</strong> — only when loading into a runtime or
-pushing to a registry.</p>
+tarballs are only produced at the moment they are needed — when loading into
+a runtime or pushing to a registry.</p>
 <h2 id="the-problem-with-archive-based-builds">The problem with archive-based builds</h2>
 <p>Traditional container build tools — whether <code>docker build</code> with a Dockerfile
 or Nix's built-in <code>dockerTools.buildImage</code> — follow the same pattern:</p>
@@ -149,8 +150,8 @@ A built image in the Nix store is just a few kilobytes of JSON listing:</p>
 <li>OCI image configuration (entrypoint, env, labels, etc.).</li>
 </ul>
 <p>No tar archive is written during <code>nix build</code>. The image "recipe" is a
-pure Nix derivation that produces only JSON — this is what we mean by
-<strong>just-in-time</strong> (or archive-less) container building.</p>
+pure Nix derivation that produces only JSON — this is what <strong>archive-less</strong>
+container building means.</p>
 <h3 id="streaming-push-with-skopeo">Streaming push with Skopeo</h3>
 <p>nix2container ships a small Go library (~250 lines) that plugs into
 <a href="https://github.com/containers/skopeo">Skopeo</a> as a custom <code>nix:</code> transport.
@@ -225,19 +226,102 @@ stream layers into the local runtime without creating intermediate files.</p>
 </tbody>
 </table>
 <h3 id="outside-the-nix-ecosystem">Outside the Nix ecosystem</h3>
-<p>Other tools that pursue just-in-time or layer-streaming strategies:</p>
-<ul>
-<li><a href="https://ko.build/"><strong>ko</strong></a> — builds Go container images directly from
-source without a Dockerfile; layers are assembled on push.</li>
-<li><a href="https://github.com/GoogleContainerTools/jib"><strong>Jib</strong></a> — builds Java
-container images without Docker, computing layers from build artifacts and
-pushing them individually.</li>
-<li><a href="https://buildpacks.io/"><strong>Buildpacks</strong></a> — auto-detect application type and
-produce images with reusable base layers, though they still write archives
-locally.</li>
-<li><a href="https://nixery.dev/"><strong>Nixery</strong></a> — serves Nix-built images from a registry
-endpoint, computing layers on demand per HTTP request.</li>
-</ul>
+<p>Several other tools pursue Dockerfile-free or layer-streaming strategies,
+each targeting a specific language or workflow:</p>
+<h4 id="ko--go">ko (Go)</h4>
+<p><a href="https://ko.build/">ko</a> builds container images from Go source code without
+requiring Docker or a Dockerfile. It runs <code>go build</code> locally, places the
+binary on a minimal <a href="https://github.com/GoogleContainerTools/distroless">distroless</a>
+base image, and pushes layers directly to a registry. Multi-platform builds,
+automatic SBOM generation, and Kubernetes YAML templating are built in.
+Because ko understands Go's build model, it can separate the base image from
+the application binary and only re-push what changed.</p>
+<p>See <a href="https://snyk.io/blog/container-images-simplified-with-google-ko/">Container images simplified with ko (Snyk)</a>
+and <a href="https://cloud.google.com/blog/topics/developers-practitioners/ship-your-go-applications-faster-cloud-run-ko">Ship your Go applications faster to Cloud Run with ko (Google Cloud Blog)</a>.</p>
+<h4 id="jib--java">Jib (Java)</h4>
+<p><a href="https://github.com/GoogleContainerTools/jib">Jib</a> integrates with Maven and
+Gradle to build Java container images without a Docker daemon. It splits the
+application into three layers — dependencies, resources, and classes — so that
+a code-only change rebuilds and pushes just the thin classes layer. Layers are
+pushed in parallel directly to the registry, skipping the local <code>docker save</code>
+step entirely.</p>
+<p>See <a href="https://cloud.google.com/blog/products/application-development/introducing-jib-build-java-docker-images-better">Introducing Jib (Google Cloud Blog)</a>
+and <a href="https://cloud.google.com/blog/products/application-development/jib-1-0-0-is-ga-building-java-docker-images-has-never-been-easier">Jib 1.0.0 is GA (Google Cloud Blog)</a>.</p>
+<h4 id="cloud-native-buildpacks">Cloud Native Buildpacks</h4>
+<p><a href="https://buildpacks.io/">Cloud Native Buildpacks</a> auto-detect the application
+type and produce images with modular, reusable layers. Unlike Dockerfile
+builds — where a change in one layer invalidates all subsequent layers —
+each buildpack contributes an independent layer that is cached by its own
+inputs. When the OS base image is updated, existing application layers are
+<strong>rebased</strong> in milliseconds by swapping metadata, without triggering a full
+rebuild.</p>
+<p>See <a href="https://www.cncf.io/blog/2024/01/11/reduce-reuse-rebase-sustainable-containers-with-buildpacks/">Reduce, Reuse, Rebase: Sustainable Containers with Buildpacks (CNCF)</a>
+and <a href="https://medium.com/@michael.vittrup.larsen/dockerfiles-vs-cloud-native-buildpacks-8acf8149dea1">Dockerfiles vs. Cloud-native Buildpacks (Medium)</a>.</p>
+<h4 id="nixery">Nixery</h4>
+<p><a href="https://nixery.dev/">Nixery</a> takes the on-demand concept to its logical
+extreme: it is a container <strong>registry</strong> that builds images at pull time.
+A <code>docker pull nixery.dev/shell/git</code> request triggers Nix to assemble an
+image containing those packages, using a
+<a href="https://tazj.in/blog/nixery-layers">popularity-based layering algorithm</a>
+to maximize layer sharing across requests. Built layers are cached in a
+storage bucket so subsequent pulls of the same packages are instant.</p>
+<p>See <a href="https://tazj.in/blog/nixery-layers">Nixery — Improved Layering Design (tazjin's blog)</a>
+and <a href="https://blog.derlin.ch/nixery-one-docker-image-to-rule-them-all">One Docker image to rule them all (DERLIN)</a>.</p>
+<h4 id="comparison-summary">Comparison summary</h4>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Language</th>
+<th>Docker required</th>
+<th>Archive-less</th>
+<th>Incremental push</th>
+<th>Reproducible</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>nix2container</strong></td>
+<td>Any (Nix)</td>
+<td>No</td>
+<td>Yes (JSON only)</td>
+<td>Yes (digest check)</td>
+<td>Yes (bit-for-bit)</td>
+</tr>
+<tr>
+<td><strong>ko</strong></td>
+<td>Go</td>
+<td>No</td>
+<td>Partial (streamed)</td>
+<td>Yes</td>
+<td>Yes (with <code>-trimpath</code>)</td>
+</tr>
+<tr>
+<td><strong>Jib</strong></td>
+<td>Java</td>
+<td>No</td>
+<td>Yes (no local tar)</td>
+<td>Yes (parallel layers)</td>
+<td>Configurable</td>
+</tr>
+<tr>
+<td><strong>Buildpacks</strong></td>
+<td>Multi-lang</td>
+<td>Yes (or daemon)</td>
+<td>No</td>
+<td>Partial (rebase)</td>
+<td>Configurable</td>
+</tr>
+<tr>
+<td><strong>Nixery</strong></td>
+<td>Any (Nix)</td>
+<td>No (is a registry)</td>
+<td>Yes (on-demand)</td>
+<td>N/A (pull-based)</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
 <p>nix2container stands out by combining Nix's reproducibility guarantees with
 truly archive-less builds: the Nix store only ever contains JSON metadata,
 and the actual image bytes are generated at the moment they are needed.</p>
@@ -254,9 +338,24 @@ times, since unchanged layers are never re-uploaded.</li>
 image is bit-for-bit reproducible across machines.</li>
 </ul>
 <h2 id="further-reading">Further reading</h2>
+<h3 id="nix2container-and-nix">nix2container and Nix</h3>
 <ul>
 <li><a href="https://github.com/nlewo/nix2container">nix2container</a> — the backend powering nix-oci</li>
 <li><a href="https://lewo.abesis.fr/posts/nix-build-container-image/">Building container images with Nix</a> — foundational ideas behind the archive-less approach</li>
+<li><a href="https://blog.eigenvalue.net/2023-nix2container-everything-once/">Nix &amp; Docker: Layer explicitly without duplicate packages</a> — avoiding duplicate store paths in explicit layers</li>
+<li><a href="https://tazj.in/blog/nixery-layers">Nixery — Improved Layering Design</a> — popularity-based layering for on-demand registry images</li>
+<li><a href="https://tmp.bearblog.dev/minimal-containers-using-nix/">Minimal containers using Nix</a> — practical guide to small Nix-built containers</li>
+<li><a href="https://mitchellh.com/writing/nix-with-dockerfiles">Using Nix with Dockerfiles</a> — Mitchell Hashimoto on combining Nix and Docker</li>
+</ul>
+<h3 id="dockerfile-free-tools">Dockerfile-free tools</h3>
+<ul>
+<li><a href="https://cloud.google.com/blog/products/application-development/introducing-jib-build-java-docker-images-better">Introducing Jib (Google Cloud Blog)</a> — building Java images without Docker</li>
+<li><a href="https://snyk.io/blog/container-images-simplified-with-google-ko/">Container images simplified with ko (Snyk)</a> — building Go images without Docker</li>
+<li><a href="https://www.cncf.io/blog/2024/01/11/reduce-reuse-rebase-sustainable-containers-with-buildpacks/">Reduce, Reuse, Rebase: Sustainable Containers with Buildpacks (CNCF)</a> — reusable layers and rebasing</li>
+<li><a href="https://blog.ttulka.com/building-container-images-without-dockerfile/">Building Container Images without a Dockerfile</a> — overview of alternative approaches</li>
+</ul>
+<h3 id="nix-oci">nix-oci</h3>
+<ul>
 <li><a href="./optimize-layers.html">Optimized layer sharing</a> — how nix-oci uses popularity-based layering on top of nix2container</li>
 </ul>
 </body></html></main>
@@ -266,7 +365,7 @@ image is bit-for-bit reproducible across machines.</li>
         <nav class="page-toc-nav">
           <h3>On this page</h3>
           <ul class="page-toc-list">
-            <li><a href="#just-in-time-container-building">Just-in-time container building</a>
+            <li><a href="#archive-less-container-building">Archive-less container building</a>
 <ul><li><a href="#the-problem-with-archive-based-builds">The problem with archive-based builds</a>
 <li><a href="#how-nix2container-solves-it">How nix2container solves it</a>
 <ul><li><a href="#streaming-push-with-skopeo">Streaming push with Skopeo</a>
@@ -275,7 +374,10 @@ image is bit-for-bit reproducible across machines.</li>
 <ul><li><a href="#outside-the-nix-ecosystem">Outside the Nix ecosystem</a>
 </ul><li><a href="#why-it-matters-for-nix-oci">Why it matters for nix-oci</a>
 <li><a href="#further-reading">Further reading</a>
-</li></ul></li>
+<ul><li><a href="#nix2container-and-nix">nix2container and Nix</a>
+<li><a href="#dockerfile-free-tools">Dockerfile-free tools</a>
+<li><a href="#nix-oci">nix-oci</a>
+</li></ul></li></ul></li>
           </ul>
         </nav>
       </aside>

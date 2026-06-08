@@ -33,6 +33,7 @@
           let
             oci = perSystemConfig.containers.${containerId};
             optimized = oci.optimizeLayers or false;
+            layerStrategy = oci.layerStrategy or "fine-grained";
 
             entrypointWrapper = if oci.debug.entrypoint.enabled then oci.debug.entrypoint.wrapper else null;
 
@@ -98,6 +99,7 @@
             # Simple (non-Nix) path
             simpleLayers = ociLib.mkImageLayers {
               nix2container = perSystemConfig.packages.nix2container;
+              inherit layerStrategy;
               dependencies = deps;
               copyToRoot = simpleAppCopyToRoot;
               debug = debugDef;
@@ -111,6 +113,7 @@
             };
             nixLayers = ociLib.mkImageLayers {
               nix2container = perSystemConfig.packages.nix2container;
+              inherit layerStrategy;
               prependBuiltLayers = [ nixLayer ];
               prependLayerDefs = configFilesLayerDefs;
               dependencies = deps;
@@ -141,7 +144,7 @@
           if optimized then
             # Optimized: share layers with production, append debug layer
             if installNix then
-              perSystemConfig.packages.nix2container.buildImage {
+              perSystemConfig.packages.nix2container.buildImage ({
                 tag = oci.tag + "-debug";
                 name = fullName;
                 copyToRoot = [
@@ -159,7 +162,6 @@
                   }
                 ];
                 layers = nixLayers;
-                maxLayers = 40;
                 config = {
                   entrypoint = debugEntrypoint;
                   User = oci.user;
@@ -177,13 +179,15 @@
                   Labels = debugLabels;
                 };
               }
+              // lib.optionalAttrs (layerStrategy == "fine-grained") {
+                maxLayers = 40;
+              })
             else
               perSystemConfig.packages.nix2container.buildImage (
                 {
                   tag = oci.tag + "-debug";
                   name = fullName;
                   layers = simpleLayers;
-                  maxLayers = 40;
                   config = {
                     entrypoint =
                       if out.entrypoint != [ ] then
@@ -204,6 +208,9 @@
                 }
                 // lib.optionalAttrs (fromImage != null) {
                   inherit fromImage;
+                }
+                // lib.optionalAttrs (layerStrategy == "fine-grained") {
+                  maxLayers = 40;
                 }
               )
           else

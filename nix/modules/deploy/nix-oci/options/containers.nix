@@ -100,6 +100,7 @@ let
         {
           pkgs,
           dependencies,
+          layerStrategy ? "fine-grained",
         }:
         {
           copyToRoot = [
@@ -114,6 +115,8 @@ let
               ignoreCollisions = true;
             })
           ];
+        }
+        // lib.optionalAttrs (layerStrategy == "fine-grained") {
           maxLayers = 80;
         };
 
@@ -149,10 +152,14 @@ let
           nix2container,
           dependencies,
           rootPaths,
+          layerStrategy ? "fine-grained",
         }:
         let
           depsLayerDefs =
-            if dependencies != [ ] then [ (mkDepsLayerDef { inherit pkgs dependencies; }) ] else [ ];
+            if dependencies != [ ] then
+              [ (mkDepsLayerDef { inherit pkgs dependencies layerStrategy; }) ]
+            else
+              [ ];
           appLayerDefs = [ (mkAppLayerDef { copyToRoot = rootPaths; }) ];
         in
         foldImageLayers {

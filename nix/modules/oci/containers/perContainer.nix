@@ -62,7 +62,25 @@ let
       };
     };
 
-  mkPerContainerType = module: deferredModuleWith { staticModules = [ module ]; };
+  # All option-declaration-only modules in _options/.
+  # Including them as staticModules makes getSubOptions visible to nixosOptionsDoc
+  # (e.g. for the flake.parts website documentation).
+  optionModules = [
+    ./_options/config-files.nix
+    ./_options/dependencies.nix
+    ./_options/entrypoint.nix
+    ./_options/environment.nix
+    ./_options/is-root.nix
+    ./_options/labels.nix
+    ./_options/name.nix
+    ./_options/optimize-layers.nix
+    ./_options/package.nix
+    ./_options/ports.nix
+    ./_options/tag.nix
+    ./_options/user.nix
+  ];
+
+  mkPerContainerType = module: deferredModuleWith { staticModules = [ module ] ++ optionModules; };
 in
 {
   options.perSystem = flake-parts-lib.mkPerSystemOption (

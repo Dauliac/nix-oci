@@ -9,3 +9,4 @@ Understand the concepts and design decisions behind nix-oci.
 
 - [Archive-less container building](./archive-less-container-building.md) — How nix2container builds OCI images without intermediate archives, reducing store bloat and enabling streaming pushes
 - [Optimized Layer Sharing](./optimize-layers.md) — How store-path popularity-based layering shares layers between containers
+- [Container metadata wiring](./container-metadata-wiring.md) — How user options (ports, environment, user, entrypoint, labels) flow into OCI image config, systemd services, and firewall rules

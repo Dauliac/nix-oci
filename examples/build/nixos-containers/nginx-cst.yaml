@@ -6,6 +6,20 @@ metadataTest:
     - key: SSL_CERT_FILE
       value: /etc/ssl/certs/ca-bundle.crt
 fileExistenceTests:
+  # FHS directories
+  - name: "/tmp directory exists"
+    path: "/tmp"
+    shouldExist: true
+  - name: "/var/tmp directory exists"
+    path: "/var/tmp"
+    shouldExist: true
+  - name: "/bin directory exists"
+    path: "/bin"
+    shouldExist: true
+  - name: "/root home directory exists"
+    path: "/root"
+    shouldExist: true
+  # Shadow and identity files
   - name: "passwd file exists"
     path: "/etc/passwd"
     shouldExist: true
@@ -15,20 +29,31 @@ fileExistenceTests:
   - name: "shadow file exists"
     path: "/etc/shadow"
     shouldExist: true
+  - name: "gshadow file exists"
+    path: "/etc/gshadow"
+    shouldExist: true
+  # NSS and TLS
   - name: "nsswitch.conf exists"
     path: "/etc/nsswitch.conf"
     shouldExist: true
   - name: "SSL CA bundle exists"
     path: "/etc/ssl/certs/ca-bundle.crt"
     shouldExist: true
-  - name: "nginx binary exists"
+  # Main binary
+  - name: "nginx binary exists and is executable"
     path: "/bin/nginx"
     shouldExist: true
-  - name: "tmp directory exists"
-    path: "/tmp"
-    shouldExist: true
+    isExecutableBy: "any"
 fileContentTests:
   - name: "root user in passwd"
     path: "/etc/passwd"
     expectedContents:
       - "root:x:0:0"
+  - name: "root group in group file"
+    path: "/etc/group"
+    expectedContents:
+      - "root:x:0:"
+  - name: "root shadow entry is locked"
+    path: "/etc/shadow"
+    expectedContents:
+      - "root:!"

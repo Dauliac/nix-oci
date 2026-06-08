@@ -59,6 +59,7 @@ let
   };
 
   optimized = config.optimizeLayers;
+  layerStrategy = config.layerStrategy or "fine-grained";
 
   # When optimized, split into layers: shadow+configFiles as root,
   # dependencies as a separate layer, package as the top layer.
@@ -67,7 +68,7 @@ let
     shadowOnly ++ config.configFiles ++ lib.optional (config.package != null) config.package;
 
   layers = ociLib.mkImageLayers {
-    inherit pkgs nix2container;
+    inherit pkgs nix2container layerStrategy;
     inherit (config) dependencies;
     inherit rootPaths;
   };
@@ -87,6 +88,8 @@ in
         if optimized then
           {
             inherit layers;
+          }
+          // lib.optionalAttrs (layerStrategy == "fine-grained") {
             maxLayers = 40;
           }
         else

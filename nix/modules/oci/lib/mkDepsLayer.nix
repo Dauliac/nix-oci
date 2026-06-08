@@ -18,7 +18,10 @@
         type = lib.types.functionTo lib.types.attrs;
         description = "Build a layer definition for container dependencies (for use with foldImageLayers)";
         fn =
-          { dependencies }:
+          {
+            dependencies,
+            layerStrategy ? "fine-grained",
+          }:
           {
             copyToRoot = [
               (pkgs.buildEnv {
@@ -32,6 +35,8 @@
                 ignoreCollisions = true;
               })
             ];
+          }
+          // lib.optionalAttrs (layerStrategy == "fine-grained") {
             maxLayers = 80;
           };
       };

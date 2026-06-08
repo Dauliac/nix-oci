@@ -4,20 +4,62 @@ metadataTest:
     - key: USER
       value: redis
 fileExistenceTests:
-  - name: "redis-server binary exists"
-    path: "/bin/redis-server"
+  # FHS directories
+  - name: "/tmp directory exists"
+    path: "/tmp"
     shouldExist: true
-  - name: "passwd file exists"
-    path: "/etc/passwd"
+  - name: "/var/tmp directory exists"
+    path: "/var/tmp"
     shouldExist: true
-  - name: "SSL CA bundle exists"
-    path: "/etc/ssl/certs/ca-bundle.crt"
+  - name: "/bin directory exists"
+    path: "/bin"
     shouldExist: true
   - name: "home directory exists"
     path: "/home/redis"
     shouldExist: true
+  # Shadow and identity files
+  - name: "passwd file exists"
+    path: "/etc/passwd"
+    shouldExist: true
+  - name: "group file exists"
+    path: "/etc/group"
+    shouldExist: true
+  - name: "shadow file exists"
+    path: "/etc/shadow"
+    shouldExist: true
+  - name: "gshadow file exists"
+    path: "/etc/gshadow"
+    shouldExist: true
+  # NSS and TLS
+  - name: "nsswitch.conf exists"
+    path: "/etc/nsswitch.conf"
+    shouldExist: true
+  - name: "SSL CA bundle exists"
+    path: "/etc/ssl/certs/ca-bundle.crt"
+    shouldExist: true
+  # Main binary
+  - name: "redis-server binary exists and is executable"
+    path: "/bin/redis-server"
+    shouldExist: true
+    isExecutableBy: "any"
 fileContentTests:
-  - name: "non-root user in passwd"
+  - name: "redis user in passwd"
     path: "/etc/passwd"
     expectedContents:
       - "redis:x:4000:4000"
+  - name: "root user in passwd"
+    path: "/etc/passwd"
+    expectedContents:
+      - "root:x:0:0"
+  - name: "redis group in group file"
+    path: "/etc/group"
+    expectedContents:
+      - "redis:x:"
+  - name: "root group in group file"
+    path: "/etc/group"
+    expectedContents:
+      - "root:x:0:"
+  - name: "redis shadow entry is locked"
+    path: "/etc/shadow"
+    expectedContents:
+      - "redis:!"
