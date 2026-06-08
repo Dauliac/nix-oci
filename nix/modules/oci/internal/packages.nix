@@ -12,10 +12,7 @@ let
     types
     attrsets
     ;
-  archMap = {
-    "x86_64-linux" = "amd64";
-    "aarch64-linux" = "arm64";
-  };
+  archDefs = import ../../_lib/arch.nix;
 in
 {
   options = {
@@ -248,7 +245,7 @@ in
             readOnly = true;
             default =
               let
-                arch = archMap.${system} or null;
+                arch = if archDefs.archMap ? ${system} then archDefs.systemToOCIArch system else null;
               in
               if arch == null then
                 { }
@@ -293,7 +290,7 @@ in
                   ociLib.mkMergeMultiArchApp {
                     perSystemConfig = config.oci;
                     inherit containerId;
-                    systems = cfg.systems;
+                    systems = containerConfig.multiArch.systems;
                   }
                 )
               ))

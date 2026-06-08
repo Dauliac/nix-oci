@@ -8,6 +8,7 @@
 let
   inherit (lib) types;
   cfg = config;
+  archDefs = import ../../_lib/arch.nix;
 in
 {
   config.perSystem =
@@ -89,16 +90,12 @@ in
             }:
             let
               containerConfig = perSystemConfig.containers.${containerId};
-              archMap = {
-                "x86_64-linux" = "amd64";
-                "aarch64-linux" = "arm64";
-              };
               baseName =
                 if containerConfig.registry != null && containerConfig.registry != "" then
                   "${containerConfig.registry}/${containerConfig.name}"
                 else
                   containerConfig.name;
-              arches = builtins.map (sys: archMap.${sys}) systems;
+              arches = builtins.map (sys: archDefs.systemToOCIArch sys) systems;
               primaryTag = builtins.head (
                 lib.attrNames (lib.filterAttrs (_: tc: tc.primary) containerConfig.tagConfigs)
               );
