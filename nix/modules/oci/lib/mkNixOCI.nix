@@ -59,10 +59,12 @@
             # Root filesystem from NixOS eval — includes shadow files (with nixbld
             # users), etc files (nix.conf, nsswitch, certs), packages (nix, bash,
             # coreutils), dependencies, configFiles, home dir.
+            # rootFilesystem (buildEnv) already includes oci.package — adding it
+            # again would cause nix2container collisions when the package uses
+            # makeWrapper (symlink-vs-real-file conflict, e.g. PostgreSQL).
             appCopyToRoot = [
               out.rootFilesystem
             ]
-            ++ lib.optional (oci.package != null) oci.package
             ++ lib.optional (nixVarDirs != null) nixVarDirs;
 
             # hwcaps layers from the host arch's archConfigs entry

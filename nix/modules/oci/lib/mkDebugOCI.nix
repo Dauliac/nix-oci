@@ -81,11 +81,13 @@
             nixVarDirs = out.nixVarDirs or null;
             nixPerms = out.nixPerms or [ ];
 
-            # Root filesystem from NixOS eval — same for all builder types
+            # Root filesystem from NixOS eval — same for all builder types.
+            # rootFilesystem (buildEnv) already includes oci.package — adding it
+            # again would cause nix2container collisions when the package uses
+            # makeWrapper (symlink-vs-real-file conflict, e.g. PostgreSQL).
             appCopyToRoot = [
               out.rootFilesystem
             ]
-            ++ lib.optional (oci.package != null) oci.package
             ++ lib.optional (nixVarDirs != null) nixVarDirs;
 
             debugDef = {

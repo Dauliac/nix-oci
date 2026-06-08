@@ -7,6 +7,10 @@
 }:
 let
   cfg = config.oci.container;
+  # Effective names used for all lookups — adapters override these for
+  # multi-instance services (e.g. redis "redis" → "redis-default").
+  effectiveSystemdName =
+    if cfg.resolvedSystemdServiceName != null then cfg.resolvedSystemdServiceName else cfg.mainService;
 in
 {
   options.oci.container = {
@@ -18,7 +22,40 @@ in
     mainService = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
-      description = "NixOS service to extract entrypoint from.";
+      description = ''
+        Logical NixOS service name to extract entrypoint from.
+        For most services this matches the systemd unit name directly.
+        For multi-instance services (e.g. redis), the service adapter
+        resolves this to the actual systemd unit name automatically.
+      '';
+    };
+    resolvedSystemdServiceName = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = ''
+        Resolved systemd service name. Set by service adapters for
+        multi-instance services where the logical name differs from
+        the systemd unit name (e.g. "redis" → "redis-default").
+        When null, falls back to mainService.
+      '';
+    };
+    resolvedServicePackage = lib.mkOption {
+      type = lib.types.nullOr lib.types.package;
+      default = null;
+      description = ''
+        Resolved service package. Set by service adapters for services
+        where config.services.<name>.package doesn't exist at the top
+        level (e.g. redis package is under servers.<name>).
+      '';
+    };
+    resolvedServiceDataDir = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = ''
+        Resolved service data directory. Set by service adapters for
+        services where config.services.<name>.dataDir doesn't exist
+        at the top level.
+      '';
     };
     stopSignal = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
@@ -132,7 +169,10 @@ in
       internal = true;
       readOnly = true;
       default =
-        if cfg.mainService != null then config.oci.lib.extractServiceData cfg.mainService else null;
+        if effectiveSystemdName != null then
+          config.oci.lib.extractServiceData effectiveSystemdName
+        else
+          null;
     };
 
     servicePackage = lib.mkOption {
@@ -140,7 +180,12 @@ in
       internal = true;
       readOnly = true;
       default =
-        if cfg.mainService != null then config.services.${cfg.mainService}.package or null else null;
+        if cfg.resolvedServicePackage != null then
+          cfg.resolvedServicePackage
+        else if cfg.mainService != null then
+          config.services.${cfg.mainService}.package or null
+        else
+          null;
     };
 
     entrypoint = lib.mkOption {
@@ -180,7 +225,12 @@ in
           sd = cfg._output.serviceData;
           fromSystemd = if sd != null then sd.workingDirectory else null;
           fromService =
-            if cfg.mainService != null then config.services.${cfg.mainService}.dataDir or null else null;
+            if cfg.resolvedServiceDataDir != null then
+              cfg.resolvedServiceDataDir
+            else if cfg.mainService != null then
+              config.services.${cfg.mainService}.dataDir or null
+            else
+              null;
         in
         if cfg.workingDir != null then
           cfg.workingDir

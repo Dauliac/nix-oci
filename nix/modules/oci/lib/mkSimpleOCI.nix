@@ -55,7 +55,10 @@
               autoLabels = oci.autoLabels or true;
             };
 
-            appCopyToRoot = [ out.rootFilesystem ] ++ lib.optional (oci.package != null) oci.package;
+            # rootFilesystem (buildEnv) already includes oci.package — adding it
+            # again would cause nix2container collisions when the package uses
+            # makeWrapper (symlink-vs-real-file conflict, e.g. PostgreSQL).
+            appCopyToRoot = [ out.rootFilesystem ];
 
             # hwcaps layers from the host arch's archConfigs entry
             hostArch = pkgs.stdenv.hostPlatform.system;

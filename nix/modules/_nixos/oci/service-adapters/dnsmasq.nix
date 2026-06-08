@@ -19,7 +19,9 @@ let
   isDnsmasq = cfg.mainService == "dnsmasq";
   dnsmasqCfg = config.services.dnsmasq;
   port = toString (dnsmasqCfg.settings.port or 53);
-  listenAddr = dnsmasqCfg.settings.listen-address or "127.0.0.1";
+  rawAddr = dnsmasqCfg.settings.listen-address or "127.0.0.1";
+  # NixOS settings can produce a list or comma-separated string
+  listenAddr = if builtins.isList rawAddr then builtins.head rawAddr else rawAddr;
   # Use first address if multiple are configured
   addr = builtins.head (lib.splitString "," listenAddr);
 in
