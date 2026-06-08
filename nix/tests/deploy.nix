@@ -46,6 +46,7 @@ in
               ];
 
               virtualisation = {
+                cores = 4;
                 memorySize = 2048;
                 diskSize = 4096;
                 podman = {
@@ -53,6 +54,9 @@ in
                   dockerSocket.enable = true;
                 };
               };
+
+              documentation.enable = false;
+              environment.noXlibs = true;
 
               # --- Home-manager: testuser with rootless podman ---
               users.users.testuser = {
