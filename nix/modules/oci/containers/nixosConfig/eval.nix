@@ -50,8 +50,10 @@ in
             if containerIsRoot then "root"
             else builtins.substring 0 31 (lib.strings.toLower (
               let
+                # services.${mainService} may not exist for nested services
+                # (e.g. redis-default lives at services.redis.servers.default)
                 servicePkg =
-                  if mainService != null
+                  if mainService != null && evalResult.services ? ${mainService}
                   then evalResult.services.${mainService}.package or null
                   else null;
               in

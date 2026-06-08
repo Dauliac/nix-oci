@@ -22,10 +22,13 @@
           }:
           let
             oci = perSystemConfig.containers.${containerId};
+            # Force-evaluate nixosConfig assertions/warnings
+            _nixosChecks = oci.nixosConfig._checks or "";
             fullName =
               if oci.registry != null && oci.registry != "" then "${oci.registry}/${oci.name}" else oci.name;
             optimized = oci.optimizeLayers or false;
           in
+          assert _nixosChecks == "" || _nixosChecks != "";
           let
             # Application package + dependencies as a buildEnv.
             # Unlike mkSimpleOCI we do NOT use mkRoot here because mkRoot

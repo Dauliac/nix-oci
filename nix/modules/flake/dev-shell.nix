@@ -21,7 +21,7 @@ in
         devShells.default = mkIf cfg.oci.enableDevShell (
           pkgs.mkShell {
             # NOTE: transform config.packages attrset into list
-            packages = lib.attrValues config.oci.packages;
+            packages = lib.filter lib.isDerivation (lib.attrValues config.oci.packages);
             shellHook = ''
               ${config.packages.oci-updatePulledManifestsLocks}/bin/update-pulled-oci-manifests-locks
             '';

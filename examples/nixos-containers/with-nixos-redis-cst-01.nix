@@ -3,11 +3,15 @@
 # Demonstrates a Redis container built via NixOS modules.
 # Redis runs in foreground by default in NixOS (daemonize no),
 # so no service adapter is needed.
+#
+# Note: NixOS redis uses services.redis.servers.<name>, creating a
+# systemd service "redis-<name>". Since config.services.redis-default
+# doesn't exist as an attribute path, package must be set explicitly.
 { ... }:
 {
   config = {
     perSystem =
-      { ... }:
+      { pkgs, ... }:
       {
         config.oci.containers = {
           nixosRedisCst = {
@@ -27,6 +31,7 @@
                 )
               ];
             };
+            package = pkgs.redis;
             test.containerStructureTest = {
               enabled = true;
               configs = [

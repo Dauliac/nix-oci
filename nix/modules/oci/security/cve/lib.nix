@@ -163,10 +163,7 @@ in
               oci = perSystemConfig.internal.OCIs.${containerId};
               containerConfig = perSystemConfig.containers.${containerId}.cve.vulnix;
               whitelistFlag =
-                if containerConfig.whitelist.enabled then
-                  "--whitelist ${containerConfig.whitelist.path}"
-                else
-                  "";
+                if containerConfig.whitelist.enabled then "--whitelist ${containerConfig.whitelist.path}" else "";
             in
             pkgs.writeShellScriptBin "vulnix-${containerId}" ''
               set -o errexit

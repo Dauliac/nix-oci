@@ -42,6 +42,23 @@
       partitionedAttrs.devShells = "dev";
       partitionedAttrs.formatter = "dev";
 
+      # Doc-only outputs (isolated from consumers)
+      partitionedAttrs.legacyPackages = "docs";
+
+      partitions.docs = {
+        extraInputsFlake = ./docs;
+        module =
+          { inputs, ... }:
+          {
+            imports = [
+              inputs.github-actions-nix.flakeModules.default
+              ./nix/docs.nix
+              (import ./nix/flake-module.nix inputs)
+            ];
+            oci.enabled = true;
+          };
+      };
+
       partitions.dev = {
         extraInputsFlake = ./dev;
         module =
@@ -52,6 +69,8 @@
               (import ./nix/flake-module.nix inputs)
               # Treefmt formatter and check
               ./nix/treefmt.nix
+              # Integration tests (NixOS + home-manager module tests)
+              ./nix/tests/integration.nix
             ];
             oci.enabled = true;
             debug = true;

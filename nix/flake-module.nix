@@ -8,8 +8,9 @@ inputs: {
     (inputs.import-tree ./modules)
   ];
 
-  # Override the package defaults to use our bundled nix2container
+  # Override the package defaults to use our bundled dependencies
   config = {
+    _module.args.import-tree = inputs.import-tree;
     perSystem =
       { system, ... }:
       {

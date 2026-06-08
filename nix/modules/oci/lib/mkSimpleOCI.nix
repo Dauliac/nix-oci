@@ -23,6 +23,10 @@
           }:
           let
             oci = perSystemConfig.containers.${containerId};
+            # Force-evaluate nixosConfig assertions/warnings
+            _nixosChecks = oci.nixosConfig._checks or "";
+            nixosEval = oci.nixosConfig.eval;
+            out = nixosEval.oci.container._output;
             fullName =
               if oci.registry != null && oci.registry != "" then "${oci.registry}/${oci.name}" else oci.name;
             fromImage =
@@ -33,7 +37,6 @@
                   inherit perSystemConfig containerId globalConfig;
                 };
             optimized = oci.optimizeLayers or false;
-            rootDeps = if optimized then [ ] else oci.dependencies;
             depsLayers =
               if optimized && oci.dependencies != [ ] then
                 [
@@ -44,37 +47,21 @@
                 ]
               else
                 [ ];
-            home = if oci.user == "root" then "/root" else "/home/${oci.user}";
-            homeDir = pkgs.runCommand "home-dir" { } ''
-              mkdir -p $out${home}
-            '';
           in
+          assert _nixosChecks == "" || _nixosChecks != "";
           perSystemConfig.packages.nix2container.buildImage (
             {
               inherit (oci) tag;
               name = fullName;
-              copyToRoot = [
-                (ociLib.mkRoot {
-                  inherit (oci)
-                    package
-                    user
-                    ;
-                  dependencies = rootDeps;
-                })
-                homeDir
-                # Standard FHS temp directories
-                (pkgs.runCommand "fhs-dirs" { } "mkdir -p $out/tmp $out/var/tmp")
-              ]
-              ++ (oci.configFiles or [ ]);
+              # rootFilesystem has shadow, etc, home, deps, configFiles from NixOS eval.
+              # Package is added separately (can't pass to NixOS eval without cycle).
+              copyToRoot = [ out.rootFilesystem ] ++ lib.optional (oci.package != null) oci.package;
               config = {
-                inherit (oci) entrypoint;
+                # Use NixOS-generated entrypoint for service containers,
+                # fall back to flake-parts entrypoint for simple containers
+                entrypoint = if out.entrypoint != [ ] then out.entrypoint else oci.entrypoint;
                 User = oci.user;
-                Env = [
-                  "PATH=/bin"
-                  "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
-                  "USER=${oci.user}"
-                  "HOME=${home}"
-                ];
+                Env = out.envVars;
               }
               // lib.optionalAttrs (oci.labels != { }) {
                 Labels = oci.labels;
