@@ -70,8 +70,8 @@
   [ "$status" -eq 0 ]
 }
 
-@test "CST crossBuildKubectl" {
-  run nix run '.#oci-container-structure-test-crossBuildKubectl'
+@test "CST crossBuildCurl" {
+  run nix run '.#oci-container-structure-test-crossBuildCurl'
   [ "$status" -eq 0 ]
 }
 
@@ -128,8 +128,8 @@
   [ "$os" = "linux" ]
 }
 
-@test "Multi-arch crossBuildKubectl has amd64+arm64 manifest" {
-  run nix build '.#oci-multiarch-crossBuildKubectl' --no-link --print-out-paths
+@test "Multi-arch crossBuildCurl has amd64+arm64 manifest" {
+  run nix build '.#oci-multiarch-crossBuildCurl' --no-link --print-out-paths
   [ "$status" -eq 0 ]
   layout="$output"
   manifest=$(skopeo inspect --raw "oci:$layout:latest")
@@ -178,6 +178,16 @@
     layers=$(echo "$arch_manifest" | jq '.layers | length')
     [ "$layers" -ge 1 ]
   done
+}
+
+@test "CST devShell (home-manager + zsh + starship + neovim)" {
+  run nix run '.#oci-container-structure-test-devShell'
+  [ "$status" -eq 0 ]
+}
+
+@test "CST nixosPostgres" {
+  run nix run '.#oci-container-structure-test-nixosPostgres'
+  [ "$status" -eq 0 ]
 }
 
 @test "Nix default template works" {

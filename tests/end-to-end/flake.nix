@@ -4,6 +4,9 @@
   inputs = {
     get-flake.url = "github:ursi/get-flake";
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    home-manager = {
+      url = "github:nix-community/home-manager/release-25.11";
+    };
     devour-flake = {
       url = "github:srid/devour-flake";
       flake = false;

@@ -1,136 +1,181 @@
 +++
-title = "Container Modules API"
-description = "How nixosConfig.modules works for building containers from NixOS services"
+title = "Build containers from NixOS services"
+description = "How to turn NixOS service definitions into minimal OCI containers"
 +++
 
-# Container Modules API
+# How to build containers from NixOS services
 
-nix-oci lets you build OCI containers from NixOS service definitions using
-`nixosConfig.modules`. This is the "dendritic" pattern: you write standard
-NixOS configuration and nix-oci extracts what's needed for an OCI image.
+This guide shows you how to use `nixosConfig.modules` to build OCI containers
+directly from NixOS service definitions — no Dockerfile needed.
 
-## Basic Usage
+## 1. Set up your flake
+
+Start with a basic flake-parts flake with nix-oci:
 
 ```nix
-perSystem = { ... }: {
-  oci.containers.my-caddy = {
-    nixosConfig = {
-      enable = true;
-      mainService = "caddy";
-      modules = [
-        ({ pkgs, ... }: {
-          services.caddy = {
-            enable = true;
-            virtualHosts."localhost:8080".extraConfig = ''
-              respond "Hello from nix-oci!"
-            '';
-          };
-          environment.systemPackages = [ pkgs.curl ];
-        })
-      ];
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    flake-parts.url = "github:hercules-ci/flake-parts";
+    nix-oci.url = "github:Dauliac/nix-oci";
+  };
+
+  outputs = inputs:
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [ inputs.nix-oci.modules.flake.nix-oci ];
+      systems = [ "x86_64-linux" "aarch64-linux" ];
+      oci.enabled = true;
+
+      perSystem = { ... }: {
+        oci.containers = {
+          # containers go here
+        };
+      };
     };
-    isRoot = true;
-  };
-};
+}
 ```
 
-## How It Works
+## 2. Define a container from a NixOS service
 
-1. Your NixOS modules are evaluated in a minimal container context (`boot.isContainer = true`)
-2. The `mainService` option tells nix-oci which systemd service to extract the entrypoint from
-3. Users, groups, and shadow files are generated from `config.users.users`
-4. `/etc` files and environment variables are extracted from the NixOS eval
-5. Everything is assembled into a root filesystem and passed to `nix2container.buildImage`
-
-## `nixosConfig` Options
-
-| Option | Type | Description |
-|--------|------|-------------|
-| `enable` | `bool` | Enable NixOS module evaluation for this container |
-| `mainService` | `string` | NixOS service name to derive the entrypoint from |
-| `modules` | `list` | NixOS modules to evaluate inside the container |
-
-## Container-Level Options
-
-These are set alongside `nixosConfig`, not inside it:
-
-| Option | Type | Description |
-|--------|------|-------------|
-| `isRoot` | `bool` | Run as root (default: `false`) |
-| `dependencies` | `list of package` | Extra packages for the root filesystem |
-| `configFiles` | `list of package` | Additional `/etc` file derivations |
-
-## NixOS Service Compatibility
-
-nix-oci includes **service adapters** for common NixOS services that need
-special handling in containers:
-
-| Service | Adapter | What It Does |
-|---------|---------|-------------|
-| nginx | `nginx.nix` | Sets daemon mode off for foreground execution |
-| caddy | — | Works out of the box (runs in foreground by default) |
-| bind | `bind.nix` | Adjusts for container networking |
-| httpd | `httpd.nix` | Apache foreground mode |
-| postfix | `postfix.nix` | Mail server container adjustments |
-| vsftpd | `vsftpd.nix` | FTP server container adjustments |
-
-If a service doesn't have an adapter, it may still work — nix-oci extracts
-the `ExecStart` from the systemd unit and uses it as the entrypoint.
-
-## `package` vs `mainService`
-
-These are **mutually exclusive**:
-
-- Use `mainService` when your container runs a NixOS service (nginx, redis, caddy...)
-- Use `package` when your container runs a simple binary
+Pick any NixOS service (e.g. nginx) and wrap it in `nixosConfig.modules`:
 
 ```nix
-# Using mainService (NixOS service)
-oci.containers.web = {
+oci.containers.my-nginx = {
   nixosConfig = {
     enable = true;
-    mainService = "nginx";
-    modules = [({ ... }: { services.nginx.enable = true; })];
-  };
-};
-
-# Using package (simple binary)
-oci.containers.hello = {
-  package = pkgs.hello;
-};
-```
-
-## User Derivation
-
-When `isRoot = false` (default), nix-oci:
-
-1. Derives the username from the service package name (e.g., `nginx`, `redis`)
-2. Creates a non-root user with UID/GID 4000
-3. Generates `/etc/passwd`, `/etc/shadow`, `/etc/group`
-4. Creates the user's home directory
-
-When `isRoot = true`, the container runs as root with standard root entries.
-
-## Home Manager Inside Containers
-
-nix-oci supports `homeConfig` for adding Home Manager configuration inside
-a container's NixOS eval:
-
-```nix
-oci.containers.my-app = {
-  nixosConfig = {
-    enable = true;
-    mainService = "my-app";
-    modules = [ ... ];
-  };
-  homeConfig = {
-    enable = true;
-    homeManagerFlake = inputs.home-manager;
+    mainService = "nginx";  # which systemd service to use as entrypoint
     modules = [
-      ({ pkgs, ... }: {
-        home.packages = [ pkgs.ripgrep ];
+      ({ ... }: {
+        services.nginx = {
+          enable = true;
+          virtualHosts.localhost = {
+            locations."/".return = "200 'Hello from nix-oci!'";
+          };
+        };
       })
     ];
   };
 };
 ```
+
+That's it. nix-oci evaluates the NixOS modules, extracts the nginx binary
+as the entrypoint, creates a non-root `nginx` user, and builds a minimal image.
+
+## 3. Build and test
+
+```bash
+# Build the image
+nix build .#oci-my-nginx
+
+# Load it into Podman
+nix run .#oci-copyToPodman-my-nginx
+
+# Run it
+podman run --rm -p 8080:80 localhost/my-nginx:latest
+
+# Test
+curl http://localhost:8080
+```
+
+## 4. Add extra packages to the container
+
+Use `environment.systemPackages` inside the NixOS module, or `dependencies`
+at the container level:
+
+```nix
+oci.containers.my-nginx = {
+  # Container-level: always available in the image
+  dependencies = [ pkgs.curl ];
+
+  nixosConfig = {
+    enable = true;
+    mainService = "nginx";
+    modules = [
+      ({ pkgs, ... }: {
+        services.nginx.enable = true;
+        # NixOS-level: also available in the image
+        environment.systemPackages = [ pkgs.htop ];
+      })
+    ];
+  };
+};
+```
+
+## 5. Run as root or non-root
+
+By default, containers run as a non-root user derived from the service name.
+To run as root (required for some services like caddy that bind to port 80):
+
+```nix
+oci.containers.my-caddy = {
+  isRoot = true;  # set at container level
+  nixosConfig = {
+    enable = true;
+    mainService = "caddy";
+    modules = [({ ... }: {
+      services.caddy = {
+        enable = true;
+        virtualHosts."localhost:8080".extraConfig = ''
+          respond "Hello!"
+        '';
+      };
+    })];
+  };
+};
+```
+
+## 6. Add container structure tests
+
+Validate your container image with CST:
+
+```nix
+oci.containers.my-nginx = {
+  nixosConfig = { /* ... */ };
+  test.containerStructureTest = {
+    enabled = true;
+    configs = [ ./my-nginx-cst.yaml ];
+  };
+};
+```
+
+Create `my-nginx-cst.yaml`:
+
+```yaml
+schemaVersion: "2.0.0"
+commandTests:
+  - name: "nginx is present"
+    command: "nginx"
+    args: ["-v"]
+    expectedOutput: ["nginx"]
+```
+
+Run the test:
+
+```bash
+nix run .#oci-container-structure-test-my-nginx
+```
+
+## 7. Push to a registry
+
+```nix
+oci.containers.my-nginx = {
+  registry = "ghcr.io/myorg";
+  tag = "v1.0";
+  push = true;
+  # ...
+};
+```
+
+```bash
+# Push the image
+nix run .#oci-push-my-nginx-v1.0
+```
+
+## What NixOS services work?
+
+Any NixOS service that defines a systemd unit with `ExecStart`. nix-oci
+extracts the start command and uses it as the container entrypoint.
+See [NixOS options search](https://search.nixos.org/options?query=services.)
+for all available services.
+
+For full option details, see [nix-oci container module options](../reference/nix-oci-container-module-options.html).

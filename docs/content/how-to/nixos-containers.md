@@ -1,49 +1,156 @@
 +++
-title = "NixOS Container Modules"
-description = "Dendritic NixOS modules for container configuration"
+title = "Build and run with flake-parts"
+description = "How to build OCI images and run common tasks using the flake-parts module"
 +++
 
-# NixOS Container Modules
+# How to build and run with flake-parts
 
-nix-oci evaluates NixOS modules inside a minimal container context to
-derive users, entrypoints, environment variables, and root filesystems.
+This guide covers the day-to-day commands for building images, running
+security scans, and managing containers with the flake-parts module.
 
-This is the "dendritic" module pattern: you write standard NixOS configuration
-and nix-oci extracts the parts needed for an OCI image.
+## Build an image
 
-## Usage
+```bash
+# Build a specific container image
+nix build .#oci-<container-name>
+
+# Example
+nix build .#oci-hello
+```
+
+The output is a nix2container image in the Nix store (not a tarball).
+
+## Load into a container runtime
+
+```bash
+# Load into Podman
+nix run .#oci-copyToPodman-<name>
+
+# Load into Docker
+nix run .#oci-copyToDockerDaemon-<name>
+
+# Then run it
+podman run --rm localhost/<name>:latest
+```
+
+## Push to a registry
+
+Set `registry` and `push = true` on your container, then:
+
+```bash
+# Push a specific tag
+nix run .#oci-push-<name>-<tag>
+
+# Push all tags for a container
+nix run .#oci-pushAllTags-<name>
+```
+
+## Run security scans
+
+### CVE scanning
+
+```bash
+# Trivy
+nix run .#oci-cve-trivy-<name>
+
+# Grype
+nix run .#oci-cve-grype-<name>
+
+# Vulnix
+nix run .#oci-cve-vulnix-<name>
+```
+
+Enable in your container config:
 
 ```nix
-oci.containers.caddy = {
-  nixosConfig.modules = [
-    ({ pkgs, ... }: {
-      services.caddy.enable = true;
-      oci.container = {
-        mainService = "caddy";
-        dependencies = [ pkgs.cacert ];
-      };
-    })
-  ];
+oci.cve.trivy.enabled = true;
+# or
+oci.cve.grype.enabled = true;
+```
+
+### SBOM generation
+
+```bash
+nix run .#oci-sbom-syft-<name>
+```
+
+### Credentials leak detection
+
+```bash
+nix run .#oci-credentials-leak-<name>
+```
+
+## Run tests
+
+### Container Structure Tests
+
+```bash
+nix run .#oci-container-structure-test-<name>
+```
+
+### Dive (layer analysis)
+
+```bash
+nix run .#oci-dive-<name>
+```
+
+### dgoss
+
+```bash
+nix run .#oci-dgoss-<name>
+```
+
+## Build a debug image
+
+Enable debug mode to get a variant with extra tools (bash, curl, coreutils)
+and an infinite sleep entrypoint for troubleshooting:
+
+```nix
+oci.debug.enabled = true;
+```
+
+```bash
+# Build the debug variant
+nix build .#oci-debug-<name>
+
+# Load and shell into it
+nix run .#oci-copyToPodman-debug-<name>
+podman run --rm -it localhost/<name>-debug:latest bash
+```
+
+## Build multi-arch images
+
+Enable cross-compilation to build images for multiple architectures:
+
+```nix
+oci.containers.my-app = {
+  package = pkgs.hello;
+  multiArch = {
+    enabled = true;
+    systems = [ "x86_64-linux" "aarch64-linux" ];
+  };
 };
 ```
 
-## Container Options
+```bash
+# Build the multi-arch manifest
+nix build .#oci-multiarch-crossBuild
+```
 
-These options are available inside `nixosConfig.modules` under `oci.container.*`:
+## Update pulled image manifest locks
 
-- `user` — Container user name (default: `"root"`)
-- `isRoot` — Whether the container runs as root (default: `false`)
-- `uid` / `gid` — UID/GID for non-root user (default: `4000`)
-- `package` — Main package for the container (mutually exclusive with `mainService`)
-- `mainService` — NixOS service to extract entrypoint from
-- `entrypoint` — Container entrypoint (auto-derived from `mainService`)
-- `dependencies` — Additional packages to include
-- `configFiles` — Additional config file derivations
+If you use `fromImage` to base your containers on upstream images:
 
-## How It Works
+```bash
+nix run .#oci-updatePulledManifestsLocks
+```
 
-1. Your NixOS modules are evaluated in a minimal container context (`boot.isContainer = true`)
-2. Users, groups, and shadow files are generated from `config.users.users`
-3. `/etc` files and environment variables are extracted
-4. The entrypoint is derived from the systemd service unit
-5. Everything is assembled into a root filesystem layer
+## Run all checks
+
+```bash
+nix flake check
+```
+
+This runs all enabled tests (CST, dive, dgoss) as Nix checks.
+
+For full option details, see [flake.parts options](../reference/flake-parts-options.html).

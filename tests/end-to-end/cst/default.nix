@@ -53,11 +53,27 @@
               ];
             };
           };
-          crossBuildKubectl = {
+          crossBuildCurl = {
             test.containerStructureTest = {
               enabled = true;
               configs = [
-                ./crossBuildKubectl.yaml
+                ./crossBuildCurl.yaml
+              ];
+            };
+          };
+          devShell = {
+            test.containerStructureTest = {
+              enabled = true;
+              configs = [
+                ./devShell.yaml
+              ];
+            };
+          };
+          nixosPostgres = {
+            test.containerStructureTest = {
+              enabled = true;
+              configs = [
+                ./nixosPostgres.yaml
               ];
             };
           };

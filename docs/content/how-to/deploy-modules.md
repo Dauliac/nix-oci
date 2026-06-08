@@ -1,57 +1,135 @@
 +++
-title = "Deploy Modules"
-description = "NixOS and Home Manager modules for loading OCI images"
+title = "Deploy containers on NixOS"
+description = "How to deploy and run OCI containers on a NixOS system using nix-oci"
 +++
 
-# Deploy Modules
+# How to deploy containers on NixOS
 
-nix-oci provides NixOS and Home Manager modules that load built OCI images
-into your container runtime (Docker or Podman) via systemd services.
+This guide walks you through setting up a NixOS system that builds, loads,
+and runs OCI containers using nix-oci.
 
-## Usage (NixOS)
+## 1. Add nix-oci to your flake
+
+In your system flake (`flake.nix`), add nix-oci as an input:
 
 ```nix
-# In your NixOS configuration
-{ inputs, ... }:
 {
-  imports = [ inputs.nix-oci.modules.nixos.nix-oci ];
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nix-oci.url = "github:Dauliac/nix-oci";
+  };
 
-  services.nix-oci = {
-    enable = true;
-    backend = "podman"; # or "docker"
-    containers.myapp = {
-      image = self.packages.x86_64-linux.oci-myapp;
-      autoStart = true;
+  outputs = { nixpkgs, nix-oci, ... }: {
+    nixosConfigurations.my-server = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      specialArgs = { inherit nix-oci; };
+      modules = [
+        ./configuration.nix
+      ];
     };
   };
 }
 ```
 
-## Usage (Home Manager)
+## 2. Import the nix-oci NixOS module
+
+In your `configuration.nix`, import the module and define containers:
 
 ```nix
-# In your Home Manager configuration
-{ inputs, ... }:
+{ nix-oci, pkgs, ... }:
 {
-  imports = [ inputs.nix-oci.modules.homeManager.nix-oci ];
+  imports = [ nix-oci.modules.nixos.nix-oci ];
 
-  services.nix-oci = {
+  oci = {
     enable = true;
-    backend = "podman";
-    containers.myapp = {
-      image = self.packages.x86_64-linux.oci-myapp;
+    backend = "podman";  # or "docker"
+
+    containers.my-webserver = {
+      package = pkgs.python3Minimal;
+      dependencies = [ pkgs.bashInteractive pkgs.coreutils ];
+      entrypoint = [
+        "${pkgs.writeShellScript "serve" ''
+          mkdir -p /tmp/www
+          echo "Hello from nix-oci" > /tmp/www/index.html
+          cd /tmp/www
+          exec python3 -m http.server 8080
+        ''}"
+      ];
       autoStart = true;
+      ports = [ "8080:8080" ];
     };
   };
 }
 ```
 
-## How It Works
+## 3. Build and deploy
 
-For each container, a `nix-oci-load-<name>.service` oneshot unit is created.
-It uses nix2container's built-in `copyToPodman` or `copyToDockerDaemon`
-passthru scripts to load the image from the Nix store into the runtime.
+```bash
+# Build the NixOS system (includes the container)
+sudo nixos-rebuild switch --flake .#my-server
+```
 
-When `autoStart` is true, an OCI container entry is also created
-(`virtualisation.oci-containers` on NixOS, `services.podman` on Home Manager)
-with the load service wired as a dependency.
+nix-oci creates two systemd services:
+
+- `oci-load-my-webserver.service` — loads the image from the Nix store into Podman
+- `podman-my-webserver.service` — runs the container (only when `autoStart = true`)
+
+## 4. Verify
+
+```bash
+# Check the services
+systemctl status oci-load-my-webserver
+systemctl status podman-my-webserver
+
+# Check the container is running
+podman ps
+
+# Test the service
+curl http://localhost:8080
+```
+
+## 5. Use multiple containers
+
+You can define as many containers as you need:
+
+```nix
+oci = {
+  enable = true;
+  backend = "podman";
+
+  containers.frontend = {
+    package = pkgs.nginx;
+    autoStart = true;
+    ports = [ "80:80" ];
+  };
+
+  containers.api = {
+    package = pkgs.my-api;
+    autoStart = true;
+    ports = [ "3000:3000" ];
+    environment = {
+      DATABASE_URL = "postgresql://localhost/mydb";
+    };
+  };
+};
+```
+
+## Using Docker instead of Podman
+
+Change the backend:
+
+```nix
+oci = {
+  enable = true;
+  backend = "docker";
+  # ...
+};
+```
+
+Make sure Docker is enabled on the system:
+
+```nix
+virtualisation.docker.enable = true;
+```
+
+For full option reference, see [NixOS module options](../reference/nixos-options.html).
