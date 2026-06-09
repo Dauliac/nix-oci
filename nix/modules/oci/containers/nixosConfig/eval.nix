@@ -115,6 +115,7 @@ in
                   {
                     nixpkgs.hostPlatform = lib.mkDefault pkgs.system;
                     oci.container = {
+                      package = config.package;
                       user = containerUser;
                       isRoot = containerIsRoot;
                       mainService = nixosCfg.mainService or null;

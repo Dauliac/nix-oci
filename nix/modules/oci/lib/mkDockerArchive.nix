@@ -18,13 +18,31 @@
           }:
           pkgs.runCommandLocal "docker-archive"
             {
-              buildInputs = [ skopeo ];
+              buildInputs = [
+                skopeo
+                pkgs.gnutar
+              ];
               meta.description = "Docker archive from OCI image.";
             }
             ''
               set -e
               skopeo --tmpdir $TMP --insecure-policy copy nix:${oci} docker-archive:archive.tar
-              mv archive.tar $out
+
+              # nix2container produces layer tars with absolute paths (/etc/passwd)
+              # but the Docker archive spec expects relative paths (etc/passwd).
+              # Tools like Dockle fail to inspect files when paths are absolute.
+              # Rewrite paths in-place with --transform to preserve all file
+              # attributes (uid/gid, permissions, xattrs, hardlinks, device nodes).
+              mkdir -p repack
+              cd repack
+              tar xf ../archive.tar
+
+              for layer in *.tar *.tar.gz */layer.tar; do
+                [ -f "$layer" ] || continue
+                ${pkgs.python3}/bin/python3 ${./stripAbsolutePaths.py} "$layer"
+              done
+
+              tar cf $out .
             '';
       };
     };

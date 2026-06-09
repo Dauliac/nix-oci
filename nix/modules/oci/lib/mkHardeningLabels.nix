@@ -34,6 +34,62 @@ in
           NOTE: Prefer mkAutoLabels for new code.
         '';
         fn = pure.mkHardeningLabels;
+        tests = {
+          "generates labels when hardening enabled" = {
+            args = {
+              hardening = {
+                enable = true;
+                noNewPrivileges = true;
+                readOnlyRootfs = true;
+                capabilities = {
+                  drop = [ "ALL" ];
+                  add = [ ];
+                };
+                seccomp = {
+                  enable = true;
+                  profile = "strict";
+                };
+                landlock.enable = false;
+              };
+            };
+            assertions = [
+              {
+                name = "has enabled label";
+                check =
+                  result:
+                  result."io.github.dauliac.nix-oci.hardening.enabled" == "true";
+              }
+              {
+                name = "has seccomp profile label";
+                check =
+                  result:
+                  result."io.github.dauliac.nix-oci.hardening.seccomp-profile" == "strict";
+              }
+              {
+                name = "has capabilities-drop label";
+                check =
+                  result:
+                  result."io.github.dauliac.nix-oci.hardening.capabilities-drop" == "ALL";
+              }
+            ];
+          };
+          "returns empty attrs when disabled" = {
+            args = {
+              hardening = {
+                enable = false;
+                noNewPrivileges = true;
+                readOnlyRootfs = true;
+                capabilities = {
+                  drop = [ "ALL" ];
+                  add = [ ];
+                };
+                seccomp.enable = false;
+                landlock.enable = false;
+              };
+            };
+            expected = { };
+          };
+        };
       };
     };
 }

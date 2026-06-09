@@ -18,5 +18,28 @@ in
         lib.strings.toLower fromImage.imageName
       else
         throw "Error: No valid source for name (name, package.meta.mainProgram, or fromImage.imageName) found.";
+    tests = {
+      "derives name from package mainProgram" = {
+        args = {
+          package = {
+            meta.mainProgram = "MyApp";
+            pname = "myapp";
+            name = "myapp-1.0";
+          };
+          fromImage.enabled = false;
+        };
+        expected = "myapp";
+      };
+      "derives name from fromImage" = {
+        args = {
+          package = null;
+          fromImage = {
+            enabled = true;
+            imageName = "library/Alpine";
+          };
+        };
+        expected = "library/alpine";
+      };
+    };
   };
 }

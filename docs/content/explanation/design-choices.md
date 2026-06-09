@@ -17,6 +17,7 @@ Each topic has its own detailed page:
 - [Automatic OCI labels](./automatic-labeling.md) -- OCI standard annotations, build metadata, hardening hints, Kubernetes SecurityContext/PSS, network ports, Nix identity, nixpkgs security
 - [Automatic metadata derivation](./automatic-metadata.md) -- healthchecks, stop signals, working directories, volume declarations from NixOS services
 - [Multi-architecture images](./multi-arch-images.md) -- CI-parallel native builds or single-machine cross-compilation for multi-arch OCI manifests
+- [OCI standards compliance](./oci-standards-compliance.md) -- layer changesets, media types, file attributes, image configuration, and how nix-oci aligns with the OCI image specification
 
 The rest of this page covers the remaining design choices that don't
 warrant a full page.

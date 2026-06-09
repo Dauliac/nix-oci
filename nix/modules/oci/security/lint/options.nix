@@ -37,7 +37,11 @@ in
                   ignore = mkOption {
                     type = types.listOf types.str;
                     description = "List of Dockle checkpoint IDs to ignore (e.g. `CIS-DI-0001`).";
-                    default = [ ];
+                    default = [
+                      # Docker Content Trust is irrelevant for nix2container
+                      # images since they are built locally from the Nix store.
+                      "CIS-DI-0005"
+                    ];
                     example = [
                       "CIS-DI-0001"
                       "DKL-DI-0006"
