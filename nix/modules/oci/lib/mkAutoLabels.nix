@@ -42,6 +42,48 @@ in
           Callers merge: `mkAutoLabels args // userLabels` (user wins).
         '';
         fn = pure.mkAutoLabels;
+        tests = {
+          "generates OCI annotations" = {
+            args = {
+              name = "my-app";
+              tag = "1.0.0";
+              package = {
+                pname = "my-app";
+                version = "1.0.0";
+                name = "my-app-1.0.0";
+                meta = {
+                  mainProgram = "my-app";
+                  description = "Test app";
+                  license = { spdxId = "MIT"; };
+                };
+              };
+              isRoot = false;
+              system = "x86_64-linux";
+            };
+            assertions = [
+              {
+                name = "has OCI title";
+                check = result: result."org.opencontainers.image.title" == "my-app";
+              }
+              {
+                name = "has OCI version";
+                check = result: result."org.opencontainers.image.version" == "1.0.0";
+              }
+              {
+                name = "has nix pname";
+                check = result: result."io.github.dauliac.nix-oci.nix.pname" == "my-app";
+              }
+            ];
+          };
+          "returns empty when autoLabels disabled" = {
+            args = {
+              name = "x";
+              tag = "latest";
+              autoLabels = false;
+            };
+            expected = { };
+          };
+        };
       };
     };
 }

@@ -49,7 +49,8 @@ in
           // config.oci.internal.prefixedLintDockleApps
           // config.oci.internal.prefixedComplianceTrivyApps
           // config.oci.internal.prefixedPushTmpOCIApps
-          // config.oci.internal.prefixedMergeMultiArchApps;
+          // config.oci.internal.prefixedMergeMultiArchApps
+          // config.oci.internal.prefixedSandboxApps;
       };
     }
   );

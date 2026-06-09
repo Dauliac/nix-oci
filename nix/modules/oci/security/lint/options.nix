@@ -32,7 +32,7 @@ in
                       "fatal"
                     ];
                     description = "Minimum severity level that causes a non-zero exit code.";
-                    default = "warn";
+                    default = "info";
                   };
                   ignore = mkOption {
                     type = types.listOf types.str;
@@ -41,6 +41,10 @@ in
                       # Docker Content Trust is irrelevant for nix2container
                       # images since they are built locally from the Nix store.
                       "CIS-DI-0005"
+                      # HEALTHCHECK instruction check is irrelevant since
+                      # there is no Dockerfile. Healthchecks are set via
+                      # the image config by nix-oci service adapters.
+                      "CIS-DI-0006"
                     ];
                     example = [
                       "CIS-DI-0001"

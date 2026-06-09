@@ -115,6 +115,69 @@ let
         ignoreCollisions = true;
       };
 
+    # -- Sandbox --
+
+    mkSandboxScript =
+      {
+        name,
+        rootFilesystem,
+        entrypoint ? [ ],
+        environment ? { },
+        user ? "root",
+        isRoot ? true,
+        workingDir ? null,
+        pkgs,
+      }:
+      let
+        # Include coreutils and bash in PATH for interactive exploration.
+        # Container's /bin takes precedence (listed first).
+        sandboxPath = "/bin:${pkgs.coreutils}/bin:${pkgs.bashInteractive}/bin";
+
+        envFlags = lib.concatStringsSep " \\\n    " (
+          [ "--setenv PATH ${lib.escapeShellArg sandboxPath}" ]
+          ++ lib.mapAttrsToList (
+            k: v: "--setenv ${lib.escapeShellArg k} ${lib.escapeShellArg v}"
+          ) environment
+        );
+
+        userFlags =
+          if isRoot then "--uid 0 --gid 0" else "--unshare-user --uid 4000 --gid 4000";
+
+        workDirFlag = lib.optionalString (workingDir != null) "--chdir ${lib.escapeShellArg workingDir}";
+
+        shellCmd = "${pkgs.bashInteractive}/bin/bash";
+      in
+      pkgs.writeShellScriptBin "oci-sandbox-${name}" ''
+        set -euo pipefail
+        root="${rootFilesystem}"
+
+        if [ $# -gt 0 ]; then
+          cmd=("$@")
+        else
+          cmd=("${shellCmd}")
+        fi
+
+        exec ${pkgs.bubblewrap}/bin/bwrap \
+          --ro-bind /nix/store /nix/store \
+          --ro-bind "$root/bin" /bin \
+          --ro-bind "$root/lib" /lib \
+          --ro-bind "$root/etc" /etc \
+          --bind-try "$root/home" /home \
+          --bind-try "$root/root" /root \
+          --bind-try "$root/var" /var \
+          --tmpfs /tmp \
+          --proc /proc \
+          --dev /dev \
+          --unshare-pid \
+          --die-with-parent \
+          --clearenv \
+          ${envFlags} \
+          --setenv TERM "''${TERM:-xterm}" \
+          ${userFlags} \
+          ${workDirFlag} \
+          "''${cmd[@]}"
+      '';
+
     # -- Hardening --
 
     mkHardenedConfigs =

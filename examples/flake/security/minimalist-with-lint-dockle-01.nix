@@ -14,13 +14,7 @@
         config.oci.containers = {
           minimalistWithLintDockle = {
             package = pkgs.hello;
-            lint.dockle = {
-              enabled = true;
-              ignore = [
-                # Nix-built images don't use HEALTHCHECK in Dockerfile
-                "CIS-DI-0006"
-              ];
-            };
+            lint.dockle.enabled = true;
           };
         };
       };

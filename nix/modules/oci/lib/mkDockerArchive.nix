@@ -36,6 +36,7 @@
               mkdir -p repack
               cd repack
               tar xf ../archive.tar
+              chmod -R u+w .
 
               for layer in *.tar *.tar.gz */layer.tar; do
                 [ -f "$layer" ] || continue

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ title }}</title>
+    {{ meta_tags_html | safe }} {{ opengraph_html | safe }}
+    {{ favicon_links | safe }}
+    <script>
+      document.documentElement.classList.remove("no-js");
+      document.documentElement.classList.add("js");
+      // Apply sidebar state immediately to prevent flash
+      (function () {
+        try {
+          if (localStorage.getItem("sidebar-collapsed") === "true") {
+            document.documentElement.classList.add("sidebar-collapsed");
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="stylesheet" href="{{ stylesheet_path }}" />
+    <style>
+      @font-face {
+        font-family: "Frames Part One";
+        src: url("{{ root_prefix }}assets/FramesPartOne-Bold.woff2") format("woff2");
+        font-weight: 700;
+        font-display: swap;
+      }
+      :root { --header-bg: #f5c000; }
+      header { color: #000; }
+      header a, .site-title a { color: #000 !important; }
+      .header-nav a { color: #000 !important; }
+      #search-input { background: #fff; color: #000; border: 1px solid #000; }
+      #search-input::placeholder { color: #555; }
+      .site-title a {
+        font-family: "Frames Part One", monospace;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .content h1:first-of-type {
+        font-family: "Frames Part One", monospace;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+    </style>
+    <script defer src="{{ main_js_path }}"></script>
+    <script>
+      window.searchNamespace = window.searchNamespace || {};
+      window.searchNamespace.rootPath = "{{ root_prefix }}";
+    </script>
+    <script defer src="{{ search_js_path }}"></script>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="header-left">
+          <h1 class="site-title">
+            <a href="{{ index_path }}">{{ site_title }}</a>
+          </h1>
+        </div>
+        {{ navbar_html|safe }}
+        <div class="search-container js-only">
+          <input
+            type="search"
+            id="search-input"
+            placeholder="Search..."
+            aria-label="Search"
+            autocomplete="off"
+          />
+          <div
+            id="search-results"
+            class="search-results"
+            role="region"
+            aria-live="polite"
+            aria-label="Search results"
+          ></div>
+        </div>
+      </header>
+
+      <div class="layout">
+        <div class="sidebar-toggle js-only" aria-label="Toggle sidebar">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+          >
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path>
+          </svg>
+        </div>
+        <nav class="sidebar">
+          <details class="sidebar-section" data-section="docs" open>
+            <summary>Documents</summary>
+            <div class="sidebar-section-content">
+              <ul>
+                {{ doc_nav|safe }}
+              </ul>
+            </div>
+          </details>
+
+          <details class="sidebar-section" data-section="toc" open>
+            <summary>Contents</summary>
+            <div class="sidebar-section-content">
+              <ul class="toc-list">
+                {{ toc|safe }}
+              </ul>
+            </div>
+          </details>
+        </nav>
+
+        <main class="content">
+          <h1>Search</h1>
+          <div class="search-page">
+            <noscript>
+              <p class="noscript-message">
+                Search requires JavaScript. Use the document navigation links instead.
+              </p>
+            </noscript>
+            <div class="search-form js-only">
+              <input
+                type="search"
+                id="search-page-input"
+                placeholder="Search..."
+                aria-label="Search"
+                autocomplete="off"
+                autofocus
+              />
+            </div>
+            <div class="search-keyboard-hints js-only" role="note" aria-label="Keyboard shortcuts">
+              <span class="hint-item"><kbd>↑</kbd> <kbd>↓</kbd> to navigate</span>
+              <span class="hint-item"><kbd>Enter</kbd> to select</span>
+              <span class="hint-item"><kbd>Esc</kbd> to clear</span>
+            </div>
+            <div
+              id="search-page-results"
+              class="search-page-results js-only"
+              role="region"
+              aria-live="polite"
+              aria-label="Search results"
+            ></div>
+          </div>
+          <div class="footnotes-container">
+            <!-- Footnotes will be appended here -->
+          </div>
+        </main>
+      </div>
+
+      <aside class="page-toc">
+        <nav class="page-toc-nav">
+          <h3>On this page</h3>
+          <ul class="page-toc-list">
+            {{ toc|safe }}
+          </ul>
+        </nav>
+      </aside>
+
+      <footer style="text-align:center; padding:1em; font-size:0.8em; color:#888;">
+        Logo set in <a href="https://nathanlaurent.github.io/frames.html" style="color:#888;">Frames Part One</a> by Nathan Laurent (SIL Open Font License).
+      </footer>
+      {{ footer_html|safe }}
+    </div>
+
+    {{ custom_scripts|safe }}
+  </body>
+</html>
