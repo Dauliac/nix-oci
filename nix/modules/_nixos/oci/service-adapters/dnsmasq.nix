@@ -27,6 +27,7 @@ let
 in
 {
   config = lib.mkIf isDnsmasq {
+    oci.container._output.detectedPorts = [ (dnsmasqCfg.settings.port or 53) ];
     oci.container.healthcheck.command = lib.mkDefault [
       "${pkgs.dig}/bin/dig"
       "@${addr}"

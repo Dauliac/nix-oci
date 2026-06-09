@@ -20,6 +20,7 @@ let
 in
 {
   config = lib.mkIf isPostfix {
+    oci.container._output.detectedPorts = [ 25 ];
     systemd.services.postfix.serviceConfig = {
       Type = lib.mkForce "simple";
       ExecStart = lib.mkForce "${postfixPkg}/bin/postfix start-fg";

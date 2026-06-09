@@ -19,6 +19,7 @@ let
 in
 {
   config = lib.mkIf isVsftpd {
+    oci.container._output.detectedPorts = [ 21 ];
     services.vsftpd.extraConfig = lib.mkDefault "background=NO";
     oci.container.stopSignal = lib.mkDefault "SIGTERM";
   };

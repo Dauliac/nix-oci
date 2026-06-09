@@ -49,6 +49,25 @@
             );
         };
 
+        parseContainerPortInt = {
+          type = lib.types.functionTo lib.types.int;
+          description = ''
+            Extract the container port as an integer from a port mapping string.
+
+            - `"8080:8080"` → `8080`
+            - `"443:443/udp"` → `443`
+            - `"8080"` → `8080` (no host mapping)
+          '';
+          fn =
+            portSpec:
+            let
+              parts = lib.splitString ":" portSpec;
+              raw = if builtins.length parts >= 2 then builtins.elemAt parts 1 else builtins.head parts;
+              clean = builtins.head (lib.splitString "/" raw);
+            in
+            lib.toInt clean;
+        };
+
         parseHostPort = {
           type = lib.types.functionTo lib.types.int;
           description = ''

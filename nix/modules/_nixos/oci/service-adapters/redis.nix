@@ -58,6 +58,7 @@ let
 in
 {
   config = lib.mkIf (isRedis && cfg.mainService != null) {
+    oci.container._output.detectedPorts = [ (serverCfg.port or 6379) ];
     # Resolve logical → systemd service name
     oci.container.resolvedSystemdServiceName = lib.mkDefault resolved.systemdName;
     # Resolve package (lives under servers.<name>, not services.redis)

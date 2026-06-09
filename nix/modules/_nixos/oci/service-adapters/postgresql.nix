@@ -19,6 +19,7 @@ let
 in
 {
   config = lib.mkIf (cfg.mainService == "postgresql") {
+    oci.container._output.detectedPorts = [ (pgCfg.settings.port or 5432) ];
     oci.container.healthcheck.command = lib.mkDefault [
       "${pgCfg.package}/bin/pg_isready"
       "-h"

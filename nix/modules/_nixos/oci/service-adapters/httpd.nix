@@ -40,6 +40,7 @@ let
 in
 {
   config = lib.mkIf isHttpd {
+    oci.container._output.detectedPorts = [ firstPort ];
     services.httpd.package = lib.mkForce httpdForeground;
     systemd.services.httpd.serviceConfig.Type = lib.mkForce "simple";
 

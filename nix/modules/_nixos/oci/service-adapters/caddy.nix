@@ -17,6 +17,7 @@ let
 in
 {
   config = lib.mkIf isCaddy {
+    oci.container._output.detectedPorts = [ 2019 ];
     oci.container.healthcheck.command = lib.mkDefault [
       "${pkgs.curl}/bin/curl"
       "-f"

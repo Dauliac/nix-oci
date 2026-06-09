@@ -38,10 +38,27 @@ let
   # pool.listen). This avoids reading pool.settings which we also write
   # to (that would cause infinite recursion).
   listenAddr =
-    if isPhpFpm then config.services.phpfpm.pools.${poolName}.socket or "127.0.0.1:9000" else "127.0.0.1:9000";
+    if isPhpFpm then
+      config.services.phpfpm.pools.${poolName}.socket or "127.0.0.1:9000"
+    else
+      "127.0.0.1:9000";
+
+  # PHP-FPM may listen on a Unix socket or TCP — only report TCP ports.
+  detectedPort =
+    let
+      parts = lib.splitString ":" listenAddr;
+    in
+    if builtins.length parts >= 2 then
+      let
+        raw = lib.last parts;
+      in
+      lib.toInt raw
+    else
+      null;
 in
 {
   config = lib.mkIf isPhpFpm {
+    oci.container._output.detectedPorts = lib.optional (detectedPort != null) detectedPort;
     # Inject ping endpoint into the pool for health checking.
     # PHP-FPM responds with "pong" to FastCGI requests to this path.
     services.phpfpm.pools.${poolName}.settings = {

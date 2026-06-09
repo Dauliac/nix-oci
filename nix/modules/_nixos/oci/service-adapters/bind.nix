@@ -20,6 +20,7 @@ let
 in
 {
   config = lib.mkIf isNamed {
+    oci.container._output.detectedPorts = [ 53 ];
     services.bind.extraOptions = lib.mkDefault "-f";
 
     oci.container.healthcheck.command = lib.mkDefault [
