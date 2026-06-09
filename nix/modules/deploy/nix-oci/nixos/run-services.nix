@@ -47,9 +47,13 @@
               perfOpts = mkPerfOpts container;
               # sdnotify: when the image has a healthcheck, tell Podman to
               # forward READY=1 after the first healthcheck passes.
-              sdnotifyOpts = lib.optionals (
-                cfg.backend == "podman" && container.hasHealthcheck or false
-              ) [ "--sdnotify=healthy" ];
+              # NOTE: disabled until nix2container embeds Healthcheck in image
+              # config (upstream bug #197). Podman rejects --sdnotify=healthy
+              # when no healthcheck is present in the image.
+              # sdnotifyOpts = lib.optionals (cfg.backend == "podman" && container.hasHealthcheck or false) [
+              #   "--sdnotify=healthy"
+              # ];
+              sdnotifyOpts = [ ];
               allExtraOpts = secOpts ++ perfOpts ++ sdnotifyOpts;
             in
             {
@@ -81,28 +85,28 @@
             serviceName =
               config.virtualisation.oci-containers.containers.${name}.serviceName or "${cfg.backend}-${name}";
             perf = container.performance.runtime or { };
-            hasHc = container.hasHealthcheck or false;
-            useSdnotify = cfg.backend == "podman" && hasHc;
+            # NOTE: sdnotify disabled until nix2container upstream bug #197 is fixed.
+            # hasHc = container.hasHealthcheck or false;
+            # useSdnotify = cfg.backend == "podman" && hasHc;
+            useSdnotify = false;
           in
-          lib.nameValuePair serviceName (
-            {
-              after = [ "oci-load-${name}.service" ];
-              requires = [ "oci-load-${name}.service" ];
-              serviceConfig =
-                # sdnotify: Type=notify + NotifyAccess=all so systemd waits
-                # for the healthcheck READY=1 before starting dependents.
-                lib.optionalAttrs useSdnotify {
-                  Type = "notify";
-                  NotifyAccess = "all";
-                }
-                // lib.optionalAttrs ((perf.memoryHigh or null) != null) {
-                  MemoryHigh = perf.memoryHigh;
-                }
-                // lib.optionalAttrs ((perf.cpuBurst or null) != null) {
-                  CPUBurst = perf.cpuBurst;
-                };
-            }
-          )
+          lib.nameValuePair serviceName {
+            after = [ "oci-load-${name}.service" ];
+            requires = [ "oci-load-${name}.service" ];
+            serviceConfig =
+              # sdnotify: Type=notify + NotifyAccess=all so systemd waits
+              # for the healthcheck READY=1 before starting dependents.
+              lib.optionalAttrs useSdnotify {
+                Type = "notify";
+                NotifyAccess = "all";
+              }
+              // lib.optionalAttrs ((perf.memoryHigh or null) != null) {
+                MemoryHigh = perf.memoryHigh;
+              }
+              // lib.optionalAttrs ((perf.cpuBurst or null) != null) {
+                CPUBurst = perf.cpuBurst;
+              };
+          }
         ) autoStart;
       };
     };

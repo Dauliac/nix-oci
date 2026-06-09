@@ -1,7 +1,6 @@
 # Example: NixOS deploy -- HTTP server container via nix-oci.
 #
-# Uses writeShellApplication for a proper package and configFiles to bake
-# the index.html into the container image at build time (no runtime echo).
+# Static content is baked into the image via dependencies with writeTextDir.
 { pkgs, ... }:
 let
   http-server = pkgs.writeShellApplication {
@@ -19,7 +18,8 @@ in
     backend = "podman";
     containers.http-server = {
       package = http-server;
-      configFiles = [
+      dependencies = [
+        pkgs.coreutils
         (pkgs.writeTextDir "var/www/index.html" "nix-oci-test-ok\n")
       ];
       autoStart = true;

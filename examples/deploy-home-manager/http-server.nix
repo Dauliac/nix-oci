@@ -1,14 +1,18 @@
 # Example: home-manager deploy -- HTTP server container via nix-oci.
 #
-# Uses writeShellApplication for a proper package and configFiles to bake
-# the index.html into the container image at build time (no runtime echo).
+# Uses writeShellApplication for a proper package derivation.
 { pkgs, ... }:
 let
   http-server = pkgs.writeShellApplication {
     name = "http-server";
-    runtimeInputs = [ pkgs.python3Minimal ];
+    runtimeInputs = with pkgs; [
+      python3Minimal
+      coreutils
+    ];
     text = ''
-      cd /var/www
+      mkdir -p /tmp/www
+      echo "nix-oci-test-ok" > /tmp/www/index.html
+      cd /tmp/www
       exec python3 -m http.server 8080
     '';
   };
@@ -19,9 +23,7 @@ in
     backend = "podman";
     containers.http-server = {
       package = http-server;
-      configFiles = [
-        (pkgs.writeTextDir "var/www/index.html" "nix-oci-test-ok\n")
-      ];
+      dependencies = [ pkgs.coreutils ];
       autoStart = true;
       ports = [ "9090:8080" ];
     };

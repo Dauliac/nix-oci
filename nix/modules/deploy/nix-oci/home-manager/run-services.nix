@@ -26,7 +26,8 @@
               perfArgs =
                 lib.optional ((perf.ociRuntime or null) != null) "--runtime=${perf.ociRuntime}"
                 ++ map (m: "--tmpfs=${m}") (perf.tmpfsMounts or [ ]);
-              hasHc = container.hasHealthcheck or false;
+              # NOTE: sdnotify disabled until nix2container upstream bug #197 is fixed.
+              # hasHc = container.hasHealthcheck or false;
             in
             {
               image = container.imageRef;
@@ -34,14 +35,6 @@
                 Unit = {
                   After = [ "oci-load-${name}.service" ];
                   Requires = [ "oci-load-${name}.service" ];
-                };
-              }
-              // lib.optionalAttrs hasHc {
-                Container = {
-                  Notify = "healthy";
-                };
-                Service = {
-                  Type = "notify";
                 };
               };
             }
