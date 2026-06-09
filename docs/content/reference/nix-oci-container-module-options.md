@@ -153,6 +153,47 @@ oci.containers.proxy = {
 };
 ```
 
+## Home-manager integration
+
+Containers can bake [home-manager](https://nix-community.github.io/home-manager/)
+dotfiles into the image with `homeConfig`. When enabled, nix-oci injects
+container-friendly defaults (bash, [starship](https://starship.rs/) prompt)
+that are especially useful with the [container sandbox](../explanation/sandbox.md).
+
+```nix
+oci.containers.my-app = {
+  isRoot = false;
+  package = pkgs.curl;
+
+  nixosConfig = {
+    enable = true;
+    modules = [];
+  };
+
+  homeConfig = {
+    enable = true;
+    homeManagerFlake = inputs.home-manager;
+    modules = [
+      ({ ... }: {
+        programs.git = {
+          enable = true;
+          userName = "dev";
+          userEmail = "dev@container";
+        };
+      })
+    ];
+  };
+};
+```
+
+See also:
+
+- [Container sandbox](../explanation/sandbox.md) -- rootless shell into the container filesystem
+- [home-manager options reference](https://nix-community.github.io/home-manager/options.xhtml)
+- [starship configuration](https://starship.rs/config/)
+- [nix-oci source: `homeConfig` options](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci/containers/homeConfig)
+- [nix-oci source: internal HM defaults](https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/containers/nixosConfig/eval.nix)
+
 ## Internal options reference
 
 These options are set **automatically** by nix-oci during the NixOS evaluation.
