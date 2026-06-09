@@ -363,6 +363,10 @@
             '';
       in
       {
+        # Disable index and title in nix-lib docs (nix-oci provides its own header)
+        nix-lib.docs.showIndex = false;
+        nix-lib.docs.showTitle = false;
+
         legacyPackages = {
           docs-github-workflows = config.githubActions.workflowsDir;
           inherit docs;
