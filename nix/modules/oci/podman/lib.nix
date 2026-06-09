@@ -26,6 +26,7 @@ in
         mkPodmanOCI = {
           type = types.functionTo types.package;
           description = "Build a container image with Podman and a non-root daemon";
+          file = "nix/modules/oci/podman/lib.nix";
           fn =
             {
               perSystemConfig,
@@ -102,6 +103,7 @@ in
         mkPodmanOCIRunScript = {
           type = types.functionTo types.package;
           description = "Build a script to run commands in a Podman container";
+          file = "nix/modules/oci/podman/lib.nix";
           fn =
             {
               perSystemConfig,
@@ -133,6 +135,7 @@ in
         mkPublishOCIScript = {
           type = types.functionTo types.package;
           description = "Build publishing script for CI that pushes container images to registry";
+          file = "nix/modules/oci/podman/lib.nix";
           fn =
             {
               perSystemConfig,

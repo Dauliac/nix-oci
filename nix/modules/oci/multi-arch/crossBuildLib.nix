@@ -25,6 +25,7 @@ in
         mkCrossOCI = {
           type = types.functionTo types.package;
           description = "Build a container image for a non-native architecture using cross-compiled packages";
+          file = "nix/modules/oci/multi-arch/crossBuildLib.nix";
           fn =
             {
               perSystemConfig,
@@ -87,6 +88,7 @@ in
         mkMultiArchOCILayout = {
           type = types.functionTo types.package;
           description = "Merge per-arch nix2container images into a single OCI directory layout with nix2container-compatible passthru";
+          file = "nix/modules/oci/multi-arch/crossBuildLib.nix";
           fn =
             {
               perSystemConfig,
@@ -183,6 +185,7 @@ in
         mkPushOCILayoutApp = {
           type = types.functionTo types.package;
           description = "Push a multi-arch OCI directory layout to a registry";
+          file = "nix/modules/oci/multi-arch/crossBuildLib.nix";
           fn =
             {
               perSystemConfig,

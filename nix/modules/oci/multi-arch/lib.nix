@@ -25,6 +25,7 @@ in
         mkPushTempOCIApp = {
           type = types.functionTo types.package;
           description = "Create app to push image with architecture-specific temp tag for multi-arch builds";
+          file = "nix/modules/oci/multi-arch/lib.nix";
           fn =
             {
               perSystemConfig,
@@ -86,6 +87,7 @@ in
         mkMergeMultiArchApp = {
           type = types.functionTo types.package;
           description = "Create app to merge architecture-specific images into a multi-arch manifest list";
+          file = "nix/modules/oci/multi-arch/lib.nix";
           fn =
             {
               perSystemConfig,

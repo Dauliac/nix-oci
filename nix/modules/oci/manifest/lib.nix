@@ -27,6 +27,7 @@ in
         mkOCIPulledManifestLock = {
           type = types.functionTo types.package;
           description = "Build OCI manifest to pull from registry";
+          file = "nix/modules/oci/manifest/lib.nix";
           fn =
             {
               perSystemConfig,
@@ -49,6 +50,7 @@ in
         mkOCIPulledManifestLockUpdateScript = {
           type = types.functionTo types.package;
           description = "Build script to update pulled OCI manifest locks";
+          file = "nix/modules/oci/manifest/lib.nix";
           fn =
             {
               self,

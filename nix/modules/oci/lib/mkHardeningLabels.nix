@@ -48,7 +48,7 @@ in
                 };
                 seccomp = {
                   enable = true;
-                  profile = "strict";
+                  profile = "nix/lib/oci.nix";
                 };
                 landlock.enable = false;
               };
