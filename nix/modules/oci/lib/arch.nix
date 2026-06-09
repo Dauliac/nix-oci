@@ -69,6 +69,8 @@ in
     { lib, ... }:
     {
       nix-lib.lib.oci = {
+        # Static values exposed as overridable nix-lib entries.
+        # Override via nix-lib.lib.oci.archMap.fn = myCustomMap;
         archMap = {
           type = lib.types.attrs;
           description = ''
