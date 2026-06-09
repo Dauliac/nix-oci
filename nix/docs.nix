@@ -287,11 +287,11 @@
                 "${../examples}/flake"
 
               # Deploy
-              gen_examples_page "Deploy: NixOS" "$out/examples/deploy-nixos.md" \
+              gen_examples_page "NixOS deploy" "$out/examples/deploy-nixos.md" \
                 "${../examples}/deploy-nixos"
-              gen_examples_page "Deploy: Home Manager" "$out/examples/deploy-home-manager.md" \
+              gen_examples_page "Home Manager deploy" "$out/examples/deploy-home-manager.md" \
                 "${../examples}/deploy-home-manager"
-              gen_examples_page "Deploy: system-manager" "$out/examples/deploy-system-manager.md" \
+              gen_examples_page "system-manager deploy" "$out/examples/deploy-system-manager.md" \
                 "${../examples}/deploy-system-manager"
             '';
 
