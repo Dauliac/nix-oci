@@ -5,3 +5,6 @@ result-*
 .cimera/
 tests/.claude/
 flake-parts-website-preview/
+# Vale downloaded style packages (synced via `vale sync`)
+.vale/styles/*/
+!.vale/styles/config/

@@ -96,6 +96,7 @@
                       convco
                       regclient
                       act
+                      vale
                     ]
                     ++ config.oci.internal.packages;
                   shellHook = ''

@@ -71,6 +71,16 @@ tasks:
       - |
         echo "Serving flake.parts website at http://localhost:8001"
         python3 -m http.server 8001 --directory result-flake-parts-website
+  # ── Lint ──────────────────────────────────────────────────────────
+  lint:docs:
+    desc: Lint documentation prose with Vale
+    cmds:
+      - vale sync
+      - vale docs/content/
+  lint:docs:sync:
+    desc: Download/update Vale style packages
+    cmds:
+      - vale sync
   # ── CI ─────────────────────────────────────────────────────────────────
   ci:local:
     desc: Run the CI GitHub Actions workflow locally with act
