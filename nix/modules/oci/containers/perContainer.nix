@@ -73,6 +73,7 @@ let
     ./_options/entrypoint.nix
     ./_options/environment.nix
     ./_options/healthcheck.nix
+    ./_options/initialize-nix-database.nix
     ./_options/is-root.nix
     ./_options/labels.nix
     ./_options/name.nix

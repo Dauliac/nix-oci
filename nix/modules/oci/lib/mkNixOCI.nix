@@ -35,6 +35,7 @@
               if oci.registry != null && oci.registry != "" then "${oci.registry}/${oci.name}" else oci.name;
             optimized = oci.optimizeLayers or false;
             layerStrategy = oci.layerStrategy or "fine-grained";
+            initNixDb = oci.initializeNixDatabase or false;
 
             # Auto-generated labels (OCI standard + build info + hardening + PSS).
             # Merge order: auto-labels < NixOS-eval hardening labels < user labels.
@@ -104,6 +105,13 @@
               copyToRoot = appCopyToRoot;
               perms = nixPerms;
               inherit layers;
+            }
+            // lib.optionalAttrs initNixDb {
+              initializeNixDatabase = true;
+              nixUid = if oci.user == "root" then 0 else 4000;
+              nixGid = if oci.user == "root" then 0 else 4000;
+            }
+            // {
               config = {
                 entrypoint = if out.entrypoint != [ ] then out.entrypoint else oci.entrypoint;
                 User = oci.user;

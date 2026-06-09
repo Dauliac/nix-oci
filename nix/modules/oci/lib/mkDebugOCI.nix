@@ -33,6 +33,7 @@
             oci = perSystemConfig.containers.${containerId};
             optimized = oci.optimizeLayers or false;
             layerStrategy = oci.layerStrategy or "fine-grained";
+            initNixDb = oci.initializeNixDatabase or false;
 
             # NixOS eval outputs — single source of truth
             nixosEval = oci.nixosConfig.eval;
@@ -127,6 +128,13 @@
                 copyToRoot = appCopyToRoot;
                 perms = nixPerms;
                 inherit layers;
+              }
+              // lib.optionalAttrs initNixDb {
+                initializeNixDatabase = true;
+                nixUid = if oci.user == "root" then 0 else 4000;
+                nixGid = if oci.user == "root" then 0 else 4000;
+              }
+              // {
                 config = {
                   entrypoint = debugEntrypoint;
                   User = oci.user;
