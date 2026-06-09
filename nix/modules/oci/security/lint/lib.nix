@@ -30,6 +30,7 @@ in
         mkScriptLintDockle = {
           type = types.functionTo types.package;
           description = "Generate Dockle container image linting script";
+        file = "nix/modules/oci/security/lint/lib.nix";
           fn =
             {
               perSystemConfig,
@@ -70,6 +71,7 @@ in
         mkAppLintDockle = {
           type = types.functionTo types.attrs;
           description = "Create flake app for Dockle container image linting";
+        file = "nix/modules/oci/security/lint/lib.nix";
           fn =
             {
               perSystemConfig,

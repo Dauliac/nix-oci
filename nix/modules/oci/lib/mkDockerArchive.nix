@@ -11,6 +11,7 @@
       nix-lib.lib.oci.mkDockerArchive = {
         type = lib.types.functionTo lib.types.package;
         description = "Transform nix2container build into docker archive via skopeo";
+        file = "nix/modules/oci/lib/mkDockerArchive.nix";
         fn =
           {
             oci,

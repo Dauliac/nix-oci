@@ -31,6 +31,7 @@ in
       nix-lib.lib.oci.mkImageLayers = {
         type = lib.types.functionTo (lib.types.listOf lib.types.package);
         description = "Compose the full deduplicated layer stack for an OCI image";
+        file = "nix/modules/oci/lib/mkImageLayers.nix";
         fn =
           args@{
             nix2container,

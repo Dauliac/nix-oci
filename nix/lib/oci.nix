@@ -135,13 +135,12 @@ let
 
         envFlags = lib.concatStringsSep " \\\n    " (
           [ "--setenv PATH ${lib.escapeShellArg sandboxPath}" ]
-          ++ lib.mapAttrsToList (
-            k: v: "--setenv ${lib.escapeShellArg k} ${lib.escapeShellArg v}"
-          ) environment
+          ++ lib.mapAttrsToList (k: v: "--setenv ${lib.escapeShellArg k} ${lib.escapeShellArg v}") environment
         );
 
-        userFlags =
-          if isRoot then "--uid 0 --gid 0" else "--unshare-user --uid 4000 --gid 4000";
+        homeDir = if isRoot then "/root" else "/home/${user}";
+
+        userFlags = if isRoot then "--uid 0 --gid 0" else "--unshare-user --uid 4000 --gid 4000";
 
         workDirFlag = lib.optionalString (workingDir != null) "--chdir ${lib.escapeShellArg workingDir}";
 
@@ -157,13 +156,30 @@ let
           cmd=("${shellCmd}")
         fi
 
+        # Copy home directory to a writable tmpdir so tools like starship,
+        # git, bash history, etc. can write to ~/.cache, ~/.local, etc.
+        # The source is a Nix store path (read-only); the copy is writable.
+        sandbox_home=$(mktemp -d)
+        trap 'rm -rf "$sandbox_home"' EXIT
+        if [ -d "$root/home" ]; then
+          ${pkgs.coreutils}/bin/cp -rL "$root/home/." "$sandbox_home/" 2>/dev/null || true
+          ${pkgs.coreutils}/bin/chmod -R u+w "$sandbox_home" 2>/dev/null || true
+        fi
+        # Same for /root when running as root
+        sandbox_root=$(mktemp -d)
+        trap 'rm -rf "$sandbox_home" "$sandbox_root"' EXIT
+        if [ -d "$root/root" ]; then
+          ${pkgs.coreutils}/bin/cp -rL "$root/root/." "$sandbox_root/" 2>/dev/null || true
+          ${pkgs.coreutils}/bin/chmod -R u+w "$sandbox_root" 2>/dev/null || true
+        fi
+
         exec ${pkgs.bubblewrap}/bin/bwrap \
           --ro-bind /nix/store /nix/store \
           --ro-bind "$root/bin" /bin \
           --ro-bind "$root/lib" /lib \
           --ro-bind "$root/etc" /etc \
-          --bind-try "$root/home" /home \
-          --bind-try "$root/root" /root \
+          --bind "$sandbox_home" /home \
+          --bind "$sandbox_root" /root \
           --bind-try "$root/var" /var \
           --tmpfs /tmp \
           --proc /proc \
@@ -172,6 +188,8 @@ let
           --die-with-parent \
           --clearenv \
           ${envFlags} \
+          --setenv HOME "${homeDir}" \
+          --setenv USER "${user}" \
           --setenv TERM "''${TERM:-xterm}" \
           ${userFlags} \
           ${workDirFlag} \

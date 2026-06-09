@@ -55,8 +55,10 @@ in
       if hmActivation != null then
         pkgs.runCommand "home-dir-hm" { } ''
           mkdir -p $out${homeDir}
-          if [ -d "${hmActivation}/home-files" ]; then
-            cp -rT ${hmActivation}/home-files $out${homeDir}
+          # home-files is typically a symlink to home-manager-files in the store.
+          # -L dereferences the top-level symlink so cp sees the directory contents.
+          if [ -d "${hmActivation}/home-files" ] || [ -L "${hmActivation}/home-files" ]; then
+            cp -rLT ${hmActivation}/home-files $out${homeDir}
           fi
         ''
       else

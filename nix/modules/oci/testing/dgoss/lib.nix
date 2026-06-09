@@ -24,6 +24,7 @@ in
         mkScriptDgoss = {
           type = types.functionTo types.package;
           description = "Generate dgoss testing script";
+        file = "nix/modules/oci/testing/dgoss/lib.nix";
           fn =
             {
               perSystemConfig,
@@ -64,6 +65,7 @@ in
         mkAppDgoss = {
           type = types.functionTo types.attrs;
           description = "Create flake app for dgoss testing";
+        file = "nix/modules/oci/testing/dgoss/lib.nix";
           fn =
             {
               perSystemConfig,
@@ -82,6 +84,7 @@ in
         mkCheckDgoss = {
           type = types.functionTo types.package;
           description = "Run dgoss as a hermetic check via podman-in-sandbox";
+        file = "nix/modules/oci/testing/dgoss/lib.nix";
           fn =
             {
               perSystemConfig,

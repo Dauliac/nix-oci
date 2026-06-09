@@ -24,6 +24,7 @@ in
         mkCheckDive = {
           type = types.functionTo types.package;
           description = "Create dive analysis check for container image";
+        file = "nix/modules/oci/testing/dive/lib.nix";
           fn =
             {
               perSystemConfig,

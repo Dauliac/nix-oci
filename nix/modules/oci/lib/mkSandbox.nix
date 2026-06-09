@@ -23,6 +23,7 @@ in
           Defaults to an interactive bash shell. Pass arguments to run
           a specific command instead.
         '';
+        file = "nix/lib/oci.nix";
         fn = pure.mkSandboxScript;
       };
     };

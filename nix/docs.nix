@@ -363,9 +363,10 @@
             '';
       in
       {
-        # Disable index and title in nix-lib docs (nix-oci provides its own header)
+        # nix-lib docs: disable index/title, enable fn body extraction
         nix-lib.docs.showIndex = false;
         nix-lib.docs.showTitle = false;
+        nix-lib.docs.src = ../.;
 
         legacyPackages = {
           docs-github-workflows = config.githubActions.workflowsDir;

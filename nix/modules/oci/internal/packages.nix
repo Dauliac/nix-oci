@@ -101,10 +101,11 @@ in
               ociLib.mkSandboxScript {
                 name = containerId;
                 rootFilesystem = out.rootFilesystem;
-                entrypoint =
-                  if out.entrypoint != [ ] then out.entrypoint else containerConfig.entrypoint;
+                entrypoint = if out.entrypoint != [ ] then out.entrypoint else containerConfig.entrypoint;
                 environment = containerConfig.environment;
-                user = containerConfig.user;
+                # Use the NixOS eval's user (matches the filesystem) rather than
+                # the flake-parts user (may differ when auto-derived from package name).
+                user = nixosEval.oci.container.user;
                 isRoot = containerConfig.isRoot;
                 workingDir = out.workingDir or containerConfig.workingDir or null;
                 inherit pkgs;

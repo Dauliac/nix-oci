@@ -19,6 +19,7 @@ in
       nix-lib.lib.oci.mkDepsLayer = {
         type = lib.types.functionTo lib.types.attrs;
         description = "Build a layer definition for container dependencies (for use with foldImageLayers)";
+        file = "nix/modules/oci/lib/mkDepsLayer.nix";
         fn =
           {
             dependencies,

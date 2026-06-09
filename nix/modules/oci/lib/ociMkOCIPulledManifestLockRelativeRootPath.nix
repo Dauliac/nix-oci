@@ -4,6 +4,7 @@
   nix-lib.lib.oci.mkOCIPulledManifestLockRelativeRootPath = {
     type = lib.types.functionTo lib.types.str;
     description = "Get relative root path for manifest locks from flake self";
+        file = "nix/modules/oci/lib/ociMkOCIPulledManifestLockRelativeRootPath.nix";
     fn =
       {
         self,
@@ -17,8 +18,8 @@
     tests = {
       "generates relative root path" = {
         args = {
-          self = /home/user/project;
-          fromImageManifestRootPath = /home/user/project/oci/manifests;
+          self = "/project";
+          fromImageManifestRootPath = "/project/oci/manifests";
         };
         expected = "./oci/manifests/";
       };

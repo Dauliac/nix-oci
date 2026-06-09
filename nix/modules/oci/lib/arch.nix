@@ -79,12 +79,14 @@ in
             and `microarch` with `hwcapsSupported`, `hwcapsLevels`,
             `marchValues`, `defaultHwcaps`.
           '';
+        file = "nix/modules/oci/lib/arch.nix";
           fn = archMap;
         };
 
         supportedSystems = {
           type = lib.types.listOf lib.types.str;
           description = "List of Nix system strings with OCI architecture mappings.";
+        file = "nix/modules/oci/lib/arch.nix";
           fn = builtins.attrNames archMap;
         };
 
@@ -94,6 +96,7 @@ in
             Convert a Nix system string to its OCI architecture string.
             Example: `"x86_64-linux"` → `"amd64"`.
           '';
+        file = "nix/modules/oci/lib/arch.nix";
           fn = system: archMap.${system}.ociArch;
           tests = {
             "x86_64 maps to amd64" = {
@@ -113,6 +116,7 @@ in
             Get microarchitecture metadata for a Nix system string.
             Returns `{ hwcapsSupported, hwcapsLevels, marchValues, defaultHwcaps }`.
           '';
+        file = "nix/modules/oci/lib/arch.nix";
           fn = system: archMap.${system}.microarch;
           tests = {
             "x86_64 supports hwcaps" = {
@@ -139,6 +143,7 @@ in
         systemMarchValues = {
           type = lib.types.functionTo (lib.types.listOf lib.types.str);
           description = "Valid `-march` values for a given system.";
+        file = "nix/modules/oci/lib/arch.nix";
           fn = system: archMap.${system}.microarch.marchValues;
           tests = {
             "x86_64 has v2 v3 v4 levels" = {
@@ -156,6 +161,7 @@ in
         systemHwcapsLevels = {
           type = lib.types.functionTo (lib.types.listOf lib.types.str);
           description = "Valid glibc-hwcaps levels for a given system.";
+        file = "nix/modules/oci/lib/arch.nix";
           fn = system: archMap.${system}.microarch.hwcapsLevels;
           tests = {
             "x86_64 has hwcaps levels" = {
@@ -180,6 +186,7 @@ in
             Convert a Nix system string to its OCI platform string.
             Example: `"x86_64-linux"` → `"linux/amd64"`.
           '';
+        file = "nix/modules/oci/lib/arch.nix";
           fn =
             system:
             let

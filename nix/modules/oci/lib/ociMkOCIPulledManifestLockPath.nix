@@ -4,6 +4,7 @@
   nix-lib.lib.oci.mkOCIPulledManifestLockPath = {
     type = lib.types.functionTo lib.types.path;
     description = "Generate the full path for an OCI manifest lock file";
+        file = "nix/modules/oci/lib/ociMkOCIPulledManifestLockPath.nix";
     fn =
       {
         fromImageManifestRootPath,
@@ -16,13 +17,13 @@
     tests = {
       "generates correct manifest lock path" = {
         args = {
-          fromImageManifestRootPath = /tmp/manifests;
+          fromImageManifestRootPath = "./manifests";
           fromImage = {
             imageName = "library/alpine";
             imageTag = "3.18";
           };
         };
-        expected = /tmp/manifests/library-alpine-3.18-manifest-lock.json;
+        expected = "./manifests/library-alpine-3.18-manifest-lock.json";
       };
     };
   };

@@ -15,6 +15,7 @@ in
       nix-lib.lib.oci.foldImageLayers = {
         type = lib.types.functionTo (lib.types.listOf lib.types.package);
         description = "Chain layers with automatic store-path deduplication via fold";
+        file = "nix/lib/oci.nix";
         fn = pure.foldImageLayers;
       };
     };

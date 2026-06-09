@@ -69,6 +69,7 @@ in
             Loads a docker-archive OCI image into podman, starts the API
             socket, then executes the given testScript with DOCKER_HOST set.
           '';
+        file = "nix/modules/oci/testing/podman-sandbox/lib.nix";
           fn =
             {
               # Derivation name

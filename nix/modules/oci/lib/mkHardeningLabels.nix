@@ -33,6 +33,7 @@ in
 
           NOTE: Prefer mkAutoLabels for new code.
         '';
+        file = "nix/lib/oci.nix";
         fn = pure.mkHardeningLabels;
         tests = {
           "generates labels when hardening enabled" = {
@@ -55,21 +56,15 @@ in
             assertions = [
               {
                 name = "has enabled label";
-                check =
-                  result:
-                  result."io.github.dauliac.nix-oci.hardening.enabled" == "true";
+                check = result: result."io.github.dauliac.nix-oci.hardening.enabled" == "true";
               }
               {
                 name = "has seccomp profile label";
-                check =
-                  result:
-                  result."io.github.dauliac.nix-oci.hardening.seccomp-profile" == "strict";
+                check = result: result."io.github.dauliac.nix-oci.hardening.seccomp-profile" == "strict";
               }
               {
                 name = "has capabilities-drop label";
-                check =
-                  result:
-                  result."io.github.dauliac.nix-oci.hardening.capabilities-drop" == "ALL";
+                check = result: result."io.github.dauliac.nix-oci.hardening.capabilities-drop" == "ALL";
               }
             ];
           };

@@ -20,6 +20,7 @@
       nix-lib.lib.oci.mkNixOCI = {
         type = lib.types.functionTo lib.types.package;
         description = "Build a container with Nix support and build users";
+        file = "nix/modules/oci/lib/mkNixOCI.nix";
         fn =
           args@{
             perSystemConfig,

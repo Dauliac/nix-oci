@@ -34,6 +34,7 @@
           Returns a store path to the JSON file, intended for consumption
           by a Landlock wrapper binary in the container entrypoint.
         '';
+        file = "nix/modules/oci/lib/mkLandlockPolicy.nix";
         fn =
           {
             name,

@@ -11,6 +11,7 @@
       nix-lib.lib.oci.mkNixConfig = {
         type = lib.types.functionTo lib.types.package;
         description = "Build nix configuration file for containers";
+        file = "nix/modules/oci/lib/mkNixConfig.nix";
         fn =
           { }:
           pkgs.writeText "etc/nix/nix.conf" ''

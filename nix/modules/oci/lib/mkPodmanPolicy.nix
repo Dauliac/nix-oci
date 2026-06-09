@@ -11,6 +11,7 @@
       nix-lib.lib.oci.mkPodmanPolicy = {
         type = lib.types.functionTo lib.types.package;
         description = "Build podman security policy configuration";
+        file = "nix/modules/oci/lib/mkPodmanPolicy.nix";
         fn =
           { }:
           pkgs.writeTextDir "etc/containers/policy.json" ''

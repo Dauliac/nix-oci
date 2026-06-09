@@ -14,6 +14,7 @@ in
       nix-lib.lib.oci.mkAppLayer = {
         type = lib.types.functionTo lib.types.attrs;
         description = "Build a layer definition for the application root filesystem (for use with foldImageLayers)";
+        file = "nix/lib/oci.nix";
         fn = pure.mkAppLayer;
       };
     };

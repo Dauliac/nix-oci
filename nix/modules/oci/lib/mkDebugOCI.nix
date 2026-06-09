@@ -23,6 +23,7 @@
       nix-lib.lib.oci.mkDebugOCI = {
         type = lib.types.functionTo lib.types.package;
         description = "Build a debug variant that shares layers with the production image";
+        file = "nix/modules/oci/lib/mkDebugOCI.nix";
         fn =
           args@{
             perSystemConfig,

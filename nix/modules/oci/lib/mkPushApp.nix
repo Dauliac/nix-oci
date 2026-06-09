@@ -31,6 +31,7 @@
           image. One app per tag, one process per push -- parallel
           scheduling falls out for free.
         '';
+        file = "nix/modules/oci/lib/mkPushApp.nix";
         fn =
           {
             perSystemConfig,

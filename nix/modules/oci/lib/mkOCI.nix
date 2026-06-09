@@ -15,6 +15,7 @@
       nix-lib.lib.oci.mkOCI = {
         type = lib.types.functionTo lib.types.package;
         description = "Main function to build container with all conditional features";
+        file = "nix/modules/oci/lib/mkOCI.nix";
         fn =
           args@{
             perSystemConfig,

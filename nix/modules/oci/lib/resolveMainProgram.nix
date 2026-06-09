@@ -19,6 +19,7 @@ in
 
       Returns the raw program name string (not a path).
     '';
+        file = "nix/lib/oci.nix";
     fn = pure.resolveMainProgram;
     tests = {
       "resolves from meta.mainProgram" = {

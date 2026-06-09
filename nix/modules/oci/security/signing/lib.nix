@@ -33,6 +33,7 @@ in
 
             Supports both keyless (Sigstore OIDC) and key-based signing.
           '';
+        file = "nix/modules/oci/security/signing/lib.nix";
           fn =
             {
               perSystemConfig,
@@ -123,6 +124,7 @@ in
         mkAppSignCosign = {
           type = types.functionTo types.attrs;
           description = "Create flake app for cosign image signing";
+        file = "nix/modules/oci/security/signing/lib.nix";
           fn =
             {
               perSystemConfig,

@@ -20,6 +20,7 @@
             - `"443:443/udp"` → `"443/udp"`
             - `"8080"` → `"8080/tcp"` (no host mapping)
           '';
+        file = "nix/lib/oci.nix";
           fn = pure.parseContainerPort;
           tests = {
             "parses host:container port" = {
@@ -44,6 +45,7 @@
 
             Example: `["8080:8080" "443:443"]` → `{ "8080/tcp" = {}; "443/tcp" = {}; }`
           '';
+        file = "nix/lib/oci.nix";
           fn = pure.mkExposedPorts;
           tests = {
             "creates ExposedPorts from list" = {
@@ -68,6 +70,7 @@
             - `"443:443/udp"` → `443`
             - `"8080"` → `8080` (no host mapping)
           '';
+        file = "nix/lib/oci.nix";
           fn = pure.parseContainerPortInt;
           tests = {
             "parses container port as int" = {
@@ -90,6 +93,7 @@
             - `"9090:8080"` → `9090`
             - `"8080"` → `8080` (same as container port)
           '';
+        file = "nix/lib/oci.nix";
           fn = pure.parseHostPort;
           tests = {
             "parses host port" = {

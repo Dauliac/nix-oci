@@ -18,6 +18,7 @@
       nix-lib.lib.oci.mkContainerEntrypoint = {
         type = lib.types.functionTo lib.types.package;
         description = "Generate entrypoint wrapper script from systemd service data";
+        file = "nix/modules/oci/lib/mkContainerEntrypoint.nix";
         fn =
           { serviceData }:
           let

@@ -19,6 +19,7 @@ in
 
       Returns a list of derivations to include in the image root.
     '';
+        file = "nix/lib/oci.nix";
     fn = pure.mkShadowSetup;
   };
 }

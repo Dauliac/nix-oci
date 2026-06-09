@@ -7,6 +7,7 @@ in
   nix-lib.lib.oci.prefixOutputs = {
     type = lib.types.functionTo lib.types.attrs;
     description = "Add a prefix to all attribute names in a set";
+        file = "nix/modules/oci/lib/ociPrefixOutputs.nix";
     fn =
       {
         prefix,

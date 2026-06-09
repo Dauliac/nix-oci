@@ -15,6 +15,7 @@
       nix-lib.lib.oci.mkSimpleOCI = {
         type = lib.types.functionTo lib.types.package;
         description = "Build a simple container without Nix support";
+        file = "nix/modules/oci/lib/mkSimpleOCI.nix";
         fn =
           args@{
             perSystemConfig,

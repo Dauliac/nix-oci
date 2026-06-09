@@ -41,6 +41,7 @@ in
 
           Callers merge: `mkAutoLabels args // userLabels` (user wins).
         '';
+        file = "nix/lib/oci.nix";
         fn = pure.mkAutoLabels;
         tests = {
           "generates OCI annotations" = {
@@ -54,7 +55,9 @@ in
                 meta = {
                   mainProgram = "my-app";
                   description = "Test app";
-                  license = { spdxId = "MIT"; };
+                  license = {
+                    spdxId = "MIT";
+                  };
                 };
               };
               isRoot = false;

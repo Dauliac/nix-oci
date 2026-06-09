@@ -34,6 +34,7 @@
           efficiently: one real push for the primary tag, then
           registry-side copies for additional tags.
         '';
+        file = "nix/modules/oci/lib/mkPushAllTagsApp.nix";
         fn =
           {
             perSystemConfig,

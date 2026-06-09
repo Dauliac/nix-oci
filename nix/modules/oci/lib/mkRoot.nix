@@ -19,6 +19,7 @@ in
 
       Used by deploy modules for non-NixOS container images.
     '';
+        file = "nix/lib/oci.nix";
     fn = pure.mkRoot;
   };
 }

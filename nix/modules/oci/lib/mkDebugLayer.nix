@@ -16,6 +16,7 @@
       nix-lib.lib.oci.mkDebugLayer = {
         type = lib.types.functionTo lib.types.attrs;
         description = "Build a layer definition for debug tools (for use with foldImageLayers)";
+        file = "nix/modules/oci/lib/mkDebugLayer.nix";
         fn =
           {
             packages,

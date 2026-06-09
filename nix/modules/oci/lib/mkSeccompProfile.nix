@@ -32,6 +32,7 @@ in
           Returns a store path to the JSON file, suitable for use with
           `--security-opt seccomp=`.
         '';
+        file = "nix/modules/oci/lib/mkSeccompProfile.nix";
         fn =
           {
             name,

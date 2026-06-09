@@ -25,6 +25,7 @@
           The dynamic linker selects the best available variant at process
           startup based on CPUID -- zero application changes required.
         '';
+        file = "nix/modules/oci/lib/mkHwcapsLayer.nix";
         fn =
           {
             nix2container,

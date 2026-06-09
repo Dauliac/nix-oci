@@ -10,6 +10,7 @@
       nix-lib.lib.oci.mkPerformanceLabels = {
         type = lib.types.functionTo lib.types.attrs;
         description = "Generate OCI labels encoding performance tuning hints.";
+        file = "nix/modules/oci/lib/mkPerformanceLabels.nix";
         fn =
           { performance }:
           let
@@ -51,15 +52,11 @@
             assertions = [
               {
                 name = "has enabled label";
-                check =
-                  result:
-                  result."io.github.dauliac.nix-oci.performance.enabled" == "true";
+                check = result: result."io.github.dauliac.nix-oci.performance.enabled" == "true";
               }
               {
                 name = "has allocator label";
-                check =
-                  result:
-                  result."io.github.dauliac.nix-oci.performance.allocator" == "mimalloc";
+                check = result: result."io.github.dauliac.nix-oci.performance.allocator" == "mimalloc";
               }
             ];
           };
@@ -90,9 +87,7 @@
             assertions = [
               {
                 name = "has compression label";
-                check =
-                  result:
-                  result."io.github.dauliac.nix-oci.performance.compression" == "zstd";
+                check = result: result."io.github.dauliac.nix-oci.performance.compression" == "zstd";
               }
             ];
           };
