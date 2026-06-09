@@ -86,35 +86,14 @@ exploration -- even in minimal containers that only ship a single binary.
 ## Home-manager integration
 
 When a container uses `homeConfig`, the sandbox automatically picks up
-home-manager's dotfiles. nix-oci provides internal defaults (all
-`mkDefault`, user-overridable) that make the sandbox experience pleasant
-out of the box:
+home-manager's dotfiles -- bash configuration, starship prompt, git
+identity, and anything else managed by home-manager. nix-oci injects
+container-friendly defaults so the sandbox experience is pleasant out
+of the box, with no configuration required.
 
-| Default | Value |
-|---|---|
-| **Shell** | `programs.bash.enable = true` with history and aliases (`ll`, `la`, `l`) |
-| **Prompt** | `programs.starship` with container-aware format (username, hostname, directory, git, nix-shell) |
-| **TERM** | `xterm-256color` |
-
-These defaults are injected as `hmContainerDefaults` in the NixOS eval
-and apply to all containers with `homeConfig.enable = true`. Override
-any setting in your `homeConfig.modules`:
-
-```nix
-homeConfig = {
-  enable = true;
-  homeManagerFlake = inputs.home-manager;
-  modules = [
-    ({ ... }: {
-      # Override the default starship symbol
-      programs.starship.settings.character.success_symbol = "[>](bold cyan)";
-
-      # Disable starship entirely
-      # programs.starship.enable = false;
-    })
-  ];
-};
-```
+See [NixOS and home-manager in containers](./nixos-home-manager-integration.md)
+for the full explanation of how this works, why it matters, and how to
+customize the defaults.
 
 ## What is isolated
 

@@ -18,7 +18,8 @@ Each topic has its own detailed page:
 - [Automatic metadata derivation](./automatic-metadata.md) -- healthchecks, stop signals, working directories, volume declarations from NixOS services
 - [Multi-architecture images](./multi-arch-images.md) -- CI-parallel native builds or single-machine cross-compilation for multi-arch OCI manifests
 - [OCI standards compliance](./oci-standards-compliance.md) -- layer changesets, media types, file attributes, image configuration, and how nix-oci aligns with the OCI image specification
-- [Container sandbox](./sandbox.md) -- rootless, isolated shell into any container's filesystem using bubblewrap, with home-manager integration
+- [NixOS and home-manager in containers](./nixos-home-manager-integration.md) -- why NixOS module evaluation and home-manager dotfiles produce declarative, introspectable, comfortable containers
+- [Container sandbox](./sandbox.md) -- rootless, isolated shell into any container's filesystem using bubblewrap
 
 The rest of this page covers the remaining design choices that don't
 warrant a full page.
