@@ -30,6 +30,7 @@ in
             mainService = nixosCfg.mainService or null;
             homeManagerFlake = homeCfg.homeManagerFlake or null;
             homeModules = homeCfg.modules or [ ];
+            fromImageEnabled = config.fromImage.enabled or false;
           };
         in
         {
@@ -42,7 +43,7 @@ in
           };
 
           # Write the smart containerUser back to the flake-parts user option.
-          # This ensures all image builders (mkSimpleOCI, mkNixOCI, mkDebugOCI)
+          # This ensures all image builders (mkSimpleOCI, mkNixOCI)
           # read the same user that the NixOS eval used for /etc/passwd.
           # Priority 50 (mkDefault) so explicit user = "foo" still wins.
           config.user = lib.mkDefault result.containerUser;

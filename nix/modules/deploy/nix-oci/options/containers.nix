@@ -2,13 +2,17 @@
 #
 # Submodule imports SHARED option definitions from oci/containers/_options/
 # (same source of truth as flake-parts) + deploy-specific extensions from _containers/.
-# nix2container and ociLib are threaded into the submodule via specialArgs.
+# nix2container, ociLib, and ociNixOSModules are threaded into the submodule via specialArgs.
 { import-tree, ... }:
 let
   # Shared core options (package, dependencies, isRoot, entrypoint, user, name, tag, etc.)
   sharedOptions = import-tree ../../../oci/containers/_options;
-  # Deploy-specific extensions (autoStart, volumes, image, image-ref, _defaults)
+  # Deploy-specific extensions (autoStart, volumes, image, image-ref, nixos-config, _defaults)
   deployExtensions = import-tree ./_containers;
+
+  # The internal NixOS module tree evaluated per container (service adapters,
+  # entrypoint derivation, healthcheck, hardening, performance, etc.).
+  ociNixOSModules = import-tree ../../../_nixos/oci;
 
   # Shared pure OCI library -- single source of truth for both
   # flake-parts (nix-lib) and deploy (NixOS/HM) consumers.
@@ -33,7 +37,7 @@ let
               deployExtensions
             ];
             specialArgs = {
-              inherit pkgs nix2container ociLib;
+              inherit pkgs nix2container ociLib ociNixOSModules;
             };
           }
         );

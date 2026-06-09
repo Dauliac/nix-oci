@@ -1,8 +1,11 @@
 # Per-container: computed OCI image built from shared options via nix2container.
 #
-# Uses ociLib.mkRoot for the root filesystem and ociLib.mkImageLayers for
-# deduplicated layering when optimizeLayers is enabled.
-# ExposedPorts from ports, Env from environment, Labels from labels.
+# Dual-path build:
+#   1. When nixosConfig.eval is present: uses the full NixOS eval output
+#      (rootFilesystem, entrypoint, healthcheck, envVars, labels, etc.)
+#      — same pipeline as flake-parts mkSimpleOCI.
+#   2. When nixosConfig.eval is null (bare package mode): uses ociLib.mkRoot
+#      for backward compatibility.
 {
   name,
   config,
@@ -13,8 +16,17 @@
   ...
 }:
 let
+  # Force-evaluate integration checks (throws on errors, traces on warnings).
+  _nixosChecks = config.nixosConfig._checks or "";
+
+  nixosEval = config.nixosConfig.eval or null;
+  useNixosEval = nixosEval != null;
+  out = if useNixosEval then nixosEval.oci.container._output else null;
+
+  # ── Legacy path (no nixosConfig) ──────────────────────────────────────
+
   # Shadow setup + package + deps + configFiles as a single buildEnv.
-  root = ociLib.mkRoot {
+  legacyRoot = ociLib.mkRoot {
     inherit name pkgs;
     inherit (config)
       package
@@ -26,14 +38,13 @@ let
   };
 
   # Separate shadow setup (without deps/package) for optimized layering.
-  # When optimized, deps go into their own layer via mkImageLayers.
-  shadowOnly = ociLib.mkShadowSetup {
+  legacyShadowOnly = ociLib.mkShadowSetup {
     inherit (config) isRoot user;
     inherit pkgs;
     runtimeShell = pkgs.runtimeShell;
   };
 
-  entrypoint =
+  legacyEntrypoint =
     if config.entrypoint != [ ] then
       config.entrypoint
     else if config.package != null then
@@ -44,8 +55,14 @@ let
     else
       [ ];
 
+  legacyHardenedConfigs = ociLib.mkHardenedConfigs {
+    inherit (config) hardening;
+    inherit pkgs;
+  };
+
+  # ── Shared helpers ────────────────────────────────────────────────────
+
   # Auto-generated labels (OCI standard + build info + hardening + PSS).
-  # User labels override auto-generated ones via `//` merge order.
   generatedLabels = ociLib.mkAutoLabels {
     inherit (config)
       name
@@ -62,67 +79,130 @@ let
     autoLabels = config.autoLabels or true;
   };
 
-  hardenedConfigs = ociLib.mkHardenedConfigs {
-    inherit (config) hardening;
-    inherit pkgs;
-  };
+  # ── OCI config (dual-path) ───────────────────────────────────────────
 
-  ociConfig = {
-    entrypoint = entrypoint;
-    User = if config.isRoot then "root" else config.user;
-  }
-  // lib.optionalAttrs (config.ports != [ ]) {
-    ExposedPorts = ociLib.mkExposedPorts config.ports;
-  }
-  // lib.optionalAttrs (config.environment != { }) {
-    Env = lib.mapAttrsToList (k: v: "${k}=${v}") config.environment;
-  }
-  // {
-    Labels = generatedLabels // (config.labels or { });
-  }
-  // lib.optionalAttrs (config.healthcheck.command != [ ]) {
-    Healthcheck = {
-      Test = [ "CMD" ] ++ config.healthcheck.command;
-      Interval = config.healthcheck.interval * 1000000000;
-      Timeout = config.healthcheck.timeout * 1000000000;
-      StartPeriod = config.healthcheck.startPeriod * 1000000000;
-      Retries = config.healthcheck.retries;
-    };
-  }
-  // lib.optionalAttrs (config.stopSignal != null) {
-    StopSignal = config.stopSignal;
-  }
-  // lib.optionalAttrs (config.workingDir != null) {
-    WorkingDir = config.workingDir;
-  }
-  // lib.optionalAttrs (config.declaredVolumes != [ ]) {
-    Volumes = builtins.listToAttrs (map (v: lib.nameValuePair v { }) config.declaredVolumes);
-  };
+  ociConfig =
+    if useNixosEval then
+      # Rich path: same as mkSimpleOCI
+      {
+        entrypoint = if out.entrypoint != [ ] then out.entrypoint else config.entrypoint;
+        User = if config.isRoot then "root" else config.user;
+        Env = out.envVars;
+        Labels =
+          generatedLabels
+          // (out.hardening.labels or { })
+          // (out.performance.labels or { })
+          // (config.labels or { });
+      }
+      // lib.optionalAttrs (config.ports != [ ]) {
+        ExposedPorts = ociLib.mkExposedPorts config.ports;
+      }
+      // (
+        let
+          hc = out.healthcheck or null;
+        in
+        lib.optionalAttrs (hc != null) {
+          Healthcheck = {
+            Test = [ "CMD" ] ++ hc.command;
+            Interval = hc.interval * 1000000000;
+            Timeout = hc.timeout * 1000000000;
+            StartPeriod = hc.startPeriod * 1000000000;
+            Retries = hc.retries;
+          };
+        }
+      )
+      // lib.optionalAttrs ((out.stopSignal or null) != null) {
+        StopSignal = out.stopSignal;
+      }
+      // lib.optionalAttrs ((out.workingDir or null) != null) {
+        WorkingDir = out.workingDir;
+      }
+      // (
+        let
+          vols = out.declaredVolumes or [ ];
+        in
+        lib.optionalAttrs (vols != [ ]) {
+          Volumes = builtins.listToAttrs (map (v: lib.nameValuePair v { }) vols);
+        }
+      )
+    else
+      # Legacy path: existing behavior
+      {
+        entrypoint = legacyEntrypoint;
+        User = if config.isRoot then "root" else config.user;
+      }
+      // lib.optionalAttrs (config.ports != [ ]) {
+        ExposedPorts = ociLib.mkExposedPorts config.ports;
+      }
+      // lib.optionalAttrs (config.environment != { }) {
+        Env = lib.mapAttrsToList (k: v: "${k}=${v}") config.environment;
+      }
+      // {
+        Labels = generatedLabels // (config.labels or { });
+      }
+      // lib.optionalAttrs (config.healthcheck.command != [ ]) {
+        Healthcheck = {
+          Test = [ "CMD" ] ++ config.healthcheck.command;
+          Interval = config.healthcheck.interval * 1000000000;
+          Timeout = config.healthcheck.timeout * 1000000000;
+          StartPeriod = config.healthcheck.startPeriod * 1000000000;
+          Retries = config.healthcheck.retries;
+        };
+      }
+      // lib.optionalAttrs (config.stopSignal != null) {
+        StopSignal = config.stopSignal;
+      }
+      // lib.optionalAttrs (config.workingDir != null) {
+        WorkingDir = config.workingDir;
+      }
+      // lib.optionalAttrs (config.declaredVolumes != [ ]) {
+        Volumes = builtins.listToAttrs (map (v: lib.nameValuePair v { }) config.declaredVolumes);
+      };
+
+  # ── Root filesystem / layers (dual-path) ─────────────────────────────
 
   optimized = config.optimizeLayers;
   layerStrategy = config.layerStrategy or "fine-grained";
 
-  # When optimized, split into layers: shadow+configFiles as root,
-  # dependencies as a separate layer, package as the top layer.
-  # All chained via foldImageLayers for deduplication.
-  rootPaths =
-    shadowOnly
+  # Rich path: rootFilesystem from NixOS eval (includes shadow, etc, deps, configFiles, home).
+  evalCopyToRoot = [ out.rootFilesystem ];
+
+  # Legacy path: optimized layers from raw options.
+  legacyRootPaths =
+    legacyShadowOnly
     ++ config.configFiles
-    ++ hardenedConfigs
+    ++ legacyHardenedConfigs
     ++ lib.optional (config.package != null) config.package;
+
+  copyToRoot = if useNixosEval then evalCopyToRoot else [ legacyRoot ];
 
   layers = ociLib.mkImageLayers {
     inherit pkgs nix2container layerStrategy;
     inherit (config) dependencies;
-    inherit rootPaths;
+    rootPaths = if useNixosEval then evalCopyToRoot else legacyRootPaths;
   };
 in
 {
+  # Whether the built image has a healthcheck (from eval or raw config).
+  # Consumed by run-services for sdnotify integration.
+  options.hasHealthcheck = lib.mkOption {
+    type = lib.types.bool;
+    readOnly = true;
+    description = "Whether the container image has a healthcheck configured.";
+    default =
+      if useNixosEval then
+        (out.healthcheck or null) != null
+      else
+        config.healthcheck.command != [ ];
+  };
+
   options.image = lib.mkOption {
     type = lib.types.package;
     readOnly = true;
     description = "Built OCI image (computed from package + dependencies via nix2container).";
-    default = nix2container.buildImage (
+    default =
+      assert _nixosChecks == "" || _nixosChecks != "";
+      nix2container.buildImage (
       {
         name = config.name;
         tag = config.tag;
@@ -138,7 +218,7 @@ in
           }
         else
           {
-            copyToRoot = [ root ];
+            inherit copyToRoot;
           }
       )
     );
