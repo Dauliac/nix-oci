@@ -8,7 +8,7 @@
 # annotations and build info. This function is kept for backward compatibility.
 { lib, ... }:
 let
-  ns = "io.github.dauliac.nix-oci";
+  pure = import ../../../../lib/oci.nix { inherit lib; };
 in
 {
   config.perSystem =
@@ -33,25 +33,7 @@ in
 
           NOTE: Prefer mkAutoLabels for new code.
         '';
-        fn =
-          { hardening }:
-          lib.optionalAttrs hardening.enable (
-            {
-              "${ns}.hardening.enabled" = "true";
-              "${ns}.hardening.no-new-privileges" = lib.boolToString hardening.noNewPrivileges;
-              "${ns}.hardening.read-only-rootfs" = lib.boolToString hardening.readOnlyRootfs;
-              "${ns}.hardening.capabilities-drop" = lib.concatStringsSep "," hardening.capabilities.drop;
-            }
-            // lib.optionalAttrs (hardening.capabilities.add != [ ]) {
-              "${ns}.hardening.capabilities-add" = lib.concatStringsSep "," hardening.capabilities.add;
-            }
-            // lib.optionalAttrs hardening.seccomp.enable {
-              "${ns}.hardening.seccomp-profile" = hardening.seccomp.profile;
-            }
-            // lib.optionalAttrs hardening.landlock.enable {
-              "${ns}.hardening.landlock-enabled" = "true";
-            }
-          );
+        fn = pure.mkHardeningLabels;
       };
     };
 }

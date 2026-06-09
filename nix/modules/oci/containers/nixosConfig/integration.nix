@@ -160,12 +160,13 @@
 
                 # Non-root container trying to bind a privileged port without
                 # the NET_BIND_SERVICE capability.
-                privilegedPortViolation = enabled && !config.isRoot && hasPrivilegedPorts && !hasNetBindService;
+                privilegedPortViolation =
+                  enabled && h.enable && !config.isRoot && hasPrivilegedPorts && !hasNetBindService;
 
                 # Root container that drops ALL capabilities (including
                 # NET_BIND_SERVICE) but still needs a privileged port.
                 rootDroppedBindViolation =
-                  enabled && config.isRoot && hasPrivilegedPorts && dropsAll && !hasNetBindService;
+                  enabled && h.enable && config.isRoot && hasPrivilegedPorts && dropsAll && !hasNetBindService;
 
                 portList = lib.concatMapStringsSep ", " toString privilegedPorts;
 

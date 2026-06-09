@@ -189,6 +189,7 @@
                 )
               ];
             };
+            package = pkgs.php;
             ports = [ "${toString phpFpmPort}:${toString phpFpmPort}" ];
             dependencies = [ phpApp ];
             labels = commonLabels // {
@@ -207,7 +208,7 @@
               mainService = "redis-${project}";
               modules = [
                 (
-                  { ... }:
+                  { lib, ... }:
                   {
                     services.redis.servers.${project} = {
                       enable = true;
@@ -216,7 +217,7 @@
                       settings = {
                         maxmemory = "64mb";
                         maxmemory-policy = "allkeys-lru";
-                        save = "";
+                        save = lib.mkForce "";
                       };
                     };
                   }

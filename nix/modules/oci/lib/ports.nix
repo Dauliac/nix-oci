@@ -1,10 +1,13 @@
 # Register port parsing functions in flake-parts nix-lib.
 #
-# Provides `config.lib.oci.{parseContainerPort,mkExposedPorts,parseHostPort}`.
+# Provides `config.lib.oci.{parseContainerPort,mkExposedPorts,parseContainerPortInt,parseHostPort}`.
 { ... }:
 {
   config.perSystem =
     { lib, ... }:
+    let
+      pure = import ../../../../lib/oci.nix { inherit lib; };
+    in
     {
       nix-lib.lib.oci = {
         parseContainerPort = {
@@ -17,14 +20,21 @@
             - `"443:443/udp"` → `"443/udp"`
             - `"8080"` → `"8080/tcp"` (no host mapping)
           '';
-          fn =
-            portSpec:
-            let
-              parts = lib.splitString ":" portSpec;
-              raw = if builtins.length parts >= 2 then builtins.elemAt parts 1 else builtins.head parts;
-              hasProto = lib.hasInfix "/" raw;
-            in
-            if hasProto then raw else "${raw}/tcp";
+          fn = pure.parseContainerPort;
+          tests = {
+            "parses host:container port" = {
+              args = "8080:8080";
+              expected = "8080/tcp";
+            };
+            "preserves protocol" = {
+              args = "443:443/udp";
+              expected = "443/udp";
+            };
+            "handles port-only" = {
+              args = "8080";
+              expected = "8080/tcp";
+            };
+          };
         };
 
         mkExposedPorts = {
@@ -34,19 +44,19 @@
 
             Example: `["8080:8080" "443:443"]` → `{ "8080/tcp" = {}; "443/tcp" = {}; }`
           '';
-          fn =
-            ports:
-            builtins.listToAttrs (
-              map (
-                p:
-                let
-                  parts = lib.splitString ":" p;
-                  raw = if builtins.length parts >= 2 then builtins.elemAt parts 1 else builtins.head parts;
-                  normalized = if lib.hasInfix "/" raw then raw else "${raw}/tcp";
-                in
-                lib.nameValuePair normalized { }
-              ) ports
-            );
+          fn = pure.mkExposedPorts;
+          tests = {
+            "creates ExposedPorts from list" = {
+              args = [
+                "8080:8080"
+                "443:443"
+              ];
+              expected = {
+                "8080/tcp" = { };
+                "443/tcp" = { };
+              };
+            };
+          };
         };
 
         parseContainerPortInt = {
@@ -58,14 +68,17 @@
             - `"443:443/udp"` → `443`
             - `"8080"` → `8080` (no host mapping)
           '';
-          fn =
-            portSpec:
-            let
-              parts = lib.splitString ":" portSpec;
-              raw = if builtins.length parts >= 2 then builtins.elemAt parts 1 else builtins.head parts;
-              clean = builtins.head (lib.splitString "/" raw);
-            in
-            lib.toInt clean;
+          fn = pure.parseContainerPortInt;
+          tests = {
+            "parses container port as int" = {
+              args = "8080:8080";
+              expected = 8080;
+            };
+            "strips protocol" = {
+              args = "443:443/udp";
+              expected = 443;
+            };
+          };
         };
 
         parseHostPort = {
@@ -77,15 +90,17 @@
             - `"9090:8080"` → `9090`
             - `"8080"` → `8080` (same as container port)
           '';
-          fn =
-            portSpec:
-            let
-              parts = lib.splitString ":" portSpec;
-              raw = builtins.head parts;
-              # Strip protocol suffix if present
-              clean = builtins.head (lib.splitString "/" raw);
-            in
-            lib.toInt clean;
+          fn = pure.parseHostPort;
+          tests = {
+            "parses host port" = {
+              args = "9090:8080";
+              expected = 9090;
+            };
+            "handles port-only" = {
+              args = "8080";
+              expected = 8080;
+            };
+          };
         };
       };
     };

@@ -114,13 +114,14 @@
         sharedOptions = import-tree ./modules/oci/containers/_options;
         deployExtensions = import-tree ./modules/deploy/nix-oci/options/_containers;
 
-        # Minimal ociLib stub for option declarations (only needed for default values)
-        ociLib = {
-          parseContainerPort = _: "";
-          mkExposedPorts = _: { };
-          parseHostPort = _: 0;
+        # Minimal ociLib stub for option declarations (only needed for default values).
+        # Uses the shared pure library where possible; stubs for derivation-producing
+        # functions that can't evaluate during docs generation.
+        ociLib = (import ./lib/oci.nix { inherit lib; }) // {
           mkShadowSetup = _: [ ];
           mkRoot = _: null;
+          mkHardenedConfigs = _: [ ];
+          mkSeccompProfile = _: null;
         };
 
         deployOptionModules = [
@@ -256,10 +257,10 @@
               sed -i '/<!-- OPTIONS:nixos-container -->/r ${nixosContainerDoc.optionsCommonMark}' $out/reference/nix-oci-container-module-options.md
               sed -i '/<!-- OPTIONS:nix-lib -->/r ${nixLibDoc}/docs.md' $out/reference/nix-lib.md
 
-              # --- Examples: one page per directory, all examples on the page ---
-              # Groups: build root files, build/sub-dirs, deploy-nixos, deploy-home-manager
+              # --- Examples: one page per category ---
               gen_examples_page() {
-                local dir="$1" title="$2" dest="$3"
+                local title="$1" dest="$2"
+                shift 2
                 {
                   echo "+++"
                   echo "title = \"$title\""
@@ -267,32 +268,31 @@
                   echo ""
                   echo "# $title"
                   echo ""
-                  for f in $(find "$dir" -maxdepth 1 -name '*.nix' -type f | sort); do
-                    name="$(basename "$f" .nix)"
-                    echo "## $name"
-                    echo ""
-                    echo '```nix'
-                    cat "$f"
-                    echo '```'
-                    echo ""
+                  for dir in "$@"; do
+                    for f in $(find "$dir" -name '*.nix' -type f | sort); do
+                      name="$(basename "$f" .nix)"
+                      echo "## $name"
+                      echo ""
+                      echo '```nix'
+                      cat "$f"
+                      echo '```'
+                      echo ""
+                    done
                   done
                 } > "$dest"
               }
 
-              # Build: root-level examples (minimalist, with-*, write-shell-*)
-              gen_examples_page "${../examples}/build" "Build: Basics" "$out/examples/build-basics.md"
-
-              # Build: subdirectory groups
-              for sub in $(find ${../examples}/build -mindepth 1 -maxdepth 1 -type d | sort); do
-                subname="$(basename "$sub")"
-                pretty="$(echo "$subname" | tr '-' ' ')"
-                gen_examples_page "$sub" "Build: $pretty" "$out/examples/build-$subname.md"
-              done
+              # Flake: all flake-parts examples (root + subdirs) in one page
+              gen_examples_page "Flake examples" "$out/examples/flake.md" \
+                "${../examples}/flake"
 
               # Deploy
-              gen_examples_page "${../examples}/deploy-nixos" "Deploy: NixOS" "$out/examples/deploy-nixos.md"
-              gen_examples_page "${../examples}/deploy-home-manager" "Deploy: Home Manager" "$out/examples/deploy-home-manager.md"
-              gen_examples_page "${../examples}/deploy-system-manager" "Deploy: system-manager" "$out/examples/deploy-system-manager.md"
+              gen_examples_page "Deploy: NixOS" "$out/examples/deploy-nixos.md" \
+                "${../examples}/deploy-nixos"
+              gen_examples_page "Deploy: Home Manager" "$out/examples/deploy-home-manager.md" \
+                "${../examples}/deploy-home-manager"
+              gen_examples_page "Deploy: system-manager" "$out/examples/deploy-system-manager.md" \
+                "${../examples}/deploy-system-manager"
             '';
 
         # --- NDG site build (using CLI directly) ---

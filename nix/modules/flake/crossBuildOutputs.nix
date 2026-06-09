@@ -1,5 +1,7 @@
-# Flake outputs for cross-build multi-arch OCI images
+# Flake outputs for cross-build and emulated-build multi-arch OCI images
 # Only contributes on Linux (OCI containers are Linux-only).
+# Cross-build and emulated-build are mutually exclusive per container,
+# so output names never collide.
 { lib, ... }:
 {
   config.perSystem =
@@ -14,7 +16,11 @@
         "aarch64-linux"
       ])
       {
-        packages = config.oci.internal.prefixedMultiArchOCILayouts;
-        apps = config.oci.internal.prefixedPushMultiArchLayoutApps;
+        packages =
+          config.oci.internal.prefixedMultiArchOCILayouts
+          // config.oci.internal.prefixedEmulatedMultiArchOCILayouts;
+        apps =
+          config.oci.internal.prefixedPushMultiArchLayoutApps
+          // config.oci.internal.prefixedPushEmulatedMultiArchLayoutApps;
       };
 }

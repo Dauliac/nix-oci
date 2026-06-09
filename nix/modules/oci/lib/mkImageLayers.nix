@@ -13,10 +13,14 @@
 #   - "minimal": exactly 1 layer per concern (deps, app, debug)
 #   - "fine-grained": deps split into up to 80 sub-layers via popularity
 { lib, ... }:
+let
+  pure = import ../../../../lib/oci.nix { inherit lib; };
+in
 {
   config.perSystem =
     {
       lib,
+      pkgs,
       config,
       ...
     }:
@@ -28,45 +32,30 @@
         type = lib.types.functionTo (lib.types.listOf lib.types.package);
         description = "Compose the full deduplicated layer stack for an OCI image";
         fn =
-          {
+          args@{
             nix2container,
             layerStrategy ? "fine-grained",
             prependLayerDefs ? [ ],
             prependBuiltLayers ? [ ],
             dependencies ? [ ],
             copyToRoot ? [ ],
+            rootPaths ? copyToRoot,
             debug ? null,
+            ...
           }:
-          let
-            depsLayerDefs =
-              if dependencies != [ ] then
-                [ (ociLib.mkDepsLayer { inherit dependencies layerStrategy; }) ]
-              else
-                [ ];
-
-            appLayerDefs = if copyToRoot != [ ] then [ (ociLib.mkAppLayer { inherit copyToRoot; }) ] else [ ];
-
-            debugLayerDefs =
-              if debug != null then
-                [
-                  (ociLib.mkDebugLayer {
-                    inherit (debug) packages;
-                    entrypointWrapper = debug.entrypointWrapper or null;
-                  })
-                ]
-              else
-                [ ];
-
-            allLayerDefs = prependLayerDefs ++ depsLayerDefs ++ appLayerDefs ++ debugLayerDefs;
-
-            mergeToLayer =
-              priorLayers: layerDef:
-              let
-                layer = nix2container.buildLayer (layerDef // { layers = priorLayers; });
-              in
-              priorLayers ++ [ layer ];
-          in
-          lib.foldl mergeToLayer prependBuiltLayers allLayerDefs;
+          pure.mkImageLayers {
+            inherit
+              nix2container
+              pkgs
+              layerStrategy
+              prependLayerDefs
+              prependBuiltLayers
+              dependencies
+              rootPaths
+              ;
+            mkDebugLayer = ociLib.mkDebugLayer or null;
+            inherit debug;
+          };
       };
     };
 }

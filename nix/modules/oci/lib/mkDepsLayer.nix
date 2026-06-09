@@ -5,12 +5,14 @@
 # splitting (maxLayers) for optimal registry caching.
 # Shared by mkSimpleOCI, mkNixOCI, and mkImageLayers.
 { lib, ... }:
+let
+  pure = import ../../../../lib/oci.nix { inherit lib; };
+in
 {
   config.perSystem =
     {
       pkgs,
       lib,
-      config,
       ...
     }:
     {
@@ -22,22 +24,8 @@
             dependencies,
             layerStrategy ? "fine-grained",
           }:
-          {
-            copyToRoot = [
-              (pkgs.buildEnv {
-                name = "deps";
-                paths = dependencies;
-                pathsToLink = [
-                  "/bin"
-                  "/lib"
-                  "/etc"
-                ];
-                ignoreCollisions = true;
-              })
-            ];
-          }
-          // lib.optionalAttrs (layerStrategy == "fine-grained") {
-            maxLayers = 80;
+          pure.mkDepsLayer {
+            inherit pkgs dependencies layerStrategy;
           };
       };
     };

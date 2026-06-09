@@ -23,6 +23,22 @@ or Nix's built-in `dockerTools.buildImage` -- follow the same pattern:
 3. Bundle them into an OCI/Docker archive.
 4. Push or load that archive.
 
+```mermaid
+flowchart LR
+    subgraph "Dockerfile build"
+        direction TB
+        SRC["Source code"] --> D["Dockerfile"]
+        D --> L1["RUN apt-get install<br/>Layer 1 (tar)"]
+        L1 --> L2["COPY . /app<br/>Layer 2 (tar)"]
+        L2 --> L3["RUN npm build<br/>Layer 3 (tar)"]
+        L3 --> TAR["OCI archive<br/>(all layers as tars)"]
+    end
+    TAR -->|"push entire archive"| REG["Registry"]
+
+    style TAR fill:#f38ba8,stroke:#d20f39,color:#000
+    style REG fill:#a6da95,stroke:#40a02b,color:#000
+```
+
 This creates two problems:
 
 - **Store bloat**: every store path that goes into the image is stored
@@ -32,12 +48,82 @@ This creates two problems:
   be rebuilt and re-written, even if most layers are identical to the previous
   build.
 
+### Dockerfile: user-defined build graph
+
+With Dockerfiles, the user manually defines the build graph as an ordered
+sequence of `RUN`, `COPY`, and `ADD` instructions. Each instruction produces
+a layer, and layers are **ordered and sequential** -- changing one layer
+invalidates all subsequent layers:
+
+```mermaid
+flowchart TD
+    subgraph "Dockerfile layer invalidation"
+        direction TB
+        BASE["FROM debian:slim"] --> L1["RUN apt-get install openssl"]
+        L1 --> L2["RUN apt-get install nginx"]
+        L2 --> L3["COPY config /etc/nginx"]
+        L3 --> L4["COPY app /var/www"]
+    end
+    CHANGE["Change openssl version"] -.->|"invalidates"| L1
+    L1 -.->|"rebuilds"| L2
+    L2 -.->|"rebuilds"| L3
+    L3 -.->|"rebuilds"| L4
+
+    style CHANGE fill:#f38ba8,stroke:#d20f39,color:#000
+    style L1 fill:#f9e2ae,stroke:#e6a800,color:#000
+    style L2 fill:#f9e2ae,stroke:#e6a800,color:#000
+    style L3 fill:#f9e2ae,stroke:#e6a800,color:#000
+    style L4 fill:#f9e2ae,stroke:#e6a800,color:#000
+```
+
+This means:
+- Users must carefully order instructions to maximize cache hits.
+- A single dependency change can cascade through the entire image.
+- The layer graph is **linear** -- there is no way to express "these two
+  things are independent and can be cached separately".
+- Build outputs are **non-reproducible** -- `apt-get install` at two
+  different times can produce different results.
+
 Nix's `dockerTools.streamLayeredImage` partially addresses this by streaming
 the archive instead of writing it to the store, but it still computes every
 layer tarball on each invocation and cannot skip layers already present in a
 registry.
 
 ## How nix2container solves it
+
+nix2container takes a fundamentally different approach. Instead of a
+user-defined linear build graph, the dependency graph comes **from Nix** --
+it is a DAG (directed acyclic graph) derived from the package closure,
+not a sequence of imperative instructions:
+
+```mermaid
+flowchart TD
+    subgraph "nix2container: Nix-derived dependency graph"
+        direction TB
+        PKG["package = pkgs.nginx"] --> CLOSURE["Nix closure analysis"]
+        CLOSURE --> DEP["Dependencies<br/>(glibc, openssl, pcre, zlib)"]
+        CLOSURE --> APP["Application<br/>(nginx binary + config)"]
+        DEP --> JSON1["Layer def (JSON)<br/>deps store paths + digest"]
+        APP --> JSON2["Layer def (JSON)<br/>app store paths + digest"]
+        JSON1 --> MANIFEST["Image manifest<br/>(JSON, ~2 KB)"]
+        JSON2 --> MANIFEST
+    end
+
+    style PKG fill:#89b4fa,stroke:#1e66f5,color:#000
+    style MANIFEST fill:#a6da95,stroke:#40a02b,color:#000
+    style JSON1 fill:#f9e2ae,stroke:#e6a800,color:#000
+    style JSON2 fill:#f9e2ae,stroke:#e6a800,color:#000
+```
+
+The key differences from Dockerfile builds:
+
+| Aspect | Dockerfile | nix2container |
+|---|---|---|
+| Build graph | User-defined, linear, imperative | Nix-derived, DAG, declarative |
+| Layer invalidation | Cascading (one change rebuilds all below) | Targeted (only affected layer changes) |
+| Disk usage | Tars stored on disk (~2x image size) | JSON only (~2 KB) |
+| Reproducibility | Non-deterministic (network, timestamps) | Bit-for-bit identical |
+| Cache granularity | Per Dockerfile instruction | Per Nix store path |
 
 nix2container replaces tar archives with lightweight **JSON metadata files**.
 A built image in the Nix store is just a few kilobytes of JSON listing:
@@ -62,6 +148,26 @@ When you push an image:
    transferred.
 3. Only missing layers are **tar-archived on the fly** and streamed directly
    to the registry, without touching the local disk.
+
+```mermaid
+flowchart LR
+    subgraph "Nix store"
+        JSON["Image manifest<br/>(JSON, ~2 KB)"]
+        SP1["/nix/store/...-glibc"]
+        SP2["/nix/store/...-nginx"]
+    end
+    JSON --> SKOPEO["Skopeo<br/>(nix: transport)"]
+    SKOPEO -->|"digest check"| REG["Registry"]
+    REG -->|"layer exists"| SKIP["Skip<br/>(0 bytes)"]
+    REG -->|"layer missing"| STREAM["Stream tar<br/>on the fly"]
+    SP1 -.-> STREAM
+    SP2 -.-> STREAM
+    STREAM --> REG
+
+    style JSON fill:#f9e2ae,stroke:#e6a800,color:#000
+    style SKIP fill:#a6da95,stroke:#40a02b,color:#000
+    style STREAM fill:#89b4fa,stroke:#1e66f5,color:#000
+```
 
 This makes pushes dramatically faster:
 

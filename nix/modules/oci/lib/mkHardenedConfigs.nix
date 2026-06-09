@@ -6,6 +6,9 @@
 #
 # Build-time only — these are baked into the image layer.
 { lib, ... }:
+let
+  pure = import ../../../../lib/oci.nix { inherit lib; };
+in
 {
   config.perSystem =
     {
@@ -31,26 +34,7 @@
           Returns a list of derivations suitable for inclusion in `copyToRoot`
           or `configFiles`.
         '';
-        fn =
-          { hardening }:
-          lib.optionals hardening.enable (
-            lib.optionals hardening.disableDns [
-              (pkgs.writeTextDir "etc/nsswitch.conf" ''
-                passwd:    files
-                group:     files
-                shadow:    files
-                hosts:     files
-                networks:  files
-                ethers:    files
-                services:  files
-                protocols: files
-                rpc:       files
-              '')
-            ]
-            ++ lib.optionals hardening.noTlsTrustStore [
-              (pkgs.writeTextDir "etc/ssl/certs/ca-bundle.crt" "# TLS trust store removed by nix-oci hardening\n")
-            ]
-          );
+        fn = { hardening }: pure.mkHardenedConfigs { inherit hardening pkgs; };
       };
     };
 }

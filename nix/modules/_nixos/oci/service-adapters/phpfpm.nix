@@ -27,7 +27,7 @@ let
     let
       prefix = "phpfpm-";
     in
-    if lib.hasPrefix prefix (cfg.mainService or "") then
+    if cfg.mainService != null && lib.hasPrefix prefix cfg.mainService then
       lib.removePrefix prefix cfg.mainService
     else
       null;

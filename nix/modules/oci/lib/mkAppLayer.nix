@@ -4,6 +4,9 @@
 # foldImageLayers. Contains the application's copyToRoot (root filesystem,
 # package, etc.) so it can be deduplicated against prior layers.
 { lib, ... }:
+let
+  pure = import ../../../../lib/oci.nix { inherit lib; };
+in
 {
   config.perSystem =
     { lib, ... }:
@@ -11,11 +14,7 @@
       nix-lib.lib.oci.mkAppLayer = {
         type = lib.types.functionTo lib.types.attrs;
         description = "Build a layer definition for the application root filesystem (for use with foldImageLayers)";
-        fn =
-          { copyToRoot }:
-          {
-            inherit copyToRoot;
-          };
+        fn = pure.mkAppLayer;
       };
     };
 }

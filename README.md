@@ -104,7 +104,7 @@ perSystem = { ... }: {
 
 See the [examples](./examples) directory:
 
-- [`examples/build/`](./examples/build/) -- flake-parts image building
+- [`examples/flake/`](./examples/flake/) -- flake-parts image building
 - [`examples/deploy-nixos/`](./examples/deploy-nixos/) -- NixOS deployment
 - [`examples/deploy-home-manager/`](./examples/deploy-home-manager/) -- Home Manager deployment
 - [`examples/deploy-system-manager/`](./examples/deploy-system-manager/) -- system-manager deployment

@@ -51,15 +51,16 @@ in
                 attrsets.mapAttrs (
                   targetSystem: archCfg:
                   # Force _check evaluation by sequencing with builtins.seq
-                  builtins.seq _check
-                    (ociLib.mkCrossOCI {
+                  builtins.seq _check (
+                    ociLib.mkCrossOCI {
                       perSystemConfig = config.oci;
                       globalConfig = cfg.oci;
                       inherit containerId;
                       crossPackage = archCfg.package;
                       crossDependencies = archCfg.dependencies;
                       arch = ociLib.systemToOCIArch targetSystem;
-                    })
+                    }
+                  )
                 ) emulatedArchConfigs
               ))
             ];

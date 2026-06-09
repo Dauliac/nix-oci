@@ -170,7 +170,8 @@ in
 
                 # Per-arch package override.
                 # Native arch: defaults to the container's main package.
-                # Cross arch: auto-inferred via pkgsCross.${crossPkgsAttr}.${pname}.
+                # Cross arch: auto-inferred via pkgsCross (crossBuild) or
+                #   target-system nixpkgs (emulatedBuild via QEMU binfmt).
                 #   Falls back to null if inference fails — user must set manually.
                 options.package = mkOption {
                   type = types.nullOr types.package;
@@ -178,29 +179,42 @@ in
                     Package for this architecture.
 
                     For the native architecture, defaults to the container's main package.
-                    For cross architectures, auto-inferred from the container's package
-                    via `pkgs.pkgsCross.''${crossPkgsAttr}.''${pname}`. If the package
-                    is not available in pkgsCross (e.g. different attr name), set it
-                    manually or use a nixpkgs overlay so the package is available in
-                    all cross-compilation sets.
+
+                    For cross architectures with `crossBuild.enable`, auto-inferred from
+                    the container's package via `pkgs.pkgsCross.''${crossPkgsAttr}.''${pname}`.
+
+                    For emulated architectures with `emulatedBuild.enable`, auto-inferred
+                    by importing nixpkgs for the target system and looking up the pname.
+                    The build runs under QEMU binfmt emulation.
+
+                    If auto-inference fails, set the package manually.
                   '';
                   default =
                     let
-                      crossPkgsAttr = archMap.${name}.crossPkgsAttr or null;
                       mainPkg = containerConfig.package;
                       pname = mainPkg.pname or null;
+
+                      # Cross-compilation inference (pkgsCross)
+                      crossPkgsAttr = archMap.${name}.crossPkgsAttr or null;
                       crossPkgSet = if crossPkgsAttr != null then pkgs.pkgsCross.${crossPkgsAttr} or null else null;
-                      hasAttr = crossPkgSet != null && pname != null && builtins.hasAttr pname crossPkgSet;
+                      hasCrossAttr = crossPkgSet != null && pname != null && builtins.hasAttr pname crossPkgSet;
+
+                      # Emulated build inference (target-system nixpkgs via QEMU binfmt)
+                      emulatedEnabled = containerConfig.multiArch.emulatedBuild.enable or false;
+                      emulatedPkgs = import pkgs.path { system = name; };
+                      hasEmulatedAttr = pname != null && builtins.hasAttr pname emulatedPkgs;
                     in
                     if name == system then
                       mainPkg
                     else if mainPkg == null then
                       null
-                    else if hasAttr then
+                    else if emulatedEnabled then
+                      if hasEmulatedAttr then emulatedPkgs.${pname} else null
+                    else if hasCrossAttr then
                       crossPkgSet.${pname}
                     else
                       null;
-                  defaultText = lib.literalExpression "auto-inferred via pkgsCross (native) or null (fallback)";
+                  defaultText = lib.literalExpression "auto-inferred via pkgsCross, emulated nixpkgs, or null (fallback)";
                 };
 
                 # Per-arch dependencies override.
@@ -211,21 +225,34 @@ in
                     Dependencies for this architecture.
                     For native arch, defaults to the container's dependencies.
                     For cross arches, each dependency is auto-inferred via
-                    pkgsCross when possible. Dependencies that fail inference
-                    are silently dropped — override manually if needed.
+                    pkgsCross (crossBuild) or target-system nixpkgs (emulatedBuild).
+                    Dependencies that fail inference are silently dropped —
+                    override manually if needed.
                   '';
                   default =
                     let
-                      crossPkgsAttr = archMap.${name}.crossPkgsAttr or null;
                       containerDeps = containerConfig.dependencies or [ ];
+
+                      # Emulated build: import target nixpkgs
+                      emulatedEnabled = containerConfig.multiArch.emulatedBuild.enable or false;
+                      emulatedPkgs = import pkgs.path { system = name; };
+
+                      # Cross build: pkgsCross
+                      crossPkgsAttr = archMap.${name}.crossPkgsAttr or null;
                       crossPkgSet = if crossPkgsAttr != null then pkgs.pkgsCross.${crossPkgsAttr} or null else null;
+
                       inferDep =
                         dep:
                         let
                           pname = dep.pname or null;
-                          hasAttr = crossPkgSet != null && pname != null && builtins.hasAttr pname crossPkgSet;
                         in
-                        if hasAttr then crossPkgSet.${pname} else null;
+                        if emulatedEnabled then
+                          if pname != null && builtins.hasAttr pname emulatedPkgs then emulatedPkgs.${pname} else null
+                        else
+                          let
+                            hasAttr = crossPkgSet != null && pname != null && builtins.hasAttr pname crossPkgSet;
+                          in
+                          if hasAttr then crossPkgSet.${pname} else null;
                     in
                     if name == system then
                       containerDeps

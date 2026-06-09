@@ -5,6 +5,9 @@
 # layers. This is the fold pattern described in:
 # https://blog.eigenvalue.net/2023-nix2container-everything-once/
 { lib, ... }:
+let
+  pure = import ../../../../lib/oci.nix { inherit lib; };
+in
 {
   config.perSystem =
     { lib, ... }:
@@ -12,20 +15,7 @@
       nix-lib.lib.oci.foldImageLayers = {
         type = lib.types.functionTo (lib.types.listOf lib.types.package);
         description = "Chain layers with automatic store-path deduplication via fold";
-        fn =
-          {
-            nix2container,
-            layerDefs,
-          }:
-          let
-            mergeToLayer =
-              priorLayers: layerDef:
-              let
-                layer = nix2container.buildLayer (layerDef // { layers = priorLayers; });
-              in
-              priorLayers ++ [ layer ];
-          in
-          lib.foldl mergeToLayer [ ] layerDefs;
+        fn = pure.foldImageLayers;
       };
     };
 }
