@@ -1,6 +1,6 @@
 +++
 title = "Design choices and best practices"
-description = "Overview of nix-oci's opinionated defaults — secure, minimal, reproducible, self-describing containers"
+description = "Overview of nix-oci's opinionated defaults -- secure, minimal, reproducible, self-describing containers"
 +++
 
 # Design choices and best practices
@@ -13,10 +13,10 @@ produce images that are **secure**, **minimal**, **reproducible**, and
 
 Each topic has its own detailed page:
 
-- [Security defaults](./security-defaults.md) — non-root by default, distroless by construction, security tooling, bit-for-bit reproducibility
-- [Automatic OCI labels](./automatic-labeling.md) — OCI standard annotations, build metadata, hardening hints, Kubernetes SecurityContext/PSS, network ports, Nix identity, nixpkgs security
-- [Automatic metadata derivation](./automatic-metadata.md) — healthchecks, stop signals, working directories, volume declarations from NixOS services
-- [Multi-architecture images](./multi-arch-images.md) — CI-parallel native builds or single-machine cross-compilation for multi-arch OCI manifests
+- [Security defaults](./security-defaults.md) -- non-root by default, distroless by construction, security tooling, bit-for-bit reproducibility
+- [Automatic OCI labels](./automatic-labeling.md) -- OCI standard annotations, build metadata, hardening hints, Kubernetes SecurityContext/PSS, network ports, Nix identity, nixpkgs security
+- [Automatic metadata derivation](./automatic-metadata.md) -- healthchecks, stop signals, working directories, volume declarations from NixOS services
+- [Multi-architecture images](./multi-arch-images.md) -- CI-parallel native builds or single-machine cross-compilation for multi-arch OCI manifests
 
 The rest of this page covers the remaining design choices that don't
 warrant a full page.
@@ -41,7 +41,7 @@ directory tree.
   scanners.
 - **CA certificates**: every container includes `pkgs.cacert`, placing
   the Mozilla CA bundle at `/etc/ssl/certs/ca-bundle.crt`. TLS just
-  works — no need to manually add certificates or set
+  works -- no need to manually add certificates or set
   `SSL_CERT_FILE`.
 
 ## Automatic naming from packages
@@ -51,7 +51,7 @@ specified manually:
 
 ### Name resolution chain
 
-1. `package.meta.mainProgram` (preferred — lowercase)
+1. `package.meta.mainProgram` (preferred -- lowercase)
 2. `package.pname`
 3. Parsed derivation name (`builtins.parseDrvName`)
 4. Base image name (when using `fromImage`)
@@ -66,7 +66,7 @@ specified manually:
 
 - **Single source of truth**: the package already carries its name and
   version. Duplicating that information in container options is
-  error-prone — especially when bumping versions.
+  error-prone -- especially when bumping versions.
 - **Consistent naming**: `meta.mainProgram` is the canonical binary
   name in Nix. Using it as the image name means
   `docker run myapp:1.2.3` matches the binary inside the container.
@@ -89,13 +89,13 @@ The entrypoint follows the same resolution chain as the name:
 ### Why it matters
 
 - **Zero configuration for simple cases**: a `package = pkgs.caddy;`
-  container automatically gets `entrypoint = ["/bin/caddy"]` — no
+  container automatically gets `entrypoint = ["/bin/caddy"]` -- no
   manual wiring needed.
 - **Convention over configuration**: the Nix ecosystem already uses
   `meta.mainProgram` to identify the primary binary. nix-oci reuses
   that convention rather than inventing its own.
 - **Explicit override**: when the entrypoint needs flags or a wrapper
-  script, set `entrypoint` directly — automatic derivation is skipped
+  script, set `entrypoint` directly -- automatic derivation is skipped
   when the option is non-empty.
 
 ## Layer optimization: most stable first
@@ -103,9 +103,9 @@ The entrypoint follows the same resolution chain as the name:
 When `optimizeLayers = true`, the image is split into a **stack of
 layers ordered by change frequency** (most stable at the bottom):
 
-1. **Deps layer** — runtime libraries and dependencies
-2. **App layer** — the package, shadow setup, config files
-3. **Debug layer** — troubleshooting tools (only in debug variant)
+1. **Deps layer** -- runtime libraries and dependencies
+2. **App layer** -- the package, shadow setup, config files
+3. **Debug layer** -- troubleshooting tools (only in debug variant)
 
 Each layer references its predecessors, and nix2container excludes any
 store path already present in an earlier layer. This **fold-based
@@ -134,17 +134,17 @@ for details.
   variables baked into the image, making it easy to audit what a
   container will receive.
 - **Runtime override**: operators can still override variables at
-  deploy time — the runner service flags take precedence over
+  deploy time -- the runner service flags take precedence over
   image-level `Env`.
 
 ## Port wiring across layers
 
 A single `ports = ["8080:8080"]` declaration flows to four destinations:
 
-1. **OCI ExposedPorts** — image metadata
-2. **Runner service** — Docker/Podman port mapping
-3. **NixOS firewall** — `allowedTCPPorts` (NixOS deploy only)
-4. **Home-manager runner** — Podman port mapping
+1. **OCI ExposedPorts** -- image metadata
+2. **Runner service** -- Docker/Podman port mapping
+3. **NixOS firewall** -- `allowedTCPPorts` (NixOS deploy only)
+4. **Home-manager runner** -- Podman port mapping
 
 ### Why it matters
 
@@ -152,7 +152,7 @@ A single `ports = ["8080:8080"]` declaration flows to four destinations:
   common failure mode where the image exposes a port but the firewall
   blocks it (or vice versa).
 - **Secure by default**: firewall rules are opened automatically only
-  for declared ports — no need to remember to update
+  for declared ports -- no need to remember to update
   `networking.firewall` separately.
 
 ## Testing as Nix derivations
@@ -190,10 +190,10 @@ ensuring they are reproducible across machines and CI environments.
 
 ## Further reading
 
-- [Security defaults](./security-defaults.md) — non-root, distroless, hardening, reproducibility
-- [Automatic OCI labels](./automatic-labeling.md) — OCI annotations, K8s PSS, Kyverno integration
-- [Automatic metadata derivation](./automatic-metadata.md) — healthcheck, stopSignal, workingDir, volumes
-- [Archive-less container building](./archive-less-container-building.md) — how nix2container avoids tar archives
-- [Optimized layer sharing](./optimize-layers.md) — the two-level layering heuristic
-- [Container metadata wiring](./container-metadata-wiring.md) — how options flow to OCI config, services, and firewall
-- [Multi-architecture images](./multi-arch-images.md) — CI-parallel or cross-build multi-arch workflows
+- [Security defaults](./security-defaults.md) -- non-root, distroless, hardening, reproducibility
+- [Automatic OCI labels](./automatic-labeling.md) -- OCI annotations, K8s PSS, Kyverno integration
+- [Automatic metadata derivation](./automatic-metadata.md) -- healthcheck, stopSignal, workingDir, volumes
+- [Archive-less container building](./archive-less-container-building.md) -- how nix2container avoids tar archives
+- [Optimized layer sharing](./optimize-layers.md) -- the two-level layering heuristic
+- [Container metadata wiring](./container-metadata-wiring.md) -- how options flow to OCI config, services, and firewall
+- [Multi-architecture images](./multi-arch-images.md) -- CI-parallel or cross-build multi-arch workflows

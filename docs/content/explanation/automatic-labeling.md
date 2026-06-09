@@ -10,8 +10,8 @@ standardised OCI labels derived from package metadata, build context,
 and security configuration. User-provided labels always override
 auto-generated ones.
 
-All auto-generated labels are **deterministic** — no timestamps, no
-impure inputs — so they don't break bit-for-bit reproducibility.
+All auto-generated labels are **deterministic** -- no timestamps, no
+impure inputs -- so they don't break bit-for-bit reproducibility.
 
 Set `autoLabels = false` on any container to disable all auto-generation.
 
@@ -43,8 +43,8 @@ Some OCI annotations require user input or would break reproducibility:
 
 | Annotation | Why not auto-generated |
 |---|---|
-| `source` | Requires flake `self.rev` threading — set via `labels` |
-| `revision` | Same — set via `labels` |
+| `source` | Requires flake `self.rev` threading -- set via `labels` |
+| `revision` | Same -- set via `labels` |
 | `created` | Timestamps break bit-for-bit reproducibility |
 | `vendor` | Not derivable from package metadata |
 
@@ -109,11 +109,11 @@ Kubernetes admission controllers can read OCI image labels at admission
 time via [Kyverno's `imageData`](https://kyverno.io/docs/policy-types/cluster-policy/variables/)
 context (`imageData.configData.config.Labels`) and use them to:
 
-- **Validate** — reject images that don't meet a minimum PSS level
-- **Mutate** — auto-generate `securityContext` from the image's declared
+- **Validate** -- reject images that don't meet a minimum PSS level
+- **Mutate** -- auto-generate `securityContext` from the image's declared
   security posture (a growing pattern in 2026: "secure by default" via
   mutation rather than manual YAML)
-- **Annotate** — add pod annotations from image metadata
+- **Annotate** -- add pod annotations from image metadata
 
 Example Kyverno policy sketch:
 
@@ -147,7 +147,7 @@ spec:
 
 Beyond the PSS level, nix-oci embeds the exact values needed to
 populate a Kubernetes `securityContext`. Kyverno mutation policies can
-read these and auto-generate the SecurityContext — no manual YAML needed.
+read these and auto-generate the SecurityContext -- no manual YAML needed.
 
 | Label | Value | K8s field |
 |---|---|---|
@@ -168,7 +168,7 @@ Port declarations are parsed and surfaced as labels for
 | `network.tcp-ports` | `"8080,443"` | `ports` option (TCP entries) |
 | `network.udp-ports` | `"53"` | `ports` option (UDP entries) |
 
-Kyverno can read these to auto-generate `NetworkPolicy` ingress rules —
+Kyverno can read these to auto-generate `NetworkPolicy` ingress rules --
 single source of truth from the Nix declaration to the K8s network
 policy.
 
@@ -197,7 +197,7 @@ nixpkgs carries security fields that nix-oci surfaces as labels:
 The `provenance.source-type` label indicates whether the package was
 built from source (`fromSource`), is a pre-built binary
 (`binaryNativeCode`), or bytecode (`bytecode`). This is valuable for
-supply chain audits — Kyverno can reject images containing pre-built
+supply chain audits -- Kyverno can reject images containing pre-built
 binaries from untrusted sources.
 
 ## Label merge order
@@ -232,23 +232,23 @@ oci.containers.my-app = {
   Auto-labeling makes nix-oci images pass these checks for all
   derivable annotations.
 - **Single source of truth**: labels are derived from the same Nix
-  expressions that define the package and container — no drift between
+  expressions that define the package and container -- no drift between
   the image and its metadata.
 - **Fleet visibility**: tools like `skopeo inspect`, Trivy, and
   container registries display OCI annotations. Auto-labeling makes
   every image self-describing.
 - **Reproducible metadata**: all auto-generated labels are deterministic
-  — they don't break bit-for-bit reproducibility.
+  -- they don't break bit-for-bit reproducibility.
 - **Ecosystem alignment**: [Chainguard](https://edu.chainguard.dev/chainguard/chainguard-images/overview/)
   sets the same OCI standard annotations on their distroless images.
   nix-oci follows the same convention.
 
 ## Further reading
 
-- [Container metadata wiring](./container-metadata-wiring.md) — how labels flow into OCI config
-- [Security defaults](./security-defaults.md) — non-root, distroless, hardening
-- [OCI Image Spec — Annotations](https://specs.opencontainers.org/image-spec/annotations/)
-- [Kyverno — Require Image Source](https://kyverno.io/policies/other/require-image-source/require-image-source/)
-- [Kyverno — ImageValidatingPolicy](https://kyverno.io/docs/policy-types/image-validating-policy/)
+- [Container metadata wiring](./container-metadata-wiring.md) -- how labels flow into OCI config
+- [Security defaults](./security-defaults.md) -- non-root, distroless, hardening
+- [OCI Image Spec -- Annotations](https://specs.opencontainers.org/image-spec/annotations/)
+- [Kyverno -- Require Image Source](https://kyverno.io/policies/other/require-image-source/require-image-source/)
+- [Kyverno -- ImageValidatingPolicy](https://kyverno.io/docs/policy-types/image-validating-policy/)
 - [K8s Pod Security Standards](https://kubernetes.io/docs/concepts/security/pod-security-standards/)
-- [Snyk — How and when to use Docker labels](https://snyk.io/blog/how-and-when-to-use-docker-labels-oci-container-annotations/)
+- [Snyk -- How and when to use Docker labels](https://snyk.io/blog/how-and-when-to-use-docker-labels-oci-container-annotations/)

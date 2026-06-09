@@ -7,15 +7,15 @@ description = "How the layering heuristic deduplicates store paths across produc
 
 nix-oci can split your container into multiple OCI layers using a
 **store-path popularity algorithm** combined with **fold-based
-deduplication**, so that images sharing common dependencies — including
-production and debug variants — automatically share layers in the
+deduplication**, so that images sharing common dependencies -- including
+production and debug variants -- automatically share layers in the
 registry.
 
 ## The problem
 
 A naive Nix-built container puts every store path into a single layer.
 When you push two images that both depend on glibc, openssl, and bash,
-the registry stores those bytes twice. Pulls are equally wasteful —
+the registry stores those bytes twice. Pulls are equally wasteful --
 every deploy re-downloads the full image even if only your application
 code changed.
 
@@ -39,7 +39,7 @@ with production in the registry.
 
 nix-oci applies a two-level strategy when `optimizeLayers = true`:
 
-### Level 1 — nix2container's popularity algorithm
+### Level 1 -- nix2container's popularity algorithm
 
 Each `buildLayer` / `buildImage` call with a `maxLayers` cap triggers
 nix2container's internal store-path popularity algorithm (originally
@@ -59,11 +59,11 @@ Because Nix store paths are immutable and content-addressed, two images
 that share the same glibc store path produce byte-identical layers.
 The registry deduplicates them automatically.
 
-### Level 2 — fold-based cross-layer deduplication
+### Level 2 -- fold-based cross-layer deduplication
 
 nix2container builds each layer independently by default. When you have
 multiple explicit layers (deps, app, debug), shared store paths like
-glibc can end up **duplicated** across layers — this was documented in
+glibc can end up **duplicated** across layers -- this was documented in
 [Nix & Docker: Layer explicitly without duplicate packages](https://blog.eigenvalue.net/2023-nix2container-everything-once/).
 
 nix-oci solves this with a **fold pattern**: layers are built in order,
@@ -84,7 +84,7 @@ flowchart LR
 ```
 
 ```nix
-# Simplified — see mkImageLayers.nix for the real implementation
+# Simplified -- see mkImageLayers.nix for the real implementation
 foldImageLayers = { nix2container, layerDefs }:
   let
     mergeToLayer = priorLayers: layerDef:
@@ -137,7 +137,7 @@ flowchart TD
 
 ### `"minimal"`
 
-Exactly one layer per concern — no sub-splitting. Most predictable
+Exactly one layer per concern -- no sub-splitting. Most predictable
 cache behaviour: adding a dependency only invalidates the deps layer.
 Best for projects with few images.
 
@@ -186,8 +186,8 @@ flowchart TD
     style deps fill:#a6da95,stroke:#40a02b,color:#000
 ```
 
-- **App layer** — changes on each rebuild
-- **Deps layer** — stable, shared across images
+- **App layer** -- changes on each rebuild
+- **Deps layer** -- stable, shared across images
 
 For Nix-enabled containers ([`installNix`](../reference/flake-parts-options.html)),
 a **Nix layer** is prepended and all subsequent layers deduplicate against it:
@@ -213,7 +213,7 @@ flowchart TD
 
 When [`debug.enabled`](../reference/flake-parts-options.html) and
 [`optimizeLayers`](../reference/flake-parts-options.html) are both set,
-the debug image is built **on top of** the production layer stack — not
+the debug image is built **on top of** the production layer stack -- not
 rebuilt from scratch:
 
 ```mermaid
@@ -296,7 +296,7 @@ oci.containers.my-app = {
 With this setup:
 - **Production image**: deps layer (glibc, bash, coreutils…) + app layer (myApp)
 - **Debug image**: same deps layer + same app layer + thin debug layer (curl, strace)
-- Only the debug layer is unique to the debug image — everything else is shared
+- Only the debug layer is unique to the debug image -- everything else is shared
 
 ## Lib function composition
 
@@ -328,7 +328,7 @@ has its own equivalent functions in `ociLib` following the same pattern.
 
 ## Further reading
 
-- [Nix and layered Docker images](https://grahamc.com/blog/nix-and-layered-docker-images) — the original popularity algorithm
-- [nix2container](https://github.com/nlewo/nix2container) — the backend that implements layering
-- [Nix & Docker: Layer explicitly without duplicate packages](https://blog.eigenvalue.net/2023-nix2container-everything-once/) — the fold pattern for cross-layer deduplication
-- [Building container images with Nix](https://lewo.abesis.fr/posts/nix-build-container-image/) — the foundational ideas behind nix2container
+- [Nix and layered Docker images](https://grahamc.com/blog/nix-and-layered-docker-images) -- the original popularity algorithm
+- [nix2container](https://github.com/nlewo/nix2container) -- the backend that implements layering
+- [Nix & Docker: Layer explicitly without duplicate packages](https://blog.eigenvalue.net/2023-nix2container-everything-once/) -- the fold pattern for cross-layer deduplication
+- [Building container images with Nix](https://lewo.abesis.fr/posts/nix-build-container-image/) -- the foundational ideas behind nix2container
