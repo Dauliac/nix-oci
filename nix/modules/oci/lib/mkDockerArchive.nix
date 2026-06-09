@@ -44,7 +44,7 @@
                 ${pkgs.python3}/bin/python3 ${./stripAbsolutePaths.py} "$layer"
               done
 
-              tar cf $out .
+              tar cf $out --transform='s,^\./,,' .
             '';
       };
     };

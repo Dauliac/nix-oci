@@ -11,7 +11,6 @@
         config.oci.containers = {
           nixosDnsmasqCst = {
             nixosConfig = {
-              enable = true;
               mainService = "dnsmasq";
               modules = [
                 (

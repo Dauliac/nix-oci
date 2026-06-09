@@ -20,7 +20,6 @@
         config.oci.containers = {
           nixosNginxReverseProxy = {
             nixosConfig = {
-              enable = true;
               mainService = "nginx";
               modules = [
                 (

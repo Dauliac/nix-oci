@@ -72,7 +72,6 @@ nix flake init -t github:Dauliac/nix-oci
 perSystem = { ... }: {
   oci.containers.my-caddy = {
     nixosConfig = {
-      enable = true;
       mainService = "caddy";
       modules = [
         ({ ... }: {

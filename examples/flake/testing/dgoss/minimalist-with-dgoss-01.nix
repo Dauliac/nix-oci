@@ -14,6 +14,7 @@
             test.dgoss = {
               enabled = true;
               optionsPath = ./goss.yaml;
+              command = "sleep infinity";
             };
           };
         };

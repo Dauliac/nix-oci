@@ -117,7 +117,6 @@ Otherwise, `"strict"` is used:
 ```nix
 # Auto-detected: nginx → web-server profile
 oci.containers.my-app.nixosConfig = {
-  enable = true;
   mainService = "nginx";
   modules = [({ ... }: { services.nginx.enable = true; })];
 };

@@ -12,7 +12,6 @@
         config.oci.containers = {
           nixosNginxNonroot = {
             nixosConfig = {
-              enable = true;
               mainService = "nginx";
               modules = [
                 (

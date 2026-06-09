@@ -78,7 +78,7 @@ for the full list of auto-derived fields.
 
 ## How the NixOS evaluation works
 
-When you set `nixosConfig.enable = true` on a container, nix-oci
+When you use `nixosConfig.modules` or `nixosConfig.mainService` on a container, nix-oci
 performs a full NixOS module evaluation in a minimal context:
 
 1. **Imports** `_nixos/oci/` modules -- entrypoint extraction,
@@ -113,7 +113,7 @@ dotfiles are **reproducible build artifacts**, not runtime state.
 
 ### Container-friendly defaults
 
-When `homeConfig.enable = true`, nix-oci injects sensible defaults
+When `homeConfig.homeManagerFlake` is set, nix-oci injects sensible defaults
 (all `lib.mkDefault`, freely overridable):
 
 - **Bash** with history configuration and common aliases
@@ -163,9 +163,7 @@ provide it via their flake inputs and pass it through
       perSystem = { pkgs, ... }: {
         oci.containers.my-app = {
           package = pkgs.curl;
-          nixosConfig.enable = true;
           homeConfig = {
-            enable = true;
             homeManagerFlake = home-manager;
             modules = [
               ({ ... }: {
@@ -202,7 +200,6 @@ modules between containers:
 oci.containers.api = {
   package = pkgs.my-api;
   homeConfig = {
-    enable = true;
     homeManagerFlake = inputs.home-manager;
     modules = [ ./shared/dev-tools.nix ];
   };
@@ -213,7 +210,6 @@ oci.containers.worker = {
   package = pkgs.my-worker;
   dependencies = [ pkgs.postgresql ];
   homeConfig = {
-    enable = true;
     homeManagerFlake = inputs.home-manager;
     modules = [
       ./shared/dev-tools.nix

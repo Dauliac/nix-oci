@@ -92,7 +92,6 @@ NixOS service definition:
 perSystem = { ... }: {
   oci.containers.my-nginx = {
     nixosConfig = {
-      enable = true;
       mainService = "nginx";
       modules = [
         ({ ... }: {

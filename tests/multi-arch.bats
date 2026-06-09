@@ -113,7 +113,9 @@ teardown_file() {
     echo "$output"
     [ "$status" -eq 0 ]
 
-    local layout="$output"
+    # Extract only the /nix/store path from output (nix may emit warnings/traces)
+    local layout
+    layout=$(echo "$output" | grep -oP '/nix/store/\S+' | head -1)
     local manifest
     manifest=$(skopeo inspect --raw "oci:${layout}:latest")
     local media
@@ -139,7 +141,8 @@ teardown_file() {
   for pkg in "${MULTIARCH_PKGS[@]}"; do
     run nix build "${NIX_OCI_FLAKE_REF}#${pkg}" --no-link --print-out-paths
     [ "$status" -eq 0 ]
-    local layout="$output"
+    local layout
+    layout=$(echo "$output" | grep -oP '/nix/store/\S+' | head -1)
 
     for tag in $(jq -r '.manifests[] | select(.mediaType == "application/vnd.oci.image.manifest.v1+json") | .annotations["org.opencontainers.image.ref.name"]' "$layout/index.json"); do
       local arch_manifest

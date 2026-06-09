@@ -25,7 +25,7 @@
         }:
         let
           nixosCfg = config.nixosConfig;
-          enabled = nixosCfg.enable;
+          enabled = nixosCfg.mainService != null || nixosCfg.modules != [ ];
           eval = nixosCfg.eval;
           mainService = nixosCfg.mainService or null;
           out = eval.oci.container._output;

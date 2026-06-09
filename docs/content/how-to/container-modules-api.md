@@ -42,7 +42,6 @@ Pick any NixOS service (e.g. nginx) and wrap it in `nixosConfig.modules`:
 ```nix
 oci.containers.my-nginx = {
   nixosConfig = {
-    enable = true;
     mainService = "nginx";  # which systemd service to use as entrypoint
     modules = [
       ({ ... }: {
@@ -88,7 +87,6 @@ oci.containers.my-nginx = {
   dependencies = [ pkgs.curl ];
 
   nixosConfig = {
-    enable = true;
     mainService = "nginx";
     modules = [
       ({ pkgs, ... }: {
@@ -110,7 +108,6 @@ To run as root (required for some services like caddy that bind to port 80):
 oci.containers.my-caddy = {
   isRoot = true;  # set at container level
   nixosConfig = {
-    enable = true;
     mainService = "caddy";
     modules = [({ ... }: {
       services.caddy = {

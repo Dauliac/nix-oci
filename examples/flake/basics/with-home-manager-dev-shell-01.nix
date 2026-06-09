@@ -41,7 +41,6 @@
 
             # NixOS module: provides /etc, users, shadow files
             nixosConfig = {
-              enable = true;
               modules = [
                 (
                   { pkgs, ... }:
@@ -57,7 +56,6 @@
 
             # Home-manager: dotfiles baked into the image
             homeConfig = {
-              enable = true;
               homeManagerFlake = inputs.home-manager;
               modules = [
                 (

@@ -12,7 +12,6 @@
         config.oci.containers = {
           nixosRedisHealthcheck = {
             nixosConfig = {
-              enable = true;
               mainService = "redis-default";
               modules = [
                 (

@@ -145,7 +145,6 @@ Each file in `containers/` is a module that defines one container:
 {
   config.oci.containers.frontend = {
     nixosConfig = {
-      enable = true;
       mainService = "nginx";
       modules = [({ ... }: {
         services.nginx = {

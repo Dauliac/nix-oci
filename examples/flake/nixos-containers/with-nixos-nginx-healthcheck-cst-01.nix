@@ -13,7 +13,6 @@
         config.oci.containers = {
           nixosNginxHealthcheck = {
             nixosConfig = {
-              enable = true;
               mainService = "nginx";
               modules = [
                 (

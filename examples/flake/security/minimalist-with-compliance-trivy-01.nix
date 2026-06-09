@@ -12,7 +12,6 @@
         config.oci.containers = {
           minimalistWithComplianceTrivy = {
             nixosConfig = {
-              enable = true;
               mainService = "nginx";
               modules = [
                 (

@@ -15,7 +15,6 @@
         config.oci.containers = {
           nixosPostgres = {
             nixosConfig = {
-              enable = true;
               mainService = "postgresql";
               modules = [
                 (

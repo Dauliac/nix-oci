@@ -14,7 +14,6 @@
         config.oci.containers = {
           nixosNginxCst = {
             nixosConfig = {
-              enable = true;
               mainService = "nginx";
               modules = [
                 (

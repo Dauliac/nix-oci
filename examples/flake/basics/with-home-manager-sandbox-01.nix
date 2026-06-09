@@ -29,12 +29,10 @@
             ];
 
             nixosConfig = {
-              enable = true;
               modules = [ ];
             };
 
             homeConfig = {
-              enable = true;
               homeManagerFlake = inputs.home-manager;
               # The internal defaults already provide bash + starship.
               # Override or extend here:

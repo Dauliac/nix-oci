@@ -94,7 +94,6 @@
           # ──────────────────────────────────────────────
           "${containerName "nginx"}" = {
             nixosConfig = {
-              enable = true;
               mainService = "nginx";
               modules = [
                 (
@@ -144,7 +143,6 @@
           # ──────────────────────────────────────────────
           "${containerName "php"}" = {
             nixosConfig = {
-              enable = true;
               mainService = "phpfpm-${project}";
               modules = [
                 (
@@ -204,7 +202,6 @@
           # ──────────────────────────────────────────────
           "${containerName "redis"}" = {
             nixosConfig = {
-              enable = true;
               mainService = "redis-${project}";
               modules = [
                 (

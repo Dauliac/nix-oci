@@ -33,7 +33,6 @@ oci.containers.my-nginx = {
   dependencies = [ pkgs.curl ];
 
   nixosConfig = {
-    enable = true;
     mainService = "nginx";
     modules = [
       # Inside modules: write standard NixOS configuration
@@ -100,7 +99,6 @@ forks to background, you may need to add a custom adapter or set
 ```nix
 oci.containers.web = {
   nixosConfig = {
-    enable = true;
     mainService = "nginx";
     modules = [({ pkgs, ... }: {
       services.nginx = {
@@ -120,7 +118,6 @@ oci.containers.web = {
 ```nix
 oci.containers.cache = {
   nixosConfig = {
-    enable = true;
     mainService = "redis";
     modules = [({ ... }: {
       services.redis.servers.default = {
@@ -138,7 +135,6 @@ oci.containers.cache = {
 oci.containers.proxy = {
   isRoot = true;
   nixosConfig = {
-    enable = true;
     mainService = "caddy";
     modules = [({ pkgs, ... }: {
       services.caddy = {
@@ -166,12 +162,10 @@ oci.containers.my-app = {
   package = pkgs.curl;
 
   nixosConfig = {
-    enable = true;
     modules = [];
   };
 
   homeConfig = {
-    enable = true;
     homeManagerFlake = inputs.home-manager;
     modules = [
       ({ ... }: {

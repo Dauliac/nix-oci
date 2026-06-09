@@ -16,7 +16,6 @@
         config.oci.containers = {
           nixosRedisCst = {
             nixosConfig = {
-              enable = true;
               mainService = "redis-default";
               modules = [
                 (

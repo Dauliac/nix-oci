@@ -11,7 +11,6 @@
         config.oci.containers = {
           nixosCaddyCst = {
             nixosConfig = {
-              enable = true;
               mainService = "caddy";
               modules = [
                 (

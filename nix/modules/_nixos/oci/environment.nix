@@ -45,6 +45,12 @@
       map (name: config.oci.lib.mkEtcDerivation name etc.${name}) wantedNames;
   };
 
+  options.oci.container.environment = lib.mkOption {
+    type = lib.types.attrsOf lib.types.str;
+    default = { };
+    description = "User-provided environment variables forwarded from the flake-parts container options.";
+  };
+
   options.oci.container._output.envVars = lib.mkOption {
     type = lib.types.listOf lib.types.str;
     internal = true;
@@ -72,7 +78,8 @@
         "LC_ALL=C.UTF-8"
         "NIX_PAGER=cat"
       ]
-      ++ (cfg._output.performance.envVars or [ ]);
+      ++ (cfg._output.performance.envVars or [ ])
+      ++ lib.mapAttrsToList (k: v: "${k}=${v}") cfg.environment;
   };
 
   config = {
