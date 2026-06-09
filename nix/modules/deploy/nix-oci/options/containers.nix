@@ -1,4 +1,4 @@
-# oci.containers — registered for NixOS, home-manager, and system-manager.
+# oci.containers -- registered for NixOS, home-manager, and system-manager.
 #
 # Submodule imports SHARED option definitions from oci/containers/_options/
 # (same source of truth as flake-parts) + deploy-specific extensions from _containers/.
@@ -10,7 +10,7 @@ let
   # Deploy-specific extensions (autoStart, volumes, image, image-ref, _defaults)
   deployExtensions = import-tree ./_containers;
 
-  # Shared pure OCI library — single source of truth for both
+  # Shared pure OCI library -- single source of truth for both
   # flake-parts (nix-lib) and deploy (NixOS/HM) consumers.
   mkOciLib = lib: import ../../../../lib/oci.nix { inherit lib; };
 

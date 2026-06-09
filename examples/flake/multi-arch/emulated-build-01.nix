@@ -32,7 +32,7 @@
               ];
               emulatedBuild.enable = true;
             };
-            # No archConfigs needed — auto-inferred from target-system nixpkgs
+            # No archConfigs needed -- auto-inferred from target-system nixpkgs
           };
         };
       };

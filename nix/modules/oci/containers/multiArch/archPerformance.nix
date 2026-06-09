@@ -57,7 +57,7 @@
               };
             };
 
-            # Validation via option type checks — the perArch submodule
+            # Validation via option type checks -- the perArch submodule
             # does not have NixOS-level `assertions`. Instead, invalid
             # march values are caught by the image builder at build time
             # (the stdenvAdapters.withCFlags call will fail with an

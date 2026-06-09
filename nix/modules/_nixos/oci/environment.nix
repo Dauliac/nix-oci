@@ -1,4 +1,4 @@
-# Environment: SSL, nsswitch, env vars — config, lib, and outputs
+# Environment: SSL, nsswitch, env vars -- config, lib, and outputs
 {
   config,
   lib,

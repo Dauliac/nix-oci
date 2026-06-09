@@ -11,7 +11,7 @@ See also:
 
 - [Home Manager manual](https://nix-community.github.io/home-manager/)
 - [Home Manager options reference](https://nix-community.github.io/home-manager/options.xhtml)
-- [`services.podman`](https://nix-community.github.io/home-manager/options.xhtml#opt-services.podman.containers) — the HM option nix-oci wires into
+- [`services.podman`](https://nix-community.github.io/home-manager/options.xhtml#opt-services.podman.containers) -- the HM option nix-oci wires into
 - [nix-oci source: `nix/modules/deploy/nix-oci/home-manager/`](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/deploy/nix-oci/home-manager)
 
 ```nix

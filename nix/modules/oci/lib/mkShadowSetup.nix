@@ -5,7 +5,7 @@
 # root + a dedicated user with UID/GID 4000.
 { lib, ... }:
 let
-  pure = import ../../../../lib/oci.nix { inherit lib; };
+  pure = import ../../../lib/oci.nix { inherit lib; };
 in
 {
   nix-lib.lib.oci.mkShadowSetup = {

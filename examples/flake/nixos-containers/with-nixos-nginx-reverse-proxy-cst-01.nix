@@ -1,8 +1,8 @@
 # Example: Nginx as API gateway with rate limiting and custom error pages
 #
 # Demonstrates a production-grade reverse proxy pattern using NixOS module
-# composition. The entire gateway config — rate limiting, upstream backends,
-# security headers, custom error pages — is expressed as NixOS options.
+# composition. The entire gateway config -- rate limiting, upstream backends,
+# security headers, custom error pages -- is expressed as NixOS options.
 #
 # What this shows:
 # - Rate limiting via nginx limit_req zones
@@ -118,7 +118,7 @@
 
                         # API endpoints with rate limiting
                         # Security headers are repeated in each location that uses
-                        # add_header — nginx drops parent add_header directives when
+                        # add_header -- nginx drops parent add_header directives when
                         # a location defines its own (by design).
                         locations."/api/" = {
                           proxyPass = "http://api_backend";

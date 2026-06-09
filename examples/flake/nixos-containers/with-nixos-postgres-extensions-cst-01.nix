@@ -2,7 +2,7 @@
 #
 # Demonstrates building a production-grade PostgreSQL container using
 # NixOS module evaluation. All extensions are compiled and linked at
-# build time — no runtime "CREATE EXTENSION" surprises.
+# build time -- no runtime "CREATE EXTENSION" surprises.
 #
 # What this shows:
 # - PostgreSQL package override with PostGIS and pg_stat_statements
@@ -33,7 +33,7 @@
                       package = pkgs.postgresql_16;
 
                       # Extensions are compiled and linked at build time via the
-                      # NixOS `extensions` option — no `withPackages` wrapper needed.
+                      # NixOS `extensions` option -- no `withPackages` wrapper needed.
                       extensions = ps: [
                         ps.postgis
                         ps.pg_repack

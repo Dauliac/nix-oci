@@ -5,7 +5,7 @@
 #   2. Outputs build artifacts via `oci.container._output.performance.*`
 #
 # Arch-specific options (march, hwcaps) are handled by the image builder
-# directly using archConfigs — they don't need NixOS eval.
+# directly using archConfigs -- they don't need NixOS eval.
 #
 # Users can tune performance through their nixosConfig modules:
 #   oci.containers.my-app.nixosConfig.modules = [

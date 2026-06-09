@@ -24,18 +24,18 @@
       { pkgs, ... }:
       let
         # ──────────────────────────────────────────────────────
-        # SHARED CONFIGURATION — single source of truth
+        # SHARED CONFIGURATION -- single source of truth
         # ──────────────────────────────────────────────────────
         # Project identity
         project = "myapp";
         team = "backend";
 
-        # Network topology — change here, flows everywhere
+        # Network topology -- change here, flows everywhere
         phpFpmPort = 9000;
         redisPort = 6379;
         httpPort = 8080;
 
-        # Container naming — consistent prefix
+        # Container naming -- consistent prefix
         containerName = suffix: "${project}-${suffix}";
 
         # Shared labels applied to ALL containers in the stack
@@ -46,7 +46,7 @@
         };
 
         # ──────────────────────────────────────────────────────
-        # PHP APPLICATION — shared between nginx and php-fpm
+        # PHP APPLICATION -- shared between nginx and php-fpm
         # ──────────────────────────────────────────────────────
 
         documentRoot = "/var/www/${project}/public";
@@ -73,7 +73,7 @@
         '';
 
         # ──────────────────────────────────────────────────────
-        # NGINX CONFIG — generated from shared variables
+        # NGINX CONFIG -- generated from shared variables
         # ──────────────────────────────────────────────────────
 
         # nginx config references php-fpm via the shared port.
@@ -90,7 +90,7 @@
       {
         config.oci.containers = {
           # ──────────────────────────────────────────────
-          # CONTAINER 1: nginx — reverse proxy + static files
+          # CONTAINER 1: nginx -- reverse proxy + static files
           # ──────────────────────────────────────────────
           "${containerName "nginx"}" = {
             nixosConfig = {
@@ -111,10 +111,10 @@
                         ];
                         root = documentRoot;
 
-                        # Static files — served directly by nginx
+                        # Static files -- served directly by nginx
                         locations."/".tryFiles = "$uri $uri/ /index.php$is_args$args";
 
-                        # PHP files — forwarded to FPM container
+                        # PHP files -- forwarded to FPM container
                         locations."~ \\.php$".extraConfig = nginxFastcgiConfig;
 
                         # Health endpoint for external probes
@@ -140,7 +140,7 @@
           };
 
           # ──────────────────────────────────────────────
-          # CONTAINER 2: PHP-FPM — application runtime
+          # CONTAINER 2: PHP-FPM -- application runtime
           # ──────────────────────────────────────────────
           "${containerName "php"}" = {
             nixosConfig = {
@@ -200,7 +200,7 @@
           };
 
           # ──────────────────────────────────────────────
-          # CONTAINER 3: Redis — session cache
+          # CONTAINER 3: Redis -- session cache
           # ──────────────────────────────────────────────
           "${containerName "redis"}" = {
             nixosConfig = {

@@ -5,12 +5,12 @@
 #   - moderate:   SCMP_ACT_ALLOW default, blocklist ~44 dangerous syscalls
 #   - web-server: SCMP_ACT_ERRNO default, allowlist strict + network + threading
 #
-# Seccomp operates at the syscall boundary via BPF — it controls *which
+# Seccomp operates at the syscall boundary via BPF -- it controls *which
 # operations* a process can invoke, complementary to Landlock (which
 # controls *which resources* are accessible).
 { lib, ... }:
 let
-  pure = import ../../../../lib/oci.nix { inherit lib; };
+  pure = import ../../../lib/oci.nix { inherit lib; };
 in
 {
   config.perSystem =

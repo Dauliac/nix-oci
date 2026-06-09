@@ -1,7 +1,7 @@
 # Per-container: OCI Volumes metadata (declared mount points).
 #
 # Declares paths in the image that should be treated as volumes
-# (persistent data). This is image-level metadata — it tells the
+# (persistent data). This is image-level metadata -- it tells the
 # container runtime that these paths contain data that should survive
 # container restarts. Separate from deploy-side volumes (bind mounts).
 #

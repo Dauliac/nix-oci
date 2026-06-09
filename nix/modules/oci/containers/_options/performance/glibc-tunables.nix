@@ -20,9 +20,9 @@
       are strings. Multiple tunables are colon-joined automatically.
 
       **Recommended for containers**:
-      - `glibc.malloc.arena_max = "2"` — cap malloc arenas to reduce RSS
-      - `glibc.malloc.mmap_threshold = "131072"` — reduce fragmentation
-      - `glibc.malloc.tcache_count = "7"` — tune per-thread cache
+      - `glibc.malloc.arena_max = "2"` -- cap malloc arenas to reduce RSS
+      - `glibc.malloc.mmap_threshold = "131072"` -- reduce fragmentation
+      - `glibc.malloc.tcache_count = "7"` -- tune per-thread cache
 
       Only effective with glibc-based containers (not musl).
     '';

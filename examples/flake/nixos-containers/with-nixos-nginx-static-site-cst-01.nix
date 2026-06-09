@@ -2,8 +2,8 @@
 #
 # Demonstrates the full nix-oci pipeline: a static website is built as a
 # pure Nix derivation, then served by an nginx container configured via
-# NixOS modules. The entire build — site generation, nginx config, container
-# image — is a single reproducible Nix expression.
+# NixOS modules. The entire build -- site generation, nginx config, container
+# image -- is a single reproducible Nix expression.
 #
 # What this shows:
 # - Building a static site as a Nix derivation (pkgs.runCommand)
@@ -51,7 +51,7 @@
                           <body>
                             <main>
                               <h1>Built with nix-oci</h1>
-                              <p>This entire site — HTML, CSS, nginx config, and container image —
+                              <p>This entire site -- HTML, CSS, nginx config, and container image --
                                  is a single reproducible Nix expression.</p>
                               <p>Build hash: <code>@buildHash@</code></p>
                             </main>
@@ -109,7 +109,7 @@
                         };
 
                         # Immutable cache for hashed assets
-                        # Security headers must be repeated here — nginx drops
+                        # Security headers must be repeated here -- nginx drops
                         # parent add_header directives when a location defines its own.
                         locations."~* \\.(css|js|woff2?|ttf|eot|svg|png|jpg|jpeg|gif|ico|webp)$" = {
                           extraConfig = ''

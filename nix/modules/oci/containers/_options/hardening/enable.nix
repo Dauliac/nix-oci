@@ -11,9 +11,9 @@
       generates runtime security hints consumed by deploy modules.
 
       Three independent kernel primitives are available:
-      - **Seccomp** — syscall filtering (BPF at the syscall boundary)
-      - **Landlock** — object-level access control (LSM hooks at VFS level)
-      - **Capabilities + flags** — privilege restriction at runtime
+      - **Seccomp** -- syscall filtering (BPF at the syscall boundary)
+      - **Landlock** -- object-level access control (LSM hooks at VFS level)
+      - **Capabilities + flags** -- privilege restriction at runtime
 
       For containers using `nixosConfig`, these options are forwarded
       to the inner NixOS module at `oci.container.hardening` and can

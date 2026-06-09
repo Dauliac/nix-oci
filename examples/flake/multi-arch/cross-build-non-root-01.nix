@@ -1,7 +1,7 @@
 # Cross-build multi-arch with non-root user.
 #
 # Multi-arch works with all container options including user, labels, etc.
-# Cross package auto-inferred — no archConfigs needed.
+# Cross package auto-inferred -- no archConfigs needed.
 { ... }:
 {
   config = {

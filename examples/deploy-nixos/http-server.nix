@@ -1,4 +1,4 @@
-# Example: NixOS deploy — HTTP server container via nix-oci.
+# Example: NixOS deploy -- HTTP server container via nix-oci.
 { pkgs, ... }:
 {
   oci = {

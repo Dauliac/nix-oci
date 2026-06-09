@@ -5,8 +5,8 @@
 #   mainService = "redis"         → systemd "redis-default" (first enabled server)
 #   mainService = "redis-myname"  → systemd "redis-myname"
 #
-# No foreground adapter needed — NixOS redis runs with daemonize=no.
-# StopSignal: SIGTERM — Redis saves the dataset and exits gracefully.
+# No foreground adapter needed -- NixOS redis runs with daemonize=no.
+# StopSignal: SIGTERM -- Redis saves the dataset and exits gracefully.
 {
   config,
   lib,

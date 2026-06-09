@@ -19,9 +19,9 @@
           description = ''
             OCI runtime for this container. `null` uses the backend default.
 
-            - `"crun"` — C-based, 15-25% faster startup than runc. Default on Fedora/Podman.
-            - `"runc"` — Go-based, most battle-tested. Default for Docker.
-            - `"youki"` — Rust-based, experimental.
+            - `"crun"` -- C-based, 15-25% faster startup than runc. Default on Fedora/Podman.
+            - `"runc"` -- Go-based, most battle-tested. Default for Docker.
+            - `"youki"` -- Rust-based, experimental.
           '';
           example = "crun";
         };
@@ -58,7 +58,7 @@
           type = lib.types.nullOr lib.types.str;
           default = null;
           description = ''
-            cgroup v2 CPU burst — accumulated unused quota spent on demand.
+            cgroup v2 CPU burst -- accumulated unused quota spent on demand.
             Critical for latency-sensitive services that idle between requests.
 
             Value in microseconds. Translated to `CPUBurst=` in the systemd

@@ -64,7 +64,7 @@ in
   };
 
   config = lib.mkIf cfg.installNix {
-    # Nix build users — NixOS users module generates /etc/passwd entries
+    # Nix build users -- NixOS users module generates /etc/passwd entries
     users.users = {
       nobody = {
         isSystemUser = true;
@@ -101,7 +101,7 @@ in
       experimental-features = nix-command flakes
     '';
 
-    # Nix packages — included in _output.rootFilesystem via systemPackages
+    # Nix packages -- included in _output.rootFilesystem via systemPackages
     environment.systemPackages = [
       pkgs.nix
       pkgs.bashInteractive

@@ -1,7 +1,7 @@
 # Derive container name from package or base image
 { lib, ... }:
 let
-  pure = import ../../../../lib/oci.nix { inherit lib; };
+  pure = import ../../../lib/oci.nix { inherit lib; };
 in
 {
   nix-lib.lib.oci.mkOCIName = {

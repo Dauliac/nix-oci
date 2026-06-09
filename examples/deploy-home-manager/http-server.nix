@@ -1,4 +1,4 @@
-# Example: home-manager deploy — HTTP server container via nix-oci.
+# Example: home-manager deploy -- HTTP server container via nix-oci.
 { pkgs, ... }:
 {
   oci = {

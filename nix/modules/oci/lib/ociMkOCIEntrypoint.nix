@@ -1,7 +1,7 @@
 # Derive container entrypoint from package
 { lib, ... }:
 let
-  pure = import ../../../../lib/oci.nix { inherit lib; };
+  pure = import ../../../lib/oci.nix { inherit lib; };
 in
 {
   nix-lib.lib.oci.mkOCIEntrypoint = {

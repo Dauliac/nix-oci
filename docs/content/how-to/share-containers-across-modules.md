@@ -32,7 +32,7 @@ Create `containers/my-app.nix`:
 
 ```nix
 # containers/my-app.nix
-# Shared container definition — used by both flake-parts and NixOS deploy.
+# Shared container definition -- used by both flake-parts and NixOS deploy.
 { pkgs, ... }:
 {
   package = pkgs.python3Minimal;

@@ -45,7 +45,7 @@ in
 
           # Derive container user from the actual service package when possible.
           # Priority: service package → explicit package → _containerName.
-          # Truncate to 31 chars — NixOS rejects user/group names longer than that.
+          # Truncate to 31 chars -- NixOS rejects user/group names longer than that.
           #
           # When mainService is set, we read evalResult.services.${mainService}.package.
           # This is a lazy circular reference (containerUser ↔ evalResult), but safe:
@@ -119,7 +119,7 @@ in
                       isRoot = containerIsRoot;
                       mainService = nixosCfg.mainService or null;
                       installNix = config.installNix or false;
-                      # dependencies, configFiles, hardening don't depend on eval — safe to pass
+                      # dependencies, configFiles, hardening don't depend on eval -- safe to pass
                       dependencies = config.dependencies;
                       configFiles = config.configFiles;
                       # Forward build-time hardening options (not runtime hints like

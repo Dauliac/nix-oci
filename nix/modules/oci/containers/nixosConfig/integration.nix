@@ -172,11 +172,11 @@
 
                 # -- Seccomp violations --
 
-                # Strict seccomp blocks socket/bind/listen/connect — service
+                # Strict seccomp blocks socket/bind/listen/connect -- service
                 # with detected ports will crash with EPERM.
                 seccompBlocksNetworking = enabled && isStrictSeccomp && hasPorts;
 
-                # Strict seccomp blocks clone/clone3/wait4 — multi-process
+                # Strict seccomp blocks clone/clone3/wait4 -- multi-process
                 # services (nginx workers, postgresql backends) will fail.
                 seccompBlocksForking = enabled && isStrictSeccomp && serviceNeedsForking;
 

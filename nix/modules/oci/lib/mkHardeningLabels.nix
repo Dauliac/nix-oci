@@ -8,7 +8,7 @@
 # annotations and build info. This function is kept for backward compatibility.
 { lib, ... }:
 let
-  pure = import ../../../../lib/oci.nix { inherit lib; };
+  pure = import ../../../lib/oci.nix { inherit lib; };
 in
 {
   config.perSystem =

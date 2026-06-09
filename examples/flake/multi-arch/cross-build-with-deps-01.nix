@@ -2,7 +2,7 @@
 #
 # Both the main package and dependencies are auto-inferred via pkgsCross.
 # Dependencies whose pname doesn't match a pkgsCross attr are silently
-# dropped — override via archConfigs if needed.
+# dropped -- override via archConfigs if needed.
 { ... }:
 {
   config = {

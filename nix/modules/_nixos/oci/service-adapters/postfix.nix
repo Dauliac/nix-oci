@@ -4,10 +4,10 @@
 # supports "postfix start-fg" which keeps the master in the foreground.
 #
 # Healthcheck: "postfix status" checks if the mail system is running.
-# This is the canonical Postfix health check — it queries the master
+# This is the canonical Postfix health check -- it queries the master
 # process via the Postfix command interface.
 #
-# StopSignal: SIGTERM — postfix master exits cleanly on SIGTERM.
+# StopSignal: SIGTERM -- postfix master exits cleanly on SIGTERM.
 {
   config,
   lib,

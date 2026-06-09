@@ -1,4 +1,4 @@
-# Example: system-manager deploy — HTTP server container via nix-oci.
+# Example: system-manager deploy -- HTTP server container via nix-oci.
 { pkgs, ... }:
 {
   oci = {

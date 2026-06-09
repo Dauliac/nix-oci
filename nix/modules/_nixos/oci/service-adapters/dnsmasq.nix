@@ -4,10 +4,10 @@
 # No foreground adapter needed.
 #
 # Healthcheck: sends a DNS query to the configured listen address and port.
-# Uses "localhost" as the query name — dnsmasq will resolve it even without
+# Uses "localhost" as the query name -- dnsmasq will resolve it even without
 # upstream servers configured (from /etc/hosts).
 #
-# StopSignal: SIGTERM — dnsmasq exits cleanly on SIGTERM.
+# StopSignal: SIGTERM -- dnsmasq exits cleanly on SIGTERM.
 {
   config,
   lib,

@@ -9,7 +9,7 @@
 #
 # Unlike seccomp (which filters syscalls) or namespaces (which control
 # visibility), Landlock controls *which specific inodes and ports* a
-# process can access — a genuinely different kernel primitive.
+# process can access -- a genuinely different kernel primitive.
 { lib, ... }:
 {
   config.perSystem =

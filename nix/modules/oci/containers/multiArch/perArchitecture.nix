@@ -48,7 +48,7 @@
         description = ''
           Per-architecture module definitions applied to every `archConfigs` entry.
 
-          Parallel to `oci.perContainer` — a top-level collector for per-architecture
+          Parallel to `oci.perContainer` -- a top-level collector for per-architecture
           options. Contributed modules are evaluated for every target architecture
           within every container.
 

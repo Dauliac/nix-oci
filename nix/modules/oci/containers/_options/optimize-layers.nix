@@ -16,13 +16,13 @@
       Split container contents into deduplicated layers for optimal
       registry caching. Uses a two-level heuristic:
 
-      **Level 1 — popularity-based splitting.** Within each layer,
+      **Level 1 -- popularity-based splitting.** Within each layer,
       nix2container's store-path popularity algorithm sorts paths by
       how many other paths reference them. Foundational packages
       (glibc, openssl, …) get their own sub-layers; application-specific
       paths cluster together. Capped by a `maxLayers` budget per layer.
 
-      **Level 2 — fold-based cross-layer deduplication.** Layers are
+      **Level 2 -- fold-based cross-layer deduplication.** Layers are
       built in a chain where each layer references all predecessors.
       nix2container excludes any store path already present in an
       earlier layer, eliminating duplication across explicit layers.
@@ -30,10 +30,10 @@
       The resulting layer stack (most stable first):
       - Deps layer (runtime libraries, `maxLayers = 80` when fine-grained)
       - App layer (package, shadow, configs)
-      - Debug layer (curl, strace, … — only when `debug.enabled`)
+      - Debug layer (curl, strace, … -- only when `debug.enabled`)
 
       Production and debug images share the same deps + app layers in
-      the registry — only the debug layer is unique to the debug variant.
+      the registry -- only the debug layer is unique to the debug variant.
 
       Use `layerStrategy` to control sub-splitting granularity:
       `"fine-grained"` (default) for maximum cross-image sharing,

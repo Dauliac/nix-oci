@@ -1,10 +1,10 @@
 # Caddy: healthcheck via built-in admin API + stop signal.
 #
-# Caddy runs in foreground by default — no adapter needed for that.
+# Caddy runs in foreground by default -- no adapter needed for that.
 # Caddy has a built-in admin API at localhost:2019 (enabled by default).
-# We use it as a native healthcheck — no injection needed.
+# We use it as a native healthcheck -- no injection needed.
 #
-# StopSignal: SIGTERM — Caddy handles it gracefully with connection draining.
+# StopSignal: SIGTERM -- Caddy handles it gracefully with connection draining.
 {
   config,
   lib,

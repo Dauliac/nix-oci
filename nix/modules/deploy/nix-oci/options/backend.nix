@@ -1,4 +1,4 @@
-# oci.backend — registered for NixOS, home-manager, and system-manager.
+# oci.backend -- registered for NixOS, home-manager, and system-manager.
 { ... }:
 let
   mod =

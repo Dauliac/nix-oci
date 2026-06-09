@@ -6,7 +6,7 @@
 # https://blog.eigenvalue.net/2023-nix2container-everything-once/
 { lib, ... }:
 let
-  pure = import ../../../../lib/oci.nix { inherit lib; };
+  pure = import ../../../lib/oci.nix { inherit lib; };
 in
 {
   config.perSystem =

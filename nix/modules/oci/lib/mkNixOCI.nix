@@ -1,6 +1,6 @@
 # OCI mkNixOCI - Build a container with Nix support and build users
 #
-# Uses NixOS eval outputs for all image content — same normalized flow as
+# Uses NixOS eval outputs for all image content -- same normalized flow as
 # mkSimpleOCI. Nix-specific additions (nixbld users, nix.conf, nix packages)
 # are handled by _nixos/oci/nix-support.nix in the NixOS eval.
 # The only builder-specific parts are /nix/var dirs and permissions.
@@ -57,10 +57,10 @@
             nixVarDirs = out.nixVarDirs;
             nixPerms = out.nixPerms or [ ];
 
-            # Root filesystem from NixOS eval — includes shadow files (with nixbld
+            # Root filesystem from NixOS eval -- includes shadow files (with nixbld
             # users), etc files (nix.conf, nsswitch, certs), packages (nix, bash,
             # coreutils), dependencies, configFiles, home dir.
-            # rootFilesystem (buildEnv) already includes oci.package — adding it
+            # rootFilesystem (buildEnv) already includes oci.package -- adding it
             # again would cause nix2container collisions when the package uses
             # makeWrapper (symlink-vs-real-file conflict, e.g. PostgreSQL).
             appCopyToRoot = [

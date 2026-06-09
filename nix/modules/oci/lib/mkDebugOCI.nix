@@ -1,6 +1,6 @@
 # OCI mkDebugOCI - Build a debug variant that shares layers with production
 #
-# Uses NixOS eval outputs for all image content — same normalized flow as
+# Uses NixOS eval outputs for all image content -- same normalized flow as
 # mkSimpleOCI and mkNixOCI. No separate installNix/simple paths needed;
 # the NixOS eval already includes Nix packages when installNix=true.
 #
@@ -35,7 +35,7 @@
             layerStrategy = oci.layerStrategy or "fine-grained";
             initNixDb = oci.initializeNixDatabase or false;
 
-            # NixOS eval outputs — single source of truth
+            # NixOS eval outputs -- single source of truth
             nixosEval = oci.nixosConfig.eval;
             out = nixosEval.oci.container._output;
 
@@ -82,8 +82,8 @@
             nixVarDirs = out.nixVarDirs or null;
             nixPerms = out.nixPerms or [ ];
 
-            # Root filesystem from NixOS eval — same for all builder types.
-            # rootFilesystem (buildEnv) already includes oci.package — adding it
+            # Root filesystem from NixOS eval -- same for all builder types.
+            # rootFilesystem (buildEnv) already includes oci.package -- adding it
             # again would cause nix2container collisions when the package uses
             # makeWrapper (symlink-vs-real-file conflict, e.g. PostgreSQL).
             appCopyToRoot = [

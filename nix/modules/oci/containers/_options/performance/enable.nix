@@ -12,9 +12,9 @@
       consumed by deploy modules.
 
       Three independent optimization axes are available:
-      - **Allocator** — replace glibc ptmalloc2 with mimalloc/tcmalloc via `LD_PRELOAD`
-      - **glibc tunables** — tune malloc arenas, tcache, mmap thresholds
-      - **hwcaps** — ship CPU-optimized library variants (glibc-hwcaps, per-arch)
+      - **Allocator** -- replace glibc ptmalloc2 with mimalloc/tcmalloc via `LD_PRELOAD`
+      - **glibc tunables** -- tune malloc arenas, tcache, mmap thresholds
+      - **hwcaps** -- ship CPU-optimized library variants (glibc-hwcaps, per-arch)
     '';
   };
 }

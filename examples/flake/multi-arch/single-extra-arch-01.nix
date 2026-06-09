@@ -1,6 +1,6 @@
 # Single extra arch: add arm64 to an amd64-native build via cross-compilation.
 #
-# Cross package auto-inferred — just list the target systems.
+# Cross package auto-inferred -- just list the target systems.
 { ... }:
 {
   config = {

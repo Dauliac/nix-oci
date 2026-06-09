@@ -2,7 +2,7 @@
 #
 # Mirrors crossBuildPackages.nix but filters for emulatedBuild.enable.
 # Reuses the same nix-lib functions (mkCrossOCI, mkMultiArchOCILayout,
-# mkPushOCILayoutApp) — those functions are package-source-agnostic.
+# mkPushOCILayoutApp) -- those functions are package-source-agnostic.
 {
   config,
   lib,

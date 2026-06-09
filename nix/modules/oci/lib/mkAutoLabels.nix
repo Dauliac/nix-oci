@@ -15,10 +15,10 @@
 #   8. Runtime info (io.github.dauliac.nix-oci.runtime.*)
 #
 # All labels are gated behind the `autoLabels` toggle.
-# User-provided labels are NOT merged here — callers do `mkAutoLabels // userLabels`.
+# User-provided labels are NOT merged here -- callers do `mkAutoLabels // userLabels`.
 { lib, ... }:
 let
-  pure = import ../../../../lib/oci.nix { inherit lib; };
+  pure = import ../../../lib/oci.nix { inherit lib; };
 in
 {
   config.perSystem =

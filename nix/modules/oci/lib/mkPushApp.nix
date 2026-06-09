@@ -1,9 +1,9 @@
-# OCI mkPushApp — build a writeShellApplication that pushes one
+# OCI mkPushApp -- build a writeShellApplication that pushes one
 # specific tag of a built OCI image to the configured registry.
 #
 # Why per-tag: a push is the natural unit of parallelism. Emitting
 # one derivation per tag lets consumers (cimera, other flakes)
-# schedule pushes as independent Nix builds — the executor fans them
+# schedule pushes as independent Nix builds -- the executor fans them
 # out automatically, failures are isolated per-tag, and retries
 # become idempotent per-tag rather than all-or-nothing.
 #
@@ -13,7 +13,7 @@
 #   OCI_DIR              → if set, push to local ocidir:// instead
 # Output contract:
 #   "CIMERA_OCI_PUSHED_TAG ref=<full-ref> digest=<digest> tag=<tag> primary=<bool>"
-# fired on stdout — downstream consumers grep for this marker.
+# fired on stdout -- downstream consumers grep for this marker.
 { lib, ... }:
 {
   config.perSystem =
@@ -28,7 +28,7 @@
         type = lib.types.functionTo lib.types.package;
         description = ''
           Create an app that pushes a single tag of the built OCI
-          image. One app per tag, one process per push — parallel
+          image. One app per tag, one process per push -- parallel
           scheduling falls out for free.
         '';
         fn =
@@ -55,7 +55,7 @@
                 containerConfig.name;
             appName = if debug then "push-debug-${containerId}-${tag}" else "push-${containerId}-${tag}";
             primaryLiteral = if tagConfig.primary then "true" else "false";
-            # registry is types.nullOr types.str — `or ""` does NOT handle null
+            # registry is types.nullOr types.str -- `or ""` does NOT handle null
             # (or only fires for missing attributes, not null values), so guard explicitly.
             registryFallback = if containerConfig.registry != null then containerConfig.registry else "";
             compression = containerConfig.performance.compression or "gzip";
@@ -82,12 +82,12 @@
               fi
 
               # Digest-based skip: compare local image digest with remote tag.
-              # If they match, the image is already pushed — skip the expensive blob upload.
+              # If they match, the image is already pushed -- skip the expensive blob upload.
               LOCAL_DIGEST="$(skopeo inspect --format '{{.Digest}}' "nix:${ociOutput}" 2>/dev/null || echo "")"
               REMOTE_DIGEST="$(skopeo inspect --format '{{.Digest}}' "$DEST" 2>/dev/null || echo "")"
 
               if [ -n "$LOCAL_DIGEST" ] && [ "$LOCAL_DIGEST" = "$REMOTE_DIGEST" ]; then
-                echo "[${appName}] image unchanged (digest=$LOCAL_DIGEST) — skipping push"
+                echo "[${appName}] image unchanged (digest=$LOCAL_DIGEST) -- skipping push"
                 echo "CIMERA_OCI_PUSHED_TAG ref=$REF digest=$LOCAL_DIGEST tag=${tag} primary=${primaryLiteral}"
               else
                 echo "[${appName}] pushing ${containerId}${lib.optionalString debug " (debug)"} -> $REF"

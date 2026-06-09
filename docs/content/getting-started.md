@@ -6,7 +6,7 @@ description = "Build and deploy your first OCI container with nix-oci"
 # Getting Started
 
 This tutorial walks you through building your first container image,
-then deploying it on NixOS — all from Nix.
+then deploying it on NixOS -- all from Nix.
 
 ## Prerequisites
 
@@ -80,8 +80,8 @@ Add the NixOS module to your system configuration:
 ```
 
 This creates two systemd services:
-- `oci-load-hello.service` — loads the image from the Nix store into Podman
-- `podman-hello.service` — runs the container
+- `oci-load-hello.service` -- loads the image from the Nix store into Podman
+- `podman-hello.service` -- runs the container
 
 ## Step 5: Build from a NixOS service (optional)
 
@@ -108,10 +108,10 @@ perSystem = { ... }: {
 ```
 
 nix-oci evaluates the NixOS modules, extracts the entrypoint, users, and
-filesystem, and builds a minimal OCI image — no Dockerfile needed.
+filesystem, and builds a minimal OCI image -- no Dockerfile needed.
 
 ## Next steps
 
-- [Container Modules API](./how-to/container-modules-api.html) — deep dive into `nixosConfig.modules`
-- [Deploy Modules](./how-to/deploy-modules.html) — NixOS and Home Manager deployment
-- [Options Reference](./reference/flake-parts-toplevel.html) — full option reference
+- [Container Modules API](./how-to/container-modules-api.html) -- deep dive into `nixosConfig.modules`
+- [Deploy Modules](./how-to/deploy-modules.html) -- NixOS and Home Manager deployment
+- [Options Reference](./reference/flake-parts-toplevel.html) -- full option reference

@@ -4,10 +4,10 @@
 # container's hardening options. These are added to the image root
 # filesystem, overriding default configs.
 #
-# Build-time only — these are baked into the image layer.
+# Build-time only -- these are baked into the image layer.
 { lib, ... }:
 let
-  pure = import ../../../../lib/oci.nix { inherit lib; };
+  pure = import ../../../lib/oci.nix { inherit lib; };
 in
 {
   config.perSystem =
@@ -25,7 +25,7 @@ in
           When `disableDns` is set, produces:
           - `/etc/nsswitch.conf` with `hosts: files` only (no dns backend)
 
-          NOTE: `/etc/resolv.conf` is NOT written — container runtimes always
+          NOTE: `/etc/resolv.conf` is NOT written -- container runtimes always
           bind-mount it at startup, masking any image content.
 
           When `noTlsTrustStore` is set, produces:

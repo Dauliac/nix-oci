@@ -9,7 +9,7 @@
 #   Landlock   → which specific RESOURCES you can touch
 #
 # Landlock is unprivileged, self-imposed, and irreversible once applied.
-# It survives execve — child processes inherit restrictions.
+# It survives execve -- child processes inherit restrictions.
 # Requires Linux >= 5.13 (filesystem) or >= 6.7 (TCP network).
 { lib, ... }:
 {
@@ -68,7 +68,7 @@
     default = { };
     description = ''
       Landlock LSM access control. Operates at the VFS/object level
-      after path resolution — can restrict *which* files and ports
+      after path resolution -- can restrict *which* files and ports
       are accessible, not just *which syscalls* are allowed.
     '';
   };

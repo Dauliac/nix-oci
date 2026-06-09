@@ -2,7 +2,7 @@
 #
 # Seccomp operates at the syscall boundary via BPF. It can filter
 # *which syscalls* a process may invoke, but cannot inspect syscall
-# arguments that are pointers (e.g. file paths — TOCTOU risk).
+# arguments that are pointers (e.g. file paths -- TOCTOU risk).
 #
 # This is complementary to Landlock (which operates at VFS level
 # and can restrict *which files/ports* are accessible).
@@ -27,15 +27,15 @@
           description = ''
             Predefined seccomp profile level:
 
-            - `"strict"` — allowlist of ~60 syscalls. Suitable for
+            - `"strict"` -- allowlist of ~60 syscalls. Suitable for
               static binaries, Go/Rust services. Blocks `mount`,
               `ptrace`, `execve`, and most process/namespace ops.
 
-            - `"moderate"` — blocks ~44 dangerous syscalls (similar
+            - `"moderate"` -- blocks ~44 dangerous syscalls (similar
               to Docker's default profile). Allows most normal
               operations.
 
-            - `"web-server"` — strict base plus networking and
+            - `"web-server"` -- strict base plus networking and
               threading syscalls. Suitable for HTTP servers.
 
             In the inner NixOS module, the profile auto-defaults to

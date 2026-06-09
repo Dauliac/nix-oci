@@ -6,7 +6,7 @@ description = "How to turn NixOS service definitions into minimal OCI containers
 # How to build containers from NixOS services
 
 This guide shows you how to use `nixosConfig.modules` to build OCI containers
-directly from NixOS service definitions — no Dockerfile needed.
+directly from NixOS service definitions -- no Dockerfile needed.
 
 ## 1. Set up your flake
 

@@ -1,4 +1,4 @@
-# Deploy integration test — NixOS + home-manager in a single VM.
+# Deploy integration test -- NixOS + home-manager in a single VM.
 #
 # Boots one NixOS VM that validates both:
 # - System-level: nix-oci builds+loads image, auto-starts via oci-containers

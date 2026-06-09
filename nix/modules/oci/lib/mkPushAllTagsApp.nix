@@ -1,10 +1,10 @@
-# OCI mkPushAllTagsApp — push one image with all its tags efficiently.
+# OCI mkPushAllTagsApp -- push one image with all its tags efficiently.
 #
 # Instead of N independent `skopeo copy nix:→docker://` calls (which
 # each re-upload every blob), this pushes the primary tag once from the
 # Nix store, then creates additional tags via registry-side copies
 # (`skopeo copy docker://→docker://`).  Registry-side copies transfer
-# zero blobs — they just create a new manifest pointing to existing
+# zero blobs -- they just create a new manifest pointing to existing
 # layers.
 #
 # For a container with 3 tags (latest, sha, branch) this reduces
@@ -16,7 +16,7 @@
 #   OCI_DIR              → if set, push to local ocidir:// instead
 # Output contract:
 #   "CIMERA_OCI_PUSHED_TAG ref=<full-ref> digest=<digest> tag=<tag> primary=<bool>"
-#   emitted on stdout for each tag — downstream consumers grep for this.
+#   emitted on stdout for each tag -- downstream consumers grep for this.
 { lib, ... }:
 {
   config.perSystem =
@@ -89,7 +89,7 @@
                 EXTRA_REMOTE="$(skopeo inspect --format '{{.Digest}}' \
                   "''${DEST_PREFIX}${effectiveTag}" 2>/dev/null || echo "")"
                 if [ -n "$LOCAL_DIGEST" ] && [ "$EXTRA_REMOTE" = "$LOCAL_DIGEST" ]; then
-                  echo "[${appName}] tag ${effectiveTag} already correct (digest=$LOCAL_DIGEST) — skipping"
+                  echo "[${appName}] tag ${effectiveTag} already correct (digest=$LOCAL_DIGEST) -- skipping"
                   echo "CIMERA_OCI_PUSHED_TAG ref=''${BASE_REF}:${effectiveTag} digest=$LOCAL_DIGEST tag=${effectiveTag} primary=false"
                 else
                   echo "[${appName}] tagging ${containerId}: ${primaryTag} -> ${effectiveTag} (registry-side copy)"
@@ -130,7 +130,7 @@
 
               # Step 1: Push primary tag (skip if remote already has the same digest).
               if [ -n "$LOCAL_DIGEST" ] && [ "$LOCAL_DIGEST" = "$PRIMARY_REMOTE" ]; then
-                echo "[${appName}] primary tag ${primaryTag} unchanged (digest=$LOCAL_DIGEST) — skipping blob upload"
+                echo "[${appName}] primary tag ${primaryTag} unchanged (digest=$LOCAL_DIGEST) -- skipping blob upload"
                 DIGEST="$LOCAL_DIGEST"
                 echo "CIMERA_OCI_PUSHED_TAG ref=$BASE_REF:${primaryTag} digest=$DIGEST tag=${primaryTag} primary=true"
               else

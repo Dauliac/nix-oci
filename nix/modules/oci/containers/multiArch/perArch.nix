@@ -1,8 +1,8 @@
 # OCI perArch - per-architecture module collector inside each container
 #
 # Each container gets:
-#   - `perArch`     — a deferred module type that collects per-arch option contributions
-#   - `archConfigs` — attrsOf perArch, always seeded with at least the host system
+#   - `perArch`     -- a deferred module type that collects per-arch option contributions
+#   - `archConfigs` -- attrsOf perArch, always seeded with at least the host system
 #
 # Module authors contribute per-arch options via the top-level `oci.perArchitecture`
 # (preferred) or via `perArch` inside a `perContainer` contribution:
@@ -39,7 +39,7 @@ let
     types
     ;
 
-  # Inline arch map — avoids raw `import`, values only used in lazy option defaults.
+  # Inline arch map -- avoids raw `import`, values only used in lazy option defaults.
   archMap = {
     "x86_64-linux" = {
       ociArch = "amd64";
@@ -172,7 +172,7 @@ in
                 # Native arch: defaults to the container's main package.
                 # Cross arch: auto-inferred via pkgsCross (crossBuild) or
                 #   target-system nixpkgs (emulatedBuild via QEMU binfmt).
-                #   Falls back to null if inference fails — user must set manually.
+                #   Falls back to null if inference fails -- user must set manually.
                 options.package = mkOption {
                   type = types.nullOr types.package;
                   description = ''
@@ -226,7 +226,7 @@ in
                     For native arch, defaults to the container's dependencies.
                     For cross arches, each dependency is auto-inferred via
                     pkgsCross (crossBuild) or target-system nixpkgs (emulatedBuild).
-                    Dependencies that fail inference are silently dropped —
+                    Dependencies that fail inference are silently dropped --
                     override manually if needed.
                   '';
                   default =

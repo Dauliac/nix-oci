@@ -2,7 +2,7 @@
 #
 # When enabled, non-native architectures are built via QEMU binfmt emulation
 # instead of Nix cross-compilation (pkgsCross). This is slower but far more
-# compatible — every package that builds natively for the target arch will work.
+# compatible -- every package that builds natively for the target arch will work.
 #
 # Prerequisites:
 #   - NixOS: `boot.binfmt.emulatedSystems = [ "aarch64-linux" ];`

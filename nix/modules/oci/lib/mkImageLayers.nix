@@ -14,7 +14,7 @@
 #   - "fine-grained": deps split into up to 80 sub-layers via popularity
 { lib, ... }:
 let
-  pure = import ../../../../lib/oci.nix { inherit lib; };
+  pure = import ../../../lib/oci.nix { inherit lib; };
 in
 {
   config.perSystem =

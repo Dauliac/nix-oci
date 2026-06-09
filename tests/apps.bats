@@ -1,34 +1,24 @@
 #!/usr/bin/env bats
 
 # Integration tests for all runnable flake apps (auto-discovered).
-# Discovers every oci-* app and runs it, grouped by prefix.
+# Expects NIX_OCI_APPS_JSON and NIX_OCI_FLAKE_REF set by the Taskfile.
 
 setup_file() {
-  local machine
-  machine=$(uname -m)
-  local system
-  case "$machine" in
-    x86_64)  system="x86_64-linux" ;;
-    aarch64) system="aarch64-linux" ;;
-    *)       system="${machine}-linux" ;;
-  esac
-  export NIX_SYSTEM="$system"
+  [[ -n "${NIX_OCI_APPS_JSON:-}" ]] || skip "NIX_OCI_APPS_JSON not set (run via 'task test:bats')"
+  export FLAKE_REF="${NIX_OCI_FLAKE_REF}"
 
-  local flake_json
-  flake_json=$(nix flake show --json 2>/dev/null)
-
-  # All apps except push/merge/push-tmp (those need registries or OCI_DIR)
   RUNNABLE_APPS=()
   while IFS= read -r name; do
     [ -n "$name" ] && RUNNABLE_APPS+=("$name")
-  done < <(echo "$flake_json" | jq -r --arg sys "$system" '
-    .apps[$sys] // {} | keys[]
-    | select(
+  done < <(echo "$NIX_OCI_APPS_JSON" | jq -r '
+    .[] | select(
         startswith("oci-container-structure-test-") or
         startswith("oci-cve-") or
         startswith("oci-credentials-leak-") or
         startswith("oci-sbom-") or
-        startswith("oci-dgoss-")
+        startswith("oci-dgoss-") or
+        startswith("oci-compliance-") or
+        startswith("oci-lint-")
       )
   ')
   export RUNNABLE_APPS
@@ -40,8 +30,8 @@ setup_file() {
 
 @test "All runnable apps succeed" {
   for app in "${RUNNABLE_APPS[@]}"; do
-    echo "==> Running: nix run .#${app}"
-    run nix run ".#${app}"
+    echo "==> Running: nix run ${FLAKE_REF}#${app}"
+    run nix run "${FLAKE_REF}#${app}"
     echo "$output"
     [ "$status" -eq 0 ]
   done

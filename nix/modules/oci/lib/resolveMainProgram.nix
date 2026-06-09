@@ -4,7 +4,7 @@
 # Shared by mkOCIName and mkOCIEntrypoint.
 { lib, ... }:
 let
-  pure = import ../../../../lib/oci.nix { inherit lib; };
+  pure = import ../../../lib/oci.nix { inherit lib; };
 in
 {
   nix-lib.lib.oci.resolveMainProgram = {

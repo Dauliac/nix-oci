@@ -3,11 +3,11 @@
 # NixOS bind uses Type=forking. The -f flag keeps named in the
 # foreground, which is required for containers without an init system.
 #
-# Healthcheck: queries "version.bind chaos txt" — a standard BIND
+# Healthcheck: queries "version.bind chaos txt" -- a standard BIND
 # health check that returns the server version without needing any
 # user-defined zones. Proves the DNS server is resolving queries.
 #
-# StopSignal: SIGTERM — named shuts down cleanly on SIGTERM.
+# StopSignal: SIGTERM -- named shuts down cleanly on SIGTERM.
 {
   config,
   lib,

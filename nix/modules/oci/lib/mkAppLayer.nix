@@ -5,7 +5,7 @@
 # package, etc.) so it can be deduplicated against prior layers.
 { lib, ... }:
 let
-  pure = import ../../../../lib/oci.nix { inherit lib; };
+  pure = import ../../../lib/oci.nix { inherit lib; };
 in
 {
   config.perSystem =

@@ -6,7 +6,7 @@
 # Shared by mkSimpleOCI, mkNixOCI, and mkImageLayers.
 { lib, ... }:
 let
-  pure = import ../../../../lib/oci.nix { inherit lib; };
+  pure = import ../../../lib/oci.nix { inherit lib; };
 in
 {
   config.perSystem =

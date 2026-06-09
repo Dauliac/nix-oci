@@ -80,7 +80,7 @@ in
                     if cosign verify ${verifyKeyArgs} "$REF" >&2; then
                       echo "[${appName}] signature verified successfully"
                     else
-                      echo "[${appName}] WARNING: signature verification failed — this may be expected if certificate-identity/oidc-issuer regexps are not configured" >&2
+                      echo "[${appName}] WARNING: signature verification failed -- this may be expected if certificate-identity/oidc-issuer regexps are not configured" >&2
                     fi
                   ''
                 else

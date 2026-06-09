@@ -1,7 +1,7 @@
 # Apache httpd: foreground mode + injected health endpoint + stop signal.
 #
 # NixOS httpd uses Type=forking. Apache requires -DFOREGROUND to stay
-# in the foreground — we wrap the package to always pass it.
+# in the foreground -- we wrap the package to always pass it.
 #
 # Healthcheck: injects mod_status at /_nix_oci_health, restricted to
 # localhost. Provides server uptime, request count, and worker status.
@@ -59,7 +59,7 @@ in
       "5"
       "http://localhost:${toString firstPort}/_nix_oci_health?auto"
     ];
-    # SIGWINCH: graceful stop — finish serving current requests, then exit.
+    # SIGWINCH: graceful stop -- finish serving current requests, then exit.
     oci.container.stopSignal = lib.mkDefault "SIGWINCH";
     environment.systemPackages = [ pkgs.curl ];
   };

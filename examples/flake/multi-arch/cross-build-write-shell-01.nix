@@ -4,7 +4,7 @@
 # pkgsCross, so auto-inference can't resolve it. Use archConfigs to provide
 # the cross-compiled variant manually.
 #
-# For custom packages, consider using a nixpkgs overlay instead — overlays
+# For custom packages, consider using a nixpkgs overlay instead -- overlays
 # propagate to all pkgsCross sets automatically.
 { ... }:
 {
@@ -42,7 +42,7 @@
               ];
               crossBuild.enable = true;
             };
-            # Manual override needed — writeShellApplication isn't in pkgsCross
+            # Manual override needed -- writeShellApplication isn't in pkgsCross
             archConfigs."aarch64-linux".package = myScriptArm;
           };
         };

@@ -1,4 +1,4 @@
-# Shared container definition — used by both flake-parts (CI) and NixOS (deploy).
+# Shared container definition -- used by both flake-parts (CI) and NixOS (deploy).
 { pkgs }:
 {
   package = pkgs.python3Minimal;

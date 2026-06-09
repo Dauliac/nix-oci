@@ -1,7 +1,7 @@
 # PostgreSQL: auto-derive healthcheck + stop signal from NixOS module config.
 #
 # Uses pg_isready from the configured postgresql package, targeting the
-# configured port. No foreground adapter needed — NixOS postgresql
+# configured port. No foreground adapter needed -- NixOS postgresql
 # already runs in the foreground for containers (Type=notify).
 #
 # StopSignal: SIGINT for fast shutdown (rollback active transactions, clean exit).
@@ -27,7 +27,7 @@ in
       "-p"
       port
     ];
-    # SIGINT: fast shutdown — rollback active transactions and exit cleanly.
+    # SIGINT: fast shutdown -- rollback active transactions and exit cleanly.
     oci.container.stopSignal = lib.mkDefault "SIGINT";
   };
 }

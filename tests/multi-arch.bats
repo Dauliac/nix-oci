@@ -2,13 +2,15 @@
 
 # Multi-arch integration tests
 # Auto-discovers push-tmp, merge, and multiarch apps/packages from the flake.
-# Uses OCI filesystem layout for testing (no registry needed).
+# Expects NIX_OCI_APPS_JSON, NIX_OCI_PKGS_JSON, NIX_OCI_FLAKE_REF set by the Taskfile.
 
 setup_file() {
+  [[ -n "${NIX_OCI_APPS_JSON:-}" ]] || skip "NIX_OCI_APPS_JSON not set (run via 'task test:bats')"
+  export FLAKE_REF="${NIX_OCI_FLAKE_REF}"
+
   export OCI_DIR="${BATS_FILE_TMPDIR}/oci-test"
   mkdir -p "$OCI_DIR"
 
-  # Detect current OCI architecture
   local machine
   machine=$(uname -m)
   case "$machine" in
@@ -17,42 +19,24 @@ setup_file() {
     *)       export CURRENT_ARCH="unknown" ;;
   esac
 
-  # Discover all multi-arch apps from the flake (once per file)
-  local flake_json
-  flake_json=$(nix flake show --json 2>/dev/null)
-  local system
-  system="$(uname -m)-linux"
-  if [ "$CURRENT_ARCH" = "amd64" ]; then
-    system="x86_64-linux"
-  elif [ "$CURRENT_ARCH" = "arm64" ]; then
-    system="aarch64-linux"
-  fi
-
-  # push-tmp apps for current arch: oci-push-tmp-<id>-<arch>
   PUSH_TMP_APPS=()
   while IFS= read -r name; do
     [ -n "$name" ] && PUSH_TMP_APPS+=("$name")
-  done < <(echo "$flake_json" | jq -r --arg sys "$system" --arg arch "$CURRENT_ARCH" '
-    .apps[$sys] // {} | keys[] | select(startswith("oci-push-tmp-") and endswith("-" + $arch))
+  done < <(echo "$NIX_OCI_APPS_JSON" | jq -r --arg arch "$CURRENT_ARCH" '
+    .[] | select(startswith("oci-push-tmp-") and endswith("-" + $arch))
   ')
   export PUSH_TMP_APPS
 
-  # merge apps: oci-merge-<id>
   MERGE_APPS=()
   while IFS= read -r name; do
     [ -n "$name" ] && MERGE_APPS+=("$name")
-  done < <(echo "$flake_json" | jq -r --arg sys "$system" '
-    .apps[$sys] // {} | keys[] | select(startswith("oci-merge-"))
-  ')
+  done < <(echo "$NIX_OCI_APPS_JSON" | jq -r '.[] | select(startswith("oci-merge-"))')
   export MERGE_APPS
 
-  # multiarch packages: oci-multiarch-<id>
   MULTIARCH_PKGS=()
   while IFS= read -r name; do
     [ -n "$name" ] && MULTIARCH_PKGS+=("$name")
-  done < <(echo "$flake_json" | jq -r --arg sys "$system" '
-    .packages[$sys] // {} | keys[] | select(startswith("oci-multiarch-"))
-  ')
+  done < <(echo "$NIX_OCI_PKGS_JSON" | jq -r '.[] | select(startswith("oci-multiarch-"))')
   export MULTIARCH_PKGS
 }
 
@@ -68,20 +52,19 @@ teardown_file() {
 
 @test "Push temp images for current architecture" {
   for app in "${PUSH_TMP_APPS[@]}"; do
-    echo "==> Running: nix run .#${app}"
-    run nix run ".#${app}"
+    echo "==> Running: nix run ${FLAKE_REF}#${app}"
+    run nix run "${FLAKE_REF}#${app}"
     echo "$output"
     [ "$status" -eq 0 ]
   done
 }
 
 @test "Push temp creates valid OCI layout" {
-  # Use the first push-tmp app to verify structure
   local app="${PUSH_TMP_APPS[0]}"
   rm -rf "$OCI_DIR"
   mkdir -p "$OCI_DIR"
 
-  run nix run ".#${app}"
+  run nix run "${FLAKE_REF}#${app}"
   [ "$status" -eq 0 ]
 
   [ -f "${OCI_DIR}/oci-layout" ]
@@ -97,11 +80,9 @@ teardown_file() {
 
 @test "Merge fails when missing architecture images" {
   for merge_app in "${MERGE_APPS[@]}"; do
-    # Extract container id from oci-merge-<id>
     local container_id="${merge_app#oci-merge-}"
     local push_app="oci-push-tmp-${container_id}-${CURRENT_ARCH}"
 
-    # Only test if matching push-tmp app exists
     local found=false
     for p in "${PUSH_TMP_APPS[@]}"; do
       [ "$p" = "$push_app" ] && found=true && break
@@ -111,11 +92,11 @@ teardown_file() {
     rm -rf "$OCI_DIR"
     mkdir -p "$OCI_DIR"
 
-    echo "==> Pushing single arch: nix run .#${push_app}"
-    nix run ".#${push_app}"
+    echo "==> Pushing single arch: nix run ${FLAKE_REF}#${push_app}"
+    nix run "${FLAKE_REF}#${push_app}"
 
-    echo "==> Merging (should fail): nix run .#${merge_app}"
-    run nix run ".#${merge_app}"
+    echo "==> Merging (should fail): nix run ${FLAKE_REF}#${merge_app}"
+    run nix run "${FLAKE_REF}#${merge_app}"
     echo "$output"
     [ "$status" -ne 0 ]
   done
@@ -129,26 +110,22 @@ teardown_file() {
 
 @test "Multiarch packages build and have valid manifests" {
   for pkg in "${MULTIARCH_PKGS[@]}"; do
-    echo "==> Building: nix build .#${pkg}"
-    run nix build ".#${pkg}" --no-link --print-out-paths
+    echo "==> Building: nix build ${FLAKE_REF}#${pkg}"
+    run nix build "${FLAKE_REF}#${pkg}" --no-link --print-out-paths
     echo "$output"
     [ "$status" -eq 0 ]
 
     local layout="$output"
-
-    # Verify it's an OCI image index
     local manifest
     manifest=$(skopeo inspect --raw "oci:${layout}:latest")
     local media
     media=$(echo "$manifest" | jq -r '.mediaType')
     [ "$media" = "application/vnd.oci.image.index.v1+json" ]
 
-    # Verify at least 2 architectures
     local arch_count
     arch_count=$(echo "$manifest" | jq '.manifests | length')
     [ "$arch_count" -ge 2 ]
 
-    # Verify all platforms are linux
     local os_count
     os_count=$(echo "$manifest" | jq '[.manifests[].platform.os] | unique | length')
     [ "$os_count" -eq 1 ]
@@ -162,7 +139,7 @@ teardown_file() {
 
 @test "Multiarch per-arch manifests have valid layers" {
   for pkg in "${MULTIARCH_PKGS[@]}"; do
-    run nix build ".#${pkg}" --no-link --print-out-paths
+    run nix build "${FLAKE_REF}#${pkg}" --no-link --print-out-paths
     [ "$status" -eq 0 ]
     local layout="$output"
 

@@ -13,28 +13,21 @@ tasks:
       - task: test:nixos
       - task: test:checks
   test:bats:
-    summary: Run all bats test suites (sequential to avoid nix eval-cache contention)
-    cmds:
-      - task: test:bats:main
-      - task: test:bats:apps
-      - task: test:bats:multi-arch
-  test:bats:main:
-    summary: Run main bats tests
+    desc: Run all bats test suites (parallel via bats --jobs)
     dir: ./tests/
     cmds:
-      - bats main.bats --timing --trace --print-output-on-failure
-  test:bats:apps:
-    summary: Run apps bats tests
-    dir: ./tests/
-    cmds:
-      - bats apps.bats --timing --trace --print-output-on-failure
-  test:bats:multi-arch:
-    summary: Run multi-arch bats tests
-    dir: ./tests/
-    cmds:
-      - bats multi-arch.bats --timing --trace --print-output-on-failure
+      - |
+        # Pre-compute flake discovery once to avoid SQLite contention
+        # when multiple bats files run setup_file() in parallel.
+        FLAKE_REF="git+file://$(git rev-parse --show-toplevel)?dir=tests"
+        system="$(uname -m | sed 's/x86_64/x86_64-linux/;s/aarch64/aarch64-linux/')"
+        export NIX_OCI_APPS_JSON=$(nix eval --json "${FLAKE_REF}#apps.${system}" --apply builtins.attrNames)
+        export NIX_OCI_PKGS_JSON=$(nix eval --json "${FLAKE_REF}#packages.${system}" --apply builtins.attrNames)
+        export NIX_OCI_FLAKE_REF="$FLAKE_REF"
+        export NIX_OCI_SYSTEM="$system"
+        bats . --jobs {{.BATS_JOBS | default "3"}} --timing --trace --print-output-on-failure
   test:nixos:
-    summary: Run NixOS VM deploy integration test (via nom)
+    desc: Run NixOS VM deploy integration test (via nom)
     cmds:
       - nix build .#checks.x86_64-linux.deploy-integration -L 2>&1 | nom
   test:fmt:
@@ -42,153 +35,18 @@ tasks:
     cmds:
       - nix fmt
   test:checks:
-    summary: Run all nix flake checks (via nom)
+    desc: Run all nix flake checks (via nom)
     deps: ['test:fmt']
     cmds:
       - nix flake check -L 2>&1 | nom
   test:checks:treefmt:
-    summary: Run treefmt check
+    desc: Run treefmt check
     cmds:
       - nix build .#checks.x86_64-linux.treefmt -L 2>&1 | nom
   test:checks:dive:
-    summary: Run dive image analysis check
-    dir: ./tests/
+    desc: Run dive image analysis check
     cmds:
       - nix build .#checks.x86_64-linux.oci-dive-minimalistWithDive -L 2>&1 | nom
-  # ── Apps (parallelized per category) ───────────────────────────────────
-  test:apps:
-    summary: Run all app tests in parallel (CST + security + misc)
-    deps: ['test:apps:cst', 'test:apps:security', 'test:apps:sbom', 'test:apps:dgoss']
-  test:apps:cst:
-    summary: Run all container-structure-tests in parallel (via nom)
-    deps:
-      - test:apps:cst:minimalistWithContainerStructureTest
-      - test:apps:cst:nixosCaddyCst
-      - test:apps:cst:nixosDnsmasqCst
-      - test:apps:cst:nixosNginxCst
-      - test:apps:cst:nixosNginxCustomModules
-      - test:apps:cst:nixosNginxDeps
-      - test:apps:cst:nixosNginxHealthcheck
-      - test:apps:cst:nixosNginxNonroot
-      - test:apps:cst:nixosNginxReverseProxy
-      - test:apps:cst:nixosNginxStaticSite
-      - test:apps:cst:nixosNginxSyspackages
-      - test:apps:cst:nixosPostgresExtensions
-      - test:apps:cst:nixosPostgresHealthcheck
-      - test:apps:cst:nixosRedisCst
-      - test:apps:cst:nixosRedisHealthcheck
-  test:apps:cst:minimalistWithContainerStructureTest:
-    summary: CST minimalistWithContainerStructureTest
-    dir: ./tests/
-    cmds:
-      - nix run '.#oci-container-structure-test-minimalistWithContainerStructureTest' -L 2>&1 | nom
-  test:apps:cst:nixosCaddyCst:
-    summary: CST nixosCaddyCst
-    dir: ./tests/
-    cmds:
-      - nix run '.#oci-container-structure-test-nixosCaddyCst' -L 2>&1 | nom
-  test:apps:cst:nixosDnsmasqCst:
-    summary: CST nixosDnsmasqCst
-    dir: ./tests/
-    cmds:
-      - nix run '.#oci-container-structure-test-nixosDnsmasqCst' -L 2>&1 | nom
-  test:apps:cst:nixosNginxCst:
-    summary: CST nixosNginxCst
-    dir: ./tests/
-    cmds:
-      - nix run '.#oci-container-structure-test-nixosNginxCst' -L 2>&1 | nom
-  test:apps:cst:nixosNginxCustomModules:
-    summary: CST nixosNginxCustomModules
-    dir: ./tests/
-    cmds:
-      - nix run '.#oci-container-structure-test-nixosNginxCustomModules' -L 2>&1 | nom
-  test:apps:cst:nixosNginxDeps:
-    summary: CST nixosNginxDeps
-    dir: ./tests/
-    cmds:
-      - nix run '.#oci-container-structure-test-nixosNginxDeps' -L 2>&1 | nom
-  test:apps:cst:nixosNginxHealthcheck:
-    summary: CST nixosNginxHealthcheck
-    dir: ./tests/
-    cmds:
-      - nix run '.#oci-container-structure-test-nixosNginxHealthcheck' -L 2>&1 | nom
-  test:apps:cst:nixosNginxNonroot:
-    summary: CST nixosNginxNonroot
-    dir: ./tests/
-    cmds:
-      - nix run '.#oci-container-structure-test-nixosNginxNonroot' -L 2>&1 | nom
-  test:apps:cst:nixosNginxReverseProxy:
-    summary: CST nixosNginxReverseProxy
-    dir: ./tests/
-    cmds:
-      - nix run '.#oci-container-structure-test-nixosNginxReverseProxy' -L 2>&1 | nom
-  test:apps:cst:nixosNginxStaticSite:
-    summary: CST nixosNginxStaticSite
-    dir: ./tests/
-    cmds:
-      - nix run '.#oci-container-structure-test-nixosNginxStaticSite' -L 2>&1 | nom
-  test:apps:cst:nixosNginxSyspackages:
-    summary: CST nixosNginxSyspackages
-    dir: ./tests/
-    cmds:
-      - nix run '.#oci-container-structure-test-nixosNginxSyspackages' -L 2>&1 | nom
-  test:apps:cst:nixosPostgresExtensions:
-    summary: CST nixosPostgresExtensions
-    dir: ./tests/
-    cmds:
-      - nix run '.#oci-container-structure-test-nixosPostgresExtensions' -L 2>&1 | nom
-  test:apps:cst:nixosPostgresHealthcheck:
-    summary: CST nixosPostgresHealthcheck
-    dir: ./tests/
-    cmds:
-      - nix run '.#oci-container-structure-test-nixosPostgresHealthcheck' -L 2>&1 | nom
-  test:apps:cst:nixosRedisCst:
-    summary: CST nixosRedisCst
-    dir: ./tests/
-    cmds:
-      - nix run '.#oci-container-structure-test-nixosRedisCst' -L 2>&1 | nom
-  test:apps:cst:nixosRedisHealthcheck:
-    summary: CST nixosRedisHealthcheck
-    dir: ./tests/
-    cmds:
-      - nix run '.#oci-container-structure-test-nixosRedisHealthcheck' -L 2>&1 | nom
-  test:apps:security:
-    summary: Run all security app tests in parallel (CVE + credentials leak)
-    deps:
-      - test:apps:security:cve-grype
-      - test:apps:security:cve-trivy
-      - test:apps:security:cve-vulnix
-      - test:apps:security:credentials-leak
-  test:apps:security:cve-grype:
-    summary: CVE scan with grype
-    dir: ./tests/
-    cmds:
-      - nix run '.#oci-cve-grype-minimalistWithGrype' -L 2>&1 | nom
-  test:apps:security:cve-trivy:
-    summary: CVE scan with trivy (ignore file)
-    dir: ./tests/
-    cmds:
-      - nix run '.#oci-cve-trivy-minimalistWithTrivyIgnore' -L 2>&1 | nom
-  test:apps:security:cve-vulnix:
-    summary: CVE scan with vulnix
-    dir: ./tests/
-    cmds:
-      - nix run '.#oci-cve-vulnix-minimalistWithVulnix' -L 2>&1 | nom
-  test:apps:security:credentials-leak:
-    summary: Credentials leak scan with trivy
-    dir: ./tests/
-    cmds:
-      - nix run '.#oci-credentials-leak-minimalistWithCredentialsLeaksTrivy' -L 2>&1 | nom
-  test:apps:sbom:
-    summary: SBOM generation with syft
-    dir: ./tests/
-    cmds:
-      - nix run '.#oci-sbom-syft-minimalistWithSyft' -L 2>&1 | nom
-  test:apps:dgoss:
-    summary: Run dgoss test
-    dir: ./tests/
-    cmds:
-      - nix run '.#oci-dgoss-minimalistWithDgoss' -L 2>&1 | nom
   # ── Docs ───────────────────────────────────────────────────────────────
   docs:build:
     desc: Build the nix-oci documentation site with NDG

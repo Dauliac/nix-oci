@@ -1,8 +1,8 @@
-# Pure OCI library functions — single source of truth.
+# Pure OCI library functions -- single source of truth.
 #
 # This file is a plain Nix attrset (NOT a module). It is imported by:
-#   1. nix-lib module declarations (nix/modules/oci/lib/*.nix) — for flake-parts consumers
-#   2. Deploy module (nix/modules/deploy/nix-oci/options/containers.nix) — for NixOS/HM consumers
+#   1. nix-lib module declarations (nix/modules/oci/lib/*.nix) -- for flake-parts consumers
+#   2. Deploy module (nix/modules/deploy/nix-oci/options/containers.nix) -- for NixOS/HM consumers
 #
 # All functions receive their dependencies (lib, pkgs, etc.) as explicit arguments
 # so they can be used in both contexts without requiring the module system.

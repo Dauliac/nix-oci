@@ -2,7 +2,7 @@
 #
 # Responsibilities:
 # 1. Import deploy modules at top-level (nixosModules/homeManagerModules
-#    are NOT partitioned — they must be defined here, not inside dev/docs).
+#    are NOT partitioned -- they must be defined here, not inside dev/docs).
 # 2. Export the flake-parts module via flake.modules.flake (typed API).
 { inputs, ... }:
 {

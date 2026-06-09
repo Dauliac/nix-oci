@@ -2,7 +2,7 @@
 #
 # Demonstrates container performance optimization using nix-oci's
 # performance module. The allocator is injected via LD_PRELOAD at
-# build time — zero application changes required.
+# build time -- zero application changes required.
 #
 # What this shows:
 # - Alternative allocator injection (mimalloc via LD_PRELOAD)

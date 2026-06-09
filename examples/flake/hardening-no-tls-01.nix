@@ -2,7 +2,7 @@
 #
 # The built image has:
 #   - /etc/ssl/certs/ca-bundle.crt replaced with a stub comment
-#   - No valid CA certificates — all HTTPS connections will fail
+#   - No valid CA certificates -- all HTTPS connections will fail
 { ... }:
 {
   config = {

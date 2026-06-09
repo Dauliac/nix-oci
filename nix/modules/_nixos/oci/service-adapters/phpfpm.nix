@@ -9,10 +9,10 @@
 # 2. Use cgi-fcgi to send a FastCGI ping request
 # 3. PHP-FPM responds with "pong" when healthy
 #
-# This is the canonical PHP-FPM healthcheck — it proves the process
+# This is the canonical PHP-FPM healthcheck -- it proves the process
 # manager is accepting FastCGI connections AND that workers are available.
 #
-# StopSignal: SIGQUIT — graceful shutdown, finish serving current requests.
+# StopSignal: SIGQUIT -- graceful shutdown, finish serving current requests.
 {
   config,
   lib,
@@ -43,7 +43,7 @@ let
     else
       "127.0.0.1:9000";
 
-  # PHP-FPM may listen on a Unix socket or TCP — only report TCP ports.
+  # PHP-FPM may listen on a Unix socket or TCP -- only report TCP ports.
   detectedPort =
     let
       parts = lib.splitString ":" listenAddr;
@@ -72,7 +72,7 @@ in
       "-connect"
       listenAddr
     ];
-    # SIGQUIT: graceful shutdown — finish serving current requests.
+    # SIGQUIT: graceful shutdown -- finish serving current requests.
     oci.container.stopSignal = lib.mkDefault "SIGQUIT";
     environment.systemPackages = [ pkgs.fcgi ];
   };

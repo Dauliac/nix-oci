@@ -22,7 +22,7 @@
             Build and ship CPU-optimized library variants via glibc-hwcaps.
 
             The dynamic linker selects the best variant at process startup
-            based on CPUID — zero application changes required.
+            based on CPUID -- zero application changes required.
 
             Only effective on systems with hwcaps support (x86_64-linux).
             Auto-disabled on unsupported architectures in per-arch config.

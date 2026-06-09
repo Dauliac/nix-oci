@@ -7,7 +7,7 @@
 }:
 let
   cfg = config.oci.container;
-  # Effective names used for all lookups — adapters override these for
+  # Effective names used for all lookups -- adapters override these for
   # multi-instance services (e.g. redis "redis" → "redis-default").
   effectiveSystemdName =
     if cfg.resolvedSystemdServiceName != null then cfg.resolvedSystemdServiceName else cfg.mainService;

@@ -5,9 +5,9 @@
 # Writing these files into the image is a no-op at best, misleading at worst.
 #
 # Overridden paths:
-#   /etc/resolv.conf  — DNS resolver (--dns, --dns-search, --dns-opt)
-#   /etc/hostname     — container hostname (--hostname)
-#   /etc/hosts        — host entries (--add-host, container ID)
+#   /etc/resolv.conf  -- DNS resolver (--dns, --dns-search, --dns-opt)
+#   /etc/hostname     -- container hostname (--hostname)
+#   /etc/hosts        -- host entries (--add-host, container ID)
 #
 # NOT overridden (safe to bake):
 #   /etc/nsswitch.conf, /etc/passwd, /etc/group, /etc/shadow,

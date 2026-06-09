@@ -1,4 +1,4 @@
-# oci.enable — registered for NixOS, home-manager, and system-manager.
+# oci.enable -- registered for NixOS, home-manager, and system-manager.
 { ... }:
 let
   mod =

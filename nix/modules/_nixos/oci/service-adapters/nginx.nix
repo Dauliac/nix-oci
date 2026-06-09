@@ -8,7 +8,7 @@
 # 2. Inject internal stub_status server on 127.0.0.1:10246 (localhost-only,
 #    no access logs, zero interference with user vhosts)
 #
-# stub_status proves nginx is genuinely processing requests — not just
+# stub_status proves nginx is genuinely processing requests -- not just
 # that the process is alive. It also provides connection metrics.
 #
 # StopSignal: SIGQUIT for graceful worker shutdown (finish current requests).
@@ -51,7 +51,7 @@ let
   # Does the user already have a usable health endpoint?
   hasUserHealthEndpoint = hasStubStatus || healthLocation != null;
 
-  # Internal health server port — high port, localhost-only, works with non-root
+  # Internal health server port -- high port, localhost-only, works with non-root
   internalHealthPort = 10246;
 
   # Determine port and protocol for user-defined endpoints
@@ -102,7 +102,7 @@ in
 
     # Inject internal stub_status server when user has no health endpoint.
     # Uses appendHttpConfig to add a raw server{} block inside the http{}
-    # context — doesn't pollute virtualHosts or interfere with user config.
+    # context -- doesn't pollute virtualHosts or interfere with user config.
     services.nginx.appendHttpConfig = lib.mkIf (!hasUserHealthEndpoint) ''
       server {
           listen 127.0.0.1:${toString internalHealthPort};

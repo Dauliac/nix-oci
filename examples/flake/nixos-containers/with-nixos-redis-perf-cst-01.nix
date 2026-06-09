@@ -1,6 +1,6 @@
 # Example: Redis with performance tuning (tcmalloc + glibc tunables)
 #
-# Demonstrates container performance optimization with tcmalloc — Google's
+# Demonstrates container performance optimization with tcmalloc -- Google's
 # per-CPU-cache allocator that excels for high-concurrency servers like Redis.
 #
 # What this shows:

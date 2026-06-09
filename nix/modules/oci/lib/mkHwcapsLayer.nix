@@ -23,7 +23,7 @@
           for a specific x86-64 microarchitecture level.
 
           The dynamic linker selects the best available variant at process
-          startup based on CPUID — zero application changes required.
+          startup based on CPUID -- zero application changes required.
         '';
         fn =
           {

@@ -2,7 +2,7 @@
 #
 # Demonstrates the killer feature of nix-oci + NixOS eval: custom-compiling
 # nginx with additional modules is a single `services.nginx.package` override.
-# No multi-stage Dockerfile, no manual C compilation — just Nix.
+# No multi-stage Dockerfile, no manual C compilation -- just Nix.
 #
 # What this shows:
 # - Custom nginx package with brotli compression, VTS metrics, and more-headers
@@ -28,7 +28,7 @@
                     services.nginx = {
                       enable = true;
 
-                      # Custom nginx with compiled-in modules — this is the magic.
+                      # Custom nginx with compiled-in modules -- this is the magic.
                       # In a traditional Dockerfile you'd need a multi-stage build
                       # to compile these from source. Here it's one line.
                       package = pkgs.nginx.override {

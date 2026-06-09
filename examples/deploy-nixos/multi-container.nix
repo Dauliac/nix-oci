@@ -1,4 +1,4 @@
-# Example: NixOS deploy — multiple containers with dependencies.
+# Example: NixOS deploy -- multiple containers with dependencies.
 #
 # Shows deploying a web app + redis cache on the same NixOS host.
 # Both containers auto-start, with proper port allocation.

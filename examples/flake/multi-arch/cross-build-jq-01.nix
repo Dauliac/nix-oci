@@ -1,7 +1,7 @@
 # Cross-build multi-arch jq image.
 #
 # Builds jq for both amd64 and arm64 from a single machine.
-# Cross package auto-inferred — no archConfigs needed.
+# Cross package auto-inferred -- no archConfigs needed.
 { ... }:
 {
   config = {

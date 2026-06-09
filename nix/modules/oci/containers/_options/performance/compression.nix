@@ -17,8 +17,8 @@
     description = ''
       Compression algorithm for OCI image layers during transport (skopeo).
 
-      - `"gzip"` — universal compatibility, slower.
-      - `"zstd"` — 3-5x faster compress/decompress, 12% smaller.
+      - `"gzip"` -- universal compatibility, slower.
+      - `"zstd"` -- 3-5x faster compress/decompress, 12% smaller.
         Requires OCI 1.1+ registry (Docker Hub, ECR, GCR, GHCR support it).
         containerd 2.0+ required; containerd 1.7.x does NOT support zstd.
     '';

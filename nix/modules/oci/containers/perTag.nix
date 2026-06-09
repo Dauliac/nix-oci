@@ -1,8 +1,8 @@
 # OCI perTag - per-tag module collector inside each container
 #
 # Mirrors the perContainer pattern one level deeper. Each container gets:
-#   - `perTag`    — a deferred module type that collects per-tag option contributions
-#   - `tagConfigs` — attrsOf perTag, auto-populated from the `tags` list
+#   - `perTag`    -- a deferred module type that collects per-tag option contributions
+#   - `tagConfigs` -- attrsOf perTag, auto-populated from the `tags` list
 #
 # Module authors contribute per-tag options by adding to `perTag` inside
 # their `perContainer` contribution:
@@ -37,7 +37,7 @@ let
     types
     ;
 
-  # Same deferredModuleWith pattern as perContainer.nix — collects module
+  # Same deferredModuleWith pattern as perContainer.nix -- collects module
   # contributions and returns them as a list when merged.
   deferredModuleWith =
     {
@@ -155,7 +155,7 @@ in
             description = ''
               Per-tag evaluated configs, keyed by tag literal.
 
-              Auto-populated from the `tags` list — no manual declaration needed.
+              Auto-populated from the `tags` list -- no manual declaration needed.
               Override individual tag settings by addressing the key directly:
 
                 oci.containers.myApp.tagConfigs."latest".push = false;

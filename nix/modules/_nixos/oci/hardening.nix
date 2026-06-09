@@ -382,7 +382,7 @@ in
       readOnly = true;
       description = "Hardened /etc config file derivations.";
       default = lib.optionals cfg.enable (
-        # NOTE: /etc/resolv.conf is NOT written here — container runtimes
+        # NOTE: /etc/resolv.conf is NOT written here -- container runtimes
         # always bind-mount it at startup, masking any image content.
         # DNS restriction is enforced via nsswitch.conf (hosts: files only).
         lib.optionals cfg.noTlsTrustStore [
