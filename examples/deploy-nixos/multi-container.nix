@@ -43,7 +43,7 @@ in
           mainService = "redis";
           modules = [
             {
-              services.redis.servers."" = {
+              services.redis.servers.default = {
                 enable = true;
                 bind = "0.0.0.0";
                 port = 6379;

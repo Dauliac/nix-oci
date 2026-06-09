@@ -1,7 +1,8 @@
 # Deploy integration test -- NixOS + home-manager in a single VM.
 #
-# Boots one NixOS VM that validates both:
+# Boots one NixOS VM that validates:
 # - System-level: nix-oci builds+loads image, auto-starts via oci-containers
+# - System-level: nixosConfig.mainService with service adapter (redis)
 # - User-level:   nix-oci builds+loads image into rootless podman via home-manager
 #
 # Run: nix build .#checks.x86_64-linux.deploy-integration -L
@@ -23,6 +24,7 @@ in
     }:
     let
       nixosExample = ../../examples/deploy-nixos/http-server.nix;
+      redisExample = ../../examples/deploy-nixos/redis-nixos-config.nix;
       hmExample = ../../examples/deploy-home-manager/http-server.nix;
       dockerSdkCheck = pkgs.writeText "check_docker_sdk.py" (
         builtins.readFile ./_python/check_docker_sdk.py
@@ -43,6 +45,7 @@ in
                 inputs.home-manager.nixosModules.home-manager
                 nixosModule
                 nixosExample
+                redisExample
               ];
 
               virtualisation = {
@@ -92,6 +95,7 @@ in
               environment.systemPackages = with pkgs; [
                 curl
                 iptables
+                redis
                 (python3.withPackages (ps: [
                   ps.docker
                   ps.urllib3
@@ -105,7 +109,7 @@ in
             machine.wait_for_unit("multi-user.target")
 
             # ===================================================================
-            # NixOS system-level tests
+            # NixOS system-level tests (http-server -- bare package mode)
             # ===================================================================
 
             with subtest("nixos: load service completes"):
@@ -157,6 +161,75 @@ in
 
             with subtest("nixos: Docker SDK deep inspection"):
                 machine.succeed("python3 ${dockerSdkCheck}")
+
+            # ===================================================================
+            # NixOS system-level tests (redis -- nixosConfig.mainService mode)
+            # ===================================================================
+
+            with subtest("nixos-redis: load service completes"):
+                machine.wait_for_unit("oci-load-redis.service")
+
+            with subtest("nixos-redis: container service starts"):
+                machine.wait_for_unit("podman-redis.service")
+
+            with subtest("nixos-redis: runner depends on loader"):
+                deps = machine.succeed(
+                    "systemctl show podman-redis.service "
+                    "--property=After,Requires"
+                )
+                assert "oci-load-redis.service" in deps, \
+                    f"Runner must depend on loader: {deps}"
+
+            with subtest("nixos-redis: image present in podman"):
+                images_json = machine.succeed("podman images --format json")
+                images = json.loads(images_json)
+                names = []
+                for img in images:
+                    for key in ("Names", "names", "RepoTags"):
+                        if key in img and img[key]:
+                            names.extend(img[key])
+                assert any("redis" in n for n in names), \
+                    f"redis image not found: {names}"
+
+            with subtest("nixos-redis: firewall allows port 6379"):
+                rules = machine.succeed("iptables -L nixos-fw -n")
+                assert "6379" in rules, \
+                    f"Firewall should allow port 6379: {rules}"
+
+            with subtest("nixos-redis: Redis responds to PING"):
+                machine.wait_for_open_port(6379)
+                machine.wait_until_succeeds(
+                    "redis-cli -h 127.0.0.1 -p 6379 ping", timeout=30
+                )
+                response = machine.succeed("redis-cli -h 127.0.0.1 -p 6379 ping")
+                assert "PONG" in response, f"Expected PONG: {response}"
+
+            with subtest("nixos-redis: sdnotify Type=notify set"):
+                props = machine.succeed(
+                    "systemctl show podman-redis.service "
+                    "--property=Type,NotifyAccess"
+                )
+                assert "Type=notify" in props, \
+                    f"Expected Type=notify for healthcheck sdnotify: {props}"
+                assert "NotifyAccess=all" in props, \
+                    f"Expected NotifyAccess=all for healthcheck sdnotify: {props}"
+
+            with subtest("nixos-redis: container has healthcheck configured"):
+                inspect = machine.succeed("podman inspect redis")
+                data = json.loads(inspect)
+                hc = data[0].get("Config", {}).get("Healthcheck", {})
+                test_cmd = hc.get("Test", [])
+                assert len(test_cmd) > 0, f"Expected healthcheck command: {hc}"
+                cmd_str = " ".join(test_cmd)
+                assert "redis-cli" in cmd_str, \
+                    f"Expected redis-cli in healthcheck: {cmd_str}"
+
+            with subtest("nixos-redis: container has stop signal SIGTERM"):
+                inspect = machine.succeed("podman inspect redis")
+                data = json.loads(inspect)
+                stop_signal = data[0].get("Config", {}).get("StopSignal", "")
+                assert stop_signal == "SIGTERM" or stop_signal == "15", \
+                    f"Expected SIGTERM stop signal: {stop_signal}"
 
             # ===================================================================
             # Home-manager user-level tests
