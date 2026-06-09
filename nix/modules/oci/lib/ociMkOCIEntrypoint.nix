@@ -7,7 +7,7 @@ in
   nix-lib.lib.oci.mkOCIEntrypoint = {
     type = lib.types.functionTo (lib.types.listOf lib.types.str);
     description = "Derive container entrypoint from package mainProgram, pname, or derivation name";
-        file = "nix/modules/oci/lib/ociMkOCIEntrypoint.nix";
+    file = "nix/modules/oci/lib/ociMkOCIEntrypoint.nix";
     fn = { package }: if package != null then [ "/bin/${pure.resolveMainProgram package}" ] else [ ];
     tests = {
       "derives entrypoint from mainProgram" = {

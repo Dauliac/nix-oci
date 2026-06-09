@@ -5,9 +5,6 @@
 {
   config.perSystem =
     { lib, ... }:
-    let
-      pure = import ../../../lib/oci.nix { inherit lib; };
-    in
     {
       nix-lib.lib.oci = {
         parseContainerPort = {
@@ -20,8 +17,14 @@
             - `"443:443/udp"` → `"443/udp"`
             - `"8080"` → `"8080/tcp"` (no host mapping)
           '';
-        file = "nix/lib/oci.nix";
-          fn = pure.parseContainerPort;
+          file = "nix/modules/oci/lib/ports.nix";
+          fn =
+            portSpec:
+            let
+              parts = lib.splitString ":" portSpec;
+              raw = if builtins.length parts >= 2 then builtins.elemAt parts 1 else builtins.head parts;
+            in
+            if lib.hasInfix "/" raw then raw else "${raw}/tcp";
           tests = {
             "parses host:container port" = {
               args = "8080:8080";
@@ -45,8 +48,19 @@
 
             Example: `["8080:8080" "443:443"]` → `{ "8080/tcp" = {}; "443/tcp" = {}; }`
           '';
-        file = "nix/lib/oci.nix";
-          fn = pure.mkExposedPorts;
+          file = "nix/modules/oci/lib/ports.nix";
+          fn =
+            ports:
+            let
+              parseContainerPort =
+                portSpec:
+                let
+                  parts = lib.splitString ":" portSpec;
+                  raw = if builtins.length parts >= 2 then builtins.elemAt parts 1 else builtins.head parts;
+                in
+                if lib.hasInfix "/" raw then raw else "${raw}/tcp";
+            in
+            builtins.listToAttrs (map (p: lib.nameValuePair (parseContainerPort p) { }) ports);
           tests = {
             "creates ExposedPorts from list" = {
               args = [
@@ -70,8 +84,15 @@
             - `"443:443/udp"` → `443`
             - `"8080"` → `8080` (no host mapping)
           '';
-        file = "nix/lib/oci.nix";
-          fn = pure.parseContainerPortInt;
+          file = "nix/modules/oci/lib/ports.nix";
+          fn =
+            portSpec:
+            let
+              parts = lib.splitString ":" portSpec;
+              raw = if builtins.length parts >= 2 then builtins.elemAt parts 1 else builtins.head parts;
+              clean = builtins.head (lib.splitString "/" raw);
+            in
+            lib.toInt clean;
           tests = {
             "parses container port as int" = {
               args = "8080:8080";
@@ -93,8 +114,14 @@
             - `"9090:8080"` → `9090`
             - `"8080"` → `8080` (same as container port)
           '';
-        file = "nix/lib/oci.nix";
-          fn = pure.parseHostPort;
+          file = "nix/modules/oci/lib/ports.nix";
+          fn =
+            portSpec:
+            let
+              raw = builtins.head (lib.splitString ":" portSpec);
+              clean = builtins.head (lib.splitString "/" raw);
+            in
+            lib.toInt clean;
           tests = {
             "parses host port" = {
               args = "9090:8080";

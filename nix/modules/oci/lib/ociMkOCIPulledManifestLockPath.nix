@@ -4,7 +4,7 @@
   nix-lib.lib.oci.mkOCIPulledManifestLockPath = {
     type = lib.types.functionTo lib.types.path;
     description = "Generate the full path for an OCI manifest lock file";
-        file = "nix/modules/oci/lib/ociMkOCIPulledManifestLockPath.nix";
+    file = "nix/modules/oci/lib/ociMkOCIPulledManifestLockPath.nix";
     fn =
       {
         fromImageManifestRootPath,

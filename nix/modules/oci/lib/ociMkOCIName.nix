@@ -7,7 +7,7 @@ in
   nix-lib.lib.oci.mkOCIName = {
     type = lib.types.functionTo lib.types.str;
     description = "Derive container name from package mainProgram, pname, derivation name, or base image name";
-        file = "nix/modules/oci/lib/ociMkOCIName.nix";
+    file = "nix/modules/oci/lib/ociMkOCIName.nix";
     fn =
       {
         package,

@@ -4,7 +4,7 @@
   nix-lib.lib.oci.mkOCITag = {
     type = lib.types.functionTo lib.types.str;
     description = "Derive container tag from package version or base image tag";
-        file = "nix/modules/oci/lib/ociMkOCITag.nix";
+    file = "nix/modules/oci/lib/ociMkOCITag.nix";
     fn =
       {
         package,

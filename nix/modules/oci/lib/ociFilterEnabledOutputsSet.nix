@@ -7,7 +7,7 @@ in
   nix-lib.lib.oci.filterEnabledOutputsSet = {
     type = lib.types.functionTo lib.types.attrs;
     description = "Filter a config attrset to only include items where subConfig.enabled is true";
-        file = "nix/modules/oci/lib/ociFilterEnabledOutputsSet.nix";
+    file = "nix/modules/oci/lib/ociFilterEnabledOutputsSet.nix";
     fn =
       {
         config,

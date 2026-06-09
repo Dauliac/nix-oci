@@ -4,7 +4,7 @@
   nix-lib.lib.oci.mkOCIPulledManifestLockRelativePath = {
     type = lib.types.functionTo lib.types.str;
     description = "Generate relative path for a specific manifest lock file";
-        file = "nix/modules/oci/lib/ociMkOCIPulledManifestLockRelativePath.nix";
+    file = "nix/modules/oci/lib/ociMkOCIPulledManifestLockRelativePath.nix";
     fn =
       {
         self,
