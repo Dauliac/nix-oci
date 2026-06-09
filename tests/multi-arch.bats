@@ -4,9 +4,8 @@
 # Auto-discovers push-tmp, merge, and multiarch apps/packages from the flake.
 # Expects NIX_OCI_APPS_JSON, NIX_OCI_PKGS_JSON, NIX_OCI_FLAKE_REF set by the Taskfile.
 
-setup_file() {
+setup() {
   [[ -n "${NIX_OCI_APPS_JSON:-}" ]] || skip "NIX_OCI_APPS_JSON not set (run via 'task test:bats')"
-  export FLAKE_REF="${NIX_OCI_FLAKE_REF}"
 
   export OCI_DIR="${BATS_FILE_TMPDIR}/oci-test"
   mkdir -p "$OCI_DIR"
@@ -14,30 +13,29 @@ setup_file() {
   local machine
   machine=$(uname -m)
   case "$machine" in
-    x86_64)  export CURRENT_ARCH="amd64" ;;
-    aarch64) export CURRENT_ARCH="arm64" ;;
-    *)       export CURRENT_ARCH="unknown" ;;
+    x86_64)  CURRENT_ARCH="amd64" ;;
+    aarch64) CURRENT_ARCH="arm64" ;;
+    *)       CURRENT_ARCH="unknown" ;;
   esac
+  export CURRENT_ARCH
 
+  # Rebuild arrays each test (arrays don't survive bats subshells)
   PUSH_TMP_APPS=()
   while IFS= read -r name; do
     [ -n "$name" ] && PUSH_TMP_APPS+=("$name")
   done < <(echo "$NIX_OCI_APPS_JSON" | jq -r --arg arch "$CURRENT_ARCH" '
     .[] | select(startswith("oci-push-tmp-") and endswith("-" + $arch))
   ')
-  export PUSH_TMP_APPS
 
   MERGE_APPS=()
   while IFS= read -r name; do
     [ -n "$name" ] && MERGE_APPS+=("$name")
   done < <(echo "$NIX_OCI_APPS_JSON" | jq -r '.[] | select(startswith("oci-merge-"))')
-  export MERGE_APPS
 
   MULTIARCH_PKGS=()
   while IFS= read -r name; do
     [ -n "$name" ] && MULTIARCH_PKGS+=("$name")
   done < <(echo "$NIX_OCI_PKGS_JSON" | jq -r '.[] | select(startswith("oci-multiarch-"))')
-  export MULTIARCH_PKGS
 }
 
 teardown_file() {
@@ -52,8 +50,8 @@ teardown_file() {
 
 @test "Push temp images for current architecture" {
   for app in "${PUSH_TMP_APPS[@]}"; do
-    echo "==> Running: nix run ${FLAKE_REF}#${app}"
-    run nix run "${FLAKE_REF}#${app}"
+    echo "==> Running: nix run ${NIX_OCI_FLAKE_REF}#${app}"
+    run nix run "${NIX_OCI_FLAKE_REF}#${app}"
     echo "$output"
     [ "$status" -eq 0 ]
   done
@@ -64,7 +62,7 @@ teardown_file() {
   rm -rf "$OCI_DIR"
   mkdir -p "$OCI_DIR"
 
-  run nix run "${FLAKE_REF}#${app}"
+  run nix run "${NIX_OCI_FLAKE_REF}#${app}"
   [ "$status" -eq 0 ]
 
   [ -f "${OCI_DIR}/oci-layout" ]
@@ -92,11 +90,11 @@ teardown_file() {
     rm -rf "$OCI_DIR"
     mkdir -p "$OCI_DIR"
 
-    echo "==> Pushing single arch: nix run ${FLAKE_REF}#${push_app}"
-    nix run "${FLAKE_REF}#${push_app}"
+    echo "==> Pushing single arch: nix run ${NIX_OCI_FLAKE_REF}#${push_app}"
+    nix run "${NIX_OCI_FLAKE_REF}#${push_app}"
 
-    echo "==> Merging (should fail): nix run ${FLAKE_REF}#${merge_app}"
-    run nix run "${FLAKE_REF}#${merge_app}"
+    echo "==> Merging (should fail): nix run ${NIX_OCI_FLAKE_REF}#${merge_app}"
+    run nix run "${NIX_OCI_FLAKE_REF}#${merge_app}"
     echo "$output"
     [ "$status" -ne 0 ]
   done
@@ -110,8 +108,8 @@ teardown_file() {
 
 @test "Multiarch packages build and have valid manifests" {
   for pkg in "${MULTIARCH_PKGS[@]}"; do
-    echo "==> Building: nix build ${FLAKE_REF}#${pkg}"
-    run nix build "${FLAKE_REF}#${pkg}" --no-link --print-out-paths
+    echo "==> Building: nix build ${NIX_OCI_FLAKE_REF}#${pkg}"
+    run nix build "${NIX_OCI_FLAKE_REF}#${pkg}" --no-link --print-out-paths
     echo "$output"
     [ "$status" -eq 0 ]
 
@@ -139,7 +137,7 @@ teardown_file() {
 
 @test "Multiarch per-arch manifests have valid layers" {
   for pkg in "${MULTIARCH_PKGS[@]}"; do
-    run nix build "${FLAKE_REF}#${pkg}" --no-link --print-out-paths
+    run nix build "${NIX_OCI_FLAKE_REF}#${pkg}" --no-link --print-out-paths
     [ "$status" -eq 0 ]
     local layout="$output"
 

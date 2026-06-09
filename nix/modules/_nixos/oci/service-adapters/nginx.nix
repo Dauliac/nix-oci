@@ -120,6 +120,6 @@ in
     ++ lib.optional (!hasUserHealthEndpoint) internalHealthPort;
     oci.container.healthcheck.command = lib.mkDefault healthCmd;
     oci.container.stopSignal = lib.mkDefault "SIGQUIT";
-    environment.systemPackages = [ pkgs.curl ];
+    oci.container._output.adapterPackages = [ pkgs.curl ];
   };
 }

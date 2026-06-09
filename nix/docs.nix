@@ -340,6 +340,7 @@
               ndg --config-file "${ndgConfig}" --verbose html \
                 --template-dir ${../docs/templates} \
                 --jobs $NIX_BUILD_CORES --output-dir "$out"
+              cp -r ${../docs/assets}/. "$out/assets/"
             '';
       in
       {

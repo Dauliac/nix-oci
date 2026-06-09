@@ -26,6 +26,6 @@ in
       "http://localhost:2019/config/"
     ];
     oci.container.stopSignal = lib.mkDefault "SIGTERM";
-    environment.systemPackages = [ pkgs.curl ];
+    oci.container._output.adapterPackages = [ pkgs.curl ];
   };
 }

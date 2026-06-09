@@ -19,6 +19,30 @@
       })();
     </script>
     <link rel="stylesheet" href="{{ stylesheet_path }}" />
+    <style>
+      @font-face {
+        font-family: "Frames Part One";
+        src: url("{{ root_prefix }}assets/FramesPartOne-Bold.woff2") format("woff2");
+        font-weight: 700;
+        font-display: swap;
+      }
+      :root { --header-bg: #f5c000; }
+      header { color: #000; }
+      header a, .site-title a { color: #000 !important; }
+      .header-nav a { color: #000 !important; }
+      #search-input { background: #fff; color: #000; border: 1px solid #000; }
+      #search-input::placeholder { color: #555; }
+      .site-title a {
+        font-family: "Frames Part One", monospace;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .content h1:first-of-type {
+        font-family: "Frames Part One", monospace;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+    </style>
     <script defer src="{{ main_js_path }}"></script>
     {% if generate_search %}
     <script>
@@ -89,6 +113,9 @@
         </nav>
       </aside>
 
+      <footer style="text-align:center; padding:1em; font-size:0.8em; color:#888;">
+        Logo set in <a href="https://nathanlaurent.github.io/frames.html" style="color:#888;">Frames Part One</a> by Nathan Laurent (SIL Open Font License).
+      </footer>
       {{ footer_html|safe }}
     </div>
 

@@ -119,4 +119,4 @@ MIT -- see [LICENSE](./LICENSE).
 
 ## Acknowledgments
 
-Thanks to the contributors of [nix2container](https://github.com/nlewo/nix2container) and [flake-parts](https://github.com/hercules-ci/flake-parts).
+Thanks to the contributors of [nix2container](https://github.com/nlewo/nix2container) and [flake-parts](https://github.com/hercules-ci/flake-parts). Logo set in [Frames Part One](https://nathanlaurent.github.io/frames.html) by Nathan Laurent (SIL Open Font License).

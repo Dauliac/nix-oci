@@ -25,6 +25,16 @@ in
       default = [ ];
       description = "Additional packages to include in the root filesystem.";
     };
+    _output.adapterPackages = lib.mkOption {
+      type = lib.types.listOf lib.types.package;
+      default = [ ];
+      description = ''
+        Packages explicitly added by service adapters (e.g. dig for dnsmasq
+        healthcheck, fcgi for phpfpm). These are included in the container
+        root filesystem instead of environment.systemPackages to avoid
+        pulling in the full NixOS default package set.
+      '';
+    };
   };
 
   options.oci.lib.mkHomeDirDrv = lib.mkOption {
@@ -61,13 +71,18 @@ in
     default =
       let
         package' = if cfg.package != null then [ cfg.package ] else [ ];
-        systemPackages = config.environment.systemPackages or [ ];
+        # Only include packages explicitly added by nix-oci service adapters
+        # (e.g. dig for dnsmasq, fcgi for phpfpm), NOT the full NixOS
+        # environment.systemPackages which drags in systemd, sudo, iptables,
+        # openssh, perl, libcap (with its Go captree binary and 24+ CVEs), etc.
+        # Service binaries are already included via cfg.package and its closure.
+        adapterPackages = cfg._output.adapterPackages or [ ];
       in
       pkgs.buildEnv {
         name = "root";
         paths =
           package'
-          ++ systemPackages
+          ++ adapterPackages
           ++ cfg._output.shadowFiles
           ++ cfg._output.etcFiles
           ++ cfg.dependencies
@@ -87,6 +102,20 @@ in
           "/tmp"
           "/var"
         ];
+        # Dereference symlinks under /etc so tools like Dockle that
+        # inspect the Docker archive tar can read passwd/shadow/group
+        # instead of seeing dangling Nix store symlinks.
+        postBuild = ''
+          if [ -d "$out/etc" ]; then
+            find "$out/etc" -type l | while read -r link; do
+              target="$(readlink -f "$link")"
+              if [ -f "$target" ]; then
+                rm "$link"
+                cp "$target" "$link"
+              fi
+            done
+          fi
+        '';
       };
   };
 }

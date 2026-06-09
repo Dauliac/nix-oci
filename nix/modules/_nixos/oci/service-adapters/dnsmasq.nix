@@ -38,6 +38,6 @@ in
       "+time=3"
     ];
     oci.container.stopSignal = lib.mkDefault "SIGTERM";
-    environment.systemPackages = [ pkgs.dig ];
+    oci.container._output.adapterPackages = [ pkgs.dig ];
   };
 }
