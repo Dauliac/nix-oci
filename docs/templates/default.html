@@ -83,24 +83,66 @@
     </div>
 
     <script>
-      // Close directory groups by default and reorder them
+      // Sidebar: persist open/close state, auto-open current section, reorder groups
       document.addEventListener("DOMContentLoaded", function () {
         var groups = document.querySelectorAll(".sidebar-dir-group > details");
-        // Desired order: how-to, reference, examples (alphabetical puts examples first)
-        var order = { "how-to": 1, "reference": 2, "examples": 3 };
+        var order = { "how-to": 1, "explanation": 2, "reference": 3, "examples": 4 };
         var parent = groups.length > 0 ? groups[0].parentElement.parentElement : null;
         var sorted = [];
+        var currentPath = window.location.pathname;
+
+        // Load persisted state
+        var openSections = {};
+        try {
+          openSections = JSON.parse(localStorage.getItem("sidebar-open") || "{}");
+        } catch (e) {}
 
         groups.forEach(function (d) {
-          // Close all groups by default
-          d.removeAttribute("open");
-          // Extract group name from label
           var label = d.querySelector(".sidebar-dir-label");
-          if (label) {
-            var name = label.textContent.toLowerCase();
-            sorted.push({ el: d.parentElement, name: name });
+          if (!label) return;
+          var name = label.textContent.toLowerCase();
+          sorted.push({ el: d.parentElement, name: name });
+
+          // Check if current page is in this section by matching directory name in URL
+          var isCurrentSection = currentPath.indexOf("/" + name + "/") !== -1;
+
+          // Open if: current section, or previously opened by user
+          if (isCurrentSection || openSections[name]) {
+            d.setAttribute("open", "");
+          } else {
+            d.removeAttribute("open");
           }
+
+          // Persist toggle state on click
+          d.addEventListener("toggle", function () {
+            try {
+              var state = JSON.parse(localStorage.getItem("sidebar-open") || "{}");
+              if (d.open) {
+                state[name] = true;
+              } else {
+                delete state[name];
+              }
+              localStorage.setItem("sidebar-open", JSON.stringify(state));
+            } catch (e) {}
+          });
         });
+
+        // Restore sidebar scroll position
+        var sidebar = document.querySelector(".sidebar");
+        try {
+          var savedScroll = sessionStorage.getItem("sidebar-scroll");
+          if (sidebar && savedScroll) {
+            sidebar.scrollTop = parseInt(savedScroll, 10);
+          }
+        } catch (e) {}
+        // Save scroll position before navigating away
+        if (sidebar) {
+          window.addEventListener("beforeunload", function () {
+            try {
+              sessionStorage.setItem("sidebar-scroll", sidebar.scrollTop);
+            } catch (e) {}
+          });
+        }
 
         // Reorder groups in the DOM
         if (parent && sorted.length > 0) {
