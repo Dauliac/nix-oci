@@ -174,10 +174,12 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1781001456,
-        "narHash": "sha256-SG+h3owuKJl4kyMyjhbhAWjE9obiTdI5yJiziW+3Qvk=",
-        "path": "/home/juliendauliac/ghq/github.com/Dauliac/nix-lib",
-        "type": "path"
+        "lastModified": 1781002134,
+        "narHash": "sha256-Aw79CJAQm9hv4c3Im204Tp0qJG5P037YgjCnGBe1Cy4=",
+        "owner": "Dauliac",
+        "repo": "nix-lib",
+        "rev": "9bbd5aa5748c532eacfd50d3a83fe00978369bd0",
+        "type": "github"
       },
       "original": {
         "owner": "Dauliac",
