@@ -257,7 +257,9 @@
               sed -i '/<!-- OPTIONS:nixos-container -->/r ${nixosContainerDoc.optionsCommonMark}' $out/reference/nix-oci-container-module-options.md
               sed -i '/<!-- OPTIONS:nix-lib -->/r ${nixLibDoc}/docs.md' $out/reference/nix-lib.md
 
-              # --- Examples: one page per category ---
+              # --- Examples: generate pages with subdir-based sections ---
+              # gen_examples_page <title> <dest> <dir>...
+              # Subdirectories become ## headings, files become ### headings.
               gen_examples_page() {
                 local title="$1" dest="$2"
                 shift 2
@@ -269,7 +271,8 @@
                   echo "# $title"
                   echo ""
                   for dir in "$@"; do
-                    for f in $(find "$dir" -name '*.nix' -type f | sort); do
+                    # Root-level .nix files (no subdir heading)
+                    for f in $(find "$dir" -maxdepth 1 -name '*.nix' -type f | sort); do
                       name="$(basename "$f" .nix)"
                       echo "## $name"
                       echo ""
@@ -278,11 +281,27 @@
                       echo '```'
                       echo ""
                     done
+                    # Subdirectories as sections
+                    for sub in $(find "$dir" -mindepth 1 -maxdepth 1 -type d | sort); do
+                      subname="$(basename "$sub")"
+                      pretty="$(echo "$subname" | sed 's/-/ /g')"
+                      echo "## ''${pretty^}"
+                      echo ""
+                      for f in $(find "$sub" -name '*.nix' -type f | sort); do
+                        name="$(basename "$f" .nix)"
+                        echo "### $name"
+                        echo ""
+                        echo '```nix'
+                        cat "$f"
+                        echo '```'
+                        echo ""
+                      done
+                    done
                   done
                 } > "$dest"
               }
 
-              # Flake: all flake-parts examples (root + subdirs) in one page
+              # Flake: all flake-parts examples with subdir sections
               gen_examples_page "Flake examples" "$out/examples/flake.md" \
                 "${../examples}/flake"
 
