@@ -43,6 +43,7 @@
       partitionedAttrs.checks = "dev";
       partitionedAttrs.devShells = "dev";
       partitionedAttrs.formatter = "dev";
+      partitionedAttrs.tests = "dev";
 
       # Doc-only outputs (isolated from consumers)
       partitionedAttrs.legacyPackages = "docs";
