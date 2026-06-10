@@ -7,10 +7,20 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 let
   cfg = config.oci.container.healthcheck;
+
+  # Minimal /bin/sh for healthcheck execution.
+  # Podman runs --health-cmd via "sh -c <cmd>", so /bin/sh must exist.
+  # This creates a tiny derivation with /bin/sh → bash, avoiding pulling
+  # in the full bashInteractive package.
+  binSh = pkgs.runCommand "bin-sh" { } ''
+    mkdir -p $out/bin
+    ln -s ${pkgs.bashInteractive}/bin/bash $out/bin/sh
+  '';
 in
 {
   options.oci.container.healthcheck = {
@@ -44,6 +54,11 @@ in
       description = "Consecutive failures before unhealthy.";
     };
   };
+
+  # When a healthcheck is configured, ensure /bin/sh exists so podman
+  # can run --health-cmd via "sh -c". Added to adapterPackages so it
+  # ends up in the rootFilesystem's buildEnv.
+  config.oci.container._output.adapterPackages = lib.mkIf (cfg.command != [ ]) [ binSh ];
 
   options.oci.container._output.healthcheck = lib.mkOption {
     type = lib.types.nullOr lib.types.attrs;

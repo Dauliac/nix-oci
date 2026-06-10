@@ -1,9 +1,11 @@
 # Home-manager: forward autoStart containers to services.podman.containers.
 # Loader dependency is wired via the podman quadlet's extraConfig.Unit
 # (NOT via systemd.user.services, which would conflict with the quadlet file).
+# When a healthcheck is present, Notify=healthy tells the quadlet to forward
+# READY=1 after the first healthcheck passes.
 #
-# NOTE: sdnotify health-aware services are disabled until nix2container
-# upstream bug #197 is fixed (Healthcheck dropped from image config).
+# Healthcheck is injected via podman flags at runtime as a workaround for
+# nix2container upstream bug #197 (Healthcheck dropped from image config).
 { ... }:
 {
   flake.modules.homeManager.nix-oci-run-services =
@@ -14,7 +16,8 @@
     }:
     let
       cfg = config.oci;
-      autoStart = lib.filterAttrs (_: c: c.autoStart) cfg.containers;
+      deployLib = import ../../../../lib/deploy.nix { inherit lib; };
+      autoStart = deployLib.autoStartContainers cfg.containers;
     in
     {
       config = lib.mkIf (cfg.enable && cfg.backend == "podman" && autoStart != { }) {
@@ -23,10 +26,31 @@
           containers = lib.mapAttrs (
             name: container:
             let
+              perfArgs = deployLib.mkPerfOpts container;
+              healthArgs = deployLib.mkHealthcheckOpts container;
+              hasHc = container.hasHealthcheck or false;
+              allPodmanArgs = perfArgs ++ healthArgs;
+            in
+            let
               perf = container.performance.runtime or { };
-              perfArgs =
-                lib.optional ((perf.ociRuntime or null) != null) "--runtime=${perf.ociRuntime}"
-                ++ map (m: "--tmpfs=${m}") (perf.tmpfsMounts or [ ]);
+              resourceLimits =
+                lib.optionalAttrs ((perf.memoryHigh or null) != null) {
+                  MemoryHigh = perf.memoryHigh;
+                }
+                // lib.optionalAttrs ((perf.memoryMax or null) != null) {
+                  MemoryMax = perf.memoryMax;
+                }
+                // lib.optionalAttrs ((perf.cpuBurst or null) != null) {
+                  CPUBurst = perf.cpuBurst;
+                }
+                // lib.optionalAttrs ((perf.cpuQuota or null) != null) {
+                  CPUQuota = perf.cpuQuota;
+                }
+                // lib.optionalAttrs ((perf.tasksMax or null) != null) {
+                  TasksMax = perf.tasksMax;
+                };
+              hcService = lib.optionalAttrs hasHc { Type = "notify"; };
+              serviceAttrs = hcService // resourceLimits;
             in
             {
               image = container.imageRef;
@@ -35,6 +59,14 @@
                   After = [ "oci-load-${name}.service" ];
                   Requires = [ "oci-load-${name}.service" ];
                 };
+              }
+              // lib.optionalAttrs hasHc {
+                Container = {
+                  Notify = "healthy";
+                };
+              }
+              // lib.optionalAttrs (serviceAttrs != { }) {
+                Service = serviceAttrs;
               };
             }
             // lib.optionalAttrs (container.ports != [ ]) {
@@ -46,8 +78,8 @@
             // lib.optionalAttrs (container.volumes != [ ]) {
               volumes = container.volumes;
             }
-            // lib.optionalAttrs (perfArgs != [ ]) {
-              extraPodmanArgs = perfArgs;
+            // lib.optionalAttrs (allPodmanArgs != [ ]) {
+              extraPodmanArgs = allPodmanArgs;
             }
           ) autoStart;
         };
