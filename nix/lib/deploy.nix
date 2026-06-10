@@ -6,6 +6,38 @@
 let
   ociLib = import ./oci.nix { inherit lib; };
 
+  networkPresetMap = {
+    "web-server" = {
+      "net.core.somaxconn" = "65535";
+      "net.ipv4.tcp_fastopen" = "3";
+      "net.ipv4.tcp_tw_reuse" = "1";
+      "net.ipv4.tcp_fin_timeout" = "15";
+      "net.ipv4.tcp_slow_start_after_idle" = "0";
+      "net.ipv4.ip_local_port_range" = "1024 65535";
+    };
+    "high-throughput" = {
+      "net.core.somaxconn" = "65535";
+      "net.ipv4.tcp_fastopen" = "3";
+      "net.ipv4.tcp_tw_reuse" = "1";
+      "net.ipv4.tcp_fin_timeout" = "15";
+      "net.ipv4.tcp_slow_start_after_idle" = "0";
+      "net.ipv4.ip_local_port_range" = "1024 65535";
+      "net.core.rmem_max" = "67108864";
+      "net.core.wmem_max" = "67108864";
+      "net.core.netdev_max_backlog" = "65535";
+    };
+    "low-latency" = {
+      "net.core.somaxconn" = "65535";
+      "net.ipv4.tcp_fastopen" = "3";
+      "net.ipv4.tcp_tw_reuse" = "1";
+      "net.ipv4.tcp_fin_timeout" = "15";
+      "net.ipv4.tcp_slow_start_after_idle" = "0";
+      "net.ipv4.ip_local_port_range" = "1024 65535";
+      "net.ipv4.tcp_congestion_control" = "bbr";
+      "net.core.default_qdisc" = "fq";
+    };
+  };
+
   # Compute extra container runtime flags from performance.runtime options.
   # These become --flag arguments to docker/podman run.
   mkPerfOpts =
@@ -46,8 +78,15 @@ let
     ) "--ulimit=nproc=${toString ulimits.nproc}:${toString ulimits.nproc}"
     # Logging
     ++ lib.optional ((perf.logDriver or null) != null) "--log-driver=${perf.logDriver}"
-    # Sysctls
-    ++ lib.mapAttrsToList (k: v: "--sysctl=${k}=${v}") (perf.sysctls or { });
+    # Sysctls (preset merged with explicit, explicit wins)
+    ++ (
+      let
+        presetSysctls =
+          if (perf.networkPreset or null) != null then networkPresetMap.${perf.networkPreset} else { };
+        effectiveSysctls = presetSysctls // (perf.sysctls or { });
+      in
+      lib.mapAttrsToList (k: v: "--sysctl=${k}=${v}") effectiveSysctls
+    );
 in
 {
   inherit mkPerfOpts;

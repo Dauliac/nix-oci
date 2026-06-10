@@ -99,6 +99,14 @@ let
     ./_options/performance/compression.nix
     ./_options/performance/march.nix
     ./_options/performance/hwcaps.nix
+    ./_options/performance/huge-pages.nix
+    ./_options/performance/startup.nix
+    ./_options/performance/compiler.nix
+    ./_options/gpu/enable.nix
+    ./_options/gpu/capabilities.nix
+    ./_options/gpu/cuda-version.nix
+    ./_options/gpu/runtime-libraries.nix
+    ./_options/gpu/forward-compat.nix
   ];
 
   mkPerContainerType = module: deferredModuleWith { staticModules = [ module ] ++ optionModules; };

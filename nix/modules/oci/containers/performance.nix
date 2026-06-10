@@ -19,6 +19,9 @@
             ./_options/performance/compression.nix
             ./_options/performance/march.nix
             ./_options/performance/hwcaps.nix
+            ./_options/performance/huge-pages.nix
+            ./_options/performance/startup.nix
+            ./_options/performance/compiler.nix
           ];
         };
     };
