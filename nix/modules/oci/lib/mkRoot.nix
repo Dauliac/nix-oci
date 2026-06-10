@@ -1,6 +1,6 @@
 # Build the container root filesystem as a single buildEnv
 #
-# Composes package + dependencies + configFiles + shadow setup into one
+# Composes package + dependencies + shadow setup into one
 # environment with standard paths (/bin, /lib, /etc, /home).
 # Used by the deploy modules for non-NixOS containers.
 { lib, ... }:
@@ -10,7 +10,7 @@
     description = ''
       Build the container root filesystem as a single `buildEnv`.
 
-      Composes package, dependencies, config files, and shadow setup
+      Composes package, dependencies, and shadow setup
       (/etc/passwd, /etc/shadow, /etc/group) into one environment
       with `/bin`, `/lib`, `/etc`, `/home` paths.
 
@@ -22,7 +22,6 @@
         name,
         package,
         dependencies,
-        configFiles,
         isRoot,
         user,
         pkgs,
@@ -65,7 +64,6 @@
         paths =
           (lib.optional (package != null) package)
           ++ dependencies
-          ++ configFiles
           ++ (mkShadowSetup {
             inherit isRoot user pkgs;
             runtimeShell = pkgs.runtimeShell;

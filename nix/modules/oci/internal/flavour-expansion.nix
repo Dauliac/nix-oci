@@ -74,7 +74,6 @@ in
           # --- Attrsets: normal priority for merge with flavour ---
           environment = parentConfig.environment or { };
           labels = parentConfig.labels or { };
-          configFiles = parentConfig.configFiles or { };
         };
 
       expandFlavour =

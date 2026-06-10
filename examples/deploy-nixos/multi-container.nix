@@ -22,8 +22,8 @@ in
     containers = {
       web = {
         package = web;
-        dependencies = [ pkgs.curl ];
-        configFiles = [
+        dependencies = [
+          pkgs.curl
           (pkgs.writeTextDir "var/www/health.json" ''{"status":"ok","cache":"redis://localhost:6379"}'')
         ];
         autoStart = true;

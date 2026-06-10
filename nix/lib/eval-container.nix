@@ -5,7 +5,7 @@
 # _nixos/oci module tree and returns the result.
 #
 # Cycle-safe reads: isRoot, containerName, mainService, package (when
-# mainService is null), dependencies, configFiles.
+# mainService is null), dependencies.
 # NEVER pass: user, name, entrypoint (they depend on eval output).
 { lib }:
 let
@@ -20,6 +20,135 @@ let
       pkg.pname
     else
       (builtins.parseDrvName (pkg.name or "unknown")).name;
+
+  # ---------------------------------------------------------------------------
+  # Base image /etc/passwd and /etc/group → NixOS module generation.
+  #
+  # When fromImage is used, the lock update script pre-extracts identity
+  # files from the base image layers and commits them alongside the manifest
+  # lock. At eval time we read these committed source files (no IFD) and
+  # inject users/groups as a NixOS module. The NixOS module system handles
+  # merging: base image users get mkDefault, nix-oci's own declarations
+  # (root, service user) take precedence.
+  # ---------------------------------------------------------------------------
+
+  # Parse a passwd file into a list of { name, uid, gid, home, shell }.
+  # Format: name:x:uid:gid:gecos:home:shell
+  parsePasswdFile =
+    content:
+    let
+      lines = builtins.filter (l: l != "" && !(strings.hasPrefix "#" l)) (
+        strings.splitString "\n" content
+      );
+      parseLine =
+        line:
+        let
+          parts = strings.splitString ":" line;
+          len = builtins.length parts;
+        in
+        if len >= 7 then
+          {
+            name = builtins.elemAt parts 0;
+            uid = builtins.elemAt parts 2;
+            gid = builtins.elemAt parts 3;
+            home = builtins.elemAt parts 5;
+            shell = builtins.elemAt parts 6;
+          }
+        else
+          null;
+      parsed = map parseLine lines;
+    in
+    builtins.filter (x: x != null) parsed;
+
+  # Parse a group file into a list of { name, gid }.
+  # Format: name:x:gid:members
+  parseGroupFile =
+    content:
+    let
+      lines = builtins.filter (l: l != "" && !(strings.hasPrefix "#" l)) (
+        strings.splitString "\n" content
+      );
+      parseLine =
+        line:
+        let
+          parts = strings.splitString ":" line;
+          len = builtins.length parts;
+        in
+        if len >= 3 then
+          {
+            name = builtins.elemAt parts 0;
+            gid = builtins.elemAt parts 2;
+          }
+        else
+          null;
+      parsed = map parseLine lines;
+    in
+    builtins.filter (x: x != null) parsed;
+
+  # Build a GID → group name mapping from parsed group entries.
+  gidToGroupName = groups: builtins.listToAttrs (map (g: lib.nameValuePair g.gid g.name) groups);
+
+  # Create a NixOS module that declares base image users and groups.
+  # All declarations use mkDefault so nix-oci's own users take precedence.
+  # Reads from committed source files (pre-extracted at lock update time).
+  mkBaseImageUsersModule =
+    {
+      basePasswdPath,
+      baseGroupPath,
+    }:
+    let
+      passwdContent = builtins.readFile basePasswdPath;
+      groupContent = builtins.readFile baseGroupPath;
+
+      parsedUsers = parsePasswdFile passwdContent;
+      parsedGroups = parseGroupFile groupContent;
+      gidMap = gidToGroupName parsedGroups;
+
+      safeInt =
+        s:
+        let
+          r = builtins.tryEval (lib.toInt s);
+        in
+        if r.success then r.value else 0;
+    in
+    { lib, ... }:
+    {
+      users.groups = builtins.listToAttrs (
+        map (
+          g:
+          lib.nameValuePair g.name {
+            gid = lib.mkDefault (safeInt g.gid);
+          }
+        ) parsedGroups
+      );
+
+      users.users = builtins.listToAttrs (
+        lib.filter (x: x != null) (
+          map (
+            u:
+            let
+              uid = safeInt u.uid;
+              groupName = gidMap.${u.gid} or u.name;
+              isSystem = uid != 0 && uid < 1000;
+            in
+            # Skip root — nix-oci's users.nix always declares it
+            if u.name == "root" then
+              null
+            else
+              lib.nameValuePair u.name (
+                {
+                  uid = lib.mkDefault uid;
+                  group = lib.mkDefault groupName;
+                  home = lib.mkDefault u.home;
+                }
+                // (
+                  if isSystem then { isSystemUser = lib.mkDefault true; } else { isNormalUser = lib.mkDefault true; }
+                )
+              )
+          ) parsedUsers
+        )
+      );
+    };
 
   # Internal home-manager defaults for container environments.
   # All use mkDefault so user modules can override.
@@ -87,6 +216,8 @@ in
   #   mainService      - nixosConfig.mainService (or null)
   #   homeManagerFlake - homeConfig.homeManagerFlake (or null)
   #   homeModules      - homeConfig.modules (or [])
+  #   basePasswdPath   - path to committed base-passwd file (or null)
+  #   baseGroupPath    - path to committed base-group file (or null)
   #
   # Returns: { evalResult; containerUser; }
   #   evalResult   - the fully evaluated NixOS .config
@@ -102,6 +233,8 @@ in
       homeManagerFlake ? null,
       homeModules ? [ ],
       fromImageEnabled ? false,
+      basePasswdPath ? null,
+      baseGroupPath ? null,
     }:
     let
       containerIsRoot = containerConfig.isRoot;
@@ -148,10 +281,7 @@ in
       homeManagerModules =
         if homeManagerFlake != null then
           let
-            hmNixosModule =
-              homeManagerFlake.nixosModules.home-manager
-                or homeManagerFlake.nixosModule
-                or null;
+            hmNixosModule = homeManagerFlake.nixosModules.home-manager or homeManagerFlake.nixosModule or null;
           in
           if hmNixosModule != null then
             [
@@ -175,70 +305,84 @@ in
         else
           [ ];
 
+      # When building on a base image, read pre-extracted /etc/passwd and
+      # /etc/group from committed lock files and inject as NixOS user/group
+      # declarations. Files are committed by `oci-updatePulledManifestsLocks`.
+      baseImageModules =
+        if
+          fromImageEnabled
+          && basePasswdPath != null
+          && baseGroupPath != null
+          && builtins.pathExists basePasswdPath
+          && builtins.pathExists baseGroupPath
+        then
+          [ (mkBaseImageUsersModule { inherit basePasswdPath baseGroupPath; }) ]
+        else
+          [ ];
+
       evalResult =
         (import "${pkgs.path}/nixos/lib/eval-config.nix" {
           inherit (pkgs) system;
-          modules =
-            [
-              ociNixOSModules
-              # Pass cycle-safe container options into the NixOS module
-              (
-                { lib, ... }:
-                {
-                  nixpkgs.hostPlatform = lib.mkDefault pkgs.system;
-                  oci.container = {
-                    package = containerConfig.package;
-                    user = nixosEvalUser;
-                    isRoot = containerIsRoot;
-                    inherit mainService fromImageEnabled;
-                    installNix = containerConfig.installNix or false;
-                    # dependencies, configFiles, hardening don't depend on eval -- safe to pass
-                    dependencies = containerConfig.dependencies;
-                    configFiles = containerConfig.configFiles;
-                    # Forward user-provided OCI metadata so the NixOS eval merges
-                    # them with auto-derived values. Use mkIf to avoid overriding
-                    # service adapter mkDefault values with null/[] defaults.
-                    inherit (containerConfig) environment;
-                    entrypoint = lib.mkIf (containerConfig.entrypoint != [ ]) containerConfig.entrypoint;
-                    stopSignal = lib.mkIf (containerConfig.stopSignal != null) containerConfig.stopSignal;
-                    workingDir = lib.mkIf (containerConfig.workingDir != null) containerConfig.workingDir;
-                    declaredVolumes = lib.mkIf (containerConfig.declaredVolumes != [ ]) containerConfig.declaredVolumes;
-                    healthcheck = lib.mkIf (containerConfig.healthcheck.command != [ ]) {
-                      inherit (containerConfig.healthcheck)
-                        command
-                        interval
-                        timeout
-                        startPeriod
-                        retries
-                        ;
-                    };
-                    # Forward build-time hardening options (not runtime hints like
-                    # capabilities/readOnlyRootfs which are applied by deploy modules).
-                    hardening = {
-                      inherit (containerConfig.hardening)
-                        enable
-                        disableDns
-                        noTlsTrustStore
-                        seccomp
-                        landlock
-                        ;
-                    };
-                    # Forward arch-independent performance options.
-                    # Arch-specific options (march, hwcaps) are consumed directly
-                    # by image builders via archConfigs, not the NixOS eval.
-                    performance = {
-                      inherit (containerConfig.performance)
-                        enable
-                        allocator
-                        glibcTunables
-                        ;
-                    };
+          modules = [
+            ociNixOSModules
+            # Pass cycle-safe container options into the NixOS module
+            (
+              { lib, ... }:
+              {
+                nixpkgs.hostPlatform = lib.mkDefault pkgs.system;
+                oci.container = {
+                  package = containerConfig.package;
+                  user = nixosEvalUser;
+                  isRoot = containerIsRoot;
+                  inherit mainService fromImageEnabled;
+                  installNix = containerConfig.installNix or false;
+                  # dependencies, hardening don't depend on eval -- safe to pass
+                  dependencies = containerConfig.dependencies;
+                  # Forward user-provided OCI metadata so the NixOS eval merges
+                  # them with auto-derived values. Use mkIf to avoid overriding
+                  # service adapter mkDefault values with null/[] defaults.
+                  inherit (containerConfig) environment;
+                  entrypoint = lib.mkIf (containerConfig.entrypoint != [ ]) containerConfig.entrypoint;
+                  stopSignal = lib.mkIf (containerConfig.stopSignal != null) containerConfig.stopSignal;
+                  workingDir = lib.mkIf (containerConfig.workingDir != null) containerConfig.workingDir;
+                  declaredVolumes = lib.mkIf (containerConfig.declaredVolumes != [ ]) containerConfig.declaredVolumes;
+                  healthcheck = lib.mkIf (containerConfig.healthcheck.command != [ ]) {
+                    inherit (containerConfig.healthcheck)
+                      command
+                      interval
+                      timeout
+                      startPeriod
+                      retries
+                      ;
                   };
-                }
-              )
-            ]
-            ++ nixosModules
-            ++ homeManagerModules;
+                  # Forward build-time hardening options (not runtime hints like
+                  # capabilities/readOnlyRootfs which are applied by deploy modules).
+                  hardening = {
+                    inherit (containerConfig.hardening)
+                      enable
+                      disableDns
+                      noTlsTrustStore
+                      seccomp
+                      landlock
+                      ;
+                  };
+                  # Forward arch-independent performance options.
+                  # Arch-specific options (march, hwcaps) are consumed directly
+                  # by image builders via archConfigs, not the NixOS eval.
+                  performance = {
+                    inherit (containerConfig.performance)
+                      enable
+                      allocator
+                      glibcTunables
+                      ;
+                  };
+                };
+              }
+            )
+          ]
+          ++ baseImageModules
+          ++ nixosModules
+          ++ homeManagerModules;
         }).config;
     in
     {

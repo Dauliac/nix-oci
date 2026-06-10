@@ -32,7 +32,7 @@ in
           - Empty `/etc/ssl/certs/ca-bundle.crt`
 
           Returns a list of derivations suitable for inclusion in `copyToRoot`
-          or `configFiles`.
+          or `dependencies`.
         '';
         file = "nix/modules/oci/lib/mkHardenedConfigs.nix";
         fn = { hardening }: pure.mkHardenedConfigs { inherit hardening pkgs; };

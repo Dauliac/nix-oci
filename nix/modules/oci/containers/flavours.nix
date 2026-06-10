@@ -6,7 +6,7 @@
 #
 # Merge semantics (handled by the expansion module):
 #   - List options (modules, dependencies, ports): parent ++ flavour (additive)
-#   - Attrset options (environment, labels, configFiles): parent // flavour (merge)
+#   - Attrset options (environment, labels): parent // flavour (merge)
 #   - Scalar options (package, tag, isRoot): parent mkDefault, flavour overrides
 #
 # Example:

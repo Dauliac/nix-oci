@@ -1,4 +1,4 @@
-# Root filesystem: package/deps/configFiles options, home dir lib, and output
+# Root filesystem: package/deps options, home dir lib, and output
 {
   config,
   lib,
@@ -14,11 +14,6 @@ in
       type = lib.types.nullOr lib.types.package;
       default = null;
       description = "Main package for the container.";
-    };
-    configFiles = lib.mkOption {
-      type = lib.types.listOf lib.types.package;
-      default = [ ];
-      description = "Additional config file derivations for the root filesystem.";
     };
     dependencies = lib.mkOption {
       type = lib.types.listOf lib.types.package;
@@ -69,7 +64,7 @@ in
     type = lib.types.package;
     internal = true;
     readOnly = true;
-    description = "Complete root filesystem (shadow + etc + deps + configFiles + home).";
+    description = "Complete root filesystem (shadow + etc + deps + home).";
     default =
       let
         package' = if cfg.package != null then [ cfg.package ] else [ ];
@@ -88,7 +83,6 @@ in
           ++ cfg._output.shadowFiles
           ++ cfg._output.etcFiles
           ++ cfg.dependencies
-          ++ cfg.configFiles
           ++ (cfg._output.hardening.configFiles or [ ])
           ++ (cfg._output.performance.extraDeps or [ ])
           ++ [
@@ -97,13 +91,18 @@ in
           ];
         pathsToLink = [
           "/bin"
-          "/lib"
           "/etc"
           "/home"
           "/root"
           "/tmp"
           "/var"
-        ];
+        ]
+        # When building on a base image, do NOT link /lib — modern distros
+        # use /lib → /usr/lib (merged-usr). A real /lib directory from
+        # buildEnv would shadow that symlink, breaking the base image's
+        # dynamically-linked binaries. Nix packages use RPATH and don't
+        # need /lib.
+        ++ lib.optionals (!cfg.fromImageEnabled) [ "/lib" ];
         # Dereference symlinks under /etc so tools like Dockle that
         # inspect the Docker archive tar can read passwd/shadow/group
         # instead of seeing dangling Nix store symlinks.

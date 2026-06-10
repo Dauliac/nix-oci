@@ -54,7 +54,7 @@ nix-oci automatically:
 1. Evaluates the NixOS modules in a minimal container context
 2. Derives the **user** from the service package name (e.g. `nginx`)
 3. Extracts the **entrypoint** from the systemd unit of `mainService`
-4. Threads `isRoot`, `dependencies`, `configFiles` from the container level into the eval
+4. Threads `isRoot`, `dependencies` from the container level into the eval
 5. Collects `/etc` files and environment variables from the NixOS eval
 6. Generates `/etc/passwd`, `/etc/shadow`, `/etc/group`
 7. Assembles the root filesystem and passes it to [nix2container](https://github.com/nlewo/nix2container)

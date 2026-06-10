@@ -91,7 +91,6 @@ let
         name,
         package,
         dependencies,
-        configFiles,
         isRoot,
         user,
         pkgs,
@@ -101,7 +100,6 @@ let
         paths =
           (lib.optional (package != null) package)
           ++ dependencies
-          ++ configFiles
           ++ (self.mkShadowSetup {
             inherit isRoot user pkgs;
             runtimeShell = pkgs.runtimeShell;
@@ -111,6 +109,7 @@ let
           "/lib"
           "/etc"
           "/home"
+          "/var"
         ];
         ignoreCollisions = true;
       };
@@ -299,8 +298,6 @@ let
         layerStrategy ? "fine-grained",
         prependLayerDefs ? [ ],
         prependBuiltLayers ? [ ],
-        debug ? null,
-        mkDebugLayer ? null,
       }:
       let
         depsLayerDefs =
@@ -313,17 +310,7 @@ let
           else
             [ ];
         appLayerDefs = if rootPaths != [ ] then [ (self.mkAppLayer { copyToRoot = rootPaths; }) ] else [ ];
-        debugLayerDefs =
-          if debug != null && mkDebugLayer != null then
-            [
-              (mkDebugLayer {
-                inherit (debug) packages;
-                entrypointWrapper = debug.entrypointWrapper or null;
-              })
-            ]
-          else
-            [ ];
-        allLayerDefs = prependLayerDefs ++ depsLayerDefs ++ appLayerDefs ++ debugLayerDefs;
+        allLayerDefs = prependLayerDefs ++ depsLayerDefs ++ appLayerDefs;
       in
       self.foldImageLayers {
         inherit nix2container prependBuiltLayers;

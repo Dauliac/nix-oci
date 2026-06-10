@@ -84,7 +84,7 @@ performs a full NixOS module evaluation in a minimal context:
 1. **Imports** `_nixos/oci/` modules -- entrypoint extraction,
    healthcheck, hardening, performance, root filesystem assembly
 2. **Passes** container-level options (`package`, `dependencies`,
-   `configFiles`, `hardening`, `performance`) into the NixOS eval
+   `hardening`, `performance`) into the NixOS eval
 3. **Merges** your `nixosConfig.modules` and `homeConfig.modules`
 4. **Extracts** the evaluated config: systemd units, `/etc` files,
    environment variables, users, and home-manager dotfiles

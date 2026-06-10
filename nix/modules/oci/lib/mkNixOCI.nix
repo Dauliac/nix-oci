@@ -60,7 +60,7 @@
 
             # Root filesystem from NixOS eval -- includes shadow files (with nixbld
             # users), etc files (nix.conf, nsswitch, certs), packages (nix, bash,
-            # coreutils), dependencies, configFiles, home dir.
+            # coreutils), dependencies, home dir.
             # rootFilesystem (buildEnv) already includes oci.package -- adding it
             # again would cause nix2container collisions when the package uses
             # makeWrapper (symlink-vs-real-file conflict, e.g. PostgreSQL).

@@ -249,7 +249,7 @@ They end up in the **app layer** when `optimizeLayers` is enabled.
 
 ```mermaid
 flowchart LR
-    User["oci.containers.my-app.configFiles<br/>[myNginxConf myAppYaml]"]
+    User["oci.containers.my-app.dependencies<br/>[myNginxConf myAppYaml]"]
 
     subgraph rootfs ["Root filesystem"]
         Root["mkRoot: included in buildEnv"]
@@ -300,7 +300,7 @@ flowchart TD
 
     subgraph optimized ["optimizeLayers = true"]
         DepsLayer["mkImageLayers<br/>deps → own layer"]
-        AppLayer["rootPaths<br/>shadow + configFiles + package"]
+        AppLayer["rootPaths<br/>shadow + dependencies + package"]
         Fold["foldImageLayers<br/>deduplicates across layers"]
         DepsLayer --> Fold
         AppLayer --> Fold
@@ -394,7 +394,7 @@ flowchart TD
         ports[ports]
         env[environment]
         labels[labels]
-        cfg[configFiles]
+        deps[dependencies]
         hc[healthcheck]
         ss[stopSignal]
         wd[workingDir]

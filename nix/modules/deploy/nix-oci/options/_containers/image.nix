@@ -25,13 +25,12 @@ let
 
   # ── Legacy path (no nixosConfig) ──────────────────────────────────────
 
-  # Shadow setup + package + deps + configFiles as a single buildEnv.
+  # Shadow setup + package + deps as a single buildEnv.
   legacyRoot = ociLib.mkRoot {
     inherit name pkgs;
     inherit (config)
       package
       dependencies
-      configFiles
       isRoot
       user
       ;
@@ -164,15 +163,12 @@ let
   optimized = config.optimizeLayers;
   layerStrategy = config.layerStrategy or "fine-grained";
 
-  # Rich path: rootFilesystem from NixOS eval (includes shadow, etc, deps, configFiles, home).
+  # Rich path: rootFilesystem from NixOS eval (includes shadow, etc, deps, home).
   evalCopyToRoot = [ out.rootFilesystem ];
 
   # Legacy path: optimized layers from raw options.
   legacyRootPaths =
-    legacyShadowOnly
-    ++ config.configFiles
-    ++ legacyHardenedConfigs
-    ++ lib.optional (config.package != null) config.package;
+    legacyShadowOnly ++ legacyHardenedConfigs ++ lib.optional (config.package != null) config.package;
 
   copyToRoot = if useNixosEval then evalCopyToRoot else [ legacyRoot ];
 
@@ -190,10 +186,45 @@ in
     readOnly = true;
     description = "Whether the container image has a healthcheck configured.";
     default =
-      if useNixosEval then
-        (out.healthcheck or null) != null
-      else
-        config.healthcheck.command != [ ];
+      if useNixosEval then (out.healthcheck or null) != null else config.healthcheck.command != [ ];
+  };
+
+  # Healthcheck details for runtime injection via podman flags.
+  # Workaround for nix2container upstream bug #197 (Healthcheck dropped from image config).
+  options.healthcheckConfig = lib.mkOption {
+    type = lib.types.nullOr (
+      lib.types.submodule {
+        options = {
+          command = lib.mkOption { type = lib.types.listOf lib.types.str; };
+          interval = lib.mkOption { type = lib.types.int; };
+          timeout = lib.mkOption { type = lib.types.int; };
+          startPeriod = lib.mkOption { type = lib.types.int; };
+          retries = lib.mkOption { type = lib.types.int; };
+        };
+      }
+    );
+    readOnly = true;
+    internal = true;
+    description = "Resolved healthcheck config (from eval or raw options).";
+    default =
+      let
+        hc =
+          if useNixosEval then
+            out.healthcheck or null
+          else if config.healthcheck.command != [ ] then
+            {
+              inherit (config.healthcheck)
+                command
+                interval
+                timeout
+                startPeriod
+                retries
+                ;
+            }
+          else
+            null;
+      in
+      hc;
   };
 
   options.image = lib.mkOption {
@@ -203,24 +234,24 @@ in
     default =
       assert _nixosChecks == "" || _nixosChecks != "";
       nix2container.buildImage (
-      {
-        name = config.name;
-        tag = config.tag;
-        config = ociConfig;
-      }
-      // (
-        if optimized then
-          {
-            inherit layers;
-          }
-          // lib.optionalAttrs (layerStrategy == "fine-grained") {
-            maxLayers = 40;
-          }
-        else
-          {
-            inherit copyToRoot;
-          }
-      )
-    );
+        {
+          name = config.name;
+          tag = config.tag;
+          config = ociConfig;
+        }
+        // (
+          if optimized then
+            {
+              inherit layers;
+            }
+            // lib.optionalAttrs (layerStrategy == "fine-grained") {
+              maxLayers = 40;
+            }
+          else
+            {
+              inherit copyToRoot;
+            }
+        )
+      );
   };
 }
