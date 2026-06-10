@@ -1,13 +1,15 @@
 # Image structure test -- validates container contents in a NixOS VM.
 #
 # Replaces CST (Container Structure Test) YAML tests for basic containers.
-# Loads images into podman, then uses `podman run` and `podman image inspect`
-# to verify: binaries exist, commands produce expected output, USER is set,
-# and dependencies are bundled correctly.
+# Containers are built via the deploy module, loaded into podman, and tested
+# with `podman run --entrypoint` and `podman image inspect`.
+#
+# Validates: binaries run, commands produce expected output, OCI User field,
+# dependencies bundled correctly.
 #
 # Containers tested:
-#   minimalist, minimalistWithDependencies, minimalistWithName,
-#   withRootUserAndPackage, write-shell-script-bin, write-shell-application
+#   minimalist, minimalist-with-deps, minimalist-with-name,
+#   with-root-user, write-shell-script-bin, write-shell-application
 #
 # Run: nix build .#checks.x86_64-linux.vm-structure -L
 { config, ... }:
@@ -42,19 +44,22 @@ in
                 containers = {
                   minimalist = {
                     package = pkgs.kubectl;
+                    user = "kubectl";
                   };
-                  minimalistWithDependencies = {
+                  minimalist-with-deps = {
                     package = pkgs.kubectl;
+                    user = "kubectl";
                     dependencies = [
                       pkgs.bash
                       pkgs.kubectl-cnpg
                     ];
                   };
-                  minimalistWithName = {
+                  minimalist-with-name = {
                     name = "hola";
                     package = pkgs.hello;
+                    user = "hello";
                   };
-                  withRootUserAndPackage = {
+                  with-root-user = {
                     package = pkgs.bash;
                     dependencies = [ pkgs.coreutils ];
                     isRoot = true;
@@ -63,6 +68,7 @@ in
                     package = pkgs.writeShellScriptBin "hello-script" ''
                       echo "Hello from writeShellScriptBin!"
                     '';
+                    user = "hello-script";
                   };
                   write-shell-application = {
                     package = pkgs.writeShellApplication {
@@ -73,6 +79,7 @@ in
                         whoami
                       '';
                     };
+                    user = "hello-app";
                   };
                 };
               };
@@ -95,40 +102,31 @@ in
                 return json.loads(raw)[0]
 
 
-            def assert_env(image_ref, key, value):
-                """Assert an environment variable is set in the image config."""
-                info = image_inspect(image_ref)
-                env_list = info.get("Config", {}).get("Env", [])
-                matches = [e for e in env_list if e.startswith(f"{key}=")]
-                assert len(matches) == 1, \
-                    f"Expected {key}={value} in {image_ref}, got env: {env_list}"
-                assert matches[0] == f"{key}={value}", \
-                    f"Expected {key}={value}, got {matches[0]}"
-
-
             def assert_user(image_ref, expected_user):
-                """Assert the image User config matches."""
+                """Assert the OCI User config field matches."""
                 info = image_inspect(image_ref)
                 user = info.get("Config", {}).get("User", "")
                 assert user == expected_user, \
                     f"Expected User={expected_user} in {image_ref}, got: {user}"
 
 
-            def run_cmd(image_ref, cmd):
-                """Run a command in a throwaway container, return stdout."""
-                return machine.succeed(f"podman run --rm {image_ref} {cmd}")
+            def run_entrypoint(image_ref, binary, args=""):
+                """Run a specific binary as entrypoint (works without coreutils)."""
+                return machine.succeed(
+                    f"podman run --rm --entrypoint '{binary}' {image_ref} {args}"
+                )
 
 
-            def assert_file_exists(image_ref, path):
-                """Assert a file exists inside the image."""
-                machine.succeed(f"podman run --rm {image_ref} test -f {path}")
+            def assert_binary_runs(image_ref, binary, args=""):
+                """Assert a binary can be executed inside the image."""
+                run_entrypoint(image_ref, binary, args)
 
 
-            def assert_cmd_output(image_ref, cmd, expected):
-                """Assert command output contains expected string."""
-                result = run_cmd(image_ref, cmd)
+            def assert_entrypoint_output(image_ref, binary, args, expected):
+                """Assert binary output contains expected string."""
+                result = run_entrypoint(image_ref, binary, args)
                 assert expected in result, \
-                    f"Expected '{expected}' in output of '{cmd}', got: {result}"
+                    f"Expected '{expected}' in output of '{binary} {args}', got: {result}"
 
 
             # ===================================================================
@@ -138,9 +136,9 @@ in
             with subtest("load all images"):
                 for name in [
                     "minimalist",
-                    "minimalistWithDependencies",
-                    "minimalistWithName",
-                    "withRootUserAndPackage",
+                    "minimalist-with-deps",
+                    "minimalist-with-name",
+                    "with-root-user",
                     "write-shell-script-bin",
                     "write-shell-application",
                 ]:
@@ -150,83 +148,78 @@ in
             # minimalist (kubectl)
             # ===================================================================
 
-            with subtest("minimalist: USER is kubectl"):
-                assert_env("minimalist:latest", "USER", "kubectl")
+            with subtest("minimalist: User is kubectl"):
+                assert_user("minimalist:latest", "kubectl")
 
-            with subtest("minimalist: kubectl binary exists"):
-                assert_file_exists("minimalist:latest", "/bin/kubectl")
-
-            with subtest("minimalist: kubectl version runs"):
-                run_cmd("minimalist:latest", "kubectl version --client")
+            with subtest("minimalist: kubectl runs"):
+                assert_binary_runs("minimalist:latest", "/bin/kubectl", "version --client")
 
             # ===================================================================
-            # minimalistWithDependencies (kubectl + bash + kubectl-cnpg)
+            # minimalist-with-deps (kubectl + bash + kubectl-cnpg)
             # ===================================================================
 
-            with subtest("minimalistWithDependencies: USER is kubectl"):
-                assert_env("minimalistWithDependencies:latest", "USER", "kubectl")
+            with subtest("minimalist-with-deps: User is kubectl"):
+                assert_user("minimalist-with-deps:latest", "kubectl")
 
-            with subtest("minimalistWithDependencies: kubectl binary exists"):
-                assert_file_exists("minimalistWithDependencies:latest", "/bin/kubectl")
+            with subtest("minimalist-with-deps: kubectl runs"):
+                assert_binary_runs(
+                    "minimalist-with-deps:latest", "/bin/kubectl", "version --client"
+                )
 
-            with subtest("minimalistWithDependencies: bash binary exists"):
-                assert_file_exists("minimalistWithDependencies:latest", "/bin/bash")
+            with subtest("minimalist-with-deps: bash runs"):
+                assert_binary_runs(
+                    "minimalist-with-deps:latest", "/bin/bash", "--version"
+                )
 
-            with subtest("minimalistWithDependencies: kubectl runs"):
-                run_cmd("minimalistWithDependencies:latest", "kubectl version --client")
-
-            with subtest("minimalistWithDependencies: bash runs"):
-                run_cmd("minimalistWithDependencies:latest", "bash --version")
-
-            with subtest("minimalistWithDependencies: kubectl-cnpg runs"):
-                run_cmd("minimalistWithDependencies:latest", "kubectl-cnpg version")
-
-            # ===================================================================
-            # minimalistWithName (hello, image named "hola")
-            # ===================================================================
-
-            with subtest("minimalistWithName: USER is hello"):
-                assert_env("hola:latest", "USER", "hello")
-
-            with subtest("minimalistWithName: hello binary exists"):
-                assert_file_exists("hola:latest", "/bin/hello")
-
-            with subtest("minimalistWithName: hello runs"):
-                run_cmd("hola:latest", "hello")
+            with subtest("minimalist-with-deps: kubectl-cnpg runs"):
+                assert_binary_runs(
+                    "minimalist-with-deps:latest", "/bin/kubectl-cnpg", "version"
+                )
 
             # ===================================================================
-            # withRootUserAndPackage (bash + coreutils, root user)
+            # minimalist-with-name (hello, image named "hola")
             # ===================================================================
 
-            with subtest("withRootUserAndPackage: USER is root"):
-                assert_env("withRootUserAndPackage:latest", "USER", "root")
+            with subtest("minimalist-with-name: User is hello"):
+                assert_user("hola:latest", "hello")
 
-            with subtest("withRootUserAndPackage: bash binary exists"):
-                assert_file_exists("withRootUserAndPackage:latest", "/bin/bash")
+            with subtest("minimalist-with-name: hello runs"):
+                assert_binary_runs("hola:latest", "/bin/hello")
 
-            with subtest("withRootUserAndPackage: bash runs"):
-                run_cmd("withRootUserAndPackage:latest", "bash --version")
+            # ===================================================================
+            # with-root-user (bash + coreutils, root user)
+            # ===================================================================
 
-            with subtest("withRootUserAndPackage: coreutils ls runs"):
-                run_cmd("withRootUserAndPackage:latest", "ls --version")
+            with subtest("with-root-user: User is root"):
+                assert_user("with-root-user:latest", "root")
 
-            with subtest("withRootUserAndPackage: whoami is root"):
-                assert_cmd_output("withRootUserAndPackage:latest", "whoami", "root")
+            with subtest("with-root-user: bash runs"):
+                assert_binary_runs(
+                    "with-root-user:latest", "/bin/bash", "--version"
+                )
+
+            with subtest("with-root-user: coreutils ls runs"):
+                assert_binary_runs(
+                    "with-root-user:latest", "/bin/ls", "--version"
+                )
+
+            with subtest("with-root-user: whoami is root"):
+                assert_entrypoint_output(
+                    "with-root-user:latest", "/bin/whoami", "", "root"
+                )
 
             # ===================================================================
             # write-shell-script-bin
             # ===================================================================
 
-            with subtest("write-shell-script-bin: USER is hello-script"):
-                assert_env("write-shell-script-bin:latest", "USER", "hello-script")
-
-            with subtest("write-shell-script-bin: binary exists"):
-                assert_file_exists("write-shell-script-bin:latest", "/bin/hello-script")
+            with subtest("write-shell-script-bin: User is hello-script"):
+                assert_user("write-shell-script-bin:latest", "hello-script")
 
             with subtest("write-shell-script-bin: runs with expected output"):
-                assert_cmd_output(
+                assert_entrypoint_output(
                     "write-shell-script-bin:latest",
-                    "hello-script",
+                    "/bin/hello-script",
+                    "",
                     "Hello from writeShellScriptBin!",
                 )
 
@@ -234,16 +227,14 @@ in
             # write-shell-application
             # ===================================================================
 
-            with subtest("write-shell-application: USER is hello-app"):
-                assert_env("write-shell-application:latest", "USER", "hello-app")
-
-            with subtest("write-shell-application: binary exists"):
-                assert_file_exists("write-shell-application:latest", "/bin/hello-app")
+            with subtest("write-shell-application: User is hello-app"):
+                assert_user("write-shell-application:latest", "hello-app")
 
             with subtest("write-shell-application: runs with expected output"):
-                assert_cmd_output(
+                assert_entrypoint_output(
                     "write-shell-application:latest",
-                    "hello-app",
+                    "/bin/hello-app",
+                    "",
                     "Hello from writeShellApplication!",
                 )
           '';
