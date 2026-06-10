@@ -88,6 +88,43 @@ in
   };
 
   config = {
+    assertions = [
+      {
+        assertion = !(cfg.isRoot && cfg.user != "root");
+        message = ''
+          nix-oci: `isRoot = true` but `user = "${cfg.user}"` (expected "root").
+          When running as root, the user must be "root". Either:
+            - Set `user = "root"` (or leave it at default)
+            - Set `isRoot = false` to run as a non-root user
+        '';
+      }
+      {
+        assertion = !(cfg.isRoot && cfg.uid != 0 && cfg.uid != 4000);
+        message = ''
+          nix-oci: `isRoot = true` but `uid = ${toString cfg.uid}` (expected 0).
+          When running as root, do not set a custom uid. Either:
+            - Remove the `uid` setting (root always uses UID 0)
+            - Set `isRoot = false` to run as a non-root user
+        '';
+      }
+      {
+        assertion = !(cfg.isRoot && cfg.gid != 0 && cfg.gid != 4000);
+        message = ''
+          nix-oci: `isRoot = true` but `gid = ${toString cfg.gid}` (expected 0).
+          When running as root, do not set a custom gid. Either:
+            - Remove the `gid` setting (root always uses GID 0)
+            - Set `isRoot = false` to run as a non-root user
+        '';
+      }
+      {
+        assertion = cfg.isRoot || cfg.user != "root";
+        message = ''
+          nix-oci: `user = "root"` but `isRoot = false`.
+          If you intend to run as root, set `isRoot = true`.
+          If you intend to run as a non-root user, change `user` to a non-root name.
+        '';
+      }
+    ];
     users.mutableUsers = false;
     users.users = {
       root = {

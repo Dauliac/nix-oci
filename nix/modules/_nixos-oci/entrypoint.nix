@@ -8,6 +8,43 @@
 let
   cfg = config.oci.container;
   ociLib = import ../../lib/oci.nix { inherit lib; };
+
+  # POSIX signals valid for OCI StopSignal.
+  validSignals = [
+    "SIGABRT"
+    "SIGALRM"
+    "SIGBUS"
+    "SIGCHLD"
+    "SIGCONT"
+    "SIGFPE"
+    "SIGHUP"
+    "SIGILL"
+    "SIGINT"
+    "SIGIO"
+    "SIGIOT"
+    "SIGKILL"
+    "SIGPIPE"
+    "SIGPOLL"
+    "SIGPROF"
+    "SIGPWR"
+    "SIGQUIT"
+    "SIGSEGV"
+    "SIGSTKFLT"
+    "SIGSTOP"
+    "SIGSYS"
+    "SIGTERM"
+    "SIGTRAP"
+    "SIGTSTP"
+    "SIGTTIN"
+    "SIGTTOU"
+    "SIGURG"
+    "SIGUSR1"
+    "SIGUSR2"
+    "SIGVTALRM"
+    "SIGWINCH"
+    "SIGXCPU"
+    "SIGXFSZ"
+  ];
   # Effective names used for all lookups -- adapters override these for
   # multi-instance services (e.g. redis "redis" → "redis-default").
   effectiveSystemdName =
@@ -129,6 +166,46 @@ in
       default = serviceData: ociLib.mkEntrypointScript { inherit serviceData pkgs; };
     };
   };
+
+  config.assertions = [
+    {
+      assertion =
+        !(cfg.mainService == null && cfg.entrypoint == [ ] && config.oci.container.package == null);
+      message = ''
+        nix-oci: container has no entrypoint. None of the following are set:
+          - `mainService` (auto-derives entrypoint from a NixOS service)
+          - `entrypoint` (explicit command list)
+          - `package` (package with meta.mainProgram)
+        At least one must be set to produce a runnable container image.
+      '';
+    }
+    {
+      assertion =
+        let
+          sd = cfg._output.serviceData;
+          hasServiceEntrypoint = sd != null && sd.execStart != null;
+        in
+        !(cfg.mainService != null && cfg.entrypoint != [ ] && hasServiceEntrypoint);
+      message = ''
+        nix-oci: both `mainService = "${toString cfg.mainService}"` and an explicit
+        `entrypoint` are set. The service-derived entrypoint takes precedence and
+        the explicit entrypoint will be silently ignored.
+        Fix: remove the explicit `entrypoint` or remove `mainService`.
+      '';
+    }
+    {
+      assertion =
+        let
+          effectiveStop = cfg._output.stopSignal;
+        in
+        effectiveStop == null || lib.elem effectiveStop validSignals;
+      message = ''
+        nix-oci: invalid stopSignal "${toString cfg._output.stopSignal}".
+        Must be a valid POSIX signal name (e.g. SIGTERM, SIGQUIT, SIGINT).
+        Valid values: ${lib.concatStringsSep ", " validSignals}
+      '';
+    }
+  ];
 
   options.oci.container._output = {
     serviceData = lib.mkOption {

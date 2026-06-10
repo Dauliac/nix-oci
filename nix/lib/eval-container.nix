@@ -197,14 +197,31 @@ in
       # /etc/group from committed lock files and inject as NixOS user/group
       # declarations. Files are committed by `oci-updatePulledManifestsLocks`.
       baseImageModules =
-        if
-          fromImageEnabled
-          && basePasswdPath != null
-          && baseGroupPath != null
-          && builtins.pathExists basePasswdPath
-          && builtins.pathExists baseGroupPath
-        then
-          [ (mkBaseImageUsersModule { inherit basePasswdPath baseGroupPath; }) ]
+        if fromImageEnabled then
+          if basePasswdPath == null || baseGroupPath == null then
+            builtins.throw ''
+              nix-oci: container "${containerName}" has `fromImage` set but base image
+              identity paths are not configured.
+              Both `basePasswdPath` and `baseGroupPath` must be set when building on
+              a base image. Run `nix run .#oci-updatePulledManifestsLocks` to extract
+              the base image's /etc/passwd and /etc/group files.
+            ''
+          else if !(builtins.pathExists basePasswdPath) then
+            builtins.throw ''
+              nix-oci: container "${containerName}" has `fromImage` set but the base
+              image passwd file does not exist: ${toString basePasswdPath}
+              Run `nix run .#oci-updatePulledManifestsLocks` to extract base image
+              identity files, then commit the result.
+            ''
+          else if !(builtins.pathExists baseGroupPath) then
+            builtins.throw ''
+              nix-oci: container "${containerName}" has `fromImage` set but the base
+              image group file does not exist: ${toString baseGroupPath}
+              Run `nix run .#oci-updatePulledManifestsLocks` to extract base image
+              identity files, then commit the result.
+            ''
+          else
+            [ (mkBaseImageUsersModule { inherit basePasswdPath baseGroupPath; }) ]
         else
           [ ];
 
@@ -267,6 +284,9 @@ in
                       allocatorConfig
                       glibcTunables
                       glibcTunablesPreset
+                      hugePages
+                      startup
+                      compiler
                       ;
                   };
                 };

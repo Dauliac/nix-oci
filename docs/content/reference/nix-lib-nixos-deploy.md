@@ -1,7 +1,7 @@
 +++
-title = "nix-lib: NixOS deploy functions"
+title = "Options: NixOS Deploy Functions"
 +++
 
-# nix-lib: NixOS Deploy Functions
+# Options: NixOS Deploy Functions
 
 <!-- OPTIONS:nix-lib-nixos-deploy -->

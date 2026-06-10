@@ -19,24 +19,24 @@ let
     # NixOS always defines a few internal activation scripts (e.g. "stdio",
     # "var", "usrbinenv"). Only flag user-added ones by checking for non-default
     # keys. The base set is defined by NixOS internals and is safe to ignore.
-    && builtins.length (
-      builtins.filter (
-        name:
-        !(lib.elem name [
-          "stdio"
-          "var"
-          "usrbinenv"
-          "specialfs"
-          "users"
-          "groups"
-          "etc"
-          "nix"
-          "wrappers"
-          "modprobe"
-        ])
-      ) (builtins.attrNames (config.system.activationScripts or { }))
-    )
-    > 0;
+    &&
+      builtins.length (
+        builtins.filter (
+          name:
+          !(lib.elem name [
+            "stdio"
+            "var"
+            "usrbinenv"
+            "specialfs"
+            "users"
+            "groups"
+            "etc"
+            "nix"
+            "wrappers"
+            "modprobe"
+          ])
+        ) (builtins.attrNames (config.system.activationScripts or { }))
+      ) > 0;
 
   # systemd.tmpfiles.rules / systemd.tmpfiles.settings: requires systemd-tmpfiles
   # which never runs inside a nix-oci container.
@@ -63,7 +63,8 @@ let
         ])
       ) pamServices;
     in
-    customServices != { } && (builtins.any (svc: (svc.rules or { }) != { }) (builtins.attrValues customServices));
+    customServices != { }
+    && (builtins.any (svc: (svc.rules or { }) != { }) (builtins.attrValues customServices));
 
   # security.apparmor / security.audit: kernel-level features.
   hasAppArmor = config.security.apparmor.enable or false;

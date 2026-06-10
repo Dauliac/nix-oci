@@ -10,7 +10,7 @@ let
 in
 {
   config.perSystem =
-    { ... }:
+    { pkgs, ... }:
     {
       oci.perContainer =
         {
@@ -34,6 +34,7 @@ in
             description = "Internal: force-evaluated during build to check assertions.";
             default = checksLib.runChecks {
               inherit name enabled mainService;
+              system = pkgs.system;
               containerConfig = config;
               evalOutput = out;
             };

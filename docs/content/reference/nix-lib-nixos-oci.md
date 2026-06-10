@@ -1,7 +1,7 @@
 +++
-title = "nix-lib: nixos-oci functions"
+title = "Options: nixos-oci Functions"
 +++
 
-# nix-lib: nixos-oci Functions
+# Options: nixos-oci Functions
 
 <!-- OPTIONS:nix-lib-nixos-oci -->

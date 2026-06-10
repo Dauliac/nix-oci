@@ -91,6 +91,37 @@ let
       else
         [ ];
 
+    # Validate port mapping string format.
+    # Expected: "host:container" or "host:container/proto".
+    isValidPortSpec =
+      spec:
+      let
+        parts = lib.splitString "/" spec;
+        hostContainer = builtins.head parts;
+        proto = if builtins.length parts == 2 then builtins.elemAt parts 1 else "tcp";
+        hcParts = lib.splitString ":" hostContainer;
+        allDigits = s: builtins.match "[0-9]+" s != null;
+      in
+      builtins.length hcParts == 2
+      && allDigits (builtins.head hcParts)
+      && allDigits (builtins.elemAt hcParts 1)
+      && lib.elem proto [
+        "tcp"
+        "udp"
+      ];
+
+    # Valid hwcaps levels per architecture (static, matches arch.nix).
+    hwcapsLevelsForSystem = {
+      "x86_64-linux" = [
+        "x86-64-v2"
+        "x86-64-v3"
+        "x86-64-v4"
+      ];
+      "aarch64-linux" = [ ];
+      "armv7l-linux" = [ ];
+      "riscv64-linux" = [ ];
+    };
+
     # -- Orchestrator --
 
     # Run all integration checks for a container.
@@ -101,6 +132,7 @@ let
     #   evalOutput      - NixOS eval _output (or null for legacy path)
     #   mainService     - nixosConfig.mainService (or null)
     #   enabled         - whether nixosConfig is active
+    #   system          - Nix system string (optional, for arch-specific checks)
     runChecks =
       {
         name,
@@ -108,6 +140,7 @@ let
         evalOutput,
         mainService ? null,
         enabled ? false,
+        system ? null,
       }:
       let
         out = evalOutput;
@@ -192,6 +225,42 @@ let
 
         # -- nix.hostStore vs installNix mutual exclusion --
         nixStoreConflict = self.hasNixStoreConflict containerConfig;
+
+        # -- Port format validation --
+        invalidPorts = builtins.filter (p: !(self.isValidPortSpec p)) (containerConfig.ports or [ ]);
+
+        # -- Empty entrypoint --
+        emptyEntrypoint =
+          enabled
+          && mainService == null
+          && containerConfig.package == null
+          && (containerConfig.entrypoint or [ ]) == [ ];
+
+        # -- layerStrategy without optimizeLayers --
+        layerStrategyIgnored =
+          !(containerConfig.optimizeLayers or false)
+          && (containerConfig.layerStrategy or "fine-grained") != "fine-grained";
+
+        # -- LD_PRELOAD seccomp strict conflict --
+        allocatorSeccompConflict =
+          enabled && isStrictSeccomp && (containerConfig.performance or { }).allocator or null != null;
+
+        # -- hwcaps architecture validation --
+        perf = containerConfig.performance or { };
+        hwcaps = perf.hwcaps or { };
+        hwcapsEnabled = hwcaps.enable or false;
+        hwcapsLevels = hwcaps.levels or [ ];
+        validLevels = if system != null then self.hwcapsLevelsForSystem.${system} or [ ] else [ ];
+        hwcapsUnsupported = system != null && hwcapsEnabled && validLevels == [ ];
+        invalidHwcapsLevels =
+          if system != null && hwcapsEnabled && validLevels != [ ] then
+            builtins.filter (l: !(lib.elem l validLevels)) hwcapsLevels
+          else
+            [ ];
+
+        # -- healthcheck port not in declared/detected ports --
+        healthcheckPortUncovered =
+          enabled && hcPort != null && allPorts != [ ] && !(lib.elem hcPort allPorts);
       in
       # -- Package conflict (error) --
       (
@@ -337,6 +406,101 @@ let
             - Use `nix.hostStore = true` to bind-mount the host Nix store (lightweight).
             - Use `installNix = true` to embed a self-contained Nix in the image.
           ''
+        else
+          ""
+      )
+      # -- Invalid port format (error) --
+      + (
+        if invalidPorts != [ ] then
+          throw ''
+            Container "${name}": invalid port mapping format: ${
+              lib.concatStringsSep ", " (map (p: ''"${p}"'') invalidPorts)
+            }.
+            Expected format: "hostPort:containerPort" or "hostPort:containerPort/proto"
+            where proto is "tcp" or "udp".
+            Examples: "8080:8080", "443:443/tcp", "5353:53/udp"
+          ''
+        else
+          ""
+      )
+      # -- Empty entrypoint (error) --
+      + (
+        if emptyEntrypoint then
+          throw ''
+            Container "${name}": no entrypoint defined. The container has no way to start.
+            None of the following are set:
+              - `package` (with meta.mainProgram)
+              - `nixosConfig.mainService` (auto-derives entrypoint from NixOS service)
+              - `entrypoint` (explicit command list)
+            Fix: set at least one of these options.
+          ''
+        else
+          ""
+      )
+      # -- layerStrategy without optimizeLayers (warning) --
+      + (
+        if layerStrategyIgnored then
+          builtins.trace ''
+            WARNING: Container "${name}": `layerStrategy = "${
+              containerConfig.layerStrategy or "fine-grained"
+            }"` is set
+            but `optimizeLayers = false`. The layerStrategy only takes effect when
+            `optimizeLayers = true`. Fix: set `optimizeLayers = true` or remove `layerStrategy`.
+          '' ""
+        else
+          ""
+      )
+      # -- LD_PRELOAD + seccomp strict conflict (error) --
+      + (
+        if allocatorSeccompConflict then
+          throw ''
+            Container "${name}": `performance.allocator = "${
+              (containerConfig.performance or { }).allocator or ""
+            }"` uses
+            LD_PRELOAD but seccomp profile "strict" does not allow the mmap/mprotect
+            patterns needed by dynamic library loading. The allocator will fail to load.
+            Fix with one of:
+              - Use `hardening.seccomp.profile = "web-server"` or `"moderate"`
+              - Disable the custom allocator
+          ''
+        else
+          ""
+      )
+      # -- hwcaps on unsupported architecture (error) --
+      + (
+        if hwcapsUnsupported then
+          throw ''
+            Container "${name}": `performance.hwcaps.enable = true` but architecture
+            "${system}" does not support glibc-hwcaps. Only x86_64-linux supports
+            hwcaps levels (x86-64-v2, x86-64-v3, x86-64-v4).
+            Fix: remove `performance.hwcaps.enable` or set it to `false` for this arch.
+          ''
+        else
+          ""
+      )
+      # -- hwcaps invalid levels for architecture (error) --
+      + (
+        if invalidHwcapsLevels != [ ] then
+          throw ''
+            Container "${name}": invalid hwcaps levels for ${toString system}: ${
+              lib.concatStringsSep ", " (map (l: ''"${l}"'') invalidHwcapsLevels)
+            }.
+            Valid levels for ${toString system}: ${lib.concatStringsSep ", " validLevels}
+          ''
+        else
+          ""
+      )
+      # -- healthcheck port not in declared/detected ports (warning) --
+      + (
+        if healthcheckPortUncovered then
+          builtins.trace ''
+            WARNING: Container "${name}": healthcheck targets port ${toString hcPort} but this
+            port is not in the container's declared or detected ports: ${
+              lib.concatMapStringsSep ", " toString allPorts
+            }.
+            This may indicate the healthcheck is checking an unreachable endpoint.
+            Fix: add "${toString hcPort}" to `ports` or verify the healthcheck URL.
+          '' ""
         else
           ""
       );
