@@ -14,13 +14,18 @@ let
     # -- Package introspection --
 
     resolveMainProgram =
-      package:
-      if package.meta.mainProgram or null != null then
-        package.meta.mainProgram
-      else if package.pname or null != null then
-        package.pname
+      {
+        meta ? { },
+        pname ? null,
+        name ? "unknown",
+        ...
+      }:
+      if meta.mainProgram or null != null then
+        meta.mainProgram
+      else if pname != null then
+        pname
       else
-        (builtins.parseDrvName (package.name or "unknown")).name;
+        (builtins.parseDrvName name).name;
 
     # -- Port parsing --
 

@@ -80,59 +80,10 @@ let
       );
     };
 
-  # Internal home-manager defaults for container environments.
-  # All use mkDefault so user modules can override.
-  hmContainerDefaults =
-    { lib, ... }:
-    {
-      programs.bash = {
-        enable = lib.mkDefault true;
-        historySize = lib.mkDefault 10000;
-        historyFileSize = lib.mkDefault 100000;
-        shellAliases = lib.mkDefault {
-          ll = "ls -la";
-          la = "ls -A";
-          l = "ls -CF";
-        };
-      };
-
-      programs.starship = {
-        enable = lib.mkDefault true;
-        enableBashIntegration = lib.mkDefault true;
-        settings = {
-          add_newline = lib.mkDefault false;
-          format = lib.mkDefault "$username$hostname$directory$git_branch$git_status$nix_shell$container$character";
-          character = {
-            success_symbol = lib.mkDefault "[➜](bold green)";
-            error_symbol = lib.mkDefault "[✗](bold red)";
-          };
-          container = {
-            format = lib.mkDefault "[$symbol \\($name\\)]($style) ";
-            symbol = lib.mkDefault "⬡";
-            style = lib.mkDefault "bold dimmed blue";
-          };
-          directory = {
-            truncation_length = lib.mkDefault 3;
-            truncate_to_repo = lib.mkDefault false;
-          };
-          username = {
-            show_always = lib.mkDefault true;
-            format = lib.mkDefault "[$user]($style)@";
-          };
-          hostname = {
-            ssh_only = lib.mkDefault false;
-            format = lib.mkDefault "[$hostname]($style):";
-          };
-          nix_shell = {
-            symbol = lib.mkDefault "❄️ ";
-          };
-        };
-      };
-
-      home.sessionVariables = {
-        TERM = lib.mkDefault "xterm-256color";
-      };
-    };
+  # Home-manager guard & defaults module for container environments.
+  # Extracted to its own file with oci.container.* namespace for
+  # identity binding and assertions.
+  hmContainerDefaults = ../modules/_home-manager-oci/defaults.nix;
 in
 {
   # Evaluate a NixOS container configuration.
@@ -226,6 +177,12 @@ in
                     { lib, ... }:
                     {
                       imports = [ hmContainerDefaults ] ++ homeModules;
+                      # Bind nixos-oci identity → HM oci.container namespace
+                      oci.container = {
+                        user = nixosEvalUser;
+                        homeDirectory = if containerIsRoot then "/root" else "/home/${nixosEvalUser}";
+                        name = containerName;
+                      };
                       home.stateVersion = lib.mkDefault "25.05";
                     };
                 }
