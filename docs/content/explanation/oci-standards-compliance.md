@@ -24,11 +24,11 @@ The spec defines three layer media types:
 | Media type | Compression | nix-oci support |
 |---|---|---|
 | `application/vnd.oci.image.layer.v1.tar` | none | via nix2container |
-| `application/vnd.oci.image.layer.v1.tar+gzip` | gzip | default |
+| `application/vnd.oci.image.layer.v1.tar+gzip` | gzip | see [`performance.compression`](../reference/flake-parts-options.html) |
 | `application/vnd.oci.image.layer.v1.tar+zstd` | zstd | opt-in |
 
-nix-oci exposes a `performance.compression` option to choose between
-`gzip` (universal compatibility) and `zstd` (faster, smaller).
+nix-oci exposes a [`performance.compression`](../reference/flake-parts-options.html)
+option to choose between gzip (universal compatibility) and zstd (faster, smaller).
 Compression is applied by skopeo at transport time -- nix2container
 builds layer descriptions as JSON and materializes tarballs on-the-fly.
 
@@ -184,9 +184,9 @@ org.opencontainers.image.authors
 org.opencontainers.image.base.name
 ```
 
-These are derived automatically from `package.meta` when `autoLabels`
-is enabled (the default). See [Automatic labeling](./automatic-labeling.md)
-for the full label taxonomy.
+These are derived automatically from `package.meta` when
+[`autoLabels`](../reference/flake-parts-options.html) is enabled.
+See [Automatic labeling](./automatic-labeling.md) for the full label taxonomy.
 
 ## Compression and transport
 

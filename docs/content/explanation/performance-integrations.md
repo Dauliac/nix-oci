@@ -68,7 +68,7 @@ oci.containers.my-app = {
 ```
 
 Setting [`performance.enable`](../reference/flake-parts-options.html)
-to `true` activates the performance subsystem. Each feature is then
+activates the performance subsystem. Each feature is then
 configured independently. See the
 [flake-parts option reference](../reference/flake-parts-options.html)
 for all performance options, or the
@@ -112,7 +112,8 @@ performance.allocator = "mimalloc";  # or "tcmalloc"
   overhead for typical workloads with many small allocations.
 - **tcmalloc**: when throughput matters more than RSS -- high-QPS
   HTTP servers, data processing pipelines.
-- **null** (default): when you don't want to risk changing allocation
+- **disabled** (see [`allocator`](../reference/flake-parts-options.html)
+  option reference): when you don't want to risk changing allocation
   behavior, or when the application bundles its own allocator (e.g.,
   Go, Rust with `jemalloc` feature).
 
@@ -280,7 +281,7 @@ nix-oci supports zstd compression for OCI image layers via
 [`performance.compression`](../reference/flake-parts-options.html):
 
 ```nix
-performance.compression = "zstd";  # default: "gzip"
+performance.compression = "zstd";
 ```
 
 ### Comparison

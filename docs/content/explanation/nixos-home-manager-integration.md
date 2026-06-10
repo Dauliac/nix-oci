@@ -113,13 +113,13 @@ dotfiles are **reproducible build artifacts**, not runtime state.
 
 ### Container-friendly defaults
 
-When `homeConfig.homeManagerFlake` is set, nix-oci injects sensible defaults
-(all `lib.mkDefault`, freely overridable):
+When [`homeConfig.homeManagerFlake`](../reference/flake-parts-options.html) is set,
+nix-oci injects sensible defaults (all `lib.mkDefault`, freely overridable):
 
 - **Bash** with history configuration and common aliases
 - **Starship** with a container-aware prompt format showing username,
   hostname, directory, git status, and a container indicator
-- **TERM** set to `xterm-256color`
+- **TERM** environment variable configured for color support
 
 These defaults are designed to work with the
 [container sandbox](./sandbox.md), giving you a pleasant interactive

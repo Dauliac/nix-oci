@@ -133,7 +133,7 @@ intermittent failures in multi-container deployments.
 ## StopSignal -- correct graceful shutdown
 
 Different services require different signals for graceful shutdown.
-Sending `SIGTERM` (the default) to nginx kills workers mid-request;
+Sending `SIGTERM` to nginx kills workers mid-request;
 the correct signal is `SIGQUIT`. Service adapters encode this knowledge:
 
 | Service | Signal | Effect |

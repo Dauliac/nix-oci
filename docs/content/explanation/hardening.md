@@ -47,7 +47,7 @@ oci.containers.my-app = {
 ```
 
 Setting [`hardening.enable`](../reference/flake-parts-options.html)
-to `true` activates the full hardening stack with sensible defaults.
+activates the full hardening stack with sensible defaults.
 Each sub-feature can be individually tuned. See the
 [flake-parts option reference](../reference/flake-parts-options.html)
 for all available hardening options, or the
@@ -111,8 +111,10 @@ Strict base plus the syscalls needed by HTTP servers:
 ### Auto-detection
 
 When using `nixosConfig`, nix-oci detects known web server services
-(nginx, httpd) and auto-defaults to the `"web-server"` profile.
-Otherwise, `"strict"` is used:
+(nginx, httpd) and auto-selects the appropriate
+[`seccomp.profile`](../reference/flake-parts-options.html).
+See the [option reference](../reference/flake-parts-options.html) for
+the default profile:
 
 ```nix
 # Auto-detected: nginx → web-server profile
@@ -226,8 +228,8 @@ distinct units. nix-oci defaults to dropping all capabilities via
 
 ```nix
 hardening.capabilities = {
-  drop = [ "ALL" ];    # default
-  add = [ ];           # selectively add back
+  drop = [ "ALL" ];
+  add = [ ];
 };
 ```
 
@@ -255,7 +257,7 @@ Deploy modules translate these to `--cap-drop ALL --cap-add NET_BIND_SERVICE`.
 [`hardening.readOnlyRootfs`](../reference/flake-parts-options.html):
 
 ```nix
-hardening.readOnlyRootfs = true;  # default when hardening is enabled
+hardening.readOnlyRootfs = true;
 ```
 
 Mounts the container root filesystem as read-only at runtime
@@ -274,7 +276,7 @@ Applications that need writable storage should use declared volumes
 [`hardening.noNewPrivileges`](../reference/flake-parts-options.html):
 
 ```nix
-hardening.noNewPrivileges = true;  # default when hardening is enabled
+hardening.noNewPrivileges = true;
 ```
 
 Sets the `no_new_privs` kernel bit, preventing privilege escalation
@@ -360,8 +362,8 @@ oci.containers.my-api = {
     # Capabilities: drop all, add back port binding
     capabilities.add = [ "NET_BIND_SERVICE" ];
 
-    # Read-only rootfs and no-new-privileges are true by default
-    # DNS and TLS restrictions are off by default
+    # See option reference for readOnlyRootfs, noNewPrivileges,
+    # disableDns, and noTlsTrustStore defaults
   };
 };
 ```

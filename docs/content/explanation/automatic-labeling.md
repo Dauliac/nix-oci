@@ -13,7 +13,7 @@ auto-generated ones.
 All auto-generated labels are **deterministic** -- no timestamps, no
 impure inputs -- so they don't break bit-for-bit reproducibility.
 
-Set `autoLabels = false` on any container to disable all auto-generation.
+Set [`autoLabels`](../reference/flake-parts-options.html) to `false` on any container to disable all auto-generation.
 
 ## OCI standard annotations
 

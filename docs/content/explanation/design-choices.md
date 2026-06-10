@@ -63,7 +63,7 @@ specified manually:
 
 1. `package.version` (preferred)
 2. Base image tag (when using `fromImage`)
-3. `"latest"` (fallback)
+3. Fallback (see [`tag`](../reference/flake-parts-options.html) option reference)
 
 ### Why it matters
 
@@ -117,7 +117,7 @@ Two strategies control sub-splitting granularity:
 
 | Strategy | Deps sub-layers | Total layers | Best for |
 |---|---|---|---|
-| `"fine-grained"` (default) | Up to 80 | ~124 | Registries with many overlapping images |
+| `"fine-grained"` ([default](../reference/flake-parts-options.html)) | Up to 80 | ~124 | Registries with many overlapping images |
 | `"minimal"` | 1 | 2-3 | Few images, predictable caching |
 
 See [Optimized layer sharing](./optimize-layers.md) for the full
@@ -173,22 +173,26 @@ ensuring they are reproducible across machines and CI environments.
 
 ## Summary of defaults
 
-| Option | Build-time default | Deploy default | Rationale |
-|---|---|---|---|
-| `isRoot` | `false` | `true` | Security (build) vs. pragmatism (deploy) |
-| `optimizeLayers` | `false` | `true` | Speed (build) vs. efficiency (deploy) |
-| `layerStrategy` | `"fine-grained"` | `"fine-grained"` | Maximum cross-image sharing |
-| `user` | `"root"` | `"root"` | Overridden by `isRoot` logic |
-| Non-root UID | 4000 | 4000 | Avoids system/human UID ranges |
-| `tag` | `"latest"` | `"latest"` | Overridden by package version |
-| `entrypoint` | `[]` | `[]` | Auto-derived from package |
-| `autoStart` | N/A | `false` | Load image only; explicit opt-in to run |
-| `healthcheck` | `[]` (auto-derived with `nixosConfig`) | `[]` (auto-derived) | Service adapters derive from NixOS config |
-| `stopSignal` | `null` (auto-derived) | `null` (auto-derived) | Correct graceful shutdown per service |
-| `workingDir` | `null` (auto-derived) | `null` (auto-derived) | systemd -> dataDir -> home |
-| `declaredVolumes` | `[]` (auto-derived) | `[]` (auto-derived) | systemd StateDirectory/RuntimeDirectory |
-| `autoLabels` | `true` | `true` | Self-describing images by default |
-| CA certificates | Always included | Always included | TLS works out of the box |
+| Option | Rationale |
+|---|---|
+| [`isRoot`](../reference/flake-parts-options.html) | Security (build) vs. pragmatism ([deploy](../reference/nixos-options.html)) |
+| [`optimizeLayers`](../reference/flake-parts-options.html) | Speed (build) vs. efficiency ([deploy](../reference/nixos-options.html)) |
+| [`layerStrategy`](../reference/flake-parts-options.html) | Maximum cross-image sharing |
+| [`user`](../reference/flake-parts-options.html) | Overridden by `isRoot` logic |
+| [`tag`](../reference/flake-parts-options.html) | Overridden by package version |
+| [`entrypoint`](../reference/flake-parts-options.html) | Auto-derived from package |
+| [`autoStart`](../reference/nixos-options.html) | Load image only; explicit opt-in to run |
+| [`healthcheck`](../reference/flake-parts-options.html) | Service adapters derive from NixOS config |
+| [`stopSignal`](../reference/flake-parts-options.html) | Correct graceful shutdown per service |
+| [`workingDir`](../reference/flake-parts-options.html) | systemd -> dataDir -> home |
+| [`declaredVolumes`](../reference/flake-parts-options.html) | systemd StateDirectory/RuntimeDirectory |
+| [`autoLabels`](../reference/flake-parts-options.html) | Self-describing images |
+| CA certificates | TLS works out of the box |
+
+See the [flake-parts](../reference/flake-parts-options.html),
+[NixOS](../reference/nixos-options.html), and
+[Home Manager](../reference/home-manager-options.html) option references
+for default values in each context.
 
 ## Further reading
 

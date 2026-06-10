@@ -101,7 +101,8 @@ oci.containers.my-nginx = {
 
 ## 5. Run as root or non-root
 
-By default, containers run as a non-root user derived from the service name.
+Containers run as a non-root user derived from the service name
+(see [`isRoot`](../reference/flake-parts-options.html) option reference).
 To run as root (required for some services like caddy that bind to port 80):
 
 ```nix
