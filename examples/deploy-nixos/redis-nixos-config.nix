@@ -3,7 +3,7 @@
 # Demonstrates the converged build pipeline: the NixOS eval auto-derives
 # entrypoint, healthcheck (redis-cli ping), stop signal (SIGTERM), and
 # working directory from the Redis service adapter.
-{ pkgs, ... }:
+{ ... }:
 {
   oci = {
     enable = true;
@@ -22,8 +22,6 @@
           }
         ];
       };
-      # coreutils needed by the entrypoint script (mkdir for runtime dirs)
-      dependencies = [ pkgs.coreutils ];
       autoStart = true;
       ports = [ "6379:6379" ];
     };

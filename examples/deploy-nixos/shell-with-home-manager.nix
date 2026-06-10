@@ -38,6 +38,8 @@
       autoStart = true;
       entrypoint = [
         "${pkgs.bashInteractive}/bin/bash"
+        "-c"
+        "exec sleep infinity"
       ];
     };
   };

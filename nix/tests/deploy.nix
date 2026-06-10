@@ -25,6 +25,7 @@ in
     let
       nixosExample = ../../examples/deploy-nixos/http-server.nix;
       redisExample = ../../examples/deploy-nixos/redis-nixos-config.nix;
+      hmShellExample = ../../examples/deploy-nixos/shell-with-home-manager.nix;
       hmExample = ../../examples/deploy-home-manager/http-server.nix;
       dockerSdkCheck = pkgs.writeText "check_docker_sdk.py" (
         builtins.readFile ./_python/check_docker_sdk.py
@@ -46,7 +47,11 @@ in
                 nixosModule
                 nixosExample
                 redisExample
+                hmShellExample
               ];
+
+              # Thread home-manager flake into deploy modules for homeConfig
+              _module.args.home-manager-flake = inputs.home-manager;
 
               virtualisation = {
                 cores = 4;
@@ -204,10 +209,9 @@ in
                 response = machine.succeed("redis-cli -h 127.0.0.1 -p 6379 ping")
                 assert "PONG" in response, f"Expected PONG: {response}"
 
-            # NOTE: sdnotify assertions skipped -- nix2container upstream bug #197
-            # drops Healthcheck from image config, so Podman can't use --sdnotify=healthy.
-            # Once the upstream fix lands, re-enable sdnotify in run-services.nix
-            # and add assertions for Type=notify + NotifyAccess=all.
+            # NOTE: sdnotify + runtime healthcheck injection disabled until
+            # nix2container upstream bug #197 is fixed. The infrastructure
+            # (hasHealthcheck, healthcheckConfig) is ready in image.nix.
 
             with subtest("nixos-redis: container has stop signal SIGTERM"):
                 inspect = machine.succeed("podman inspect redis")
@@ -215,6 +219,41 @@ in
                 stop_signal = data[0].get("Config", {}).get("StopSignal", "")
                 assert stop_signal == "SIGTERM" or stop_signal == "15", \
                     f"Expected SIGTERM stop signal: {stop_signal}"
+
+            # ===================================================================
+            # NixOS system-level tests (dev-shell -- homeConfig in deploy)
+            # ===================================================================
+
+            with subtest("nixos-dev-shell: load service completes"):
+                machine.wait_for_unit("oci-load-dev-shell.service")
+
+            with subtest("nixos-dev-shell: container service starts"):
+                machine.wait_for_unit("podman-dev-shell.service")
+
+            with subtest("nixos-dev-shell: image present in podman"):
+                images_json = machine.succeed("podman images --format json")
+                images = json.loads(images_json)
+                names = []
+                for img in images:
+                    for key in ("Names", "names", "RepoTags"):
+                        if key in img and img[key]:
+                            names.extend(img[key])
+                assert any("dev-shell" in n for n in names), \
+                    f"dev-shell image not found: {names}"
+
+            with subtest("nixos-dev-shell: container runs and exec works"):
+                result = machine.succeed(
+                    "podman exec dev-shell echo dev-shell-ok"
+                )
+                assert "dev-shell-ok" in result, \
+                    f"Expected dev-shell-ok: {result}"
+
+            with subtest("nixos-dev-shell: home directory exists for non-root user"):
+                result = machine.succeed(
+                    "podman exec dev-shell ls -d /home/dev"
+                )
+                assert "/home/dev" in result, \
+                    f"Expected /home/dev: {result}"
 
             # ===================================================================
             # Home-manager user-level tests

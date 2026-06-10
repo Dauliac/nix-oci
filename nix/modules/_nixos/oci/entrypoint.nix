@@ -135,7 +135,9 @@ in
       default =
         serviceData:
         let
-          mkDirs = prefix: dirs: lib.concatMapStringsSep "\n" (d: "mkdir -p ${prefix}/${d}") dirs;
+          mkDirs =
+            prefix: dirs:
+            lib.concatMapStringsSep "\n" (d: "${pkgs.coreutils}/bin/mkdir -p ${prefix}/${d}") dirs;
           mkEnvExports = lib.concatStringsSep "\n" (
             lib.mapAttrsToList (k: v: "export ${k}=${lib.escapeShellArg v}") serviceData.environment
           );

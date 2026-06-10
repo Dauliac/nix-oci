@@ -195,11 +195,26 @@ in
     type = lib.types.nullOr (
       lib.types.submodule {
         options = {
-          command = lib.mkOption { type = lib.types.listOf lib.types.str; };
-          interval = lib.mkOption { type = lib.types.int; };
-          timeout = lib.mkOption { type = lib.types.int; };
-          startPeriod = lib.mkOption { type = lib.types.int; };
-          retries = lib.mkOption { type = lib.types.int; };
+          command = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            description = "Healthcheck command.";
+          };
+          interval = lib.mkOption {
+            type = lib.types.int;
+            description = "Interval between checks in seconds.";
+          };
+          timeout = lib.mkOption {
+            type = lib.types.int;
+            description = "Timeout per check in seconds.";
+          };
+          startPeriod = lib.mkOption {
+            type = lib.types.int;
+            description = "Grace period before checks start in seconds.";
+          };
+          retries = lib.mkOption {
+            type = lib.types.int;
+            description = "Number of consecutive failures before unhealthy.";
+          };
         };
       }
     );
