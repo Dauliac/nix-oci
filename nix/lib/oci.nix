@@ -517,6 +517,18 @@ let
           "SCMP_ARCH_X86_64"
           "SCMP_ARCH_AARCH64"
         ];
+
+        # Bitmask of CLONE_NEW* flags that create namespaces.
+        cloneNewNamespaceMask = 2114060416; # 0x7E020080
+
+        # ioctl commands for terminal injection attacks.
+        ioctlTIOCSTI = 21522; # 0x5412
+        ioctlTIOCLINUX = 21532; # 0x541C
+
+        # Socket address families to block.
+        afNETLINK = 16;
+        afPACKET = 17;
+
         baseSyscalls = [
           "exit"
           "exit_group"
@@ -660,6 +672,9 @@ let
           "get_kernel_syms"
           "get_mempolicy"
           "init_module"
+          "io_uring_setup"
+          "io_uring_enter"
+          "io_uring_register"
           "ioperm"
           "iopl"
           "kcmp"
@@ -668,6 +683,8 @@ let
           "keyctl"
           "lookup_dcookie"
           "mbind"
+          "memfd_create"
+          "memfd_secret"
           "mount"
           "move_mount"
           "move_pages"
@@ -697,21 +714,93 @@ let
           "userfaultfd"
           "ustat"
         ];
+        # -- Argument-level filtering rules --
+
+        cloneArgFilter = [
+          {
+            names = [
+              "clone"
+              "clone3"
+            ];
+            action = "SCMP_ACT_ERRNO";
+            args = [
+              {
+                index = 0;
+                value = cloneNewNamespaceMask;
+                valueTwo = cloneNewNamespaceMask;
+                op = "SCMP_CMP_MASKED_EQ";
+              }
+            ];
+          }
+        ];
+
+        ioctlArgFilter = [
+          {
+            names = [ "ioctl" ];
+            action = "SCMP_ACT_ERRNO";
+            args = [
+              {
+                index = 1;
+                value = ioctlTIOCSTI;
+                op = "SCMP_CMP_EQ";
+              }
+            ];
+          }
+          {
+            names = [ "ioctl" ];
+            action = "SCMP_ACT_ERRNO";
+            args = [
+              {
+                index = 1;
+                value = ioctlTIOCLINUX;
+                op = "SCMP_CMP_EQ";
+              }
+            ];
+          }
+        ];
+
+        socketArgFilter = [
+          {
+            names = [ "socket" ];
+            action = "SCMP_ACT_ERRNO";
+            args = [
+              {
+                index = 0;
+                value = afNETLINK;
+                op = "SCMP_CMP_EQ";
+              }
+            ];
+          }
+          {
+            names = [ "socket" ];
+            action = "SCMP_ACT_ERRNO";
+            args = [
+              {
+                index = 0;
+                value = afPACKET;
+                op = "SCMP_CMP_EQ";
+              }
+            ];
+          }
+        ];
+
+        mkProfile = defaultAction: syscallRules: {
+          inherit defaultAction architectures;
+          syscalls = syscallRules;
+        };
+
         profiles = {
-          strict = {
-            defaultAction = "SCMP_ACT_ERRNO";
-            inherit architectures;
-            syscalls = [
+          strict = mkProfile "SCMP_ACT_ERRNO" (
+            [
               {
                 names = lib.unique (baseSyscalls ++ fileIoSyscalls ++ eventLoopSyscalls);
                 action = "SCMP_ACT_ALLOW";
               }
-            ];
-          };
-          web-server = {
-            defaultAction = "SCMP_ACT_ERRNO";
-            inherit architectures;
-            syscalls = [
+            ]
+            ++ ioctlArgFilter
+          );
+          web-server = mkProfile "SCMP_ACT_ERRNO" (
+            [
               {
                 names = lib.unique (
                   baseSyscalls
@@ -723,24 +812,73 @@ let
                 );
                 action = "SCMP_ACT_ALLOW";
               }
-            ];
-          };
-          moderate = {
-            defaultAction = "SCMP_ACT_ALLOW";
-            inherit architectures;
-            syscalls = [
+            ]
+            ++ cloneArgFilter
+            ++ socketArgFilter
+            ++ ioctlArgFilter
+          );
+          database = mkProfile "SCMP_ACT_ERRNO" (
+            [
+              {
+                names = lib.unique (
+                  baseSyscalls
+                  ++ fileIoSyscalls
+                  ++ eventLoopSyscalls
+                  ++ networkSyscalls
+                  ++ threadingSyscalls
+                  ++ fsWriteSyscalls
+                  ++ [
+                    "fadvise64"
+                    "sync_file_range"
+                    "fdatasync"
+                    "msync"
+                    "mincore"
+                    "getgroups"
+                    "umask"
+                  ]
+                );
+                action = "SCMP_ACT_ALLOW";
+              }
+            ]
+            ++ cloneArgFilter
+            ++ socketArgFilter
+            ++ ioctlArgFilter
+          );
+          moderate = mkProfile "SCMP_ACT_ALLOW" (
+            [
               {
                 names = dangerousSyscalls;
                 action = "SCMP_ACT_ERRNO";
               }
-            ];
-          };
+            ]
+            ++ cloneArgFilter
+            ++ socketArgFilter
+            ++ ioctlArgFilter
+          );
         };
+
+        mode = hardening.seccomp.mode or "enforce";
+
+        profile = profiles.${hardening.seccomp.profile};
+
+        # In audit mode, replace SCMP_ACT_ERRNO with SCMP_ACT_LOG.
+        effectiveProfile =
+          if mode == "audit" then
+            profile
+            // {
+              defaultAction =
+                if profile.defaultAction == "SCMP_ACT_ERRNO" then "SCMP_ACT_LOG" else profile.defaultAction;
+              syscalls = map (
+                rule: if rule.action == "SCMP_ACT_ERRNO" then rule // { action = "SCMP_ACT_LOG"; } else rule
+              ) profile.syscalls;
+            }
+          else
+            profile;
       in
       if hardening.seccomp.customProfileJson != null then
         hardening.seccomp.customProfileJson
       else
-        pkgs.writeText "seccomp-${name}.json" (builtins.toJSON profiles.${hardening.seccomp.profile});
+        pkgs.writeText "seccomp-${name}.json" (builtins.toJSON effectiveProfile);
 
     # -- NixOS eval helpers (pure cores) --
 

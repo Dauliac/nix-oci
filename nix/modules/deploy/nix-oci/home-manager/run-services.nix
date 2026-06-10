@@ -30,6 +30,36 @@
               healthArgs = deployLib.mkHealthcheckOpts container;
               hasHc = container.hasHealthcheck or false;
               allPodmanArgs = perfArgs ++ healthArgs;
+              perf = container.performance.runtime or { };
+              ulimits = perf.ulimits or { };
+
+              # Quadlet Service section: systemd cgroup v2 properties
+              # These supplement container runtime flags with finer control.
+              serviceOverrides =
+                lib.optionalAttrs ((perf.memoryHigh or null) != null) {
+                  MemoryHigh = perf.memoryHigh;
+                }
+                // lib.optionalAttrs ((perf.memoryMin or null) != null) {
+                  MemoryMin = perf.memoryMin;
+                }
+                // lib.optionalAttrs ((perf.cpuWeight or null) != null) {
+                  CPUWeight = toString perf.cpuWeight;
+                }
+                // lib.optionalAttrs ((perf.ioWeight or null) != null) {
+                  IOWeight = toString perf.ioWeight;
+                }
+                // lib.optionalAttrs ((perf.oomScoreAdj or null) != null) {
+                  OOMScoreAdjust = toString perf.oomScoreAdj;
+                }
+                // lib.optionalAttrs ((ulimits.nofile or null) != null) {
+                  LimitNOFILE = toString ulimits.nofile;
+                }
+                // lib.optionalAttrs ((ulimits.memlock or null) != null) {
+                  LimitMEMLOCK = ulimits.memlock;
+                }
+                // lib.optionalAttrs ((ulimits.nproc or null) != null) {
+                  LimitNPROC = toString ulimits.nproc;
+                };
             in
             {
               image = container.imageRef;
@@ -46,6 +76,9 @@
                 Service = {
                   Type = "notify";
                 };
+              }
+              // lib.optionalAttrs (serviceOverrides != { }) {
+                Service = (lib.optionalAttrs hasHc { Type = "notify"; }) // serviceOverrides;
               };
             }
             // lib.optionalAttrs (container.ports != [ ]) {

@@ -258,6 +258,61 @@ in
           };
         };
 
+        hasNixStoreConflict = {
+          type = lib.types.functionTo lib.types.bool;
+          description = ''
+            Detect mutual exclusion conflict between `nix.hostStore`
+            (or `nix.hostDaemon`) and `installNix`.
+
+            Returns true when both host Nix store mounting and
+            embedded Nix installation are enabled, which is redundant
+            and likely a configuration error.
+          '';
+          file = "nix/lib/container-checks.nix";
+          fn = checks.hasNixStoreConflict;
+          tests = {
+            "detects hostStore + installNix conflict" = {
+              args = {
+                nix.hostStore = true;
+                installNix = true;
+              };
+              expected = true;
+            };
+            "detects hostDaemon + installNix conflict" = {
+              args = {
+                nix.hostDaemon = true;
+                installNix = true;
+              };
+              expected = true;
+            };
+            "no conflict with hostStore only" = {
+              args = {
+                nix.hostStore = true;
+                installNix = false;
+              };
+              expected = false;
+            };
+            "no conflict with installNix only" = {
+              args = {
+                nix.hostStore = false;
+                installNix = true;
+              };
+              expected = false;
+            };
+            "no conflict when both disabled" = {
+              args = {
+                nix.hostStore = false;
+                installNix = false;
+              };
+              expected = false;
+            };
+            "no conflict when nix options absent" = {
+              args = { };
+              expected = false;
+            };
+          };
+        };
+
         runChecks = {
           type = lib.types.functionTo lib.types.str;
           description = ''

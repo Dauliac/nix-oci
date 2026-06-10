@@ -93,7 +93,9 @@ let
     ./_options/hardening/privileges.nix
     ./_options/performance/enable.nix
     ./_options/performance/allocator.nix
+    ./_options/performance/allocator-config.nix
     ./_options/performance/glibc-tunables.nix
+    ./_options/performance/glibc-tunables-preset.nix
     ./_options/performance/compression.nix
     ./_options/performance/march.nix
     ./_options/performance/hwcaps.nix

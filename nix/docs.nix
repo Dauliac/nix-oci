@@ -214,7 +214,7 @@
           transformOptions = cleanupOptions;
         };
 
-        # Extract nix-lib metadata from the container eval for docs.
+        # Extract nix-lib metadata from the nixos-oci eval for docs.
         containerLibsMeta = nixosContainerEval.config.nix-lib._libsMeta or { };
 
         # Diataxis layout with NDG group_by_dir:
@@ -260,7 +260,10 @@
               sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/system-manager-options.md
               sed -i '/<!-- OPTIONS:nixos-container -->/r ${nixosContainerDoc.optionsCommonMark}' $out/reference/nix-oci-container-module-options.md
               sed -i '/<!-- OPTIONS:nix-lib -->/r ${nixLibDoc}/nix-lib.md' $out/reference/nix-lib.md
-              sed -i '/<!-- OPTIONS:nix-lib-container -->/r ${nixLibDoc}/nix-lib-container.md' $out/reference/nix-lib-container.md
+              sed -i '/<!-- OPTIONS:nix-lib-nixos-oci -->/r ${nixLibDoc}/nix-lib-nixos-oci.md' $out/reference/nix-lib-nixos-oci.md
+              sed -i '/<!-- OPTIONS:nix-lib-nixos-deploy -->/r ${nixLibDoc}/nix-lib-nixos-deploy.md' $out/reference/nix-lib-nixos-deploy.md
+              sed -i '/<!-- OPTIONS:nix-lib-home-manager-deploy -->/r ${nixLibDoc}/nix-lib-home-manager-deploy.md' $out/reference/nix-lib-home-manager-deploy.md
+              sed -i '/<!-- OPTIONS:nix-lib-system-manager-deploy -->/r ${nixLibDoc}/nix-lib-system-manager-deploy.md' $out/reference/nix-lib-system-manager-deploy.md
 
               # --- Examples: generate pages with subdir-based sections ---
               # gen_examples_page <title> <dest> <dir>...
@@ -347,6 +350,58 @@
                 path = "reference";
                 position = 3;
               }
+              # -- Reference: module options (grouped first) --
+              {
+                path = "reference/flake-parts-options.md";
+                new_title = "Options: flake-parts";
+                position = 1;
+              }
+              {
+                path = "reference/nix-oci-container-module-options.md";
+                new_title = "Options: nixos-oci";
+                position = 2;
+              }
+              {
+                path = "reference/nixos-options.md";
+                new_title = "Options: NixOS deploy";
+                position = 3;
+              }
+              {
+                path = "reference/home-manager-options.md";
+                new_title = "Options: Home Manager deploy";
+                position = 4;
+              }
+              {
+                path = "reference/system-manager-options.md";
+                new_title = "Options: system-manager deploy";
+                position = 5;
+              }
+              # -- Reference: nix-lib functions (grouped after options) --
+              {
+                path = "reference/nix-lib.md";
+                new_title = "nix-lib: flake-parts functions";
+                position = 6;
+              }
+              {
+                path = "reference/nix-lib-nixos-oci.md";
+                new_title = "nix-lib: nixos-oci functions";
+                position = 7;
+              }
+              {
+                path = "reference/nix-lib-nixos-deploy.md";
+                new_title = "nix-lib: NixOS deploy functions";
+                position = 8;
+              }
+              {
+                path = "reference/nix-lib-home-manager-deploy.md";
+                new_title = "nix-lib: Home Manager deploy functions";
+                position = 9;
+              }
+              {
+                path = "reference/nix-lib-system-manager-deploy.md";
+                new_title = "nix-lib: system-manager deploy functions";
+                position = 10;
+              }
               {
                 path = "examples";
                 position = 4;
@@ -407,17 +462,56 @@
                 ---
               '';
             };
-            nix-lib-container = {
+            nix-lib-nixos-oci = {
               showIndex = false;
               showTitle = false;
               headingLevel = 2;
               metadata = containerLibsMeta;
               header = ''
-                Functions available inside the NixOS container evaluation scope (`nixosConfig`).
+                Functions declared in the `nixos-oci` module tree (`flake.modules.nixos-oci`).
 
-                These functions are declared via `nix-lib.lib.oci.container.*` inside the
-                `nixos-oci` module tree and are available at `config.lib.oci.container.*`
-                within the NixOS evaluation.
+                Available at `config.lib.oci.container.*` inside the NixOS container evaluation
+                when `nixosConfig` is used.
+
+                ---
+              '';
+            };
+            nix-lib-nixos-deploy = {
+              showIndex = false;
+              showTitle = false;
+              headingLevel = 2;
+              header = ''
+                Deploy helper functions available in NixOS deploy scope.
+
+                The pure deploy helpers (`copyScript`, `mkPerfOpts`, `allHostPorts`, `mkRunArgs`,
+                `autoStartContainers`) are shared across all deploy targets and documented on the
+                [flake-parts functions](nix-lib.html) page under `oci.deploy.*`.
+
+                ---
+              '';
+            };
+            nix-lib-home-manager-deploy = {
+              showIndex = false;
+              showTitle = false;
+              headingLevel = 2;
+              header = ''
+                Deploy helper functions available in Home Manager deploy scope.
+
+                The pure deploy helpers are shared across all deploy targets and documented on the
+                [flake-parts functions](nix-lib.html) page under `oci.deploy.*`.
+
+                ---
+              '';
+            };
+            nix-lib-system-manager-deploy = {
+              showIndex = false;
+              showTitle = false;
+              headingLevel = 2;
+              header = ''
+                Deploy helper functions available in system-manager deploy scope.
+
+                The pure deploy helpers are shared across all deploy targets and documented on the
+                [flake-parts functions](nix-lib.html) page under `oci.deploy.*`.
 
                 ---
               '';

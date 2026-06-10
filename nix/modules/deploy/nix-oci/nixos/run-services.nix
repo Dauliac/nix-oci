@@ -53,7 +53,9 @@
         # Auto-open firewall for exposed host ports
         networking.firewall.allowedTCPPorts = deployLib.allHostPorts autoStart;
 
-        # Runner depends on loader + sdnotify + cgroup v2 performance tuning
+        # Runner depends on loader + sdnotify + cgroup v2 performance tuning.
+        # Systemd service properties provide finer cgroup v2 control than
+        # container runtime flags alone (MemoryHigh, MemoryMin, CPUWeight, etc.).
         systemd.services = lib.mapAttrs' (
           name: container:
           let
@@ -61,6 +63,8 @@
               config.virtualisation.oci-containers.containers.${name}.serviceName or "${cfg.backend}-${name}";
             hasHc = container.hasHealthcheck or false;
             useSdnotify = cfg.backend == "podman" && hasHc;
+            perf = container.performance.runtime or { };
+            ulimits = perf.ulimits or { };
           in
           lib.nameValuePair serviceName {
             after = [ "oci-load-${name}.service" ];
@@ -71,6 +75,35 @@
               lib.optionalAttrs useSdnotify {
                 Type = "notify";
                 NotifyAccess = "all";
+              }
+              # cgroup v2 memory controls (supplements --memory from container runtime)
+              // lib.optionalAttrs ((perf.memoryHigh or null) != null) {
+                MemoryHigh = perf.memoryHigh;
+              }
+              // lib.optionalAttrs ((perf.memoryMin or null) != null) {
+                MemoryMin = perf.memoryMin;
+              }
+              # cgroup v2 CPU controls
+              // lib.optionalAttrs ((perf.cpuWeight or null) != null) {
+                CPUWeight = perf.cpuWeight;
+              }
+              # cgroup v2 I/O controls
+              // lib.optionalAttrs ((perf.ioWeight or null) != null) {
+                IOWeight = perf.ioWeight;
+              }
+              # OOM priority
+              // lib.optionalAttrs ((perf.oomScoreAdj or null) != null) {
+                OOMScoreAdjust = perf.oomScoreAdj;
+              }
+              # Ulimits via systemd
+              // lib.optionalAttrs ((ulimits.nofile or null) != null) {
+                LimitNOFILE = ulimits.nofile;
+              }
+              // lib.optionalAttrs ((ulimits.memlock or null) != null) {
+                LimitMEMLOCK = ulimits.memlock;
+              }
+              // lib.optionalAttrs ((ulimits.nproc or null) != null) {
+                LimitNPROC = ulimits.nproc;
               };
           }
         ) autoStart;

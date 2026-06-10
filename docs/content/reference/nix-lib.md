@@ -1,7 +1,7 @@
 +++
-title = "nix-lib functions"
+title = "nix-lib: flake-parts functions"
 +++
 
-# nix-lib Functions
+# nix-lib: Flake-Parts Functions
 
 <!-- OPTIONS:nix-lib -->

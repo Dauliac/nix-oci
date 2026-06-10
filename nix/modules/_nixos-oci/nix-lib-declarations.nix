@@ -1,4 +1,4 @@
-# nix-lib function declarations for the NixOS container eval scope.
+# nix-lib function declarations for the nixos-oci module scope.
 #
 # Declares functions via nix-lib.lib.oci.container.* so they are:
 # - Typed and documented

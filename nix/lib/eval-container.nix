@@ -307,7 +307,9 @@ in
                     inherit (containerConfig.performance)
                       enable
                       allocator
+                      allocatorConfig
                       glibcTunables
+                      glibcTunablesPreset
                       ;
                   };
                 };

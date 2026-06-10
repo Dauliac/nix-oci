@@ -1,6 +1,6 @@
 # Register NixOS eval helper functions in flake-parts nix-lib.
 #
-# These are the pure cores of functions used inside _nixos-oci (the transient
+# These are the pure cores of functions used inside the nixos-oci module (the
 # NixOS eval). The transient eval can't contribute to nix-lib docs, so we
 # expose these here via flake-parts where they're auto-collected.
 #

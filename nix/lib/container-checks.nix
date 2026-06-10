@@ -12,6 +12,16 @@ let
   self = {
     # -- Reusable helpers (exposed via nix-lib as config.lib.oci.checks.*) --
 
+    # Detect nix.hostStore / installNix mutual exclusion conflict.
+    hasNixStoreConflict =
+      containerConfig:
+      let
+        nixHostStore = (containerConfig.nix or { }).hostStore or false;
+        nixHostDaemon = (containerConfig.nix or { }).hostDaemon or false;
+        installNixEnabled = containerConfig.installNix or false;
+      in
+      (nixHostStore || nixHostDaemon) && installNixEnabled;
+
     # Extract the container port as integer from a port mapping spec.
     # Delegates to oci.nix parseContainerPortInt.
     parsePortInt = ociLib.parseContainerPortInt;
@@ -179,6 +189,9 @@ let
         dnsBlocksHealthcheck = enabled && (h.disableDns or false) && self.healthcheckUsesHostname healthCmd;
         rootfsBlocksWrites = enabled && (h.readOnlyRootfs or false) && uncoveredWriteDirs != [ ];
         uncoveredDirList = lib.concatMapStringsSep ", " (d: "\"${d}\"") uncoveredWriteDirs;
+
+        # -- nix.hostStore vs installNix mutual exclusion --
+        nixStoreConflict = self.hasNixStoreConflict containerConfig;
       in
       # -- Package conflict (error) --
       (
@@ -313,6 +326,17 @@ let
               - Add them to `declaredVolumes`
               - Mount them as tmpfs via deploy config
           '' ""
+        else
+          ""
+      )
+      # -- nix.hostStore + installNix conflict (error) --
+      + (
+        if nixStoreConflict then
+          throw ''
+            Container "${name}": `nix.hostStore` and `installNix` are mutually exclusive.
+            - Use `nix.hostStore = true` to bind-mount the host Nix store (lightweight).
+            - Use `installNix = true` to embed a self-contained Nix in the image.
+          ''
         else
           ""
       );

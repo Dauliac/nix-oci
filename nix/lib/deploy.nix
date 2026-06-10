@@ -7,19 +7,47 @@ let
   ociLib = import ./oci.nix { inherit lib; };
 
   # Compute extra container runtime flags from performance.runtime options.
+  # These become --flag arguments to docker/podman run.
   mkPerfOpts =
     container:
     let
       perf = container.performance.runtime or { };
+      ulimits = perf.ulimits or { };
     in
+    # Runtime selection
     lib.optional ((perf.ociRuntime or null) != null) "--runtime=${perf.ociRuntime}"
-    ++ map (m: "--tmpfs=${m}") (perf.tmpfsMounts or [ ])
+    # Memory limits
     ++ lib.optional ((perf.memory or null) != null) "--memory=${perf.memory}"
     ++ lib.optional (
       (perf.memoryReservation or null) != null
     ) "--memory-reservation=${perf.memoryReservation}"
+    # CPU limits
     ++ lib.optional ((perf.cpus or null) != null) "--cpus=${perf.cpus}"
-    ++ lib.optional ((perf.pidsLimit or null) != null) "--pids-limit=${toString perf.pidsLimit}";
+    ++ lib.optional ((perf.cpuSetCpus or null) != null) "--cpuset-cpus=${perf.cpuSetCpus}"
+    ++ lib.optional ((perf.cpuSetMems or null) != null) "--cpuset-mems=${perf.cpuSetMems}"
+    # I/O
+    ++ lib.optional ((perf.ioWeight or null) != null) "--blkio-weight=${toString perf.ioWeight}"
+    # Process limits
+    ++ lib.optional ((perf.pidsLimit or null) != null) "--pids-limit=${toString perf.pidsLimit}"
+    # OOM
+    ++ lib.optional ((perf.oomScoreAdj or null) != null) "--oom-score-adj=${toString perf.oomScoreAdj}"
+    # Filesystem
+    ++ map (m: "--tmpfs=${m}") (perf.tmpfsMounts or [ ])
+    ++ lib.optional ((perf.shmSize or null) != null) "--shm-size=${perf.shmSize}"
+    # Ulimits
+    ++ lib.optional (
+      (ulimits.nofile or null) != null
+    ) "--ulimit=nofile=${toString ulimits.nofile}:${toString ulimits.nofile}"
+    ++ lib.optional (
+      (ulimits.memlock or null) != null
+    ) "--ulimit=memlock=${ulimits.memlock}:${ulimits.memlock}"
+    ++ lib.optional (
+      (ulimits.nproc or null) != null
+    ) "--ulimit=nproc=${toString ulimits.nproc}:${toString ulimits.nproc}"
+    # Logging
+    ++ lib.optional ((perf.logDriver or null) != null) "--log-driver=${perf.logDriver}"
+    # Sysctls
+    ++ lib.mapAttrsToList (k: v: "--sysctl=${k}=${v}") (perf.sysctls or { });
 in
 {
   inherit mkPerfOpts;
