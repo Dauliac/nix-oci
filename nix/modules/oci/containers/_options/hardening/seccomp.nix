@@ -1,8 +1,9 @@
 # Shared: seccomp syscall filtering.
 #
 # Seccomp operates at the syscall boundary via BPF. It can filter
-# *which syscalls* a process may invoke, but cannot inspect syscall
-# arguments that are pointers (e.g. file paths -- TOCTOU risk).
+# *which syscalls* a process may invoke, and can also filter
+# integer syscall arguments (e.g. clone flags, ioctl commands,
+# socket address families).
 #
 # This is complementary to Landlock (which operates at VFS level
 # and can restrict *which files/ports* are accessible).
@@ -22,6 +23,7 @@
             "strict"
             "moderate"
             "web-server"
+            "database"
           ];
           default = "moderate";
           description = ''
@@ -31,16 +33,40 @@
               static binaries, Go/Rust services. Blocks `mount`,
               `ptrace`, `execve`, and most process/namespace ops.
 
-            - `"moderate"` -- blocks ~44 dangerous syscalls (similar
-              to Docker's default profile). Allows most normal
-              operations.
+            - `"moderate"` -- blocks ~50 dangerous syscalls including
+              io_uring and memfd_create. All profiles include
+              argument-level filtering for clone (block namespace
+              creation), socket (block AF_NETLINK/AF_PACKET), and
+              ioctl (block TIOCSTI/TIOCLINUX terminal injection).
 
             - `"web-server"` -- strict base plus networking and
               threading syscalls. Suitable for HTTP servers.
 
+            - `"database"` -- web-server base plus memory management
+              syscalls (fadvise64, msync, mincore). Suitable for
+              PostgreSQL, Redis, and similar services.
+
             In the inner NixOS module, the profile auto-defaults to
             `"web-server"` when a known web server service (nginx,
-            httpd) is detected.
+            httpd) is detected, and `"database"` when PostgreSQL
+            or Redis is detected.
+          '';
+        };
+
+        mode = lib.mkOption {
+          type = lib.types.enum [
+            "enforce"
+            "audit"
+          ];
+          default = "enforce";
+          description = ''
+            Seccomp enforcement mode:
+
+            - `"enforce"` -- block disallowed syscalls with
+              SCMP_ACT_ERRNO (default).
+            - `"audit"` -- log disallowed syscalls with SCMP_ACT_LOG
+              but allow them. Useful for profile discovery and
+              testing before switching to enforce.
           '';
         };
 

@@ -25,7 +25,7 @@ let
   hasWebServer = (config.services.nginx.enable or false) || (config.services.httpd.enable or false);
 
   hasDatabase =
-    (config.services.postgresql.enable or false) || (config.services.redis.servers != { });
+    (config.services.postgresql.enable or false) || ((config.services.redis.servers or { }) != { });
 
   # Detect bound ports from known services for Landlock defaults.
   detectedTcpBind =
