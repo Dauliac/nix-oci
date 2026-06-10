@@ -741,6 +741,72 @@ let
         hardening.seccomp.customProfileJson
       else
         pkgs.writeText "seccomp-${name}.json" (builtins.toJSON profiles.${hardening.seccomp.profile});
+
+    # -- NixOS eval helpers (pure cores) --
+
+    # Normalize a value to a list (null -> [], scalar -> [x], list -> list).
+    toList =
+      x:
+      if builtins.isList x then
+        x
+      else if x == null then
+        [ ]
+      else
+        [ x ];
+
+    # Generate an entrypoint wrapper script from systemd service data.
+    # serviceData is a plain attrset produced by extractServiceData in _nixos-oci/entrypoint.nix.
+    mkEntrypointScript =
+      {
+        serviceData,
+        pkgs,
+      }:
+      let
+        mkDirs =
+          prefix: dirs:
+          lib.concatMapStringsSep "\n" (d: "${pkgs.coreutils}/bin/mkdir -p ${prefix}/${d}") dirs;
+        mkEnvExports = lib.concatStringsSep "\n" (
+          lib.mapAttrsToList (k: v: "export ${k}=${lib.escapeShellArg v}") serviceData.environment
+        );
+        validExecStartPre = builtins.filter (x: x != null && x != "") serviceData.execStartPre;
+        mkExecStartPre = lib.concatMapStringsSep "\n" (
+          cmd:
+          let
+            stripped = lib.removePrefix "-" (lib.removePrefix "+" cmd);
+            ignoreFailure = lib.hasPrefix "-" cmd || lib.hasPrefix "+" cmd;
+          in
+          if ignoreFailure then "${stripped} || true" else stripped
+        ) validExecStartPre;
+      in
+      pkgs.writeShellScript "container-entrypoint" ''
+        set -euo pipefail
+        ${lib.optionalString (serviceData.runtimeDirs != [ ]) (mkDirs "/run" serviceData.runtimeDirs)}
+        ${lib.optionalString (serviceData.stateDirs != [ ]) (mkDirs "/var/lib" serviceData.stateDirs)}
+        ${lib.optionalString (serviceData.cacheDirs != [ ]) (mkDirs "/var/cache" serviceData.cacheDirs)}
+        ${lib.optionalString (serviceData.logDirs != [ ]) (mkDirs "/var/log" serviceData.logDirs)}
+        ${lib.optionalString (mkEnvExports != "") mkEnvExports}
+        ${lib.optionalString (serviceData.preStart != "") serviceData.preStart}
+        ${lib.optionalString (mkExecStartPre != "") mkExecStartPre}
+        exec ${serviceData.execStart}
+      '';
+
+    # Create a derivation from a NixOS environment.etc entry.
+    mkEtcDerivation =
+      {
+        name,
+        entry,
+        pkgs,
+      }:
+      let
+        safeName = builtins.replaceStrings [ "/" ] [ "-" ] name;
+        mode = entry.mode or "0644";
+        isSymlink = mode == "symlink" || mode == "direct-symlink";
+      in
+      pkgs.runCommand "etc-${safeName}" { } ''
+        mkdir -p $out/etc/$(dirname "${name}")
+        cp -L ${entry.source} $out/etc/${name}
+        ${if isSymlink then "" else "chmod ${mode} $out/etc/${name}"}
+      '';
   };
 in
 self

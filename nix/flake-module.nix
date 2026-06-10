@@ -15,6 +15,7 @@ inputs: {
     perSystem =
       { system, ... }:
       {
+        _module.args.nixLibNixosModule = inputs.nix-lib.nixosModules.default;
         oci.packages = {
           nix2container = inputs.nix2container.packages.${system}.nix2container;
           skopeo = inputs.nix2container.packages.${system}.skopeo-nix2container;

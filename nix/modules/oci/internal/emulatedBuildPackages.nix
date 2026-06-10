@@ -36,34 +36,43 @@ in
             type = types.attrsOf (types.attrsOf types.package);
             internal = true;
             readOnly = true;
-            default = lib.pipe config.oci.containers [
-              (attrsets.filterAttrs (_: c: c.multiArch.enabled && c.multiArch.emulatedBuild.enable))
-              (attrsets.mapAttrs (
+            default =
+              let
+                emulatedContainers = attrsets.filterAttrs (
+                  _: c: c.multiArch.enabled && c.multiArch.emulatedBuild.enable
+                ) config.oci.containers;
+                # Mutual exclusion: fail if any emulated container also has crossBuild
+                conflicting = attrsets.filterAttrs (_: c: c.multiArch.crossBuild.enable) emulatedContainers;
+                conflictNames = builtins.attrNames conflicting;
+              in
+              assert
+                conflictNames == [ ]
+                || throw ''
+                  Containers ${builtins.concatStringsSep ", " (map (n: "\"${n}\"") conflictNames)}:
+                  `multiArch.crossBuild.enable` and `multiArch.emulatedBuild.enable` are mutually exclusive.
+                  Choose one build strategy per container:
+                    - crossBuild:    fast, uses pkgsCross (some packages may not cross-compile)
+                    - emulatedBuild: slower, uses QEMU binfmt (works for any natively-buildable package)
+                '';
+              attrsets.mapAttrs (
                 containerId: containerConfig:
                 let
-                  # Force-evaluate mutual exclusion check
-                  _check = containerConfig.multiArch.emulatedBuild._check;
-                  # Filter archConfigs to only non-native arches with a package set
                   emulatedArchConfigs = attrsets.filterAttrs (
                     targetSystem: archCfg: targetSystem != system && archCfg.package != null
                   ) containerConfig.archConfigs;
                 in
                 attrsets.mapAttrs (
                   targetSystem: archCfg:
-                  # Force _check evaluation by sequencing with builtins.seq
-                  builtins.seq _check (
-                    ociLib.mkCrossOCI {
-                      perSystemConfig = config.oci;
-                      globalConfig = cfg.oci;
-                      inherit containerId;
-                      crossPackage = archCfg.package;
-                      crossDependencies = archCfg.dependencies;
-                      arch = ociLib.systemToOCIArch targetSystem;
-                    }
-                  )
+                  ociLib.mkCrossOCI {
+                    perSystemConfig = config.oci;
+                    globalConfig = cfg.oci;
+                    inherit containerId;
+                    crossPackage = archCfg.package;
+                    crossDependencies = archCfg.dependencies;
+                    arch = ociLib.systemToOCIArch targetSystem;
+                  }
                 ) emulatedArchConfigs
-              ))
-            ];
+              ) emulatedContainers;
           };
           emulatedMultiArchOCILayouts = mkOption {
             description = "Merged multi-arch OCI directory layouts (native + QEMU-emulated).";

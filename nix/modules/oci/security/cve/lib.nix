@@ -25,7 +25,7 @@ in
         mkScriptCVETrivy = {
           type = types.functionTo types.package;
           description = "Generate Trivy CVE scanning script";
-        file = "nix/modules/oci/security/cve/lib.nix";
+          file = "nix/modules/oci/security/cve/lib.nix";
           fn =
             {
               perSystemConfig,
@@ -82,7 +82,7 @@ in
         mkAppCVETrivy = {
           type = types.functionTo types.attrs;
           description = "Create flake app for Trivy CVE scanning";
-        file = "nix/modules/oci/security/cve/lib.nix";
+          file = "nix/modules/oci/security/cve/lib.nix";
           fn =
             {
               perSystemConfig,
@@ -102,7 +102,7 @@ in
         mkScriptCVEGrype = {
           type = types.functionTo types.package;
           description = "Generate Grype CVE scanning script";
-        file = "nix/modules/oci/security/cve/lib.nix";
+          file = "nix/modules/oci/security/cve/lib.nix";
           fn =
             {
               perSystemConfig,
@@ -140,7 +140,7 @@ in
         mkAppCVEGrype = {
           type = types.functionTo types.attrs;
           description = "Create flake app for Grype CVE scanning";
-        file = "nix/modules/oci/security/cve/lib.nix";
+          file = "nix/modules/oci/security/cve/lib.nix";
           fn =
             {
               perSystemConfig,
@@ -158,7 +158,7 @@ in
         mkScriptCVEVulnix = {
           type = types.functionTo types.package;
           description = "Generate vulnix CVE scanning script";
-        file = "nix/modules/oci/security/cve/lib.nix";
+          file = "nix/modules/oci/security/cve/lib.nix";
           fn =
             {
               perSystemConfig,
@@ -187,7 +187,7 @@ in
         mkAppCVEVulnix = {
           type = types.functionTo types.attrs;
           description = "Create flake app for vulnix CVE scanning";
-        file = "nix/modules/oci/security/cve/lib.nix";
+          file = "nix/modules/oci/security/cve/lib.nix";
           fn =
             {
               perSystemConfig,

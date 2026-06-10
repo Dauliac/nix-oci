@@ -31,27 +31,6 @@
               hasHc = container.hasHealthcheck or false;
               allPodmanArgs = perfArgs ++ healthArgs;
             in
-            let
-              perf = container.performance.runtime or { };
-              resourceLimits =
-                lib.optionalAttrs ((perf.memoryHigh or null) != null) {
-                  MemoryHigh = perf.memoryHigh;
-                }
-                // lib.optionalAttrs ((perf.memoryMax or null) != null) {
-                  MemoryMax = perf.memoryMax;
-                }
-                // lib.optionalAttrs ((perf.cpuBurst or null) != null) {
-                  CPUBurst = perf.cpuBurst;
-                }
-                // lib.optionalAttrs ((perf.cpuQuota or null) != null) {
-                  CPUQuota = perf.cpuQuota;
-                }
-                // lib.optionalAttrs ((perf.tasksMax or null) != null) {
-                  TasksMax = perf.tasksMax;
-                };
-              hcService = lib.optionalAttrs hasHc { Type = "notify"; };
-              serviceAttrs = hcService // resourceLimits;
-            in
             {
               image = container.imageRef;
               extraConfig = {
@@ -64,9 +43,9 @@
                 Container = {
                   Notify = "healthy";
                 };
-              }
-              // lib.optionalAttrs (serviceAttrs != { }) {
-                Service = serviceAttrs;
+                Service = {
+                  Type = "notify";
+                };
               };
             }
             // lib.optionalAttrs (container.ports != [ ]) {

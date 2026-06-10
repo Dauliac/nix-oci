@@ -2,7 +2,11 @@
 #
 # Fallback chain: meta.mainProgram -> pname -> parsed derivation name.
 # Shared by mkOCIName and mkOCIEntrypoint.
+# Pure library: nix/lib/oci.nix
 { lib, ... }:
+let
+  pure = import ../../../lib/oci.nix { inherit lib; };
+in
 {
   nix-lib.lib.oci.resolveMainProgram = {
     type = lib.types.functionTo lib.types.str;
@@ -16,15 +20,8 @@
 
       Returns the raw program name string (not a path).
     '';
-    file = "nix/modules/oci/lib/resolveMainProgram.nix";
-    fn =
-      package:
-      if package.meta.mainProgram or null != null then
-        package.meta.mainProgram
-      else if package.pname or null != null then
-        package.pname
-      else
-        (builtins.parseDrvName (package.name or "unknown")).name;
+    file = "nix/lib/oci.nix";
+    fn = pure.resolveMainProgram;
     tests = {
       "resolves from meta.mainProgram" = {
         args = {

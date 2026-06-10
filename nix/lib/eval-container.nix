@@ -2,7 +2,7 @@
 #
 # Pure function callable from both flake-parts (perContainer) and deploy
 # (NixOS/home-manager) contexts. Evaluates a NixOS config with the
-# _nixos/oci module tree and returns the result.
+# nixos-oci module tree and returns the result.
 #
 # Cycle-safe reads: isRoot, containerName, mainService, package (when
 # mainService is null), dependencies.
@@ -10,83 +10,13 @@
 { lib }:
 let
   inherit (lib) strings;
-
-  # Resolve package identity for user name: pname -> parsed drv name.
-  # Unlike image naming (which uses mainProgram), user names should
-  # reflect the package identity (e.g. "redis" not "redis-cli").
-  packageName =
-    pkg:
-    if pkg.pname or null != null then
-      pkg.pname
-    else
-      (builtins.parseDrvName (pkg.name or "unknown")).name;
-
-  # ---------------------------------------------------------------------------
-  # Base image /etc/passwd and /etc/group → NixOS module generation.
-  #
-  # When fromImage is used, the lock update script pre-extracts identity
-  # files from the base image layers and commits them alongside the manifest
-  # lock. At eval time we read these committed source files (no IFD) and
-  # inject users/groups as a NixOS module. The NixOS module system handles
-  # merging: base image users get mkDefault, nix-oci's own declarations
-  # (root, service user) take precedence.
-  # ---------------------------------------------------------------------------
-
-  # Parse a passwd file into a list of { name, uid, gid, home, shell }.
-  # Format: name:x:uid:gid:gecos:home:shell
-  parsePasswdFile =
-    content:
-    let
-      lines = builtins.filter (l: l != "" && !(strings.hasPrefix "#" l)) (
-        strings.splitString "\n" content
-      );
-      parseLine =
-        line:
-        let
-          parts = strings.splitString ":" line;
-          len = builtins.length parts;
-        in
-        if len >= 7 then
-          {
-            name = builtins.elemAt parts 0;
-            uid = builtins.elemAt parts 2;
-            gid = builtins.elemAt parts 3;
-            home = builtins.elemAt parts 5;
-            shell = builtins.elemAt parts 6;
-          }
-        else
-          null;
-      parsed = map parseLine lines;
-    in
-    builtins.filter (x: x != null) parsed;
-
-  # Parse a group file into a list of { name, gid }.
-  # Format: name:x:gid:members
-  parseGroupFile =
-    content:
-    let
-      lines = builtins.filter (l: l != "" && !(strings.hasPrefix "#" l)) (
-        strings.splitString "\n" content
-      );
-      parseLine =
-        line:
-        let
-          parts = strings.splitString ":" line;
-          len = builtins.length parts;
-        in
-        if len >= 3 then
-          {
-            name = builtins.elemAt parts 0;
-            gid = builtins.elemAt parts 2;
-          }
-        else
-          null;
-      parsed = map parseLine lines;
-    in
-    builtins.filter (x: x != null) parsed;
-
-  # Build a GID → group name mapping from parsed group entries.
-  gidToGroupName = groups: builtins.listToAttrs (map (g: lib.nameValuePair g.gid g.name) groups);
+  identityLib = import ./identity.nix { inherit lib; };
+  inherit (identityLib)
+    packageName
+    parsePasswdFile
+    parseGroupFile
+    gidToGroupName
+    ;
 
   # Create a NixOS module that declares base image users and groups.
   # All declarations use mkDefault so nix-oci's own users take precedence.
@@ -211,7 +141,7 @@ in
   #   pkgs             - nixpkgs package set
   #   containerName    - container attribute name (fallback for user derivation)
   #   containerConfig  - resolved container option values (cycle-safe subset)
-  #   ociNixOSModules  - the _nixos/oci module tree (import-tree result)
+  #   ociNixOSModules  - the nixos-oci module tree (import-tree result)
   #   nixosModules     - user-provided nixosConfig.modules
   #   mainService      - nixosConfig.mainService (or null)
   #   homeManagerFlake - homeConfig.homeManagerFlake (or null)
@@ -230,6 +160,7 @@ in
       ociNixOSModules,
       nixosModules ? [ ],
       mainService ? null,
+      nixLibNixosModule ? null,
       homeManagerFlake ? null,
       homeModules ? [ ],
       fromImageEnabled ? false,
@@ -325,6 +256,9 @@ in
           inherit (pkgs) system;
           modules = [
             ociNixOSModules
+          ]
+          ++ lib.optional (nixLibNixosModule != null) nixLibNixosModule
+          ++ [
             # Pass cycle-safe container options into the NixOS module
             (
               { lib, ... }:

@@ -37,24 +37,17 @@
             perSystemConfig,
             containerId,
             tagConfig,
-            # When true, pushes the debug image variant and appends
-            # "-debug" to the tag literal (e.g. "1.0.0" → "1.0.0-debug").
-            debug ? false,
           }:
           let
             containerConfig = perSystemConfig.containers.${containerId};
-            tag = if debug then "${tagConfig._tagName}-debug" else tagConfig._tagName;
-            ociOutput =
-              if debug then
-                perSystemConfig.internal.debugOCIs."${containerId}-debug"
-              else
-                perSystemConfig.internal.OCIs.${containerId};
+            tag = tagConfig._tagName;
+            ociOutput = perSystemConfig.internal.OCIs.${containerId};
             baseName =
               if containerConfig.registry != null && containerConfig.registry != "" then
                 "${containerConfig.registry}/${containerConfig.name}"
               else
                 containerConfig.name;
-            appName = if debug then "push-debug-${containerId}-${tag}" else "push-${containerId}-${tag}";
+            appName = "push-${containerId}-${tag}";
             primaryLiteral = if tagConfig.primary then "true" else "false";
             # registry is types.nullOr types.str -- `or ""` does NOT handle null
             # (or only fires for missing attributes, not null values), so guard explicitly.
@@ -91,7 +84,7 @@
                 echo "[${appName}] image unchanged (digest=$LOCAL_DIGEST) -- skipping push"
                 echo "CIMERA_OCI_PUSHED_TAG ref=$REF digest=$LOCAL_DIGEST tag=${tag} primary=${primaryLiteral}"
               else
-                echo "[${appName}] pushing ${containerId}${lib.optionalString debug " (debug)"} -> $REF"
+                echo "[${appName}] pushing ${containerId} -> $REF"
 
                 skopeo copy --retry-times 3 ${compressFlag} \
                   "nix:${ociOutput}" "$DEST" >&2

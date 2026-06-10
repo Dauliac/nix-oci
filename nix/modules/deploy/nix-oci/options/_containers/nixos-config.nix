@@ -9,6 +9,7 @@
   lib,
   pkgs,
   ociNixOSModules,
+  nixLibNixosModule ? null,
   ...
 }:
 let
@@ -18,7 +19,7 @@ let
   enabled = nixosCfg.mainService != null || nixosCfg.modules != [ ];
 
   result = evalContainerLib.evalContainerNixos {
-    inherit pkgs ociNixOSModules;
+    inherit pkgs ociNixOSModules nixLibNixosModule;
     containerName = name;
     containerConfig = config;
     nixosModules = nixosCfg.modules;

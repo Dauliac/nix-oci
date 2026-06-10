@@ -24,7 +24,7 @@ in
         mkScriptSBOMSyft = {
           type = types.functionTo types.package;
           description = "Generate Syft SBOM generation script";
-        file = "nix/modules/oci/security/sbom/lib.nix";
+          file = "nix/modules/oci/security/sbom/lib.nix";
           fn =
             {
               perSystemConfig,
@@ -61,7 +61,7 @@ in
         mkAppSBOMSyft = {
           type = types.functionTo types.attrs;
           description = "Create flake app for Syft SBOM generation";
-        file = "nix/modules/oci/security/sbom/lib.nix";
+          file = "nix/modules/oci/security/sbom/lib.nix";
           fn =
             {
               perSystemConfig,

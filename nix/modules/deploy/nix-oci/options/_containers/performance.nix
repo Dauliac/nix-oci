@@ -42,29 +42,53 @@
           ];
         };
 
-        memoryHigh = lib.mkOption {
+        memory = lib.mkOption {
           type = lib.types.nullOr lib.types.str;
           default = null;
           description = ''
-            cgroup v2 `memory.high` soft limit. Throttles allocation before OOM.
-            Set 10-20% below the hard memory limit for graceful degradation.
+            Hard memory limit for the container. The OOM killer terminates
+            the container when this limit is exceeded.
 
-            Translated to `MemoryHigh=` in the systemd service unit.
+            Translated to `--memory` container runtime flag.
+          '';
+          example = "1G";
+        };
+
+        memoryReservation = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = ''
+            Soft memory limit. The runtime throttles allocation when the
+            system is under memory pressure. Set 10-20% below the hard
+            memory limit for graceful degradation.
+
+            Translated to `--memory-reservation` container runtime flag.
           '';
           example = "512M";
         };
 
-        cpuBurst = lib.mkOption {
+        cpus = lib.mkOption {
           type = lib.types.nullOr lib.types.str;
           default = null;
           description = ''
-            cgroup v2 CPU burst -- accumulated unused quota spent on demand.
-            Critical for latency-sensitive services that idle between requests.
+            CPU limit. Restricts how much CPU time the container may use.
+            `"1.0"` equals one core; `"2.5"` allows two and a half cores.
 
-            Value in microseconds. Translated to `CPUBurst=` in the systemd
-            service unit (requires systemd >= 252).
+            Translated to `--cpus` container runtime flag.
           '';
-          example = "50000";
+          example = "2.0";
+        };
+
+        pidsLimit = lib.mkOption {
+          type = lib.types.nullOr lib.types.ints.positive;
+          default = null;
+          description = ''
+            Maximum number of PIDs (processes/threads) allowed in the
+            container. Prevents fork bombs and runaway thread creation.
+
+            Translated to `--pids-limit` container runtime flag.
+          '';
+          example = 512;
         };
       };
     };

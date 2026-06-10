@@ -189,11 +189,12 @@
 
         # --- NixOS container module options (oci.container.*) ---
         # Use import-tree to discover _nixos/oci modules, same as eval.nix does.
-        ociNixOSModule = import-tree ./modules/_nixos/oci;
+        ociNixOSModule = import-tree ./modules/_nixos-oci;
 
         nixosContainerEval = lib.evalModules {
           modules = [
             ociNixOSModule
+            inputs.nix-lib.nixosModules.default
             {
               options._module.args = lib.mkOption { internal = true; };
               config._module = {
@@ -212,6 +213,9 @@
           };
           transformOptions = cleanupOptions;
         };
+
+        # Extract nix-lib metadata from the container eval for docs.
+        containerLibsMeta = nixosContainerEval.config.nix-lib._libsMeta or { };
 
         # Diataxis layout with NDG group_by_dir:
         #   Root (flat): index.md (overview), getting-started.md (tutorial)
@@ -255,7 +259,8 @@
               sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/home-manager-options.md
               sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/system-manager-options.md
               sed -i '/<!-- OPTIONS:nixos-container -->/r ${nixosContainerDoc.optionsCommonMark}' $out/reference/nix-oci-container-module-options.md
-              sed -i '/<!-- OPTIONS:nix-lib -->/r ${nixLibDoc}/docs.md' $out/reference/nix-lib.md
+              sed -i '/<!-- OPTIONS:nix-lib -->/r ${nixLibDoc}/nix-lib.md' $out/reference/nix-lib.md
+              sed -i '/<!-- OPTIONS:nix-lib-container -->/r ${nixLibDoc}/nix-lib-container.md' $out/reference/nix-lib-container.md
 
               # --- Examples: generate pages with subdir-based sections ---
               # gen_examples_page <title> <dest> <dir>...
@@ -363,10 +368,62 @@
             '';
       in
       {
-        # nix-lib docs: disable index/title, enable fn body extraction
-        nix-lib.docs.showIndex = false;
-        nix-lib.docs.showTitle = false;
-        nix-lib.docs.src = ../.;
+        # nix-lib docs: multi-page output with fn body extraction
+        nix-lib.docs = {
+          src = ../.;
+          pages = {
+            nix-lib = {
+              showIndex = false;
+              showTitle = false;
+              headingLevel = 2;
+              header = ''
+                Library functions available as `config.lib.oci.*` (per-system) after importing the nix-oci flake-parts module.
+
+                ## Overriding functions
+
+                All nix-oci library functions can be overridden by consumers. Since they are declared as `nix-lib.lib.oci.*` module options, you can replace any function in your own flake-parts module:
+
+                ```nix
+                # In your flake module:
+                perSystem = { lib, ... }: {
+                  nix-lib.lib.oci.mkAutoLabels = {
+                    type = lib.types.functionTo lib.types.attrs;
+                    description = "My custom label generator";
+                    fn = { ... }: {
+                      # your custom labels
+                    };
+                  };
+                };
+                ```
+
+                The overridden function will be used everywhere nix-oci calls `config.lib.oci.mkAutoLabels`, including image builders and deploy modules. This lets you customize or extend any behavior without forking nix-oci.
+
+                See also:
+
+                - [Source: `nix/modules/oci/lib/`](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci/lib) -- image builders, layers, labels, security, ports, architecture
+                - [Source: `nix/modules/oci/security/`](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci/security) -- CVE, SBOM, signing, compliance, credentials leak, linting
+                - [Source: `nix/modules/oci/testing/`](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci/testing) -- CST, dgoss, dive, podman sandbox
+
+                ---
+              '';
+            };
+            nix-lib-container = {
+              showIndex = false;
+              showTitle = false;
+              headingLevel = 2;
+              metadata = containerLibsMeta;
+              header = ''
+                Functions available inside the NixOS container evaluation scope (`nixosConfig`).
+
+                These functions are declared via `nix-lib.lib.oci.container.*` inside the
+                `nixos-oci` module tree and are available at `config.lib.oci.container.*`
+                within the NixOS evaluation.
+
+                ---
+              '';
+            };
+          };
+        };
 
         legacyPackages = {
           docs-github-workflows = config.githubActions.workflowsDir;

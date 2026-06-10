@@ -14,37 +14,8 @@
     }:
     let
       cfg = config.oci;
-      autoStart = lib.filterAttrs (_: c: c.autoStart) cfg.containers;
-
-      mkRunArgs =
-        name: container:
-        let
-          portArgs = lib.concatMap (p: [
-            "-p"
-            p
-          ]) container.ports;
-          envArgs = lib.concatLists (
-            lib.mapAttrsToList (k: v: [
-              "-e"
-              "${k}=${v}"
-            ]) container.environment
-          );
-          volumeArgs = lib.concatMap (v: [
-            "-v"
-            v
-          ]) container.volumes;
-        in
-        [
-          "run"
-          "--rm"
-          "--name"
-          name
-        ]
-        ++ portArgs
-        ++ envArgs
-        ++ volumeArgs
-        ++ [ container.imageRef ];
-
+      deployLib = import ../../../../lib/deploy.nix { inherit lib; };
+      autoStart = deployLib.autoStartContainers cfg.containers;
       backend =
         if cfg.backend == "docker" then "${pkgs.docker}/bin/docker" else "${pkgs.podman}/bin/podman";
     in
@@ -64,7 +35,7 @@
             serviceConfig = {
               Type = "simple";
               Restart = "on-failure";
-              ExecStart = lib.concatStringsSep " " ([ backend ] ++ (mkRunArgs name container));
+              ExecStart = lib.concatStringsSep " " ([ backend ] ++ (deployLib.mkRunArgs name container));
               ExecStop = "${backend} stop ${name}";
               ExecStopPost = "-${backend} rm -f ${name}";
             };

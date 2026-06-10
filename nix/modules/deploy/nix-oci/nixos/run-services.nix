@@ -28,8 +28,7 @@
             let
               secOpts = container.securityOpts or [ ];
               perfOpts = deployLib.mkPerfOpts container;
-              healthOpts =
-                if cfg.backend == "podman" then deployLib.mkHealthcheckOpts container else [ ];
+              healthOpts = if cfg.backend == "podman" then deployLib.mkHealthcheckOpts container else [ ];
               allExtraOpts = secOpts ++ perfOpts ++ healthOpts;
             in
             {
@@ -60,7 +59,6 @@
           let
             serviceName =
               config.virtualisation.oci-containers.containers.${name}.serviceName or "${cfg.backend}-${name}";
-            perf = container.performance.runtime or { };
             hasHc = container.hasHealthcheck or false;
             useSdnotify = cfg.backend == "podman" && hasHc;
           in
@@ -73,21 +71,6 @@
               lib.optionalAttrs useSdnotify {
                 Type = "notify";
                 NotifyAccess = "all";
-              }
-              // lib.optionalAttrs ((perf.memoryHigh or null) != null) {
-                MemoryHigh = perf.memoryHigh;
-              }
-              // lib.optionalAttrs ((perf.memoryMax or null) != null) {
-                MemoryMax = perf.memoryMax;
-              }
-              // lib.optionalAttrs ((perf.cpuBurst or null) != null) {
-                CPUBurst = perf.cpuBurst;
-              }
-              // lib.optionalAttrs ((perf.cpuQuota or null) != null) {
-                CPUQuota = perf.cpuQuota;
-              }
-              // lib.optionalAttrs ((perf.tasksMax or null) != null) {
-                TasksMax = perf.tasksMax;
               };
           }
         ) autoStart;

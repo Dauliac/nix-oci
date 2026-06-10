@@ -24,7 +24,7 @@ in
         mkScriptCredentialsLeakTrivy = {
           type = types.functionTo types.package;
           description = "Generate Trivy credentials leak detection script";
-        file = "nix/modules/oci/security/credentials-leak/lib.nix";
+          file = "nix/modules/oci/security/credentials-leak/lib.nix";
           fn =
             {
               perSystemConfig,
@@ -59,7 +59,7 @@ in
         mkAppCredentialsLeakTrivy = {
           type = types.functionTo types.attrs;
           description = "Create flake app for Trivy credentials leak detection";
-        file = "nix/modules/oci/security/credentials-leak/lib.nix";
+          file = "nix/modules/oci/security/credentials-leak/lib.nix";
           fn =
             {
               perSystemConfig,

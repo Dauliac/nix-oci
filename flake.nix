@@ -71,8 +71,8 @@
               (import ./nix/flake-module.nix inputs)
               # Treefmt formatter and check
               ./nix/treefmt.nix
-              # Deploy integration test (NixOS + home-manager in one VM)
-              ./nix/tests/deploy.nix
+              # All test categories (unit, vm, lint, build)
+              ./tests/flake-module.nix
             ];
             oci.enabled = true;
             oci.enableFlakeOutputs = false;

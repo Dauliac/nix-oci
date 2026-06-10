@@ -11,19 +11,17 @@
     }:
     let
       cfg = config.oci;
-      copyScript =
-        container:
-        if cfg.backend == "docker" then
-          container.image.copyToDockerDaemon
-        else
-          container.image.copyToPodman;
+      deployLib = import ../../../../lib/deploy.nix { inherit lib; };
     in
     {
       config = lib.mkIf cfg.enable {
         systemd.user.services = lib.mapAttrs' (
           name: container:
           let
-            script = copyScript container;
+            script = deployLib.copyScript {
+              backend = cfg.backend;
+              inherit container;
+            };
           in
           lib.nameValuePair "oci-load-${name}" {
             Unit.Description = "Load OCI image ${container.imageRef} into ${cfg.backend}";

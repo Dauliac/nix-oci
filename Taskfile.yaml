@@ -6,47 +6,56 @@ tasks:
     cmds:
       - task --list
   # ── Tests ──────────────────────────────────────────────────────────────
+  #
+  # Hermetic (pure, sandboxed):
+  #   test:check     All nix flake checks (unit, vm, oci, lint, build, treefmt)
+  #   test:unit      nix-unit lib tests
+  #   test:vm        NixOS VM deploy integration
+  #   test:lint      Formatting + prose
+  #
+  # Non-hermetic (needs daemon/network):
+  #   test:e2e       Bats suites (CST, security scans, multi-arch)
+  #
   test:
-    desc: Run all tests (bats + NixOS + checks)
+    desc: Run all tests (hermetic checks + e2e)
     cmds:
-      - task: test:bats
-      - task: test:nixos
-      - task: test:checks
-  test:bats:
-    desc: Run all bats test suites (parallel via bats --jobs)
-    dir: ./tests/
+      - task: test:check
+      - task: test:e2e
+  test:check:
+    desc: Run all hermetic nix flake checks (via nom)
+    deps: ['test:fmt']
+    cmds:
+      - nix flake check -L 2>&1 | nom
+  test:unit:
+    desc: Run nix-lib unit tests (nix-unit)
+    cmds:
+      - nix build .#checks.x86_64-linux.nix-unit -L 2>&1 | nom
+  test:vm:
+    desc: Run NixOS VM deploy integration test (via nom)
+    cmds:
+      - nix build .#checks.x86_64-linux.vm-deploy-integration -L 2>&1 | nom
+  test:lint:
+    desc: Run lint checks (treefmt + vale)
+    cmds:
+      - nix build .#checks.x86_64-linux.treefmt .#checks.x86_64-linux.lint-vale -L 2>&1 | nom
+  test:e2e:
+    desc: Run non-hermetic e2e bats suites (needs daemon)
+    dir: ./tests/e2e/bats/
     cmds:
       - |
         # Pre-compute flake discovery once to avoid SQLite contention
         # when multiple bats files run setup_file() in parallel.
-        FLAKE_REF="git+file://$(git rev-parse --show-toplevel)?dir=tests"
+        FLAKE_REF="git+file://$(git rev-parse --show-toplevel)"
         system="$(uname -m | sed 's/x86_64/x86_64-linux/;s/aarch64/aarch64-linux/')"
         export NIX_OCI_APPS_JSON=$(nix eval --json "${FLAKE_REF}#apps.${system}" --apply builtins.attrNames)
         export NIX_OCI_PKGS_JSON=$(nix eval --json "${FLAKE_REF}#packages.${system}" --apply builtins.attrNames)
         export NIX_OCI_FLAKE_REF="$FLAKE_REF"
         export NIX_OCI_SYSTEM="$system"
         bats . --jobs {{.BATS_JOBS | default "3"}} --timing --trace --print-output-on-failure
-  test:nixos:
-    desc: Run NixOS VM deploy integration test (via nom)
-    cmds:
-      - nix build .#checks.x86_64-linux.deploy-integration -L 2>&1 | nom
   test:fmt:
     desc: Format the project tree with nix fmt
     cmds:
       - nix fmt
-  test:checks:
-    desc: Run all nix flake checks (via nom)
-    deps: ['test:fmt']
-    cmds:
-      - nix flake check -L 2>&1 | nom
-  test:checks:treefmt:
-    desc: Run treefmt check
-    cmds:
-      - nix build .#checks.x86_64-linux.treefmt -L 2>&1 | nom
-  test:checks:dive:
-    desc: Run dive image analysis check
-    cmds:
-      - nix build .#checks.x86_64-linux.oci-dive-minimalistWithDive -L 2>&1 | nom
   # ── Docs ───────────────────────────────────────────────────────────────
   docs:build:
     desc: Build the nix-oci documentation site with NDG

@@ -1,15 +1,14 @@
 +++
 title = "Optimized layer sharing"
-description = "How the layering heuristic deduplicates store paths across production and debug images"
+description = "How the layering heuristic deduplicates store paths across images"
 +++
 
 # Optimized layer sharing
 
 nix-oci can split your container into multiple OCI layers using a
 **store-path popularity algorithm** combined with **fold-based
-deduplication**, so that images sharing common dependencies -- including
-production and debug variants -- automatically share layers in the
-registry.
+deduplication**, so that images sharing common dependencies automatically
+share layers in the registry.
 
 ## The problem
 
@@ -29,11 +28,10 @@ graph LR
     A1 -. "duplicated bytes" .-> B1
 ```
 
-The problem gets worse with **debug images**: a debug variant typically
-adds a handful of tools (curl, coreutils, an entrypoint wrapper) on top
-of an otherwise identical production image. Without explicit layer
-sharing, the entire image is rebuilt from scratch and shares zero bytes
-with production in the registry.
+The problem gets worse with **image variants** (e.g. debug flavours):
+a variant typically adds a handful of tools on top of an otherwise
+identical base image. Without explicit layer sharing, the entire image
+is rebuilt from scratch and shares zero bytes in the registry.
 
 ## The layering heuristic
 
@@ -62,7 +60,7 @@ The registry deduplicates them automatically.
 ### Level 2 -- fold-based cross-layer deduplication
 
 nix2container builds each layer independently by default. When you have
-multiple explicit layers (deps, app, debug), shared store paths like
+multiple explicit layers (deps, app), shared store paths like
 glibc can end up **duplicated** across layers -- this was documented in
 [Nix & Docker: Layer explicitly without duplicate packages](https://blog.eigenvalue.net/2023-nix2container-everything-once/).
 
@@ -77,10 +75,8 @@ flowchart LR
         direction LR
         L0["[ ]"] -->|"+ deps def"| L1["[deps]"]
         L1 -->|"+ app def"| L2["[deps, app]"]
-        L2 -->|"+ debug def"| L3["[deps, app, debug]"]
     end
     L1 -.- N1["app excludes<br/>deps store paths"]
-    L2 -.- N2["debug excludes<br/>deps + app store paths"]
 ```
 
 ```nix
@@ -158,16 +154,14 @@ flowchart TD
 |---|---|
 | Dependencies | exactly 1 |
 | Application | exactly 1 |
-| Debug (if enabled) | exactly 1 |
-| Total | 2–3 |
+| Total | 2 |
 
 ## The layer stack
 
 The options that control layer composition
 ([`optimizeLayers`](../reference/flake-parts-options.html),
 [`layerStrategy`](../reference/flake-parts-options.html),
-[`dependencies`](../reference/flake-parts-options.html),
-[`debug.enabled`](../reference/flake-parts-options.html))
+[`dependencies`](../reference/flake-parts-options.html))
 are documented in the option reference. This section explains the
 resulting image structure.
 
@@ -209,43 +203,13 @@ flowchart TD
     style nix fill:#89b4fa,stroke:#1e66f5,color:#000
 ```
 
-### Debug image (layer sharing with production)
+### Flavour images
 
-When [`debug.enabled`](../reference/flake-parts-options.html) and
-[`optimizeLayers`](../reference/flake-parts-options.html) are both set,
-the debug image is built **on top of** the production layer stack -- not
-rebuilt from scratch:
-
-```mermaid
-flowchart TD
-    subgraph prod ["Production"]
-        direction TB
-        pa["App layer"]
-        pd["Deps layer"]
-        pa --> pd
-    end
-    subgraph debug ["Debug"]
-        direction TB
-        dbg["Debug layer<br/>(curl, strace…)"]
-        da["App layer"]
-        dd["Deps layer"]
-        dbg --> da --> dd
-    end
-
-    pd -. "byte-identical" .-> dd
-    pa -. "byte-identical" .-> da
-
-    style pa fill:#f9e2ae,stroke:#e6a800,color:#000
-    style pd fill:#a6da95,stroke:#40a02b,color:#000
-    style da fill:#f9e2ae,stroke:#e6a800,color:#000
-    style dd fill:#a6da95,stroke:#40a02b,color:#000
-    style dbg fill:#f5c2e7,stroke:#ea76cb,color:#000
-```
-
-The deps and app layers are **byte-identical** between production and
-debug. The debug layer is folded after the production layers, so it only
-contains store paths **not already present** in deps or app. Pushing
-both images to the same registry uploads the shared layers once.
+Flavours (variant images defined via `flavours.<name>`) are full
+containers that inherit the parent's config. Each flavour goes through
+the same layer pipeline independently, so images sharing the same
+dependencies benefit from registry-level layer deduplication via
+content-addressed store paths.
 
 ## Enable it
 
@@ -279,7 +243,7 @@ oci.containers.my-app = {
 };
 ```
 
-## Example: production + debug sharing
+## Example: production + debug flavour
 
 ```nix
 oci.containers.my-app = {
@@ -288,15 +252,16 @@ oci.containers.my-app = {
   optimizeLayers = true;
   layerStrategy = "fine-grained";
 
-  debug.enabled = true;
-  debug.packages = with pkgs; [ curl strace ];
+  flavours.debug = {
+    dependencies = with pkgs; [ curl strace ];
+  };
 };
 ```
 
 With this setup:
-- **Production image**: deps layer (glibc, bash, coreutils…) + app layer (myApp)
-- **Debug image**: same deps layer + same app layer + thin debug layer (curl, strace)
-- Only the debug layer is unique to the debug image -- everything else is shared
+- **Production image** (`oci-my-app`): deps layer + app layer
+- **Debug image** (`oci-my-app-debug`): inherits all parent config, adds curl and strace to dependencies
+- Images sharing the same base dependencies get registry-level layer deduplication via content-addressed store paths
 
 ## Lib function composition
 
@@ -304,27 +269,24 @@ With this setup:
 flowchart TD
     mkDepsLayer["mkDepsLayer<br/>layer-def for dependencies"]
     mkAppLayer["mkAppLayer<br/>layer-def for app root"]
-    mkDebugLayer["mkDebugLayer<br/>layer-def for debug tools"]
     foldImageLayers["foldImageLayers<br/>core fold with deduplication"]
     mkImageLayers["mkImageLayers<br/>orchestrator"]
 
     mkDepsLayer --> mkImageLayers
     mkAppLayer --> mkImageLayers
-    mkDebugLayer --> mkImageLayers
     mkImageLayers --> foldImageLayers
 
     mkSimpleOCI["mkSimpleOCI"] -.->|"delegates to"| mkImageLayers
     mkNixOCI["mkNixOCI"] -.->|"delegates to"| mkImageLayers
-    mkDebugOCI["mkDebugOCI"] -.->|"extends with debug"| mkImageLayers
 
     style mkImageLayers fill:#a6da95,stroke:#40a02b,color:#000
     style foldImageLayers fill:#89b4fa,stroke:#1e66f5,color:#000
 ```
 
 `mkImageLayers` is the single entry point that defines the ordering
-heuristic. Both `mkSimpleOCI` and `mkNixOCI` delegate to it, and
-`mkDebugOCI` extends its output with a debug layer. The deploy module
-has its own equivalent functions in `ociLib` following the same pattern.
+heuristic. Both `mkSimpleOCI` and `mkNixOCI` delegate to it. Flavour
+images go through the same pipeline as regular containers — each
+flavour is a full container evaluated independently.
 
 ## Further reading
 

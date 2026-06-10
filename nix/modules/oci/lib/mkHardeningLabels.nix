@@ -7,6 +7,9 @@
 # NOTE: Prefer mkAutoLabels which includes hardening labels plus OCI standard
 # annotations and build info. This function is kept for backward compatibility.
 { lib, ... }:
+let
+  pure = import ../../../lib/oci.nix { inherit lib; };
+in
 {
   config.perSystem =
     { lib, ... }:
@@ -30,29 +33,8 @@
 
           NOTE: Prefer mkAutoLabels for new code.
         '';
-        file = "nix/modules/oci/lib/mkHardeningLabels.nix";
-        fn =
-          { hardening }:
-          let
-            ns = "io.github.dauliac.nix-oci";
-          in
-          lib.optionalAttrs hardening.enable (
-            {
-              "${ns}.hardening.enabled" = "true";
-              "${ns}.hardening.no-new-privileges" = lib.boolToString hardening.noNewPrivileges;
-              "${ns}.hardening.read-only-rootfs" = lib.boolToString hardening.readOnlyRootfs;
-              "${ns}.hardening.capabilities-drop" = lib.concatStringsSep "," hardening.capabilities.drop;
-            }
-            // lib.optionalAttrs (hardening.capabilities.add != [ ]) {
-              "${ns}.hardening.capabilities-add" = lib.concatStringsSep "," hardening.capabilities.add;
-            }
-            // lib.optionalAttrs hardening.seccomp.enable {
-              "${ns}.hardening.seccomp-profile" = hardening.seccomp.profile;
-            }
-            // lib.optionalAttrs (hardening.landlock.enable or false) {
-              "${ns}.hardening.landlock-enabled" = "true";
-            }
-          );
+        file = "nix/lib/oci.nix";
+        fn = pure.mkHardeningLabels;
         tests = {
           "generates labels when hardening enabled" = {
             args = {

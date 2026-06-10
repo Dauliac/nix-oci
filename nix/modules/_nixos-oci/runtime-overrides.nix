@@ -25,19 +25,24 @@ let
   ];
 
   # Fail the build when user's NixOS modules write to runtime-overridden etc paths.
+  # Guard: environment.etc may not exist in minimal NixOS evals (e.g. mkCrossOCI).
+  hasEnvironmentEtc = config ? environment && config.environment ? etc;
   etcAssertions =
-    let
-      etc = config.environment.etc;
-    in
-    map (name: {
-      assertion = !(etc ? ${name});
-      message = ''
-        nix-oci: /etc/${name} is always bind-mounted by the container runtime
-        at startup. Writing it into the image via `environment.etc."${name}"`
-        has no effect. Remove this setting, or enforce the policy at runtime
-        (e.g. --dns, --hostname, --add-host).
-      '';
-    }) runtimeOverriddenEtcNames;
+    if !hasEnvironmentEtc then
+      [ ]
+    else
+      let
+        etc = config.environment.etc;
+      in
+      map (name: {
+        assertion = !(etc ? ${name});
+        message = ''
+          nix-oci: /etc/${name} is always bind-mounted by the container runtime
+          at startup. Writing it into the image via `environment.etc."${name}"`
+          has no effect. Remove this setting, or enforce the policy at runtime
+          (e.g. --dns, --hostname, --add-host).
+        '';
+      }) runtimeOverriddenEtcNames;
 in
 {
   options.oci.container.runtimeOverriddenEtcNames = lib.mkOption {

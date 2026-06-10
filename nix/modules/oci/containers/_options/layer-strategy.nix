@@ -1,7 +1,7 @@
 # Shared: layer splitting strategy.
 #
 # Controls how aggressively nix2container splits store paths into sub-layers
-# within each logical layer (deps, app, debug). Only effective when
+# within each logical layer (deps, app). Only effective when
 # optimizeLayers = true.
 { lib, ... }:
 {
@@ -15,8 +15,8 @@
       Controls how nix2container splits store paths into sub-layers.
       Only effective when `optimizeLayers` is `true`.
 
-      - `"minimal"`: exactly one layer per concern (deps, app, debug).
-        Produces 2–3 total layers. Most predictable cache behaviour --
+      - `"minimal"`: exactly one layer per concern (deps, app).
+        Produces 2 total layers. Most predictable cache behaviour --
         adding or removing a dependency only invalidates the deps layer.
         Best for projects with few images where cross-image sharing is
         not a priority.

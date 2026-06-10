@@ -19,11 +19,7 @@ in
     { ... }:
     {
       oci.perContainer =
-        {
-          config,
-          name,
-          ...
-        }:
+        { ... }:
         {
           options.multiArch.emulatedBuild = {
             enable = mkOption {
@@ -48,23 +44,6 @@ in
               '';
               default = false;
             };
-          };
-
-          options.multiArch.emulatedBuild._check = lib.mkOption {
-            type = types.str;
-            internal = true;
-            readOnly = true;
-            description = "Internal: mutual exclusion check for emulatedBuild vs crossBuild.";
-            default =
-              if config.multiArch.emulatedBuild.enable && config.multiArch.crossBuild.enable then
-                throw ''
-                  Container "${name}": `multiArch.crossBuild.enable` and `multiArch.emulatedBuild.enable`
-                  are mutually exclusive. Choose one build strategy:
-                    - crossBuild:    fast, uses pkgsCross (some packages may not cross-compile)
-                    - emulatedBuild: slower, uses QEMU binfmt (works for any natively-buildable package)
-                ''
-              else
-                "";
           };
         };
     };

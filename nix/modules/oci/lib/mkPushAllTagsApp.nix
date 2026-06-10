@@ -39,33 +39,17 @@
           {
             perSystemConfig,
             containerId,
-            debug ? false,
           }:
           let
             containerConfig = perSystemConfig.containers.${containerId};
             tagConfigs = containerConfig.tagConfigs;
             tagNames = lib.attrNames tagConfigs;
 
-            # Find the primary tag (first in the tags list).
-            primaryTag =
-              let
-                primary = lib.findFirst (t: tagConfigs.${t}.primary) (builtins.head tagNames) tagNames;
-              in
-              if debug then "${primary}-debug" else primary;
+            primaryTag = lib.findFirst (t: tagConfigs.${t}.primary) (builtins.head tagNames) tagNames;
 
-            additionalTags = lib.filter (
-              t:
-              let
-                tag = if debug then "${t}-debug" else t;
-              in
-              tag != primaryTag
-            ) tagNames;
+            additionalTags = lib.filter (t: t != primaryTag) tagNames;
 
-            ociOutput =
-              if debug then
-                perSystemConfig.internal.debugOCIs."${containerId}-debug"
-              else
-                perSystemConfig.internal.OCIs.${containerId};
+            ociOutput = perSystemConfig.internal.OCIs.${containerId};
 
             baseName =
               if containerConfig.registry != null && containerConfig.registry != "" then
@@ -73,35 +57,30 @@
               else
                 containerConfig.name;
 
-            appName = if debug then "push-all-debug-${containerId}" else "push-all-${containerId}";
+            appName = "push-all-${containerId}";
 
             registryFallback = if containerConfig.registry != null then containerConfig.registry else "";
 
             compression = containerConfig.performance.compression or "gzip";
             compressFlag = if compression == "zstd" then "--dest-compress-format zstd" else "";
 
-            mkAdditionalTagScript =
-              tag:
-              let
-                effectiveTag = if debug then "${tag}-debug" else tag;
-              in
-              ''
-                # Check if this additional tag already points to the correct digest.
-                EXTRA_REMOTE="$(skopeo inspect --format '{{.Digest}}' \
-                  "''${DEST_PREFIX}${effectiveTag}" 2>/dev/null || echo "")"
-                if [ -n "$LOCAL_DIGEST" ] && [ "$EXTRA_REMOTE" = "$LOCAL_DIGEST" ]; then
-                  echo "[${appName}] tag ${effectiveTag} already correct (digest=$LOCAL_DIGEST) -- skipping"
-                  echo "CIMERA_OCI_PUSHED_TAG ref=''${BASE_REF}:${effectiveTag} digest=$LOCAL_DIGEST tag=${effectiveTag} primary=false"
-                else
-                  echo "[${appName}] tagging ${containerId}: ${primaryTag} -> ${effectiveTag} (registry-side copy)"
-                  skopeo copy --retry-times 3 \
-                    "''${PRIMARY_DEST}" "''${DEST_PREFIX}${effectiveTag}" >&2
-                  EXTRA_DIGEST="$(skopeo inspect --format '{{.Digest}}' \
-                    "''${DEST_PREFIX}${effectiveTag}" 2>/dev/null || echo 'unknown')"
-                  echo "[${appName}] tagged ''${BASE_REF}:${effectiveTag}@$EXTRA_DIGEST"
-                  echo "CIMERA_OCI_PUSHED_TAG ref=''${BASE_REF}:${effectiveTag} digest=$EXTRA_DIGEST tag=${effectiveTag} primary=false"
-                fi
-              '';
+            mkAdditionalTagScript = tag: ''
+              # Check if this additional tag already points to the correct digest.
+              EXTRA_REMOTE="$(skopeo inspect --format '{{.Digest}}' \
+                "''${DEST_PREFIX}${tag}" 2>/dev/null || echo "")"
+              if [ -n "$LOCAL_DIGEST" ] && [ "$EXTRA_REMOTE" = "$LOCAL_DIGEST" ]; then
+                echo "[${appName}] tag ${tag} already correct (digest=$LOCAL_DIGEST) -- skipping"
+                echo "CIMERA_OCI_PUSHED_TAG ref=''${BASE_REF}:${tag} digest=$LOCAL_DIGEST tag=${tag} primary=false"
+              else
+                echo "[${appName}] tagging ${containerId}: ${primaryTag} -> ${tag} (registry-side copy)"
+                skopeo copy --retry-times 3 \
+                  "''${PRIMARY_DEST}" "''${DEST_PREFIX}${tag}" >&2
+                EXTRA_DIGEST="$(skopeo inspect --format '{{.Digest}}' \
+                  "''${DEST_PREFIX}${tag}" 2>/dev/null || echo 'unknown')"
+                echo "[${appName}] tagged ''${BASE_REF}:${tag}@$EXTRA_DIGEST"
+                echo "CIMERA_OCI_PUSHED_TAG ref=''${BASE_REF}:${tag} digest=$EXTRA_DIGEST tag=${tag} primary=false"
+              fi
+            '';
           in
           pkgs.writeShellApplication {
             name = appName;
@@ -135,7 +114,7 @@
                 DIGEST="$LOCAL_DIGEST"
                 echo "CIMERA_OCI_PUSHED_TAG ref=$BASE_REF:${primaryTag} digest=$DIGEST tag=${primaryTag} primary=true"
               else
-                echo "[${appName}] pushing ${containerId}${lib.optionalString debug " (debug)"}: ${primaryTag} -> $BASE_REF:${primaryTag}"
+                echo "[${appName}] pushing ${containerId}: ${primaryTag} -> $BASE_REF:${primaryTag}"
                 skopeo copy --retry-times 3 ${compressFlag} \
                   "nix:${ociOutput}" "$PRIMARY_DEST" >&2
                 DIGEST="$(skopeo inspect --format '{{.Digest}}' \

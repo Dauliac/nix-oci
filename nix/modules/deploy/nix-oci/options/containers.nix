@@ -12,7 +12,7 @@ let
 
   # The internal NixOS module tree evaluated per container (service adapters,
   # entrypoint derivation, healthcheck, hardening, performance, etc.).
-  ociNixOSModules = import-tree ../../../_nixos/oci;
+  ociNixOSModules = import-tree ../../../_nixos-oci;
 
   # Shared pure OCI library -- single source of truth for both
   # flake-parts (nix-lib) and deploy (NixOS/HM) consumers.
@@ -23,6 +23,7 @@ let
       lib,
       pkgs,
       nix2container,
+      nixLibNixosModule ? null,
       ...
     }:
     let
@@ -37,7 +38,13 @@ let
               deployExtensions
             ];
             specialArgs = {
-              inherit pkgs nix2container ociLib ociNixOSModules;
+              inherit
+                pkgs
+                nix2container
+                ociLib
+                ociNixOSModules
+                nixLibNixosModule
+                ;
             };
           }
         );

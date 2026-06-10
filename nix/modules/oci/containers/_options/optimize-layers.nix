@@ -30,10 +30,6 @@
       The resulting layer stack (most stable first):
       - Deps layer (runtime libraries, `maxLayers = 80` when fine-grained)
       - App layer (package, shadow, configs)
-      - Debug layer (curl, strace, … -- only when `debug.enabled`)
-
-      Production and debug images share the same deps + app layers in
-      the registry -- only the debug layer is unique to the debug variant.
 
       Use `layerStrategy` to control sub-splitting granularity:
       `"fine-grained"` (default) for maximum cross-image sharing,

@@ -24,7 +24,7 @@ in
         mkScriptComplianceTrivy = {
           type = types.functionTo types.package;
           description = "Generate Trivy CIS compliance checking script";
-        file = "nix/modules/oci/security/compliance/lib.nix";
+          file = "nix/modules/oci/security/compliance/lib.nix";
           fn =
             {
               perSystemConfig,
@@ -63,7 +63,7 @@ in
         mkAppComplianceTrivy = {
           type = types.functionTo types.attrs;
           description = "Create flake app for Trivy CIS compliance checking";
-        file = "nix/modules/oci/security/compliance/lib.nix";
+          file = "nix/modules/oci/security/compliance/lib.nix";
           fn =
             {
               perSystemConfig,

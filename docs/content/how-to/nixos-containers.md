@@ -100,22 +100,38 @@ nix run .#oci-dive-<name>
 nix run .#oci-dgoss-<name>
 ```
 
-## Build a debug image
+## Build image flavours
 
-Enable debug mode to get a variant with extra tools (bash, curl, coreutils)
-and an infinite sleep entrypoint for troubleshooting:
+Flavours let you create variant images that inherit from a parent container.
+List options (dependencies, nixosConfig.modules) are additive; scalar options
+(tag, isRoot) can be overridden.
 
 ```nix
-oci.debug.enabled = true;
+oci.containers.my-app = {
+  package = pkgs.myApp;
+
+  # Debug flavour: adds tools on top of the production image
+  flavours.debug = {
+    dependencies = with pkgs; [ curl strace coreutils bash ];
+  };
+
+  # Slim flavour: strips TLS certs and DNS
+  flavours.slim = {
+    hardening.noTlsTrustStore = true;
+    hardening.disableDns = true;
+  };
+};
 ```
 
 ```bash
 # Build the debug variant
-nix build .#oci-debug-<name>
+nix build .#oci-my-app-debug
 
-# Load and shell into it
-nix run .#oci-copyToPodman-debug-<name>
-podman run --rm -it localhost/<name>-debug:latest bash
+# Build the slim variant
+nix build .#oci-my-app-slim
+
+# Shell into the debug image
+podman run --rm -it localhost/my-app:latest-debug bash
 ```
 
 ## Build multi-arch images

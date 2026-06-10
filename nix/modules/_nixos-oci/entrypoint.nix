@@ -7,6 +7,7 @@
 }:
 let
   cfg = config.oci.container;
+  ociLib = import ../../lib/oci.nix { inherit lib; };
   # Effective names used for all lookups -- adapters override these for
   # multi-instance services (e.g. redis "redis" → "redis-default").
   effectiveSystemdName =
@@ -80,14 +81,7 @@ in
       internal = true;
       readOnly = true;
       description = "Normalize a value to a list (handles null, scalar, list).";
-      default =
-        x:
-        if builtins.isList x then
-          x
-        else if x == null then
-          [ ]
-        else
-          [ x ];
+      default = ociLib.toList;
     };
 
     extractServiceData = lib.mkOption {
@@ -132,36 +126,7 @@ in
       internal = true;
       readOnly = true;
       description = "Generate an entrypoint wrapper script from systemd service data.";
-      default =
-        serviceData:
-        let
-          mkDirs =
-            prefix: dirs:
-            lib.concatMapStringsSep "\n" (d: "${pkgs.coreutils}/bin/mkdir -p ${prefix}/${d}") dirs;
-          mkEnvExports = lib.concatStringsSep "\n" (
-            lib.mapAttrsToList (k: v: "export ${k}=${lib.escapeShellArg v}") serviceData.environment
-          );
-          validExecStartPre = builtins.filter (x: x != null && x != "") serviceData.execStartPre;
-          mkExecStartPre = lib.concatMapStringsSep "\n" (
-            cmd:
-            let
-              stripped = lib.removePrefix "-" (lib.removePrefix "+" cmd);
-              ignoreFailure = lib.hasPrefix "-" cmd || lib.hasPrefix "+" cmd;
-            in
-            if ignoreFailure then "${stripped} || true" else stripped
-          ) validExecStartPre;
-        in
-        pkgs.writeShellScript "container-entrypoint" ''
-          set -euo pipefail
-          ${lib.optionalString (serviceData.runtimeDirs != [ ]) (mkDirs "/run" serviceData.runtimeDirs)}
-          ${lib.optionalString (serviceData.stateDirs != [ ]) (mkDirs "/var/lib" serviceData.stateDirs)}
-          ${lib.optionalString (serviceData.cacheDirs != [ ]) (mkDirs "/var/cache" serviceData.cacheDirs)}
-          ${lib.optionalString (serviceData.logDirs != [ ]) (mkDirs "/var/log" serviceData.logDirs)}
-          ${lib.optionalString (mkEnvExports != "") mkEnvExports}
-          ${lib.optionalString (serviceData.preStart != "") serviceData.preStart}
-          ${lib.optionalString (mkExecStartPre != "") mkExecStartPre}
-          exec ${serviceData.execStart}
-        '';
+      default = serviceData: ociLib.mkEntrypointScript { inherit serviceData pkgs; };
     };
   };
 

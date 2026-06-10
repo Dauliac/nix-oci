@@ -3,14 +3,13 @@
 # Single entry point that defines the layering heuristic:
 #   1. Dependencies layer (most stable, shared across images)
 #   2. Application layer (root filesystem, package)
-#   3. Optional debug layer (debug tools, entrypoint wrapper)
 #
 # All layers are chained via a fold so each layer deduplicates
 # store paths already present in earlier layers. The ordering is deliberate:
 # foundational deps change least often → best registry cache hit rate.
 #
 # The `layerStrategy` parameter controls sub-splitting:
-#   - "minimal": exactly 1 layer per concern (deps, app, debug)
+#   - "minimal": exactly 1 layer per concern (deps, app)
 #   - "fine-grained": deps split into up to 80 sub-layers via popularity
 { lib, ... }:
 let
@@ -41,7 +40,6 @@ in
             dependencies ? [ ],
             copyToRoot ? [ ],
             rootPaths ? copyToRoot,
-            debug ? null,
             ...
           }:
           pure.mkImageLayers {
@@ -54,8 +52,6 @@ in
               dependencies
               rootPaths
               ;
-            mkDebugLayer = ociLib.mkDebugLayer or null;
-            inherit debug;
           };
       };
     };

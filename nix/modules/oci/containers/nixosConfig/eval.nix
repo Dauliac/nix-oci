@@ -5,11 +5,12 @@
 {
   lib,
   import-tree,
+  nixLibNixosModule,
   ...
 }:
 let
   inherit (lib) mkOption types;
-  ociNixOSModules = import-tree ../../../_nixos/oci;
+  ociNixOSModules = import-tree ../../../_nixos-oci;
   evalContainerLib = import ../../../../lib/eval-container.nix { inherit lib; };
 in
 {
@@ -53,6 +54,7 @@ in
             inherit
               pkgs
               ociNixOSModules
+              nixLibNixosModule
               basePasswdPath
               baseGroupPath
               ;

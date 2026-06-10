@@ -76,14 +76,6 @@
               }
             else
               { }
-          )
-          // (
-            if oci.debug.enabled then
-              {
-                debug = ociLib.mkDebugOCI { inherit perSystemConfig containerId globalConfig; };
-              }
-            else
-              { }
           );
       };
     };

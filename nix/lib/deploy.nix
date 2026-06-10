@@ -5,8 +5,24 @@
 { lib }:
 let
   ociLib = import ./oci.nix { inherit lib; };
+
+  # Compute extra container runtime flags from performance.runtime options.
+  mkPerfOpts =
+    container:
+    let
+      perf = container.performance.runtime or { };
+    in
+    lib.optional ((perf.ociRuntime or null) != null) "--runtime=${perf.ociRuntime}"
+    ++ map (m: "--tmpfs=${m}") (perf.tmpfsMounts or [ ])
+    ++ lib.optional ((perf.memory or null) != null) "--memory=${perf.memory}"
+    ++ lib.optional (
+      (perf.memoryReservation or null) != null
+    ) "--memory-reservation=${perf.memoryReservation}"
+    ++ lib.optional ((perf.cpus or null) != null) "--cpus=${perf.cpus}"
+    ++ lib.optional ((perf.pidsLimit or null) != null) "--pids-limit=${toString perf.pidsLimit}";
 in
 {
+  inherit mkPerfOpts;
   # Select the backend-specific copy script for loading an image.
   # Returns the nix2container copy derivation (copyToDockerDaemon or copyToPodman).
   copyScript =
@@ -19,22 +35,12 @@ in
   # Filter containers that have autoStart enabled.
   autoStartContainers = containers: lib.filterAttrs (_: c: c.autoStart) containers;
 
-  # Compute extra container runtime flags from performance.runtime options.
-  mkPerfOpts =
-    container:
-    let
-      perf = container.performance.runtime or { };
-    in
-    lib.optional ((perf.ociRuntime or null) != null) "--runtime=${perf.ociRuntime}"
-    ++ map (m: "--tmpfs=${m}") (perf.tmpfsMounts or [ ]);
-
   # Extract all host ports across containers for firewall rules.
   allHostPorts =
     containers:
-    lib.concatMap (
-      container:
-      map (portSpec: ociLib.parseHostPort portSpec) container.ports
-    ) (lib.attrValues containers);
+    lib.concatMap (container: map (portSpec: ociLib.parseHostPort portSpec) container.ports) (
+      lib.attrValues containers
+    );
 
   # Compute podman healthcheck + sdnotify flags.
   # Injects --health-cmd at runtime to work around nix2container not
@@ -76,6 +82,8 @@ in
         "-v"
         v
       ]) container.volumes;
+      secOpts = container.securityOpts or [ ];
+      perfOpts = mkPerfOpts container;
     in
     [
       "run"
@@ -86,5 +94,7 @@ in
     ++ portArgs
     ++ envArgs
     ++ volumeArgs
+    ++ secOpts
+    ++ perfOpts
     ++ [ container.imageRef ];
 }

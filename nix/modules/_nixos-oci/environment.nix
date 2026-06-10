@@ -5,24 +5,16 @@
   pkgs,
   ...
 }:
+let
+  ociLib = import ../../lib/oci.nix { inherit lib; };
+in
 {
   options.oci.lib.mkEtcDerivation = lib.mkOption {
     type = lib.types.unspecified;
     internal = true;
     readOnly = true;
     description = "Create a derivation from a NixOS environment.etc entry.";
-    default =
-      name: entry:
-      let
-        safeName = builtins.replaceStrings [ "/" ] [ "-" ] name;
-        mode = entry.mode or "0644";
-        isSymlink = mode == "symlink" || mode == "direct-symlink";
-      in
-      pkgs.runCommand "etc-${safeName}" { } ''
-        mkdir -p $out/etc/$(dirname "${name}")
-        cp -L ${entry.source} $out/etc/${name}
-        ${if isSymlink then "" else "chmod ${mode} $out/etc/${name}"}
-      '';
+    default = name: entry: ociLib.mkEtcDerivation { inherit name entry pkgs; };
   };
 
   options.oci.container._output.etcFiles = lib.mkOption {

@@ -59,24 +59,48 @@ in
               }
             ) config.oci.containers;
           };
-          debugOCIs = mkOption {
-            description = "Built debug OCI container images.";
+          # Flavour images: synthetic containers from flavour expansion.
+          # Each flavour is a full container evaluated through the same
+          # pipeline — we just need to make it findable by mkOCI.
+          flavourOCIs = mkOption {
+            description = "Built OCI images from flavour expansion.";
             type = types.attrsOf types.package;
             internal = true;
             readOnly = true;
-            default = lib.pipe config.oci.internal.OCIs [
-              (attrsets.mapAttrs' (
-                containerId: ociOutput:
-                let
-                  containerConfig = config.oci.containers.${containerId};
-                in
-                if containerConfig.debug.enabled && ociOutput ? debug then
-                  attrsets.nameValuePair "${containerId}-debug" ociOutput.debug
-                else
-                  attrsets.nameValuePair "${containerId}-debug-disabled" null
-              ))
-              (attrsets.filterAttrs (_: v: v != null))
-            ];
+            default =
+              let
+                flavourContainers = config.oci.internal._flavourContainers;
+                # mkOCI reads perSystemConfig.containers.${containerId}, so we
+                # construct a perSystemConfig that includes the synthetic containers.
+                allPerSystem = config.oci // {
+                  containers = config.oci.containers // flavourContainers;
+                };
+              in
+              attrsets.mapAttrs (
+                syntheticId: _:
+                ociLib.mkOCI {
+                  perSystemConfig = allPerSystem;
+                  globalConfig = cfg.oci;
+                  containerId = syntheticId;
+                }
+              ) flavourContainers;
+          };
+          _flavourPerSystem = mkOption {
+            type = types.unspecified;
+            internal = true;
+            readOnly = true;
+            description = "Merged perSystemConfig for flavour-aware lookups (containers + OCIs).";
+            default =
+              let
+                flavourContainers = config.oci.internal._flavourContainers;
+              in
+              config.oci
+              // {
+                containers = config.oci.containers // flavourContainers;
+                internal = config.oci.internal // {
+                  OCIs = config.oci.internal.OCIs // config.oci.internal.flavourOCIs;
+                };
+              };
           };
           prefixedOCIs = mkOption {
             type = types.attrsOf types.package;
@@ -84,7 +108,7 @@ in
             readOnly = true;
             default = cfg.lib.flake.oci.prefixOutputs {
               prefix = "oci-";
-              set = config.oci.internal.OCIs // config.oci.internal.debugOCIs;
+              set = config.oci.internal.OCIs // config.oci.internal.flavourOCIs;
             };
           };
           sandboxApps = mkOption {
@@ -142,8 +166,7 @@ in
           # retry per-tag, and emit per-tag events / markers.
           #
           # Shape: attrsOf (attrsOf package). Outer key is
-          # containerId; inner key is the tag literal. For containers
-          # with debug enabled, `debugPushApps` mirrors the structure.
+          # containerId; inner key is the tag literal.
           pushApps = mkOption {
             description = ''
               Per-tag push apps for each container. Keys are
@@ -185,46 +208,41 @@ in
               (builtins.foldl' (a: b: a // b) { })
             ];
           };
-          debugPushApps = mkOption {
+          flavourPushApps = mkOption {
             description = ''
-              Same shape as `pushApps` but for debug images. Only
-              produced for containers that enable `debug`.
+              Per-tag push apps for flavour images. Same structure as pushApps.
             '';
             type = types.attrsOf (types.attrsOf types.package);
             internal = true;
             readOnly = true;
-            default = lib.pipe config.oci.containers [
-              (attrsets.filterAttrs (_: c: c.debug.enabled))
-              (attrsets.mapAttrs (
-                containerId: containerConfig:
-                # Debug variants push the same tag list with a
-                # consistent suffix so the registry shows
-                # `cimera:v1.0.0-debug` next to `cimera:v1.0.0`.
-                # primary flag is read from tagConfig, aligned with production.
-                attrsets.mapAttrs' (
-                  tag: tagConfig:
-                  attrsets.nameValuePair "${tag}-debug" (
-                    ociLib.mkPushApp {
-                      perSystemConfig = config.oci;
-                      inherit containerId tagConfig;
-                      debug = true;
-                    }
-                  )
-                ) containerConfig.tagConfigs
-              ))
-            ];
+            default =
+              let
+                flavourContainers = config.oci.internal._flavourContainers;
+                allPerSystem = config.oci.internal._flavourPerSystem;
+              in
+              attrsets.mapAttrs (
+                syntheticId: syntheticConfig:
+                attrsets.mapAttrs (
+                  _tag: tagConfig:
+                  ociLib.mkPushApp {
+                    perSystemConfig = allPerSystem;
+                    containerId = syntheticId;
+                    inherit tagConfig;
+                  }
+                ) syntheticConfig.tagConfigs
+              ) flavourContainers;
           };
-          prefixedDebugPushApps = mkOption {
-            description = "Flat app attrset for debug pushes; keys `oci-push-debug-<container>-<tag>-debug`.";
+          prefixedFlavourPushApps = mkOption {
+            description = "Flat app attrset for flavour pushes.";
             type = types.attrsOf types.attrs;
             internal = true;
             readOnly = true;
-            default = lib.pipe config.oci.internal.debugPushApps [
+            default = lib.pipe config.oci.internal.flavourPushApps [
               (attrsets.mapAttrsToList (
-                containerId: tagsMap:
+                syntheticId: tagsMap:
                 attrsets.mapAttrs' (
                   tag: app:
-                  attrsets.nameValuePair "oci-push-debug-${containerId}-${tag}" {
+                  attrsets.nameValuePair "oci-push-${syntheticId}-${tag}" {
                     type = "app";
                     program = lib.getExe app;
                   }
@@ -255,24 +273,20 @@ in
               }
             ) config.oci.containers;
           };
-          debugPushAllTagsApps = mkOption {
+          flavourPushAllTagsApps = mkOption {
             description = ''
-              Same as `pushAllTagsApps` but for debug images.
+              Same as `pushAllTagsApps` but for flavour images.
             '';
             type = types.attrsOf types.package;
             internal = true;
             readOnly = true;
-            default = lib.pipe config.oci.containers [
-              (attrsets.filterAttrs (_: c: c.debug.enabled))
-              (attrsets.mapAttrs (
-                containerId: _containerConfig:
-                ociLib.mkPushAllTagsApp {
-                  perSystemConfig = config.oci;
-                  inherit containerId;
-                  debug = true;
-                }
-              ))
-            ];
+            default = attrsets.mapAttrs (
+              syntheticId: _:
+              ociLib.mkPushAllTagsApp {
+                perSystemConfig = config.oci.internal._flavourPerSystem;
+                containerId = syntheticId;
+              }
+            ) config.oci.internal._flavourContainers;
           };
           pushTmpOCIApps = mkOption {
             description = "Apps to push architecture-specific temporary images for multi-arch builds. Keyed by containerId-arch.";

@@ -108,7 +108,6 @@ layers ordered by change frequency** (most stable at the bottom):
 
 1. **Deps layer** -- runtime libraries and dependencies
 2. **App layer** -- the package, shadow setup, config files
-3. **Debug layer** -- troubleshooting tools (only in debug variant)
 
 Each layer references its predecessors, and nix2container excludes any
 store path already present in an earlier layer. This **fold-based

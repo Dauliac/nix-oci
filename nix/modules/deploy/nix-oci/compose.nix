@@ -2,17 +2,25 @@
 #
 # Injects nix2container (from flake inputs) into the NixOS/HM/SM modules
 # so that _containers/image.nix can build images.
+# Also exports the NixOS container eval module tree (_nixos-oci) as a
+# public module for reuse by other projects.
 {
   config,
   inputs,
   ...
 }:
 let
+  import-tree = inputs.import-tree;
   nixosMods = config.flake.modules.nixos;
   hmMods = config.flake.modules.homeManager;
   smMods = config.flake.modules.systemManager;
 in
 {
+  # Export the NixOS container eval module tree.
+  # Internal path uses _ prefix (excluded from flake-parts import-tree),
+  # but exported as a public module for consumers and nix-lib collection.
+  flake.modules.nixos-oci = import-tree ../../../_nixos-oci;
+
   flake.modules.nixos.nix-oci =
     { pkgs, ... }:
     {
@@ -24,6 +32,7 @@ in
         nixosMods.nix-oci-run-services
       ];
       _module.args.nix2container = inputs.nix2container.packages.${pkgs.system}.nix2container;
+      _module.args.nixLibNixosModule = inputs.nix-lib.nixosModules.default;
     };
 
   flake.modules.homeManager.nix-oci =
@@ -37,6 +46,7 @@ in
         hmMods.nix-oci-run-services
       ];
       _module.args.nix2container = inputs.nix2container.packages.${pkgs.system}.nix2container;
+      _module.args.nixLibNixosModule = inputs.nix-lib.nixosModules.default;
     };
 
   flake.modules.systemManager.nix-oci =
@@ -50,5 +60,6 @@ in
         smMods.nix-oci-run-services
       ];
       _module.args.nix2container = inputs.nix2container.packages.${pkgs.system}.nix2container;
+      _module.args.nixLibNixosModule = inputs.nix-lib.nixosModules.default;
     };
 }

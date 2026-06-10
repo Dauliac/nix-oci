@@ -24,7 +24,7 @@ in
         mkScriptContainerStructureTest = {
           type = types.functionTo types.package;
           description = "Generate container-structure-test script";
-        file = "nix/modules/oci/testing/container-structure/lib.nix";
+          file = "nix/modules/oci/testing/container-structure/lib.nix";
           fn =
             {
               perSystemConfig,
@@ -76,7 +76,7 @@ in
         mkAppContainerStructureTest = {
           type = types.functionTo types.attrs;
           description = "Create flake app for container-structure-test";
-        file = "nix/modules/oci/testing/container-structure/lib.nix";
+          file = "nix/modules/oci/testing/container-structure/lib.nix";
           fn =
             {
               perSystemConfig,
