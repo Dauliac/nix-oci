@@ -81,50 +81,24 @@ The `oci.container.*` namespace inside the NixOS container eval is the **single 
 
 ```mermaid
 flowchart TB
-    subgraph "User-facing API"
-        FP["flake-parts<br/><code>oci.containers.&lt;name&gt;.*</code>"]
-        DP["deploy (NixOS/HM/SM)<br/><code>oci.containers.&lt;name&gt;.*</code>"]
+    FP["flake-parts<br/>oci.containers.‹name›.*"]
+    DP["deploy (NixOS / HM / SM)<br/>oci.containers.‹name›.*"]
+    SO["Shared options<br/>_options/"]
+
+    subgraph "NixOS container eval"
+        BUS["oci.container.* bus"]
+        NIXOS["nixos-oci modules<br/>+ service adapters"]
+        HM["home-manager-oci"]
+        OUT["oci.container._output.*"]
     end
 
-    subgraph "Shared options<br/>(single source of truth)"
-        SO["<code>oci/containers/_options/</code><br/>package, entrypoint, healthcheck,<br/>hardening, performance, ports, ..."]
-    end
+    IMG["nix2container.buildImage"]
 
-    subgraph "NixOS container eval<br/>(oci.container.* bus)"
-        EC["<code>evalContainerNixos</code><br/>(nix/lib/eval-container.nix)"]
-
-        subgraph "nixos-oci modules<br/>(nix/modules/_nixos-oci/)"
-            SA["Service adapters<br/>nginx, redis, caddy, ..."]
-            ENT["entrypoint.nix"]
-            HC["healthcheck.nix"]
-            HD["hardening.nix"]
-            PF["performance.nix"]
-            RF["root-filesystem.nix"]
-            ENV["environment.nix"]
-            US["users.nix"]
-        end
-
-        subgraph "home-manager-oci modules<br/>(nix/modules/_home-manager-oci/)"
-            HM["defaults.nix<br/>oci.container.{user,homeDirectory,name}<br/>+ assertions + defaults"]
-        end
-
-        BUS["<b>oci.container._output.*</b><br/>entrypoint, healthcheck, stopSignal,<br/>workingDir, declaredVolumes,<br/>rootFilesystem, envVars, labels,<br/>hardening.*, performance.*"]
-    end
-
-    subgraph "Image build"
-        N2C["nix2container.buildImage"]
-    end
-
-    SO -->|"imported by"| FP
-    SO -->|"imported by"| DP
-    FP -->|"cycle-safe subset"| EC
-    DP -->|"cycle-safe subset"| EC
-    EC -->|"oci.container.* inputs"| SA & ENT & HC & HD & PF & RF & ENV & US
-    EC -->|"identity binding"| HM
-    SA -->|"mkDefault"| ENT & HC
-    ENT & HC & HD & PF & RF & ENV & US --> BUS
-    HM -->|"home-files"| RF
-    BUS -->|"_output consumed"| N2C
+    SO --> FP & DP
+    FP & DP -->|"forward into"| BUS
+    BUS --> NIXOS & HM
+    NIXOS & HM --> OUT
+    OUT -->|"consumed by"| IMG
 ```
 
 **Key rule**: flake-parts and deploy container options MUST NOT directly produce OCI image config. They forward values into the `oci.container.*` namespace of the NixOS eval, which derives all OCI output fields (entrypoint, healthcheck, env, labels, rootFilesystem, etc.) through the `_output.*` interface. The image builder then reads `_output.*` to produce the final image.
