@@ -6,6 +6,12 @@
 # Service adapters add packages via oci.container._output.adapterPackages.
 { lib, ... }:
 {
+  options.oci.container.fromImageEnabled = lib.mkOption {
+    type = lib.types.bool;
+    default = false;
+    description = "Whether this container builds on top of an external base image (fromImage).";
+  };
+
   config = {
     boot.isContainer = true;
     documentation.enable = lib.mkDefault false;

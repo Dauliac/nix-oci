@@ -67,7 +67,6 @@ let
   # (e.g. for the flake.parts website documentation).
   optionModules = [
     ./_options/auto-labels.nix
-    ./_options/config-files.nix
     ./_options/declared-volumes.nix
     ./_options/dependencies.nix
     ./_options/entrypoint.nix
@@ -144,7 +143,9 @@ in
             - `pkgs`: nixpkgs for current system
             - `lib`: nixpkgs lib
           '';
-          # The apply function creates a submodule type from the collected modules
+          # The apply function creates a submodule type from the collected modules.
+          # _collectedModules is attached for flavour expansion (so synthetic
+          # containers can be evaluated through the same module pipeline).
           apply =
             modules:
             types.submoduleWith {
@@ -155,6 +156,9 @@ in
                 perSystemConfig = config;
               };
               class = "perContainer";
+            }
+            // {
+              _collectedModules = modules;
             };
         };
 

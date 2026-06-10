@@ -60,7 +60,7 @@
       let
         cfg = config.oci.container;
         home = config.oci.lib.homeDir;
-        basePath = "/bin";
+        basePath = if cfg.fromImageEnabled then "/bin:/usr/local/bin:/usr/bin:/usr/sbin:/sbin" else "/bin";
         path =
           if cfg.installNix or false then
             "${basePath}:${home}/.nix-profile/bin:/nix/var/nix/profiles/default/bin"

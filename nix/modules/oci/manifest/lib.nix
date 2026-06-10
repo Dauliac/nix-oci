@@ -75,6 +75,20 @@ in
                         inherit fromImage;
                       };
                     };
+                    passwdPath = flakeLib.mkOCIPulledManifestLockRelativePath {
+                      inherit self;
+                      manifestLockPath = flakeLib.mkOCIPulledBasePasswdPath {
+                        inherit (globalConfig) fromImageManifestRootPath;
+                        inherit fromImage;
+                      };
+                    };
+                    groupPath = flakeLib.mkOCIPulledManifestLockRelativePath {
+                      inherit self;
+                      manifestLockPath = flakeLib.mkOCIPulledBaseGroupPath {
+                        inherit (globalConfig) fromImageManifestRootPath;
+                        inherit fromImage;
+                      };
+                    };
                     manifest = ociLib.mkOCIPulledManifestLock {
                       inherit perSystemConfig containerId globalConfig;
                     };
@@ -93,6 +107,45 @@ in
                       printf "Generating lock manifest for ${containerId}::${fromImage.imageName}:${fromImage.imageTag} in ${manifestPath} ...\n"
                       echo "$manifest" > "${manifestPath}"
                     fi
+
+                    # Extract /etc/passwd and /etc/group from the base image layers.
+                    # These are used at eval time to merge base image users into the
+                    # NixOS-generated /etc/passwd (no IFD required).
+                    # Wrapped in a subshell so trap and temporary variables are scoped
+                    # per container and do not leak across iterations.
+                    (
+                      printf "Extracting base image identity files for ${containerId}::${fromImage.imageName}:${fromImage.imageTag} ...\n"
+                      _nix_oci_tmpdir="$(mktemp -d)"
+                      trap 'rm -rf "$_nix_oci_tmpdir"' EXIT
+
+                      ${pkgs.skopeo}/bin/skopeo copy --override-os linux \
+                        "docker://${fromImage.imageName}:${fromImage.imageTag}" \
+                        "oci:$_nix_oci_tmpdir/image:${fromImage.imageTag}" >/dev/null
+
+                      mkdir -p "$_nix_oci_tmpdir/extract/etc"
+                      for _digest in $(${pkgs.jq}/bin/jq -r '.layers[].digest' "${manifestPath}"); do
+                        _hash="''${_digest#sha256:}"
+                        _blob="$_nix_oci_tmpdir/image/blobs/sha256/$_hash"
+                        if [ -f "$_blob" ]; then
+                          tar -xzf "$_blob" -C "$_nix_oci_tmpdir/extract" --no-same-owner \
+                            etc/passwd etc/group ./etc/passwd ./etc/group 2>/dev/null \
+                          || tar -xf "$_blob" -C "$_nix_oci_tmpdir/extract" --no-same-owner \
+                            etc/passwd etc/group ./etc/passwd ./etc/group 2>/dev/null \
+                          || true
+                        fi
+                      done
+
+                      if [ -f "$_nix_oci_tmpdir/extract/etc/passwd" ]; then
+                        cp "$_nix_oci_tmpdir/extract/etc/passwd" "${passwdPath}"
+                      else
+                        touch "${passwdPath}"
+                      fi
+                      if [ -f "$_nix_oci_tmpdir/extract/etc/group" ]; then
+                        cp "$_nix_oci_tmpdir/extract/etc/group" "${groupPath}"
+                      else
+                        touch "${groupPath}"
+                      fi
+                    )
                   ''
                 ) perSystemConfig.internal.pulledOCIs
               );

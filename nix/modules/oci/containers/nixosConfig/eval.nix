@@ -17,20 +17,52 @@ in
     { pkgs, ... }:
     {
       oci.perContainer =
-        { config, ... }:
+        {
+          config,
+          perSystemConfig,
+          globalConfig,
+          ...
+        }:
         let
           nixosCfg = config.nixosConfig;
           homeCfg = config.homeConfig;
+          hasFromImage = config.fromImage.enabled or false;
+
+          # Paths to pre-extracted base image identity files.
+          # These are committed alongside the manifest lock by
+          # `nix run .#oci-updatePulledManifestsLocks`.
+          flakeLib = globalConfig.lib.flake.oci or { };
+          basePasswdPath =
+            if hasFromImage then
+              flakeLib.mkOCIPulledBasePasswdPath {
+                inherit (globalConfig.oci) fromImageManifestRootPath;
+                inherit (config) fromImage;
+              }
+            else
+              null;
+          baseGroupPath =
+            if hasFromImage then
+              flakeLib.mkOCIPulledBaseGroupPath {
+                inherit (globalConfig.oci) fromImageManifestRootPath;
+                inherit (config) fromImage;
+              }
+            else
+              null;
 
           result = evalContainerLib.evalContainerNixos {
-            inherit pkgs ociNixOSModules;
+            inherit
+              pkgs
+              ociNixOSModules
+              basePasswdPath
+              baseGroupPath
+              ;
             containerName = config._containerName;
             containerConfig = config;
             nixosModules = nixosCfg.modules;
             mainService = nixosCfg.mainService or null;
             homeManagerFlake = homeCfg.homeManagerFlake or null;
             homeModules = homeCfg.modules or [ ];
-            fromImageEnabled = config.fromImage.enabled or false;
+            fromImageEnabled = hasFromImage;
           };
         in
         {

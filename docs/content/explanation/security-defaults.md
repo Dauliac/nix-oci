@@ -62,10 +62,11 @@ have verified their service works without root.
 
 ## Distroless by construction
 
-nix-oci does not use a base image. There is no `FROM alpine` or
-`FROM debian:slim` -- the container root filesystem is assembled from
-**exactly the Nix store paths the application needs**, plus a minimal
-scaffolding:
+By default, nix-oci builds from scratch -- there is no implicit
+`FROM alpine` or `FROM debian:slim`. The container root filesystem is
+assembled from **exactly the Nix store paths the application needs**,
+plus a minimal scaffolding. When needed, you can also layer on top of an
+existing image via `fromImage`, but the default is a clean slate:
 
 | Path | Contents |
 |---|---|
@@ -97,11 +98,18 @@ than hand-curated.
 
 ### Adding debug tools
 
-For troubleshooting, nix-oci supports a `debug` variant that adds tools
-like `curl`, `strace`, and a shell in an **additional layer** on top of
-the production image. The production layers remain byte-identical in the
-registry -- only the debug layer is unique to the debug variant. See
-[Optimized layer sharing](./optimize-layers.md) for details.
+For troubleshooting, define a `flavours.debug` variant that adds tools
+like `curl`, `strace`, and a shell. Each flavour is a full container
+that inherits the parent's config with additive dependencies:
+
+```nix
+flavours.debug = {
+  dependencies = with pkgs; [ curl strace coreutils bash ];
+};
+```
+
+See [Optimized layer sharing](./optimize-layers.md) for how images
+sharing common dependencies benefit from registry-level deduplication.
 
 ## Security tooling built in
 
