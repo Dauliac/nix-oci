@@ -7,7 +7,7 @@ description = "Overview of nix-oci's opinionated defaults -- secure, minimal, re
 
 nix-oci ships with a set of opinionated defaults that guide users toward
 production-ready containers without requiring explicit configuration. Every
-default can be overridden, but the out-of-the-box experience is designed to
+default can be overridden, but the out-of-the-box experience aims to
 produce images that are **secure**, **minimal**, **reproducible**, and
 **self-describing**.
 
@@ -36,15 +36,15 @@ directory tree.
 - **Compatibility**: most runtime tools (shells, interpreters, linked
   libraries) expect binaries in `/bin` and libraries in `/lib`. FHS
   compliance avoids mysterious `ENOENT` errors.
-- **OCI conventions**: container entrypoints are set as absolute paths
+- **OCI conventions**: nix-oci sets container entrypoints as absolute paths
   (`/bin/myapp`), matching what operators expect from `docker inspect`.
-- **Nix store paths are hidden**: the `buildEnv` symlinks Nix store
+- **Nix store paths stay hidden**: the `buildEnv` symlinks Nix store
   paths into FHS locations, so the container looks like a standard Linux
   filesystem to inspection tools, log aggregators, and security
   scanners.
 - **CA certificates**: every container includes `pkgs.cacert`, placing
-  the Mozilla CA bundle at `/etc/ssl/certs/ca-bundle.crt`. TLS just
-  works -- no need to manually add certificates or set
+  the Mozilla CA bundle at `/etc/ssl/certs/ca-bundle.crt`. TLS works
+  out of the box -- no need to manually add certificates or set
   `SSL_CERT_FILE`.
 
 ## Automatic naming from packages
@@ -75,7 +75,7 @@ specified manually:
   `docker run myapp:1.2.3` matches the binary inside the container.
 - **Registry hygiene**: tags derived from package versions make it
   trivial to trace a running container back to its source.
-- **Always lowercase**: the name is forced to lowercase via
+- **Always lowercase**: nix-oci forces the name to lowercase via
   `lib.strings.toLower`, since OCI image names must be lowercase.
 
 All automatic derivation can be overridden by setting `name` and `tag`
@@ -91,19 +91,19 @@ The entrypoint follows the same resolution chain as the name:
 
 ### Why it matters
 
-- **Zero configuration for simple cases**: a `package = pkgs.caddy;`
+- **Zero configuration for common cases**: a `package = pkgs.caddy;`
   container automatically gets `entrypoint = ["/bin/caddy"]` -- no
   manual wiring needed.
 - **Convention over configuration**: the Nix ecosystem already uses
   `meta.mainProgram` to identify the primary binary. nix-oci reuses
   that convention rather than inventing its own.
 - **Explicit override**: when the entrypoint needs flags or a wrapper
-  script, set `entrypoint` directly -- automatic derivation is skipped
+  script, set `entrypoint` directly -- nix-oci skips automatic derivation
   when the option is non-empty.
 
 ## Layer optimization: most stable first
 
-When `optimizeLayers = true`, the image is split into a **stack of
+When `optimizeLayers = true`, nix-oci splits the image into a **stack of
 layers ordered by change frequency** (most stable at the bottom):
 
 1. **Deps layer** -- runtime libraries and dependencies
@@ -125,7 +125,7 @@ explanation.
 
 ## Environment variable dual-write
 
-Environment variables declared in `environment` are written to **both**
+nix-oci writes environment variables declared in `environment` to **both**
 the OCI image config (`Env`) and the container runner service (Docker/Podman
 `--env` flags). See [Container metadata wiring](./container-metadata-wiring.md)
 for details.
@@ -133,7 +133,7 @@ for details.
 ### Why it matters
 
 - **Inspectability**: `docker inspect` and `skopeo inspect` show the
-  variables baked into the image, making it easy to audit what a
+  variables baked into the image, making it straightforward to audit what a
   container will receive.
 - **Runtime override**: operators can still override variables at
   deploy time -- the runner service flags take precedence over
@@ -153,13 +153,13 @@ A single `ports = ["8080:8080"]` declaration flows to four destinations:
 - **One declaration, no drift**: declaring a port once prevents the
   common failure mode where the image exposes a port but the firewall
   blocks it (or vice versa).
-- **Secure by default**: firewall rules are opened automatically only
+- **Secure by default**: nix-oci opens firewall rules automatically only
   for declared ports -- no need to remember to update
   `networking.firewall` separately.
 
 ## Testing as Nix derivations
 
-Container tests are defined declaratively and executed as reproducible
+nix-oci defines container tests declaratively and executes them as reproducible
 Nix derivations:
 
 | Tool | Purpose |

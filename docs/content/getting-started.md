@@ -109,8 +109,134 @@ perSystem = { ... }: {
 nix-oci evaluates the NixOS modules, extracts the entrypoint, users, and
 filesystem, and builds a minimal OCI image -- no Dockerfile needed.
 
+The service adapter for nginx auto-injects a healthcheck endpoint, a stop
+signal (`SIGQUIT`), and foreground mode. Adapters exist for 10 services:
+nginx, httpd, caddy, postgresql, redis, bind, dnsmasq, postfix, vsftpd,
+and php-fpm.
+
+## Step 6: Build on an external base image (optional)
+
+Use `fromImage` to layer Nix packages on top of an existing OCI image
+(for example from Docker Hub). Identity files (`/etc/passwd`, `/etc/group`)
+get pre-extracted at lock time so evaluation stays pure (no IFD):
+
+```nix
+perSystem = { pkgs, ... }: {
+  oci.containers.my-app = {
+    fromImage = {
+      enabled = true;
+      imageName = "docker.io/library/ubuntu";
+      imageTag = "24.04";
+    };
+    package = pkgs.my-app;
+  };
+};
+```
+
+## Step 7: Add Home Manager configuration (optional)
+
+Use `homeConfig.modules` to configure dotfiles, shell, git, and editors
+inside a container via Home Manager:
+
+```nix
+perSystem = { ... }: {
+  oci.containers.dev-env = {
+    package = pkgs.neovim;
+    homeConfig = {
+      homeManagerFlake = inputs.home-manager;
+      modules = [
+        ({ ... }: {
+          programs.git = {
+            enable = true;
+            userName = "dev";
+          };
+          programs.bash.enable = true;
+        })
+      ];
+    };
+  };
+};
+```
+
+## Step 8: Enable hardening (optional)
+
+Enable seccomp, Landlock, capability dropping, and more.
+Seccomp profiles provide argument-level filtering
+(namespace/socket/ioctl restrictions), `io_uring` blocking, and an audit
+mode for profile discovery:
+
+```nix
+perSystem = { ... }: {
+  oci.containers.my-nginx = {
+    nixosConfig = {
+      mainService = "nginx";
+      modules = [({ ... }: { services.nginx.enable = true; })];
+    };
+    hardening.enable = true;
+  };
+};
+```
+
+See [Hardening](./explanation/hardening.html) and
+[Security defaults](./explanation/security-defaults.html) for details.
+
+## Step 9: Enable performance optimizations (optional)
+
+Swap in alternative memory allocators, tune glibc, or target a specific
+CPU architecture:
+
+```nix
+perSystem = { ... }: {
+  oci.containers.my-app = {
+    package = pkgs.my-app;
+    performance = {
+      enable = true;
+      allocator = "mimalloc";
+      march = "x86-64-v3";
+    };
+  };
+};
+```
+
+See [Performance integrations](./explanation/performance-integrations.html)
+for the full set of options.
+
+## Step 10: Health-aware deployment (optional)
+
+When a container has a healthcheck (auto-derived from a service adapter or
+set explicitly), the deploy modules wire `sdnotify` so dependent systemd
+services wait until the container reports healthy (`READY=1`):
+
+```nix
+# NixOS deploy -- healthcheck-aware by default
+{ inputs, ... }:
+{
+  imports = [ inputs.nix-oci.modules.nixos.nix-oci ];
+
+  oci = {
+    enable = true;
+    backend = "podman";
+    containers.my-redis = {
+      nixosConfig = {
+        mainService = "redis";
+        modules = [({ ... }: { services.redis.servers."".enable = true; })];
+      };
+      autoStart = true;
+    };
+  };
+}
+```
+
+The generated `podman-my-redis.service` uses `Type=notify` and
+`--sdnotify=healthy`, so any service that depends on it won't start
+until Redis passes its first `redis-cli ping` healthcheck.
+
 ## Next steps
 
 - [Container Modules API](./how-to/container-modules-api.html) -- deep dive into `nixosConfig.modules`
 - [Deploy Modules](./how-to/deploy-modules.html) -- NixOS and Home Manager deployment
-- [Options Reference](./reference/flake-parts-toplevel.html) -- full option reference
+- [Hardening](./explanation/hardening.html) -- seccomp, Landlock, capabilities
+- [Performance](./explanation/performance-integrations.html) -- allocators, glibc tunables, march
+- [Automatic metadata](./explanation/automatic-metadata.html) -- healthchecks, stop signals, volumes
+- [Automatic labeling](./explanation/automatic-labeling.html) -- OCI annotations, K8s PSS, security hints
+- [Options Reference](./reference/flake-parts-options.html) -- full option reference

@@ -10,7 +10,7 @@ a self-described **"archive-less `dockerTools.buildImage` implementation"** --
 to build OCI images using a fundamentally different approach than traditional
 tools: layers are never materialized as tar archives in the Nix store.
 Instead, they exist as **JSON descriptions** of store paths, and actual
-tarballs are only produced at the moment they are needed -- when loading into
+tarballs only appear at the moment the runtime needs them -- when loading into
 a runtime or pushing to a registry.
 
 ## The problem with archive-based builds
@@ -41,8 +41,8 @@ flowchart LR
 
 This creates two problems:
 
-- **Store bloat**: every store path that goes into the image is stored
-  *twice* -- once as a Nix derivation output and once inside a layer tarball.
+- **Store bloat**: the Nix store holds every store path *twice* -- once as a
+  Nix derivation output and once inside a layer tarball.
   A 500 MB image effectively costs 1 GB of disk.
 - **Slow rebuilds**: changing a single dependency forces the entire archive to
   be rebuilt and re-written, even if most layers are identical to the previous
@@ -79,8 +79,8 @@ flowchart TD
 This means:
 - Users must carefully order instructions to maximize cache hits.
 - A single dependency change can cascade through the entire image.
-- The layer graph is **linear** -- there is no way to express "these two
-  things are independent and can be cached separately".
+- The layer graph is **linear** -- users cannot express "these two
+  things are independent and can cache separately".
 - Build outputs are **non-reproducible** -- `apt-get install` at two
   different times can produce different results.
 
@@ -132,7 +132,7 @@ A built image in the Nix store is just a few kilobytes of JSON listing:
 - Pre-computed **digests and diff IDs** for every layer.
 - OCI image configuration (entrypoint, env, labels, etc.).
 
-No tar archive is written during `nix build`. The image "recipe" is a
+`nix build` writes no tar archive to disk. The image "recipe" is a
 pure Nix derivation that produces only JSON -- this is what **archive-less**
 container building means.
 
@@ -144,8 +144,8 @@ When you push an image:
 
 1. Skopeo reads the JSON manifest.
 2. For each layer, it checks the **pre-computed digest** against the registry.
-   Layers that already exist are skipped entirely -- no data is generated or
-   transferred.
+   Skopeo skips layers that already exist -- it neither generates nor
+   transfers any data for them.
 3. Only missing layers are **tar-archived on the fly** and streamed directly
    to the registry, without touching the local disk.
 
@@ -202,8 +202,8 @@ each targeting a specific language or workflow:
 [ko](https://ko.build/) builds container images from Go source code without
 requiring Docker or a Dockerfile. It runs `go build` locally, places the
 binary on a minimal [distroless](https://github.com/GoogleContainerTools/distroless)
-base image, and pushes layers directly to a registry. Multi-platform builds,
-automatic SBOM generation, and Kubernetes YAML templating are built in.
+base image, and pushes layers directly to a registry. ko includes
+multi-platform builds, automatic SBOM generation, and Kubernetes YAML templating.
 Because ko understands Go's build model, it can separate the base image from
 the application binary and only re-push what changed.
 
@@ -214,9 +214,9 @@ and [Ship your Go applications faster to Cloud Run with ko (Google Cloud Blog)](
 
 [Jib](https://github.com/GoogleContainerTools/jib) integrates with Maven and
 Gradle to build Java container images without a Docker daemon. It splits the
-application into three layers -- dependencies, resources, and classes -- so that
-a code-only change rebuilds and pushes just the thin classes layer. Layers are
-pushed in parallel directly to the registry, skipping the local `docker save`
+application into three layers -- dependencies, resources, and classes -- meaning
+a code-only change rebuilds and pushes only the thin classes layer. Jib pushes
+layers in parallel directly to the registry, skipping the local `docker save`
 step entirely.
 
 See [Introducing Jib (Google Cloud Blog)](https://cloud.google.com/blog/products/application-development/introducing-jib-build-java-docker-images-better)
@@ -227,9 +227,9 @@ and [Jib 1.0.0 is GA (Google Cloud Blog)](https://cloud.google.com/blog/products
 [Cloud Native Buildpacks](https://buildpacks.io/) auto-detect the application
 type and produce images with modular, reusable layers. Unlike Dockerfile
 builds -- where a change in one layer invalidates all subsequent layers --
-each buildpack contributes an independent layer that is cached by its own
-inputs. When the OS base image is updated, existing application layers are
-**rebased** in milliseconds by swapping metadata, without triggering a full
+each buildpack contributes an independent layer that caches based on its own
+inputs. When someone updates the OS base image, the platform **re-layers**
+existing application layers in milliseconds by swapping metadata, without triggering a full
 rebuild.
 
 See [Reduce, Reuse, Rebase: Sustainable Containers with Buildpacks (CNCF)](https://www.cncf.io/blog/2024/01/11/reduce-reuse-rebase-sustainable-containers-with-buildpacks/)
@@ -242,8 +242,8 @@ extreme: it is a container **registry** that builds images at pull time.
 A `docker pull nixery.dev/shell/git` request triggers Nix to assemble an
 image containing those packages, using a
 [popularity-based layering algorithm](https://tazj.in/blog/nixery-layers)
-to maximize layer sharing across requests. Built layers are cached in a
-storage bucket so subsequent pulls of the same packages are instant.
+to maximize layer sharing across requests. Nixery caches built layers in a
+storage bucket, making subsequent pulls of the same packages instant.
 
 See [Nixery -- Improved Layering Design (tazjin's blog)](https://tazj.in/blog/nixery-layers)
 and [One Docker image to rule them all (DERLIN)](https://blog.derlin.ch/nixery-one-docker-image-to-rule-them-all).
@@ -260,7 +260,7 @@ and [One Docker image to rule them all (DERLIN)](https://blog.derlin.ch/nixery-o
 
 nix2container stands out by combining Nix's reproducibility guarantees with
 truly archive-less builds: the Nix store only ever contains JSON metadata,
-and the actual image bytes are generated at the moment they are needed.
+and skopeo generates the actual image bytes only at the moment it needs them.
 
 ## Why it matters for nix-oci
 

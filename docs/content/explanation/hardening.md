@@ -33,9 +33,9 @@ flowchart TD
 | Primitive | Kernel layer | Controls | Limitations |
 |---|---|---|---|
 | **Namespaces** | Process visibility | What processes/files/networks are visible | Container runtime handles this |
-| **Seccomp** | Syscall boundary (BPF) | Which syscalls can be invoked | Cannot inspect pointer arguments (TOCTOU) |
+| **Seccomp** | Syscall boundary (BPF) | Which syscalls a process can invoke | Cannot inspect pointer arguments (TOCTOU) |
 | **Landlock** | VFS/object level (LSM) | Which specific files and ports are accessible | Requires Linux >= 5.13 (fs) / >= 6.7 (net) |
-| **Capabilities** | Privilege checks | Which root sub-privileges are held | Coarse-grained per capability |
+| **Capabilities** | Privilege checks | Which root sub-privileges the process holds | Coarse-grained per capability |
 
 ## Enabling hardening
 
@@ -75,7 +75,7 @@ each using a different filtering strategy:
 ### Strict profile
 
 Default action: **deny** (`SCMP_ACT_ERRNO`). Only explicitly listed
-syscalls are allowed:
+syscalls may execute:
 
 - Process basics: `exit`, `read`, `write`, `mmap`, `brk`, signals
 - File I/O: `openat`, `fstat`, `lseek`, `readv`, `writev`, `getcwd`
@@ -87,7 +87,7 @@ Blocked by omission: `mount`, `ptrace`, `execve`, `socket`, `clone`,
 ### Moderate profile
 
 Default action: **allow** (`SCMP_ACT_ALLOW`). Only explicitly
-dangerous syscalls are blocked:
+dangerous syscalls face explicit blocks:
 
 `acct`, `bpf`, `clock_settime`, `create_module`, `delete_module`,
 `finit_module`, `init_module`, `kexec_load`, `mount`, `move_mount`,
@@ -135,7 +135,7 @@ hardening.seccomp.customProfileJson = ./my-seccomp-profile.json;
 
 ### Generated output
 
-When seccomp is enabled, nix-oci produces a JSON file at
+With seccomp enabled, nix-oci produces a JSON file at
 `_output.hardening.seccompProfile` following the OCI runtime spec
 format. Deploy modules pass it via
 `--security-opt seccomp=<path>`.
@@ -148,7 +148,7 @@ process can access, not just which syscalls it can invoke.
 
 Key properties:
 - **Unprivileged**: any process can self-restrict (no root needed).
-- **Irreversible**: once applied, restrictions cannot be relaxed.
+- **Irreversible**: once applied, the process cannot relax restrictions.
 - **Survives execve**: child processes inherit restrictions.
 
 ### Filesystem restrictions
@@ -299,8 +299,8 @@ Deploy modules translate to `--security-opt=no-new-privileges`.
 hardening.disableDns = true;
 ```
 
-Rewrites `/etc/nsswitch.conf` to `hosts: files` only -- no DNS
-backend. Applications using hardcoded IP addresses are unaffected.
+This rewrites `/etc/nsswitch.conf` to `hosts: files` only -- no DNS
+backend. Applications using hardcoded IP addresses remain unaffected.
 
 Note: `/etc/resolv.conf` is **not** written into the image because
 container runtimes always bind-mount it at startup. To fully restrict
@@ -320,7 +320,7 @@ for containers that should never initiate external TLS connections.
 
 ## Hardening labels
 
-When hardening is enabled, nix-oci embeds the security posture as
+With hardening enabled, nix-oci embeds the security posture as
 OCI labels:
 
 | Label | Value |

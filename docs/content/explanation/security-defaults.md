@@ -14,7 +14,7 @@ Kubernetes [Pod Security Standards](https://kubernetes.io/docs/concepts/security
 
 Containers built with nix-oci run as a **non-root user** by default
 (see [`isRoot`](../reference/flake-parts-options.html) option reference).
-When `isRoot` is disabled, a dedicated user entry is created in `/etc/passwd`
+When you disable `isRoot`, nix-oci creates a dedicated user entry in `/etc/passwd`
 with **UID 4000** and **GID 4000** -- a deliberate choice that avoids
 collisions with both system UIDs (0-999) and typical human UIDs
 (1000-60000).
@@ -28,7 +28,7 @@ from the host, a root process:
 - Can modify any file in the container filesystem, including binaries
   and libraries -- an attacker who gains code execution can trivially
   persist.
-- May exploit kernel vulnerabilities where UID 0 is checked as a
+- May exploit kernel vulnerabilities that check UID 0 as a
   capability gate.
 - Violates the **principle of least privilege** -- most applications do
   not need to bind privileged ports, load kernel modules, or change
@@ -39,7 +39,7 @@ from the host, a root process:
 Regardless of `isRoot`, every container includes minimal
 `/etc/passwd`, `/etc/shadow`, `/etc/group`, and `/etc/gshadow` files.
 For non-root containers, both a `root` entry and the application user
-entry are created. This ensures that:
+entry exist. This ensures that:
 
 - `getpwnam()` and `getgrnam()` calls resolve correctly -- many
   libraries (including glibc's NSS) fail hard without these files.
@@ -53,16 +53,16 @@ The deploy modules (`modules.nixos.nix-oci`, `modules.homeManager.nix-oci`)
 override [`isRoot`](../reference/nixos-options.html) via `mkDefault`. This is a pragmatic choice:
 deploy-time containers typically run system services (Caddy, Redis,
 dnsmasq) that may need to bind privileged ports or access host-mounted
-volumes. Users are expected to explicitly set `isRoot = false` once they
-have verified their service works without root.
+volumes. You should explicitly set `isRoot = false` once you
+verify that your service works without root.
 
 ## Distroless by construction
 
-By default, nix-oci builds from scratch -- there is no implicit
-`FROM alpine` or `FROM debian:slim`. The container root filesystem is
-assembled from **exactly the Nix store paths the application needs**,
+By default, nix-oci builds from scratch -- no implicit
+`FROM alpine` or `FROM debian:slim`. nix-oci assembles the container root filesystem
+from **exactly the Nix store paths the application needs**,
 plus a minimal scaffolding. When needed, you can also layer on top of an
-existing image via `fromImage`, but the default is a clean slate (from scratch):
+existing image via `fromImage`, but the default is an empty base (from scratch):
 
 | Path | Contents |
 |---|---|
@@ -82,7 +82,7 @@ than hand-curated.
 - **Smaller attack surface**: fewer binaries means fewer potential
   exploits. A container without `curl`, `wget`, or a shell makes
   post-exploitation lateral movement significantly harder.
-- **Smaller images**: only runtime dependencies are included. A typical
+- **Smaller images**: nix-oci includes only runtime dependencies. A typical
   nix-oci image for a Go binary is 20-50 MB, compared to 150+ MB for
   an Alpine-based equivalent with a package manager.
 - **No CVE noise**: CVE scanners report vulnerabilities in installed

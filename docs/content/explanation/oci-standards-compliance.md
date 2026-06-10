@@ -13,7 +13,7 @@ images and how the project satisfies it.
 ## Layer changesets
 
 The OCI [layer specification](https://github.com/opencontainers/image-spec/blob/main/layer.md)
-defines how filesystem changes are packaged as tar archives. Every layer
+defines how filesystem changes become tar archives. Every layer
 in an OCI image is a **changeset** -- a set of additions, modifications,
 and removals relative to the layers below it.
 
@@ -29,7 +29,7 @@ The spec defines three layer media types:
 
 nix-oci exposes a [`performance.compression`](../reference/flake-parts-options.html)
 option to choose between gzip (universal compatibility) and zstd (faster, smaller).
-Compression is applied by skopeo at transport time -- nix2container
+Skopeo applies compression at transport time -- nix2container
 builds layer descriptions as JSON and materializes tarballs on-the-fly.
 
 ```nix
@@ -86,7 +86,7 @@ for file paths. nix-oci satisfies this through two mechanisms:
 
 1. **`buildEnv` deduplication** -- the Nix `buildEnv` function merges
    package outputs into a single directory tree, resolving collisions
-   before any tar is produced.
+   before nix-oci produces any tar.
 2. **nix2container store-path model** -- each Nix store path appears
    exactly once in the layer description. The `foldImageLayers` function
    chains layers so each one excludes paths already present in prior
@@ -95,8 +95,8 @@ for file paths. nix-oci satisfies this through two mechanisms:
 ### Hardlinks
 
 The spec stores hardlinks as tar entries with type `1`. Since Nix store
-paths are immutable and content-addressed, hardlinks within store paths
-are preserved by nix2container's tar generation. The `mkDockerArchive`
+paths are immutable and content-addressed, nix2container's tar generation
+preserves hardlinks within store paths. The `mkDockerArchive`
 rewriter also preserves hardlink entries (the `TarInfo` object carries
 the link type and target through unchanged).
 
@@ -107,9 +107,9 @@ relative to lower layers. nix-oci builds images **from scratch** by
 default -- there are no lower layers to delete from, so whiteout files
 are not produced.
 
-When `fromImage` is used to build on top of a pulled base image,
-whiteout handling is delegated to nix2container and the base image's
-existing layers.
+When `fromImage` builds on top of a pulled base image,
+nix2container and the base image's existing layers handle whiteout
+processing.
 
 ## Layer ordering and deduplication
 
@@ -125,13 +125,13 @@ flowchart LR
     style DBG fill:#f5c2e7,stroke:#ea76cb,color:#000
 ```
 
-Layers are ordered from most stable (dependencies) to least stable
+nix-oci orders layers from most stable (dependencies) to least stable
 (application code), matching the OCI spec's changeset model: lower
 layers change infrequently, upper layers change with each release.
 This maximizes registry-level deduplication and minimizes pull sizes.
 
 The `foldImageLayers` function implements **fold-based cross-layer
-deduplication**: each layer is built with `layers = priorLayers`, so
+deduplication**: it builds each layer with `layers = priorLayers`, so
 nix2container automatically excludes store paths already present in
 earlier layers. The result is zero duplicated store paths across the
 entire image.
@@ -184,19 +184,19 @@ org.opencontainers.image.authors
 org.opencontainers.image.base.name
 ```
 
-These are derived automatically from `package.meta` when
-[`autoLabels`](../reference/flake-parts-options.html) is enabled.
+nix-oci derives these automatically from `package.meta` when you enable
+[`autoLabels`](../reference/flake-parts-options.html).
 See [Automatic labeling](./automatic-labeling.md) for the full label taxonomy.
 
 ## Compression and transport
 
 nix2container uses an **archive-less** build model: layer tars are never
 stored on disk during the build. Instead, JSON manifests describe which
-Nix store paths belong to each layer, and actual tarballs are streamed
-at push time through skopeo's `nix:` transport.
+Nix store paths belong to each layer, and skopeo streams actual tarballs
+at push time through its `nix:` transport.
 
-This means compression is applied **at transport time**, not build time.
-The media type in the manifest is set by skopeo based on the target
+This means skopeo applies compression **at transport time**, not build time.
+Skopeo sets the media type in the manifest based on the target
 registry's capabilities and the configured compression algorithm.
 
 See [Archive-less container building](./archive-less-container-building.md)
@@ -205,16 +205,16 @@ for the full explanation.
 ## Reproducibility
 
 OCI images built by nix-oci are **bit-for-bit reproducible**. Given the
-same Nix flake lock, the same image is produced regardless of when or
+same Nix flake lock, nix-oci produces the same image regardless of when or
 where the build runs. This is a property inherited from Nix's
 content-addressed store:
 
-- File timestamps are set to the Unix epoch (0).
+- Nix sets file timestamps to the Unix epoch (0).
 - File ownership is deterministic (root or the configured uid/gid).
-- Build outputs are isolated from the host environment.
-- Layer contents are determined entirely by the Nix derivation graph.
+- The Nix sandbox isolates build outputs from the host environment.
+- The Nix derivation graph determines layer contents entirely.
 
-The `nix-oci.build.reproducible = true` label is set automatically to
+nix-oci automatically sets the `nix-oci.build.reproducible = true` label to
 signal this property to downstream tooling.
 
 ## Further reading

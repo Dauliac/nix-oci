@@ -61,10 +61,10 @@ The registry deduplicates them automatically.
 
 nix2container builds each layer independently by default. When you have
 multiple explicit layers (deps, app), shared store paths like
-glibc can end up **duplicated** across layers -- this was documented in
+glibc can **duplicate** across layers -- as documented in
 [Nix & Docker: Layer explicitly without duplicate packages](https://blog.eigenvalue.net/2023-nix2container-everything-once/).
 
-nix-oci solves this with a **fold pattern**: layers are built in order,
+nix-oci solves this with a **fold pattern**: it builds layers in order,
 and each layer references all prior layers via the `layers` attribute.
 nix2container then excludes any store path already present in a
 predecessor:
@@ -98,8 +98,8 @@ The result: **zero duplicated store paths** across layers.
 
 The [`layerStrategy`](../reference/flake-parts-options.html) option
 controls how aggressively nix2container splits store paths into
-sub-layers. It only takes effect when
-[`optimizeLayers`](../reference/flake-parts-options.html) is enabled.
+sub-layers. It only takes effect when you enable
+[`optimizeLayers`](../reference/flake-parts-options.html).
 See the option reference for default values and allowed values
 ([flake-parts](../reference/flake-parts-options.html),
 [NixOS](../reference/nixos-options.html),
@@ -162,7 +162,7 @@ The options that control layer composition
 ([`optimizeLayers`](../reference/flake-parts-options.html),
 [`layerStrategy`](../reference/flake-parts-options.html),
 [`dependencies`](../reference/flake-parts-options.html))
-are documented in the option reference. This section explains the
+appear in the option reference. This section explains the
 resulting image structure.
 
 ### Production image
@@ -285,7 +285,7 @@ flowchart TD
 
 `mkImageLayers` is the single entry point that defines the ordering
 heuristic. Both `mkSimpleOCI` and `mkNixOCI` delegate to it. Flavour
-images go through the same pipeline as regular containers — each
+images go through the same pipeline as regular containers -- each
 flavour is a full container evaluated independently.
 
 ## Further reading

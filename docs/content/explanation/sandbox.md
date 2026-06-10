@@ -18,7 +18,7 @@ This drops you into an interactive bash shell where `/bin`, `/etc`, and
 
 ## How it works
 
-Every container's root filesystem is built as a single `pkgs.buildEnv`
+nix-oci builds every container's root filesystem as a single `pkgs.buildEnv`
 derivation in the Nix store. The sandbox reuses this derivation directly
 rather than building and loading an OCI image:
 
@@ -95,7 +95,7 @@ See [NixOS and home-manager in containers](./nixos-home-manager-integration.md)
 for the full explanation of how this works, why it matters, and how to
 customize the defaults.
 
-## What is isolated
+## What the sandbox isolates
 
 | Resource | Isolation | Details |
 |---|---|---|
@@ -120,7 +120,7 @@ customize the defaults.
 
 ## Architecture
 
-The sandbox is implemented across four files:
+Four files implement the sandbox:
 
 - **`nix/lib/oci.nix`** (`mkSandboxScript`) -- pure function that generates
   the bubblewrap wrapper script

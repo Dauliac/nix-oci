@@ -77,7 +77,7 @@ for inner `oci.container.performance.*` options.
 
 ## Alternative memory allocators
 
-glibc's default allocator (ptmalloc2) is optimized for general
+glibc's default allocator (ptmalloc2) targets general
 desktop workloads. In containerized environments with cgroup memory
 limits, it creates too many arenas and wastes RSS.
 
@@ -91,9 +91,9 @@ performance.allocator = "mimalloc";  # or "tcmalloc"
 
 ### How it works
 
-1. The allocator library (e.g., `pkgs.mimalloc`) is added as a
+1. nix-oci adds the allocator library (e.g., `pkgs.mimalloc`) as a
    container dependency.
-2. `LD_PRELOAD=/nix/store/.../lib/libmimalloc.so` is set in the OCI
+2. nix-oci sets `LD_PRELOAD=/nix/store/.../lib/libmimalloc.so` in the OCI
    manifest's `Env` section.
 3. At process startup, the dynamic linker loads the allocator
    *before* glibc, replacing `malloc`/`free`/`realloc` globally.
@@ -149,15 +149,15 @@ GLIBC_TUNABLES=glibc.malloc.arena_max=2:glibc.malloc.mmap_threshold=131072:glibc
 
 ptmalloc2 creates arenas to reduce lock contention. On a 64-core
 host, it creates 512 arenas -- each consuming ~1 MB of virtual memory.
-But a container limited to 2 CPUs via cgroups still sees 64 cores
+However, a container limited to 2 CPUs via cgroups still sees 64 cores
 via `/proc/cpuinfo`, creating 512 arenas for 2 threads. Setting
 `arena_max = 2` fixes this.
 
 ### When to avoid
 
 - **musl-based containers**: glibc tunables have no effect on musl.
-- **Non-glibc allocators**: if `performance.allocator` is set,
-  tunables for `glibc.malloc.*` are ignored since malloc is replaced.
+- **Non-glibc allocators**: when you set `performance.allocator`,
+  the replacement allocator ignores `glibc.malloc.*` tunables.
   However, non-malloc tunables (e.g., `glibc.cpu.*`) still apply.
 
 ## CPU microarchitecture targeting (`march`)
@@ -243,9 +243,9 @@ flowchart LR
 
 1. `mkHwcapsLayer` rebuilds each library with
    `-march=x86-64-v3 -mtune=x86-64-v3` using an adapted stdenv.
-2. Only `.so` files are extracted into
+2. `mkHwcapsLayer` extracts only `.so` files into
    `/lib/glibc-hwcaps/x86-64-v3/`.
-3. The hwcaps layer is added to the image via the fold chain
+3. nix-oci adds the hwcaps layer to the image via the fold chain
    (deduplicating against deps).
 4. At startup, `ld-linux.so` checks CPUID and loads the v3 variant
    if the CPU supports it, falling back to baseline otherwise.
@@ -304,7 +304,7 @@ performance.compression = "zstd";
 
 ## Performance labels
 
-When performance tuning is enabled, nix-oci emits OCI labels
+When you enable performance tuning, nix-oci emits OCI labels
 documenting the configuration:
 
 | Label | Example value |
@@ -317,8 +317,7 @@ documenting the configuration:
 | `io.github.dauliac.nix-oci.performance.march` | `"x86-64-v3"` |
 
 These labels serve as documentation -- `docker inspect` or
-`skopeo inspect` shows exactly what optimizations are baked into
-the image.
+`skopeo inspect` reveals exactly what optimizations the image contains.
 
 ## Full performance example
 
@@ -353,7 +352,7 @@ oci.containers.my-api = {
 
 ## NixOS container integration
 
-When using `nixosConfig`, performance options can be set through
+When using `nixosConfig`, you can set performance options through
 NixOS module composition:
 
 ```nix

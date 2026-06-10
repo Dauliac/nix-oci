@@ -11,7 +11,7 @@ and security configuration. User-provided labels always override
 auto-generated ones.
 
 All auto-generated labels are **deterministic** -- no timestamps, no
-impure inputs -- so they don't break bit-for-bit reproducibility.
+impure inputs -- and they preserve bit-for-bit reproducibility.
 
 Set [`autoLabels`](../reference/flake-parts-options.html) to `false` on any container to disable all auto-generation.
 
@@ -31,11 +31,11 @@ namespace from data already present in the Nix package:
 | `documentation` | `package.meta.changelog` | `"https://…/CHANGELOG.md"` |
 | `base.name` | Always `"scratch"` (distroless by construction) | `"scratch"` |
 
-These standard annotations are consumed by container registries,
+Container registries,
 security scanners ([Trivy](https://trivy.dev/),
 [Grype](https://github.com/anchore/grype),
 [Snyk](https://snyk.io/blog/how-and-when-to-use-docker-labels-oci-container-annotations/)),
-and Kubernetes admission controllers.
+and Kubernetes admission controllers consume these standard annotations.
 
 ### Labels not auto-generated
 
@@ -50,8 +50,8 @@ Some OCI annotations require user input or would break reproducibility:
 
 ## Build metadata
 
-Labels under `io.github.dauliac.nix-oci.build.*` record how the image
-was constructed:
+Labels under `io.github.dauliac.nix-oci.build.*` record how nix-oci
+constructed the image:
 
 | Label | Value | Source |
 |---|---|---|
@@ -160,7 +160,7 @@ The seccomp label is only set when `hardening.seccomp.enable = true`.
 
 ## Network hints
 
-Port declarations are parsed and surfaced as labels for
+nix-oci parses port declarations and surfaces them as labels for
 **NetworkPolicy generation**:
 
 | Label | Example | Source |
@@ -194,15 +194,15 @@ nixpkgs carries security fields that nix-oci surfaces as labels:
 | `security.insecure` | `"true"` | Set when `knownVulnerabilities` is non-empty |
 | `provenance.source-type` | `"fromSource"` | `package.meta.sourceProvenance` |
 
-The `provenance.source-type` label indicates whether the package was
-built from source (`fromSource`), is a pre-built binary
-(`binaryNativeCode`), or bytecode (`bytecode`). This is valuable for
+The `provenance.source-type` label indicates whether someone
+built the package from source (`fromSource`), distributed it as a pre-built binary
+(`binaryNativeCode`), or compiled it to bytecode (`bytecode`). This is valuable for
 supply chain audits -- Kyverno can reject images containing pre-built
 binaries from untrusted sources.
 
 ## Label merge order
 
-Auto-generated labels are merged with user labels at image build time.
+nix-oci merges auto-generated labels with user labels at image build time.
 **User labels always win**:
 
 ```
@@ -231,7 +231,7 @@ oci.containers.my-app = {
   that rejects images missing `org.opencontainers.image.source`.
   Auto-labeling makes nix-oci images pass these checks for all
   derivable annotations.
-- **Single source of truth**: labels are derived from the same Nix
+- **Single source of truth**: nix-oci derives labels from the same Nix
   expressions that define the package and container -- no drift between
   the image and its metadata.
 - **Fleet visibility**: tools like `skopeo inspect`, Trivy, and

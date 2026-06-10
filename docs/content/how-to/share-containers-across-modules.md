@@ -22,7 +22,7 @@ You need a way to:
 2. Build it in CI via `nix build .#oci-<name>`
 3. Deploy it on NixOS/HM via `oci.containers.<name>`
 
-## Approach 1: shared Nix files (simple)
+## Approach 1: shared Nix files (straightforward)
 
 Create a shared file that both flake-parts and NixOS can import.
 
@@ -83,7 +83,7 @@ nix run .#oci-push-my-app-latest
 }
 ```
 
-The container definition is shared. NixOS adds `autoStart` on top.
+Both targets share the container definition. NixOS adds `autoStart` on top.
 
 ### Use it in Home Manager (deploy)
 
@@ -244,7 +244,7 @@ oci.containers.api = (import ./containers/api.nix { inherit pkgs; }) // {
 
 ## Approach 3: pass the flake output directly
 
-If your NixOS system is defined in the same flake, you can reference
+If you define your NixOS system in the same flake, you can reference
 the built image from flake-parts outputs:
 
 ```nix

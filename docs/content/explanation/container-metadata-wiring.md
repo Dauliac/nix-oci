@@ -244,8 +244,8 @@ See [Automatic OCI labels](./automatic-labeling.md) for full details.
 
 ### Config files
 
-Config file derivations are included in the container root filesystem.
-They end up in the **app layer** when `optimizeLayers` is enabled.
+nix-oci includes config file derivations in the container root filesystem.
+They appear in the **app layer** when you enable `optimizeLayers`.
 
 ```mermaid
 flowchart LR
@@ -282,8 +282,8 @@ flowchart LR
     style Build fill:#1e1e2e,stroke:#a6da95,color:#cdd6f4
 ```
 
-`imageRef` is a **readOnly** computed option (`"name:tag"`) used by
-the runner service to reference the locally-loaded image.
+`imageRef` is a **readOnly** computed option (`"name:tag"`) that
+the runner service uses to reference the locally loaded image.
 
 ### Package and dependencies
 
@@ -344,8 +344,8 @@ flowchart LR
     style hm fill:#1e1e2e,stroke:#f5c2e7,color:#cdd6f4
 ```
 
-When [`autoStart`](../reference/nixos-options.html) is disabled, only the loader service is created -- no runner,
-no firewall rules, no volumes. The image is loaded but not started.
+When you disable [`autoStart`](../reference/nixos-options.html), nix-oci creates only the loader service -- no runner,
+no firewall rules, no volumes. It loads the image but does not start it.
 
 ## Service dependency chain
 
@@ -495,7 +495,7 @@ readiness.
 
 When using `nixosConfig` with a `mainService`, service adapters
 **automatically derive** the healthcheck command from the NixOS module
-configuration. No manual healthcheck setup is required.
+configuration. You do not need to configure a healthcheck manually.
 
 ```mermaid
 flowchart TD
@@ -664,7 +664,7 @@ flowchart TD
 
 ### Auto-derivation chain (NixOS containers)
 
-For NixOS containers, the working directory is resolved in priority order:
+For NixOS containers, nix-oci resolves the working directory in priority order:
 
 1. **Explicit** `oci.container.workingDir` (user override)
 2. **systemd** `WorkingDirectory` from the service config
@@ -687,7 +687,7 @@ uses the runtime default. Set it explicitly when needed.
 
 OCI `Volumes` declares paths in the image that contain **persistent data**.
 This is image-level metadata -- it tells the container runtime which paths
-should be treated as named volumes (surviving container restarts).
+the runtime should treat as named volumes (surviving container restarts).
 
 This is **separate from** deploy-time `volumes` (host bind mounts like
 `"/data:/data"` passed to the runner service).
@@ -730,7 +730,7 @@ translates directory declarations into OCI volume paths:
 | `CacheDirectory = "nginx"` | `/var/cache/nginx` |
 | `LogsDirectory = "nginx"` | `/var/log/nginx` |
 
-Explicit `declaredVolumes` are merged with auto-derived ones.
+nix-oci merges explicit `declaredVolumes` with auto-derived ones.
 
 ### Declared volumes vs deploy volumes
 

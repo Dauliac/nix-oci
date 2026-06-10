@@ -5,13 +5,13 @@ description = "How nix-oci leverages NixOS module evaluation and home-manager to
 
 # NixOS and home-manager in containers
 
-nix-oci is built on a radical idea: **containers are just NixOS systems
+nix-oci builds on a radical idea: **containers are just NixOS systems
 without a kernel**. Instead of writing Dockerfiles or shell scripts, you
 write NixOS module configuration -- the same language used to configure
 full NixOS machines -- and nix-oci evaluates it into a minimal OCI image.
 
 Home-manager extends this further: dotfiles, shell configuration, and
-developer tooling are baked into the container at build time, producing
+developer tooling bake into the container at build time, producing
 images that are not only functional servers but also comfortable
 environments to work in.
 
@@ -25,10 +25,10 @@ Traditional container images suffer from three fundamental issues:
    commands. The final state depends on execution order, layer caching,
    and implicit state from base images.
 2. **No introspection** -- once built, there's no way to ask "what
-   services are configured?" or "what user runs this process?" without
+   services does this configure?" or "what user runs this process?" without
    reverse-engineering the image.
-3. **Manual metadata** -- healthchecks, stop signals, exposed ports,
-   and labels must be specified by hand and kept in sync with the
+3. **Manual metadata** -- operators must specify healthchecks, stop signals,
+   exposed ports, and labels by hand and keep them in sync with the
    actual service configuration.
 
 ### The NixOS module answer
@@ -113,7 +113,7 @@ dotfiles are **reproducible build artifacts**, not runtime state.
 
 ### Container-friendly defaults
 
-When [`homeConfig.homeManagerFlake`](../reference/flake-parts-options.html) is set,
+When you set [`homeConfig.homeManagerFlake`](../reference/flake-parts-options.html),
 nix-oci injects sensible defaults (all `lib.mkDefault`, freely overridable):
 
 - **Bash** with history configuration and common aliases
@@ -121,11 +121,11 @@ nix-oci injects sensible defaults (all `lib.mkDefault`, freely overridable):
   hostname, directory, git status, and a container indicator
 - **TERM** environment variable configured for color support
 
-These defaults are designed to work with the
+These defaults work with the
 [container sandbox](./sandbox.md), giving you a pleasant interactive
 shell without any configuration.
 
-### How dotfiles are baked in
+### How nix-oci bakes in dotfiles
 
 Home-manager produces an **activation package** containing a `home-files`
 directory tree with symlinks to Nix store paths:

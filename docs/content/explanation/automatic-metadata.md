@@ -78,8 +78,8 @@ server {
 
 #### Non-HTTP services -- native CLI tools
 
-Services that don't serve HTTP already have built-in health check tools.
-No injection is needed:
+Services that don't serve HTTP already ship built-in health check tools
+and require no adapter injection:
 
 | Service | Native tool | Health signal |
 |---|---|---|
@@ -99,8 +99,8 @@ services) so the binary is available inside the container image.
   healthchecks is forgetting to set one, or setting one that doesn't
   match the actual service configuration. Auto-derivation eliminates
   both.
-- **Correct by construction**: the healthcheck is derived from the same
-  NixOS options that configure the service. If you change the PostgreSQL
+- **Correct by construction**: nix-oci derives the healthcheck from the
+  same NixOS options that configure the service. If you change the PostgreSQL
   port to 5433, the healthcheck automatically updates.
 - **No dummy probes**: instead of blindly curling `/` (which might 404),
   HTTP adapters inject a purpose-built health endpoint that provides a
@@ -148,12 +148,12 @@ the correct signal is `SIGQUIT`. Service adapters encode this knowledge:
 | **Postfix** | `SIGTERM` | Stop mail system |
 | **vsftpd** | `SIGTERM` | Clean shutdown |
 
-When no adapter is present, the signal is derived from the systemd
-`KillSignal` in the NixOS service config.
+When no adapter covers the service, nix-oci reads the systemd
+`KillSignal` from the NixOS service config instead.
 
 ## WorkingDir -- context-aware working directory
 
-The working directory is resolved from four sources in priority order:
+nix-oci resolves the working directory from four sources in priority order:
 
 1. Explicit `workingDir` option
 2. systemd `WorkingDirectory` from the service config

@@ -45,7 +45,7 @@ This produces:
 | `oci-merge-myApp` | Create the manifest list and tag it |
 
 A typical CI pipeline runs `oci-push-tmp-*` in parallel on native
-runners, then runs `oci-merge-*` once all arches are pushed.
+runners, then runs `oci-merge-*` once all runners finish pushing.
 
 See the [CI multi-arch example](https://github.com/Dauliac/nix-oci/blob/main/examples/flake/multi-arch/ci-multi-arch-01.nix)
 and the [CI multi-arch with custom tags example](https://github.com/Dauliac/nix-oci/blob/main/examples/flake/multi-arch/ci-multi-arch-custom-tags-01.nix).
@@ -86,11 +86,11 @@ and the [cross-build with dependencies example](https://github.com/Dauliac/nix-o
 
 For both strategies, nix-oci automatically resolves cross-compiled
 packages via `pkgsCross`. When the container declares
-`package = pkgs.hello`, the arm64 variant is inferred as
+`package = pkgs.hello`, nix-oci infers the arm64 variant as
 `pkgs.pkgsCross.aarch64-multiplatform.hello` -- no manual `archConfigs`
 needed.
 
-Dependencies listed in `dependencies` are inferred the same way. Any
+nix-oci infers dependencies listed in `dependencies` the same way. Any
 dependency whose `pname` does not match a `pkgsCross` attribute is
 silently dropped for that architecture.
 
@@ -129,7 +129,7 @@ See the [cross-build with writeShellApplication example](https://github.com/Daul
 | **Build speed** | Fast -- native compilation on each runner | Slower -- cross-compilation overhead |
 | **CI infrastructure** | Needs runners for each architecture | Single runner is enough |
 | **Registry required** | Yes (temporary tags) | No (local OCI directory) |
-| **Best for** | Production CI pipelines with multi-arch runners | Development, testing, simple setups |
+| **Best for** | Production CI pipelines with multi-arch runners | Development, testing, single-runner setups |
 
 ## Options reference
 

@@ -8,8 +8,8 @@ title = "nix-oci container module options"
 
 Instead of writing Dockerfiles or manually assembling root filesystems, you write
 standard [NixOS module configuration](https://nixos.org/manual/nixos/stable/#sec-writing-modules)
-and nix-oci builds a minimal OCI image from it. Any NixOS service that can be
-expressed as a module can become a container -- nginx, caddy, redis, postgresql,
+and nix-oci builds a minimal OCI image from it. You can turn any NixOS service module
+into a container -- nginx, caddy, redis, postgresql,
 grafana, and [thousands more](https://search.nixos.org/options).
 
 See also:
@@ -59,7 +59,7 @@ nix-oci automatically:
 6. Generates `/etc/passwd`, `/etc/shadow`, `/etc/group`
 7. Assembles the root filesystem and passes it to [nix2container](https://github.com/nlewo/nix2container)
 
-## What NixOS features are supported
+## Supported NixOS features
 
 Since the container runs a real NixOS evaluation, you get access to the full
 NixOS module system:
@@ -70,7 +70,7 @@ NixOS module system:
 - **System packages** -- `environment.systemPackages` for tools available in the container
 - **Users and groups** -- `users.users`, `users.groups` (nix-oci extracts `/etc/passwd` etc.)
 - **Environment variables** -- from systemd service units and NixOS config
-- **`/etc` files** -- all NixOS-managed `/etc` entries are included in the image
+- **`/etc` files** -- nix-oci includes all NixOS-managed `/etc` entries in the image
 - **Networking config** -- `networking.firewall`, DNS settings, etc.
 
 ## Service adapters
@@ -190,8 +190,8 @@ See also:
 
 ## Internal options reference
 
-These options are set **automatically** by nix-oci during the NixOS evaluation.
-They are documented here for understanding and for advanced use cases
+nix-oci sets these options **automatically** during the NixOS evaluation.
+This section documents them for understanding and for advanced use cases
 (e.g. writing custom NixOS modules that read `config.oci.container.user`
 inside the container eval context).
 
