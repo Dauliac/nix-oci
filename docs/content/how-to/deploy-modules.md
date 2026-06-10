@@ -126,7 +126,7 @@ oci = {
 };
 ```
 
-Enable Docker on the system:
+Ensure you enable Docker on the system:
 
 ```nix
 virtualisation.docker.enable = true;

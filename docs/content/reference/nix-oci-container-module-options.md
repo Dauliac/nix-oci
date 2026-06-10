@@ -8,8 +8,8 @@ title = "nix-oci container module options"
 
 Instead of writing Dockerfiles or manually assembling root filesystems, you write
 standard [NixOS module configuration](https://nixos.org/manual/nixos/stable/#sec-writing-modules)
-and nix-oci builds a minimal OCI image from it. You can turn any NixOS service module
-into a container -- nginx, caddy, redis, postgresql,
+and nix-oci builds a minimal OCI image from it. You can turn any NixOS service
+module into a container -- nginx, caddy, redis, postgresql,
 grafana, and [thousands more](https://search.nixos.org/options).
 
 See also:

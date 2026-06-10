@@ -104,8 +104,8 @@ the link type and target through unchanged).
 
 Whiteout files (`.wh.*` prefix) signal file deletions in a layer
 relative to lower layers. nix-oci builds images **from scratch** by
-default -- there are no lower layers to delete from, so whiteout files
-are not produced.
+default -- there are no lower layers to delete from, so nix-oci does not
+produce whiteout files.
 
 When `fromImage` builds on top of a pulled base image,
 nix2container and the base image's existing layers handle whiteout
