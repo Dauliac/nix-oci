@@ -108,6 +108,22 @@ This ensures:
 - Service adapters can enrich/override any field (e.g. inject a health endpoint) without the caller knowing
 - New OCI fields only need to be added in one place (a `_nixos-oci` module)
 
+### No IFD (Import From Derivation)
+
+nix-oci **never** uses IFD. All evaluation is pure -- no derivation is built during `nix eval`, `nix flake show`, or `nix flake check`.
+
+Why this matters:
+
+- **Eval stays fast**: without IFD, evaluation is instant attribute traversal. IFD forces the evaluator to block while a derivation builds, creating sequential bottlenecks (eval → build → eval → build).
+- **No builder required for eval**: tools like `nix flake show`, `nix flake check`, and documentation generators work without a running Nix daemon or build sandbox. CI jobs that only need eval remain lightweight.
+- **Hydra-friendly**: Hydra separates evaluation from building. IFD collapses this boundary and breaks eval caching.
+- **Cross-compilation works**: IFD derivations build for the build platform, which can cause confusing failures when cross-compiling for a different architecture.
+- **Smaller attack surface**: IFD runs arbitrary derivations during eval, which expands trust requirements. Some Nix setups disable IFD entirely (`--no-allow-import-from-derivation`).
+
+Where this constraint shows up concretely: the `fromImage` identity merge reads base image `/etc/passwd` and `/etc/group` from committed source files via `builtins.readFile` instead of extracting them from the base image at eval time. This requires a manual lock step (extract → commit) but preserves eval purity.
+
+**Rule**: if you need data from an external source (base image, generated file), commit it to the repo and read it with `builtins.readFile` or `builtins.pathExists`. Never use `import (pkgs.runCommand ...)` or similar IFD patterns.
+
 ### Service adapters
 
 NixOS service adapters (`nix/modules/_nixos-oci/service-adapters/`) automatically detect running services (nginx, postgresql, redis, etc.) and inject foreground mode, health endpoints, stop signals, and working directories into the `oci.container` bus. Users get production-ready container configs without manual OCI plumbing.
