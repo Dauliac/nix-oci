@@ -72,6 +72,8 @@ keyless
 ko
 Kyverno
 Landlock
+linPEAS
+linpeas
 lapack
 linkname
 malloc
