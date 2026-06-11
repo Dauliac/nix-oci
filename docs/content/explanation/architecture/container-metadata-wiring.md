@@ -239,7 +239,7 @@ flowchart TD
 | `…nix-oci.security.known-vulnerabilities` | `package.meta.knownVulnerabilities` | `"CVE-…"` |
 | `…nix-oci.provenance.source-type` | `package.meta.sourceProvenance` | `"fromSource"` |
 
-To disable auto-labeling, set [`autoLabels`](../reference/flake-parts-options.html) to `false` on the container.
+To disable auto-labeling, set [`autoLabels`](../../reference/flake-parts-options.html) to `false` on the container.
 See [Automatic OCI labels](./automatic-labeling.md) for full details.
 
 ### Config files
@@ -344,7 +344,7 @@ flowchart LR
     style hm fill:#1e1e2e,stroke:#f5c2e7,color:#cdd6f4
 ```
 
-When you disable [`autoStart`](../reference/nixos-options.html), nix-oci creates only the loader service: no runner,
+When you disable [`autoStart`](../../reference/nixos-options.html), nix-oci creates only the loader service: no runner,
 no firewall rules, no volumes. It loads the image but does not start it.
 
 ## Service dependency chain
@@ -626,7 +626,7 @@ flowchart LR
 | **dnsmasq** | `SIGTERM` | Clean shutdown |
 | **Postfix** | `SIGTERM` | Stop mail system |
 | **vsftpd** | `SIGTERM` | Clean shutdown |
-| *(no adapter)* | See [`stopSignal`](../reference/flake-parts-options.html) | Container runtime default when not specified |
+| *(no adapter)* | See [`stopSignal`](../../reference/flake-parts-options.html) | Container runtime default when not specified |
 
 Service adapters use `lib.mkDefault`, so the user can always override.
 When no adapter sets a signal, the `extractServiceData` function checks
@@ -674,7 +674,7 @@ For NixOS containers, nix-oci resolves the working directory in priority order:
 This means PostgreSQL containers automatically get `WorkingDir = /var/lib/postgresql`
 without any manual configuration.
 
-For non-NixOS containers, [`workingDir`](../reference/flake-parts-options.html)
+For non-NixOS containers, [`workingDir`](../../reference/flake-parts-options.html)
 uses the runtime default. Set it explicitly when needed.
 
 | Stage | Transformation | File |

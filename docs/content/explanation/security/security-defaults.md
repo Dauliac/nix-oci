@@ -13,7 +13,7 @@ Kubernetes [Pod Security Standards](https://kubernetes.io/docs/concepts/security
 ## Non-root by default
 
 Containers built with nix-oci run as a **non-root user** by default
-(see [`isRoot`](../reference/flake-parts-options.html) option reference).
+(see [`isRoot`](../../reference/flake-parts-options.html) option reference).
 When you disable `isRoot`, nix-oci creates a dedicated user entry in `/etc/passwd`
 with **UID 4000** and **GID 4000**, a deliberate choice that avoids
 collisions with both system UIDs (0-999) and typical human UIDs
@@ -50,7 +50,7 @@ entry exist. This ensures that:
 ### Deploy modules default to root
 
 The deploy modules (`modules.nixos.nix-oci`, `modules.homeManager.nix-oci`)
-override [`isRoot`](../reference/nixos-options.html) via `mkDefault`. This is a pragmatic choice:
+override [`isRoot`](../../reference/nixos-options.html) via `mkDefault`. This is a pragmatic choice:
 deploy-time containers typically run system services (Caddy, Redis,
 dnsmasq) that may need to bind privileged ports or access host-mounted
 volumes. You should explicitly set `isRoot = false` once you
@@ -117,7 +117,7 @@ nix-oci includes optional, declarative security scanning:
 | **Grype** | CVE scanning | `oci.cve.grype.enabled` |
 | **Vulnix** | Nix-native CVE scanning | `oci.cve.vulnix.enabled` |
 | **Syft** | SBOM generation | `oci.sbom.syft.enabled` |
-| **cosign** | Image signing ([keyless](../reference/flake-parts-options.html) mode) | `oci.signing.cosign.enabled` |
+| **cosign** | Image signing ([keyless](../../reference/flake-parts-options.html) mode) | `oci.signing.cosign.enabled` |
 | **Trivy** | Credentials leak detection | `oci.credentialsLeak.trivy.enabled` |
 
 All scanners run as Nix derivations or flake checks, integrating into CI

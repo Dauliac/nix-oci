@@ -65,7 +65,7 @@ flowchart LR
 A single `services.nginx.enable = true` gives you:
 
 - The correct entrypoint (`nginx` in foreground mode via a
-  [service adapter](../reference/nix-oci-container-module-options.md#service-adapters))
+  [service adapter](../../reference/nix-oci-container-module-options.md#service-adapters))
 - A healthcheck (probing `stub_status` on localhost)
 - The right stop signal (`SIGQUIT` for graceful shutdown)
 - A non-root user derived from the package name
@@ -113,7 +113,7 @@ dotfiles are **reproducible build artifacts**, not runtime state.
 
 ### Container-friendly defaults
 
-When you set [`homeConfig.homeManagerFlake`](../reference/flake-parts-options.html),
+When you set [`homeConfig.homeManagerFlake`](../../reference/flake-parts-options.html),
 nix-oci injects sensible defaults (all `lib.mkDefault`, freely overridable):
 
 - **Bash** with history configuration and common aliases
@@ -225,10 +225,10 @@ that import it: a single source of truth.
 
 ## See also
 
-- [Container module options](../reference/nix-oci-container-module-options.md): full reference for `nixosConfig` and `homeConfig`
+- [Container module options](../../reference/nix-oci-container-module-options.md): full reference for `nixosConfig` and `homeConfig`
 - [Container sandbox](./sandbox.md): interactive shell leveraging home-manager dotfiles
 - [Automatic metadata derivation](./automatic-metadata.md): healthchecks, stop signals, working directories from NixOS services
-- [flake-parts options](../reference/flake-parts-options.md): build-time container options
+- [flake-parts options](../../reference/flake-parts-options.md): build-time container options
 - [home-manager manual](https://nix-community.github.io/home-manager/): upstream documentation
 - [home-manager options](https://nix-community.github.io/home-manager/options.xhtml): full option reference
 - [NixOS options search](https://search.nixos.org/options): find any NixOS service option

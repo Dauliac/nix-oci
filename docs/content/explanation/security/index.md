@@ -63,6 +63,12 @@ flowchart TD
 
 ## Topics
 
+- [Security defaults](security-defaults.html)
+  — non-root user, distroless images, capability-dropped containers
+
+- [Hardening](hardening.html)
+  — seccomp, Landlock, AppArmor, capability controls, read-only rootfs
+
 - [Vulnerability scanning, SBOM & compliance](vulnerability-scanning.html)
   — CVE scanning (Trivy, Grype, Vulnix), SBOM generation (Syft),
   credentials leak detection, CIS compliance, image linting (Dockle)
@@ -73,8 +79,13 @@ flowchart TD
 
 - [Policy checking & integrity testing](policy-integrity-testing.html)
   — Conftest / OPA Rego policies, container-structure-test (including
-  coherence auto-generation), dgoss, Dive, container probes
-  (amicontained, DEEPCE, linPEAS)
+  coherence auto-generation), dgoss, Dive
+
+- [Policy composition & coherence testing](policy-coherence-testing.html)
+  — three-layer validation model, auto-generated coherence checks
+
+- [Container probes](container-probes.html)
+  — amicontained, CDK, DEEPCE, linPEAS security probes
 
 ## The Nix advantage
 
@@ -100,10 +111,10 @@ nix-oci closes this gap:
 
 ## Further reading
 
-- [Security defaults](../security-defaults.html): non-root, distroless, reproducibility
-- [Policy composition and coherence testing](../policy-coherence-testing.html): three-layer validation model
-- [Automatic OCI labels](../automatic-labeling.html): labels encoding security posture
-- [Hardening](../hardening.html): seccomp, Landlock, capability controls
+- [Security defaults](security-defaults.html): non-root, distroless, reproducibility
+- [Policy composition and coherence testing](policy-coherence-testing.html): three-layer validation model
+- [Automatic OCI labels](../architecture/automatic-labeling.html): labels encoding security posture
+- [Hardening](hardening.html): seccomp, Landlock, capability controls
 - [Sigstore](https://www.sigstore.dev/): keyless signing infrastructure
 - [CycloneDX](https://cyclonedx.org/): SBOM standard
 - [CIS Docker Benchmark](https://www.cisecurity.org/benchmark/docker): container security baseline

@@ -46,12 +46,12 @@ oci.containers.my-app = {
 };
 ```
 
-Setting [`hardening.enable`](../reference/flake-parts-options.html)
+Setting [`hardening.enable`](../../reference/flake-parts-options.html)
 activates the full hardening stack with sensible defaults.
 Each sub-feature can be individually tuned. See the
-[flake-parts option reference](../reference/flake-parts-options.html)
+[flake-parts option reference](../../reference/flake-parts-options.html)
 for all available hardening options, or the
-[NixOS container module reference](../reference/nix-oci-container-module-options.html)
+[NixOS container module reference](../../reference/nix-oci-container-module-options.html)
 for the inner `oci.container.hardening.*` options.
 
 ## Seccomp: syscall filtering
@@ -63,7 +63,7 @@ syscall never executes.
 ### Predefined profiles
 
 nix-oci ships three profiles via
-[`hardening.seccomp.profile`](../reference/flake-parts-options.html),
+[`hardening.seccomp.profile`](../../reference/flake-parts-options.html),
 each using a different filtering strategy:
 
 | Profile | Strategy | Syscalls | Best for |
@@ -112,8 +112,8 @@ Strict base plus the syscalls needed by HTTP servers:
 
 When using `nixosConfig`, nix-oci detects known web server services
 (nginx, httpd) and auto-selects the appropriate
-[`seccomp.profile`](../reference/flake-parts-options.html).
-See the [option reference](../reference/flake-parts-options.html) for
+[`seccomp.profile`](../../reference/flake-parts-options.html).
+See the [option reference](../../reference/flake-parts-options.html) for
 the default profile:
 
 ```nix
@@ -127,7 +127,7 @@ oci.containers.my-app.nixosConfig = {
 ### Custom profiles
 
 For full control, provide an OCI runtime spec JSON file via
-[`hardening.seccomp.customProfileJson`](../reference/flake-parts-options.html):
+[`hardening.seccomp.customProfileJson`](../../reference/flake-parts-options.html):
 
 ```nix
 hardening.seccomp.customProfileJson = ./my-seccomp-profile.json;
@@ -153,7 +153,7 @@ Key properties:
 
 ### Filesystem restrictions
 
-Configure via [`hardening.landlock`](../reference/flake-parts-options.html):
+Configure via [`hardening.landlock`](../../reference/flake-parts-options.html):
 
 ```nix
 hardening.landlock = {
@@ -164,7 +164,7 @@ hardening.landlock = {
 };
 ```
 
-When [`allowedReadPaths`](../reference/flake-parts-options.html) is empty and `enable` is true, nix-oci
+When [`allowedReadPaths`](../../reference/flake-parts-options.html) is empty and `enable` is true, nix-oci
 auto-populates it from the Nix closure of the container's package
 and dependencies.
 
@@ -224,7 +224,7 @@ restrict access to specific *resources*.
 
 Linux capabilities split root's monolithic privilege into ~40
 distinct units. nix-oci defaults to dropping all capabilities via
-[`hardening.capabilities`](../reference/flake-parts-options.html):
+[`hardening.capabilities`](../../reference/flake-parts-options.html):
 
 ```nix
 hardening.capabilities = {
@@ -254,7 +254,7 @@ Deploy modules translate these to `--cap-drop ALL --cap-add NET_BIND_SERVICE`.
 
 ## Read-only root filesystem
 
-[`hardening.readOnlyRootfs`](../reference/flake-parts-options.html):
+[`hardening.readOnlyRootfs`](../../reference/flake-parts-options.html):
 
 ```nix
 hardening.readOnlyRootfs = true;
@@ -273,7 +273,7 @@ Applications that need writable storage should use declared volumes
 
 ## No-new-privileges
 
-[`hardening.noNewPrivileges`](../reference/flake-parts-options.html):
+[`hardening.noNewPrivileges`](../../reference/flake-parts-options.html):
 
 ```nix
 hardening.noNewPrivileges = true;
@@ -293,7 +293,7 @@ Deploy modules translate to `--security-opt=no-new-privileges`.
 
 ### Disable DNS
 
-[`hardening.disableDns`](../reference/flake-parts-options.html):
+[`hardening.disableDns`](../../reference/flake-parts-options.html):
 
 ```nix
 hardening.disableDns = true;
@@ -308,7 +308,7 @@ DNS at runtime, use `--dns=127.0.0.1` or network policies.
 
 ### Remove TLS trust store
 
-[`hardening.noTlsTrustStore`](../reference/flake-parts-options.html):
+[`hardening.noTlsTrustStore`](../../reference/flake-parts-options.html):
 
 ```nix
 hardening.noTlsTrustStore = true;

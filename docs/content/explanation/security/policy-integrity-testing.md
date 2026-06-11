@@ -39,7 +39,7 @@ No container runtime is needed. The check is purely build-time.
 
 ### Enable it
 
-See [`oci.policy.conftest`](../../reference/flake-parts-options.html) in the option reference.
+See [`oci.policy.conftest`](../../../reference/flake-parts-options.html) in the option reference.
 
 ```nix
 # Global (all containers)
@@ -125,12 +125,12 @@ behavioral testing tools:
 
 | Tool | Purpose | Option |
 |---|---|---|
-| **container-structure-test** | Validate filesystem, commands, metadata | [`oci.test.containerStructureTest.enabled`](../../reference/flake-parts-options.html) |
-| **dgoss** | Behavioral testing with goss inside the container | [`oci.test.dgoss.enabled`](../../reference/flake-parts-options.html) |
-| **Dive** | Image layer efficiency analysis | [`oci.test.dive.enabled`](../../reference/flake-parts-options.html) |
-| **amicontained** | Container introspection: runtime, capabilities, seccomp, namespaces | [`oci.test.amicontained.enabled`](../../reference/flake-parts-options.html) |
-| **DEEPCE** | Container escape detection: socket exposure, privileged mode, dangerous mounts | [`oci.test.deepce.enabled`](../../reference/flake-parts-options.html) |
-| **linPEAS** | Privilege escalation audit: SUID, capabilities, writable paths, kernel exploits | [`oci.test.linpeas.enabled`](../../reference/flake-parts-options.html) |
+| **container-structure-test** | Validate filesystem, commands, metadata | [`oci.test.containerStructureTest.enabled`](../../../reference/flake-parts-options.html) |
+| **dgoss** | Behavioral testing with goss inside the container | [`oci.test.dgoss.enabled`](../../../reference/flake-parts-options.html) |
+| **Dive** | Image layer efficiency analysis | [`oci.test.dive.enabled`](../../../reference/flake-parts-options.html) |
+| **amicontained** | Container introspection: runtime, capabilities, seccomp, namespaces | [`oci.test.amicontained.enabled`](../../../reference/flake-parts-options.html) |
+| **DEEPCE** | Container escape detection: socket exposure, privileged mode, dangerous mounts | [`oci.test.deepce.enabled`](../../../reference/flake-parts-options.html) |
+| **linPEAS** | Privilege escalation audit: SUID, capabilities, writable paths, kernel exploits | [`oci.test.linpeas.enabled`](../../../reference/flake-parts-options.html) |
 
 ### CST coherence checking (auto-generated)
 
@@ -184,7 +184,7 @@ The production image is tested as-is. If hardening options (seccomp,
 dropped capabilities, read-only rootfs) are effective, these probes
 confirm it.
 
-See the [options reference](../../reference/flake-parts-options.html)
+See the [options reference](../../../reference/flake-parts-options.html)
 for per-tool configuration (`oci.test.amicontained`,
 `oci.test.deepce`, `oci.test.linpeas`).
 

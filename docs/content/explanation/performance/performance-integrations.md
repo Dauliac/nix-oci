@@ -67,12 +67,12 @@ oci.containers.my-app = {
 };
 ```
 
-Setting [`performance.enable`](../reference/flake-parts-options.html)
+Setting [`performance.enable`](../../reference/flake-parts-options.html)
 activates the performance subsystem. Each feature is then
 configured independently. See the
-[flake-parts option reference](../reference/flake-parts-options.html)
+[flake-parts option reference](../../reference/flake-parts-options.html)
 for all performance options, or the
-[NixOS container module reference](../reference/nix-oci-container-module-options.html)
+[NixOS container module reference](../../reference/nix-oci-container-module-options.html)
 for inner `oci.container.performance.*` options.
 
 ## Alternative memory allocators
@@ -83,7 +83,7 @@ limits, it creates too many arenas and wastes RSS.
 
 nix-oci can inject a modern allocator via `LD_PRELOAD` with no
 recompilation needed. Set
-[`performance.allocator`](../reference/flake-parts-options.html):
+[`performance.allocator`](../../reference/flake-parts-options.html):
 
 ```nix
 performance.allocator = "mimalloc";  # or "tcmalloc"
@@ -112,7 +112,7 @@ performance.allocator = "mimalloc";  # or "tcmalloc"
   overhead for typical workloads with many small allocations.
 - **tcmalloc**: when throughput matters more than RSS; high-QPS
   HTTP servers, data processing pipelines.
-- **disabled** (see [`allocator`](../reference/flake-parts-options.html)
+- **disabled** (see [`allocator`](../../reference/flake-parts-options.html)
   option reference): when you don't want to risk changing allocation
   behavior, or when the application bundles its own allocator (e.g.,
   Go, Rust with `jemalloc` feature).
@@ -121,7 +121,7 @@ performance.allocator = "mimalloc";  # or "tcmalloc"
 
 glibc exposes runtime tuning parameters via the `GLIBC_TUNABLES`
 environment variable. nix-oci sets this in the OCI manifest via
-[`performance.glibcTunables`](../reference/flake-parts-options.html):
+[`performance.glibcTunables`](../../reference/flake-parts-options.html):
 
 ```nix
 performance.glibcTunables = {
@@ -164,7 +164,7 @@ via `/proc/cpuinfo`, creating 512 arenas for 2 threads. Setting
 
 nix-oci can rebuild all packages in a container with a specific
 `-march` and `-mtune` flag via
-[`performance.march`](../reference/flake-parts-options.html):
+[`performance.march`](../../reference/flake-parts-options.html):
 
 ```nix
 performance.march = "x86-64-v3";
@@ -198,7 +198,7 @@ container. This means:
 - The resulting binaries may use SIMD instructions (AVX2, etc.) that
   improve performance for crypto, compression, and math.
 
-For most users, [`performance.hwcaps`](../reference/flake-parts-options.html)
+For most users, [`performance.hwcaps`](../../reference/flake-parts-options.html)
 (below) is a better choice; it ships optimized variants of specific
 hot libraries while keeping baseline packages cached.
 
@@ -278,7 +278,7 @@ else.
 ## Layer compression
 
 nix-oci supports zstd compression for OCI image layers via
-[`performance.compression`](../reference/flake-parts-options.html):
+[`performance.compression`](../../reference/flake-parts-options.html):
 
 ```nix
 performance.compression = "zstd";

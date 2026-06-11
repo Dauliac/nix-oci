@@ -190,8 +190,8 @@ perSystem = { ... }: {
 };
 ```
 
-See [Hardening](./explanation/hardening.html) and
-[Security defaults](./explanation/security-defaults.html) for details.
+See [Hardening](./explanation/security/hardening.html) and
+[Security defaults](./explanation/security/security-defaults.html) for details.
 
 ## Step 9: Enable performance optimizations (optional)
 
@@ -211,7 +211,7 @@ perSystem = { ... }: {
 };
 ```
 
-See [Performance integrations](./explanation/performance-integrations.html)
+See [Performance integrations](./explanation/performance/performance-integrations.html)
 for the full set of options.
 
 ## Step 10: Health-aware deployment (optional)
@@ -294,10 +294,10 @@ for the full set of security tools.
 
 - [Container Modules API](./how-to/container-modules-api.html): deep dive into `nixosConfig.modules`
 - [Deploy Modules](./how-to/deploy-modules.html): NixOS and Home Manager deployment
-- [Hardening](./explanation/hardening.html): seccomp, Landlock, capabilities
-- [Performance](./explanation/performance-integrations.html): allocators, glibc tunables, march
-- [Automatic metadata](./explanation/automatic-metadata.html): healthchecks, stop signals, volumes
-- [Automatic labeling](./explanation/automatic-labeling.html): OCI annotations, K8s PSS, security hints
+- [Hardening](./explanation/security/hardening.html): seccomp, Landlock, capabilities
+- [Performance](./explanation/performance/performance-integrations.html): allocators, glibc tunables, march
+- [Automatic metadata](./explanation/architecture/automatic-metadata.html): healthchecks, stop signals, volumes
+- [Automatic labeling](./explanation/architecture/automatic-labeling.html): OCI annotations, K8s PSS, security hints
 - [Security scanning](./explanation/security/index.html): CVE, SBOM, signing, Conftest
-- [Container probes](./explanation/container-probes.html): amicontained, CDK, DEEPCE, linPEAS
+- [Container probes](./explanation/security/container-probes.html): amicontained, CDK, DEEPCE, linPEAS
 - [Options Reference](./reference/flake-parts-options.html): full option reference

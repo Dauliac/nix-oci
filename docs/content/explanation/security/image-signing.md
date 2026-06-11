@@ -20,7 +20,7 @@ certificate. No key management required.
 ## Key-based signing
 
 For air-gapped or compliance-constrained environments, see
-[`oci.signing.cosign`](../../reference/flake-parts-options.html):
+[`oci.signing.cosign`](../../../reference/flake-parts-options.html):
 
 ```nix
 oci.signing.cosign = {

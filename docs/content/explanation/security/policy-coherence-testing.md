@@ -189,6 +189,6 @@ Three layers give each concern a clear owner:
   — detailed coverage of each security tool integration
 - [Security defaults](security-defaults.html)
   — why nix-oci defaults to non-root, distroless containers
-- [flake-parts option reference](../reference/flake-parts-options.html)
+- [flake-parts option reference](../../reference/flake-parts-options.html)
   — all `oci.policy.conftest.*` and `oci.test.containerStructureTest.*`
   options

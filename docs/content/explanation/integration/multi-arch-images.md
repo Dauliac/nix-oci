@@ -133,16 +133,16 @@ See the [cross-build with writeShellApplication example](https://github.com/Daul
 
 ## Options reference
 
-See the [flake-parts option reference](../reference/flake-parts-options.html) for
+See the [flake-parts option reference](../../reference/flake-parts-options.html) for
 default values and full type details.
 
 | Option | Description |
 |---|---|
-| [`multiArch.systems`](../reference/flake-parts-options.html) | Target architectures (non-empty enables multi-arch) |
-| [`multiArch.crossBuild.enable`](../reference/flake-parts-options.html) | Cross-compile all arches locally |
-| [`multiArch.tempTagPrefix`](../reference/flake-parts-options.html) | Prefix for temporary per-arch tags (CI workflow) |
-| [`archConfigs.<system>.package`](../reference/flake-parts-options.html) | Per-arch package override |
-| [`archConfigs.<system>.dependencies`](../reference/flake-parts-options.html) | Per-arch dependencies override |
+| [`multiArch.systems`](../../reference/flake-parts-options.html) | Target architectures (non-empty enables multi-arch) |
+| [`multiArch.crossBuild.enable`](../../reference/flake-parts-options.html) | Cross-compile all arches locally |
+| [`multiArch.tempTagPrefix`](../../reference/flake-parts-options.html) | Prefix for temporary per-arch tags (CI workflow) |
+| [`archConfigs.<system>.package`](../../reference/flake-parts-options.html) | Per-arch package override |
+| [`archConfigs.<system>.dependencies`](../../reference/flake-parts-options.html) | Per-arch dependencies override |
 
 ## All multi-arch examples
 

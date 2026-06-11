@@ -96,14 +96,14 @@ The result: **zero duplicated store paths** across layers.
 
 ## Layer strategies
 
-The [`layerStrategy`](../reference/flake-parts-options.html) option
+The [`layerStrategy`](../../reference/flake-parts-options.html) option
 controls how aggressively nix2container splits store paths into
 sub-layers. It only takes effect when you enable
-[`optimizeLayers`](../reference/flake-parts-options.html).
+[`optimizeLayers`](../../reference/flake-parts-options.html).
 See the option reference for default values and allowed values
-([flake-parts](../reference/flake-parts-options.html),
-[NixOS](../reference/nixos-options.html),
-[Home Manager](../reference/home-manager-options.html)).
+([flake-parts](../../reference/flake-parts-options.html),
+[NixOS](../../reference/nixos-options.html),
+[Home Manager](../../reference/home-manager-options.html)).
 
 ### `"fine-grained"`
 
@@ -159,9 +159,9 @@ flowchart TD
 ## The layer stack
 
 The options that control layer composition
-([`optimizeLayers`](../reference/flake-parts-options.html),
-[`layerStrategy`](../reference/flake-parts-options.html),
-[`dependencies`](../reference/flake-parts-options.html))
+([`optimizeLayers`](../../reference/flake-parts-options.html),
+[`layerStrategy`](../../reference/flake-parts-options.html),
+[`dependencies`](../../reference/flake-parts-options.html))
 appear in the option reference. This section explains the
 resulting image structure.
 
@@ -183,7 +183,7 @@ flowchart TD
 - **App layer**: changes on each rebuild
 - **Deps layer**: stable, shared across images
 
-For Nix-enabled containers ([`installNix`](../reference/flake-parts-options.html)),
+For Nix-enabled containers ([`installNix`](../../reference/flake-parts-options.html)),
 a **Nix layer** is prepended and all subsequent layers deduplicate against it:
 
 ```mermaid
@@ -213,13 +213,13 @@ content-addressed store paths.
 
 ## Enable it
 
-Set [`optimizeLayers`](../reference/flake-parts-options.html) and
-optionally [`layerStrategy`](../reference/flake-parts-options.html).
+Set [`optimizeLayers`](../../reference/flake-parts-options.html) and
+optionally [`layerStrategy`](../../reference/flake-parts-options.html).
 See the option reference for default values per context:
-[flake-parts](../reference/flake-parts-options.html),
-[NixOS deploy](../reference/nixos-options.html),
-[Home Manager deploy](../reference/home-manager-options.html),
-[system-manager deploy](../reference/system-manager-options.html).
+[flake-parts](../../reference/flake-parts-options.html),
+[NixOS deploy](../../reference/nixos-options.html),
+[Home Manager deploy](../../reference/home-manager-options.html),
+[system-manager deploy](../../reference/system-manager-options.html).
 
 ### flake-parts (build-time)
 

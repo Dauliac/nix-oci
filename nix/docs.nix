@@ -358,8 +358,23 @@
               }
               {
                 path = "explanation/security";
-                new_title = "Supply-chain security";
+                new_title = "Security";
                 position = 1;
+              }
+              {
+                path = "explanation/performance";
+                new_title = "Performance";
+                position = 2;
+              }
+              {
+                path = "explanation/architecture";
+                new_title = "Architecture";
+                position = 3;
+              }
+              {
+                path = "explanation/integration";
+                new_title = "Integration";
+                position = 4;
               }
               {
                 path = "reference";
