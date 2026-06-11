@@ -9,17 +9,15 @@
 {
   lib,
   pkgs,
-  perSystemConfig,
   ...
 }:
 let
   example = true;
-  globalTurbo = perSystemConfig.oci.turbo or { };
 in
 {
   options.performance.turbo.enable = lib.mkOption {
     type = lib.types.bool;
-    default = globalTurbo.enable or false;
+    default = false;
     description = ''
       Use nix2container-turbo patched skopeo for image pushes.
 

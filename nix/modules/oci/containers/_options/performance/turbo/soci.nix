@@ -10,17 +10,15 @@
 {
   lib,
   pkgs,
-  perSystemConfig,
   ...
 }:
 let
   example = true;
-  globalTurbo = perSystemConfig.oci.turbo or { };
 in
 {
   options.performance.turbo.soci = lib.mkOption {
     type = lib.types.bool;
-    default = globalTurbo.soci or false;
+    default = false;
     description = ''
       Generate SOCI v2 indexes during push for lazy pulling.
 

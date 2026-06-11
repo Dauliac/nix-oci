@@ -8,17 +8,15 @@
 {
   lib,
   pkgs,
-  perSystemConfig,
   ...
 }:
 let
   example = 4194304;
-  globalTurbo = perSystemConfig.oci.turbo or { };
 in
 {
   options.performance.turbo.sociSpanSize = lib.mkOption {
     type = lib.types.int;
-    default = globalTurbo.sociSpanSize or 4194304;
+    default = 4194304;
     description = ''
       SOCI span size in bytes for zTOC checkpoint granularity.
 

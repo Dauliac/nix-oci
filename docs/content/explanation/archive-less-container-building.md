@@ -5,18 +5,18 @@ description = "How nix2container builds OCI images without intermediate archives
 
 # Archive-less container building
 
-nix-oci relies on [nix2container](https://github.com/nlewo/nix2container) --
-a self-described **"archive-less `dockerTools.buildImage` implementation"** --
+nix-oci relies on [nix2container](https://github.com/nlewo/nix2container),
+a self-described **"archive-less `dockerTools.buildImage` implementation"**,
 to build OCI images using a fundamentally different approach than traditional
 tools: layers are never materialized as tar archives in the Nix store.
 Instead, they exist as **JSON descriptions** of store paths, and actual
-nix2container only produces tarballs at the moment a consumer needs them -- when loading into
+nix2container only produces tarballs at the moment a consumer needs them: when loading into
 a runtime or pushing to a registry.
 
 ## The problem with archive-based builds
 
-Traditional container build tools -- whether `docker build` with a Dockerfile
-or Nix's built-in `dockerTools.buildImage` -- follow the same pattern:
+Traditional container build tools (whether `docker build` with a Dockerfile
+or Nix's built-in `dockerTools.buildImage`) follow the same pattern:
 
 1. Collect the filesystem contents.
 2. Write one or more **tar archives** (layers) to disk.
@@ -35,7 +35,7 @@ flowchart LR
 
 This creates two problems:
 
-- **Store bloat**: the Nix store holds every store path *twice* -- once as a
+- **Store bloat**: the Nix store holds every store path *twice*: once as a
   Nix derivation output and once inside a layer tarball.
   A 500 MB image effectively costs 1 GB of disk.
 - **Slow rebuilds**: changing a single dependency forces the entire archive to
@@ -46,7 +46,7 @@ This creates two problems:
 
 With Dockerfiles, the user manually defines the build graph as an ordered
 sequence of `RUN`, `COPY`, and `ADD` instructions. Each instruction produces
-a layer, and layers are **ordered and sequential** -- changing one layer
+a layer, and layers are **ordered and sequential**: changing one layer
 invalidates all subsequent layers:
 
 ```mermaid
@@ -64,9 +64,9 @@ flowchart LR
 This means:
 - Users must carefully order instructions to maximize cache hits.
 - A single dependency change can cascade through the entire image.
-- The layer graph is **linear** -- users cannot express "these two
+- The layer graph is **linear**: users cannot express "these two
   things are independent and can cache separately".
-- Build outputs are **non-reproducible** -- `apt-get install` at two
+- Build outputs are **non-reproducible**: `apt-get install` at two
   different times can produce different results.
 
 Nix's `dockerTools.streamLayeredImage` partially addresses this by streaming
@@ -108,7 +108,7 @@ A built image in the Nix store is just a few kilobytes of JSON listing:
 - OCI image configuration (entrypoint, env, labels, etc.).
 
 `nix build` writes no tar archive. The image "recipe" is a
-pure Nix derivation that produces only JSON -- this is what **archive-less**
+pure Nix derivation that produces only JSON. This is what **archive-less**
 container building means.
 
 ### Streaming push with Skopeo
@@ -119,7 +119,7 @@ When you push an image:
 
 1. Skopeo reads the JSON manifest.
 2. For each layer, it checks the **pre-computed digest** against the registry.
-   Skopeo skips layers that already exist -- it generates and transfers no data
+   Skopeo skips layers that already exist; it generates and transfers no data
    for them.
 3. Only missing layers are **tar-archived on the fly** and streamed directly
    to the registry, without touching the local disk.
@@ -178,7 +178,7 @@ and [Ship your Go applications faster to Cloud Run with ko (Google Cloud Blog)](
 
 [Jib](https://github.com/GoogleContainerTools/jib) integrates with Maven and
 Gradle to build Java container images without a Docker daemon. It splits the
-application into three layers -- dependencies, resources, and classes -- and
+application into three layers (dependencies, resources, and classes) and
 a code-only change rebuilds and pushes only the thin classes layer. Jib pushes
 layers in parallel directly to the registry, skipping the local `docker save`
 step entirely.
@@ -190,7 +190,7 @@ and [Jib 1.0.0 is GA (Google Cloud Blog)](https://cloud.google.com/blog/products
 
 [Cloud Native Buildpacks](https://buildpacks.io/) auto-detect the application
 type and produce images with modular, reusable layers. Unlike Dockerfile
-builds -- where a change in one layer invalidates all subsequent layers --
+builds, where a change in one layer invalidates all subsequent layers,
 each buildpack contributes an independent layer that caches based on its own
 inputs. When someone updates the OS base image, the platform
 **rebases** existing application layers in milliseconds by swapping metadata,
@@ -209,54 +209,154 @@ image containing those packages, using a
 to maximize layer sharing across requests. Nixery caches built layers in a
 storage bucket, making subsequent pulls of the same packages instant.
 
-See [Nixery -- Improved Layering Design (tazjin's blog)](https://tazj.in/blog/nixery-layers)
+See [Nixery: Improved Layering Design (tazjin's blog)](https://tazj.in/blog/nixery-layers)
 and [One Docker image to rule them all (DERLIN)](https://blog.derlin.ch/nixery-one-docker-image-to-rule-them-all).
 
-#### Comparison summary
+#### Dagger
 
-| Tool | Language | Docker required | Archive-less | Incremental push | Reproducible |
-|---|---|---|---|---|---|
-| **nix2container** | Any (Nix) | No | Yes (JSON only) | Yes (digest check) | Yes (bit-for-bit) |
-| **ko** | Go | No | Partial (streamed) | Yes | Yes (with `-trimpath`) |
-| **Jib** | Java | No | Yes (no local tar) | Yes (parallel layers) | Configurable |
-| **Buildpacks** | Multi-lang | Yes (or daemon) | No | Partial (rebase) | Configurable |
-| **Nixery** | Any (Nix) | No (is a registry) | Yes (on-demand) | N/A (pull-based) | Yes |
+[Dagger](https://dagger.io/) exposes BuildKit as a programmable API.
+Instead of writing Dockerfiles, users define container builds in Go, Python,
+or TypeScript using a type-safe SDK. Each function call maps to a BuildKit
+operation, giving full control over caching and parallelism. Because Dagger
+runs its own BuildKit engine, it does not require a separate Docker daemon
+install, but it still relies on BuildKit internally and produces the same
+layer-tar artifacts. Dagger excels as a **CI/CD pipeline engine** that
+happens to build containers, rather than a container-image tool per se.
 
-nix2container stands out by combining Nix's reproducibility guarantees with
-truly archive-less builds: the Nix store only ever contains JSON metadata,
-and nix2container generates the actual image bytes only at the moment the consumer needs them.
+See [Dagger documentation](https://docs.dagger.io/).
+
+#### Earthly
+
+[Earthly](https://earthly.dev/) extends Dockerfile syntax with an
+`Earthfile` that supports targets, cross-references, and shared caching.
+Like Dagger, it uses BuildKit under the hood but adds features such as
+`SAVE ARTIFACT`, multi-target graphs, and Earthly Satellites for remote
+build caching. Earthly brings reproducibility closer to Dockerfile users
+by isolating builds in containers, though the resulting images still depend
+on mutable base images and are not bit-for-bit reproducible by default.
+
+See [Earthly documentation](https://docs.earthly.dev/).
+
+#### Table 1: Build mechanism comparison
+
+This table compares **how each tool builds and pushes images**: the
+underlying model, disk usage, caching strategy, and reproducibility
+guarantees.
+
+> **Legend:** ✅ native / built-in — 🟡 partial or configurable — ❌ no support — 🔧 manual effort required — 🔌 needs external tool — ⚙️ own engine
+
+<div class="table-scroll">
+
+| Capability | Dockerfile (BuildKit) | Dagger | Earthly | Nix `dockerTools` | nix2container | **nix-oci** | ko | Jib | Buildpacks | Apko / Melange | Nixery |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Language scope | Any | Any | Any | Any | Any | **Any** | Go only | Java only | Multi-lang | Any (Alpine) | Any (Nix) |
+| Docker daemon required | ❌ Yes | ⚙️ Own engine | ⚙️ Own engine | ✅ No | ✅ No | ✅ **No** | ✅ No | ✅ No | ❌ Yes | ✅ No | ✅ No (is a registry) |
+| Build model | Imperative (RUN) | Programmatic (SDK) | Imperative (Earthfile) | Declarative (Nix) | Declarative (Nix) | ✅ **Declarative (NixOS modules)** | Go build | Maven / Gradle plugin | Auto-detect | Declarative (YAML) | On-demand (pull) |
+| Archive-less builds | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | 🟡 Partial | ✅ | ❌ | ❌ | ✅ |
+| Incremental push | 🟡 Layer cache | 🟡 Layer cache | 🟡 Layer cache + Satellites | ❌ | ✅ Digest check | ✅ **Digest check** | ✅ | ✅ Parallel | 🟡 Rebase | ❌ | N/A (pull-based) |
+| Reproducible builds | ❌ | ❌ | 🟡 Partial | ✅ | ✅ | ✅ **Bit-for-bit** | 🟡 Partial | 🟡 Configurable | ❌ | ✅ | ✅ |
+| Multi-arch | ✅ | ✅ | ✅ | 🔧 Manual | 🔧 Manual | ✅ **Declarative** | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Layer optimization | 🔧 Manual ordering | 🔧 Manual ordering | 🔧 Manual ordering | ✅ Popularity | ✅ Popularity | ✅ **Popularity** | ✅ Automatic | ✅ 3-layer split | ✅ Automatic | 🔧 Manual | ✅ Popularity |
+| Disk cost per image | ❌ ~2x (tars) | ❌ ~2x (tars) | ❌ ~2x (tars) | ❌ ~2x (tars) | ✅ **~0 (JSON)** | ✅ **~0 (JSON)** | 🟡 ~1x | ✅ ~0 (no tar) | ❌ ~2x (tars) | 🟡 ~1x | N/A |
+| Base image model | FROM (mutable tags) | FROM (mutable tags) | FROM (mutable tags) | ✅ Nix closure | ✅ Nix closure | ✅ **Nix closure** | Distroless | Distroless | Builder-provided | Alpine packages | ✅ Nix closure |
+
+</div>
+
+#### Table 2: Security & supply chain
+
+This table compares **security features** (scanning, signing, hardening,
+and compliance) that each tool provides out of the box.
+Tools whose scope is limited to image building (Apko/Melange, Nixery,
+nix2container) are omitted here; they appear in Table 1.
+
+> **Legend:** ✅ built-in — 🔌 needs external tool — 🔧 possible but manual — 🟡 partial — ❌ not available
+
+<div class="table-scroll">
+
+| Capability | Dockerfile (BuildKit) | Dagger | Earthly | Nix `dockerTools` | **nix-oci** | ko | Jib | Buildpacks |
+|---|---|---|---|---|---|---|---|---|
+| **Supply Chain** | | | | | | | | |
+| CVE scanning | 🔌 External | 🔌 External | 🔌 External | 🔌 External | ✅ **Trivy, Grype, Vulnix** | 🔌 External | 🔌 External | 🔌 External |
+| SBOM generation | 🔌 External | 🔌 External | 🔌 External | 🔌 External | ✅ **Syft** | ✅ Built-in | 🔌 External | ✅ Built-in |
+| Image signing | 🔌 External | 🔌 External | 🔌 External | 🔌 External | ✅ **Cosign, keyless** | ✅ Cosign | 🔌 External | 🔌 External |
+| Compliance audit | 🔌 External | 🔌 External | 🔌 External | 🔌 External | ✅ **Trivy** | ❌ | ❌ | ❌ |
+| Image linting | 🔌 hadolint | 🔌 External | 🔌 External | ❌ | ✅ **Dockle** | ❌ | ❌ | ❌ |
+| Credentials leak detection | 🔌 External | 🔌 External | 🔌 External | 🔌 External | ✅ **Trivy** | ❌ | ❌ | ❌ |
+| **Runtime Hardening** | | | | | | | | |
+| Seccomp profiles | 🔧 Manual | 🔧 Manual | 🔧 Manual | 🔧 Manual | ✅ **Auto-generated** | ❌ | ❌ | ❌ |
+| Capability dropping | 🔧 Manual | 🔧 Manual | 🔧 Manual | 🔧 Manual | ✅ **Least-privilege** | ❌ | ❌ | ❌ |
+| Read-only rootfs | 🔧 Manual | 🔧 Manual | 🔧 Manual | 🔧 Manual | ✅ **Built-in** | ❌ | ❌ | ❌ |
+| Privilege escalation prevention | 🔧 Manual | 🔧 Manual | 🔧 Manual | 🔧 Manual | ✅ **Built-in** | ❌ | ❌ | ❌ |
+| Landlock LSM | ❌ | ❌ | ❌ | ❌ | ✅ **Built-in** | ❌ | ❌ | ❌ |
+
+</div>
+
+#### Table 3: Performance, runtime & testing
+
+This table compares **runtime tuning and testing** capabilities.
+
+> **Legend:** ✅ built-in — 🔧 possible but manual — 🟡 partial — ❌ not available
+
+<div class="table-scroll">
+
+| Capability | Dockerfile (BuildKit) | Dagger | Earthly | Nix `dockerTools` | **nix-oci** | ko | Jib | Buildpacks |
+|---|---|---|---|---|---|---|---|---|
+| **Performance** | | | | | | | | |
+| Allocator selection | 🔧 Manual | 🔧 Manual | 🔧 Manual | 🔧 Manual | ✅ **jemalloc, mimalloc, …** | ❌ | ❌ | ❌ |
+| Compiler optimization (march, LTO) | 🔧 Manual | 🔧 Manual | 🔧 Manual | 🔧 Manual | ✅ **Built-in** | ❌ | ❌ | ❌ |
+| GPU / CUDA support | 🔧 Manual | 🔧 Manual | 🔧 Manual | 🔧 Manual | ✅ **Built-in** | ❌ | ❌ | ❌ |
+| Health checks | 🔧 Manual | 🔧 Manual | 🔧 Manual | 🔧 Manual | ✅ **Auto-detected** | ❌ | ❌ | 🟡 Partial |
+| Huge pages, glibc tunables | 🔧 Manual | 🔧 Manual | 🔧 Manual | 🔧 Manual | ✅ **Built-in** | ❌ | ❌ | ❌ |
+| **Testing** | | | | | | | | |
+| Structure tests | 🔌 External | 🔌 External | 🔌 External | 🔌 External | ✅ **Built-in** | ❌ | ❌ | ❌ |
+| NixOS VM integration tests | ❌ | ❌ | ❌ | 🔧 Manual | ✅ **Built-in** | ❌ | ❌ | ❌ |
+
+</div>
+
+**Key takeaway**: Dagger and Earthly modernize the *build pipeline* but
+still rely on BuildKit's imperative, tar-based model and leave security,
+hardening, and tuning to external tools. nix-oci is the only tool that
+covers the entire container lifecycle: build, scan, sign, harden, tune,
+and test, in a single declarative module.
 
 ## Why it matters for nix-oci
 
 Because nix-oci uses nix2container as its backend:
 
-- **Minimal store usage** -- building dozens of container variants does not
+- **Minimal store usage**: building dozens of container variants does not
   bloat your Nix store with duplicate tarballs.
-- **Fast iteration** -- rebuilding after a code change only recomputes the JSON
+- **Fast iteration**: rebuilding after a code change only recomputes the JSON
   manifest; pushing only transfers the changed layer.
-- **Efficient CI** -- CI runners benefit from smaller caches and shorter push
+- **Efficient CI**: CI runners benefit from smaller caches and shorter push
   times, since unchanged layers are never re-uploaded.
-- **Reproducibility** -- the JSON manifest is a pure Nix derivation, so the
+- **Reproducibility**: the JSON manifest is a pure Nix derivation, so the
   image is bit-for-bit reproducible across machines.
 
 ## Further reading
 
 ### nix2container and Nix
 
-- [nix2container](https://github.com/nlewo/nix2container) -- the backend powering nix-oci
-- [Building container images with Nix](https://lewo.abesis.fr/posts/nix-build-container-image/) -- foundational ideas behind the archive-less approach
-- [Nix & Docker: Layer explicitly without duplicate packages](https://blog.eigenvalue.net/2023-nix2container-everything-once/) -- avoiding duplicate store paths in explicit layers
-- [Nixery -- Improved Layering Design](https://tazj.in/blog/nixery-layers) -- popularity-based layering for on-demand registry images
-- [Minimal containers using Nix](https://tmp.bearblog.dev/minimal-containers-using-nix/) -- practical guide to small Nix-built containers
-- [Using Nix with Dockerfiles](https://mitchellh.com/writing/nix-with-dockerfiles) -- Mitchell Hashimoto on combining Nix and Docker
+- [nix2container](https://github.com/nlewo/nix2container): the backend powering nix-oci
+- [Building container images with Nix](https://lewo.abesis.fr/posts/nix-build-container-image/): foundational ideas behind the archive-less approach
+- [Nix & Docker: Layer explicitly without duplicate packages](https://blog.eigenvalue.net/2023-nix2container-everything-once/): avoiding duplicate store paths in explicit layers
+- [Nixery: Improved Layering Design](https://tazj.in/blog/nixery-layers): popularity-based layering for on-demand registry images
+- [Minimal containers using Nix](https://tmp.bearblog.dev/minimal-containers-using-nix/): practical guide to small Nix-built containers
+- [Using Nix with Dockerfiles](https://mitchellh.com/writing/nix-with-dockerfiles): Mitchell Hashimoto on combining Nix and Docker
 
 ### Dockerfile-free tools
 
-- [Introducing Jib (Google Cloud Blog)](https://cloud.google.com/blog/products/application-development/introducing-jib-build-java-docker-images-better) -- building Java images without Docker
-- [Container images simplified with ko (Snyk)](https://snyk.io/blog/container-images-simplified-with-google-ko/) -- building Go images without Docker
-- [Reduce, Reuse, Rebase: Sustainable Containers with Buildpacks (CNCF)](https://www.cncf.io/blog/2024/01/11/reduce-reuse-rebase-sustainable-containers-with-buildpacks/) -- reusable layers and rebasing
-- [Building Container Images without a Dockerfile](https://blog.ttulka.com/building-container-images-without-dockerfile/) -- overview of alternative approaches
+- [Introducing Jib (Google Cloud Blog)](https://cloud.google.com/blog/products/application-development/introducing-jib-build-java-docker-images-better): building Java images without Docker
+- [Container images simplified with ko (Snyk)](https://snyk.io/blog/container-images-simplified-with-google-ko/): building Go images without Docker
+- [Reduce, Reuse, Rebase: Sustainable Containers with Buildpacks (CNCF)](https://www.cncf.io/blog/2024/01/11/reduce-reuse-rebase-sustainable-containers-with-buildpacks/): reusable layers and rebasing
+- [Building Container Images without a Dockerfile](https://blog.ttulka.com/building-container-images-without-dockerfile/): overview of alternative approaches
+
+### Build pipeline tools
+
+- [Dagger documentation](https://docs.dagger.io/): programmable CI/CD engine exposing BuildKit as a type-safe SDK
+- [Dagger architecture overview](https://docs.dagger.io/features/architecture): how Dagger wraps BuildKit into a DAG of containerized functions
+- [Earthly documentation](https://docs.earthly.dev/): Dockerfile-like syntax with targets, cross-references, and shared caching
+- [Earthly vs. Dockerfile (Earthly Blog)](https://earthly.dev/blog/earthly-vs-dockerfile/): how Earthfiles extend the Dockerfile model with better caching and reproducibility
 
 ### nix-oci
 
-- [Optimized layer sharing](./optimize-layers.md) -- how nix-oci uses popularity-based layering on top of nix2container
+- [Optimized layer sharing](./optimize-layers.md): how nix-oci uses popularity-based layering on top of nix2container

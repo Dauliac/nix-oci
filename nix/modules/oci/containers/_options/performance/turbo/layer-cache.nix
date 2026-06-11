@@ -10,17 +10,15 @@
 {
   lib,
   pkgs,
-  perSystemConfig,
   ...
 }:
 let
   example = true;
-  globalTurbo = perSystemConfig.oci.turbo or { };
 in
 {
   options.performance.turbo.layerCache = lib.mkOption {
     type = lib.types.bool;
-    default = globalTurbo.layerCache or true;
+    default = true;
     description = ''
       Enable cross-machine layer caching via OCI Referrers API.
 
