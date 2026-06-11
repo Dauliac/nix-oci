@@ -7,7 +7,7 @@ description = "How nix2container-turbo adds cross-machine layer caching, SOCI v2
 
 nix-oci integrates [nix2container-turbo](https://github.com/schlarpc/nix2container-turbo)
 as an optional push backend that accelerates image distribution. Three
-independent capabilities target different bottlenecks -- layer
+independent capabilities target different bottlenecks: layer
 re-upload, cold-start latency, and lazy pulling.
 
 ## The problem
@@ -17,7 +17,7 @@ Default container pushes with nix2container have two inefficiencies:
 - **Every push re-compresses and re-uploads all layers**, even if the
   registry already has them from a previous push on a different CI
   runner. nix2container's local layer cache (`nix2container-cache.json`)
-  is per-machine -- it does not survive ephemeral CI environments.
+  is per-machine; it does not survive ephemeral CI environments.
 - **Cold-start is sequential**: the container runtime must download the
   *entire* image before the process starts. For large images (1 GB+),
   this can take 50+ seconds on AWS Fargate.
@@ -126,14 +126,14 @@ sequenceDiagram
     Note over CI2: Sub-second push
 ```
 
-1. nix2container annotates each layer with `n2ct.source-digest` -- the
+1. nix2container annotates each layer with `n2ct.source-digest`, the
    uncompressed tar hash derived from the Nix store paths.
 2. On first push, turbo stores a **referrer manifest** in the registry
    mapping `source-digest -> {compressed-digest, size, media-type}`.
 3. On subsequent pushes from *any* machine, skopeo queries the
    [OCI Referrers API](https://github.com/opencontainers/distribution-spec/blob/main/spec.md#listing-referrers),
-   finds the mapping, and tells the registry "this blob already exists"
-   -- **zero re-compression, zero re-upload**.
+   finds the mapping, and tells the registry "this blob already exists":
+   **zero re-compression, zero re-upload**.
 
 ### Performance impact
 
@@ -361,10 +361,10 @@ flowchart TD
 
 ## Further reading
 
-- [Performance integrations](./performance-integrations.md) -- allocators, glibc, march, hwcaps, compression
-- [Archive-less container building](./archive-less-container-building.md) -- how nix2container avoids tarballs
-- [nix2container-turbo](https://github.com/schlarpc/nix2container-turbo) -- upstream project
-- [SOCI snapshotter](https://github.com/awslabs/soci-snapshotter) -- AWS lazy pulling
-- [stargz-snapshotter](https://github.com/containerd/stargz-snapshotter) -- containerd lazy pulling
-- [OCI Referrers API](https://github.com/opencontainers/distribution-spec/blob/main/spec.md#listing-referrers) -- registry-side layer mapping
-- [AWS Fargate SOCI announcement](https://aws.amazon.com/blogs/aws/aws-fargate-enables-faster-container-startup-using-seekable-oci/) -- Fargate lazy pull benchmarks
+- [Performance integrations](./performance-integrations.md): allocators, glibc, march, hwcaps, compression
+- [Archive-less container building](./archive-less-container-building.md): how nix2container avoids tarballs
+- [nix2container-turbo](https://github.com/schlarpc/nix2container-turbo): upstream project
+- [SOCI snapshotter](https://github.com/awslabs/soci-snapshotter): AWS lazy pulling
+- [stargz-snapshotter](https://github.com/containerd/stargz-snapshotter): containerd lazy pulling
+- [OCI Referrers API](https://github.com/opencontainers/distribution-spec/blob/main/spec.md#listing-referrers): registry-side layer mapping
+- [AWS Fargate SOCI announcement](https://aws.amazon.com/blogs/aws/aws-fargate-enables-faster-container-startup-using-seekable-oci/): Fargate lazy pull benchmarks

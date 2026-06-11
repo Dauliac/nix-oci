@@ -55,7 +55,7 @@ and the [CI multi-arch with custom tags example](https://github.com/Dauliac/nix-
 When `crossBuild.enable = true`, non-native architectures are
 cross-compiled on the current host using Nix's `pkgsCross`
 infrastructure. The result is a single OCI directory layout containing
-the manifest list -- no registry or merge step needed.
+the manifest list, with no registry or merge step needed.
 
 ```nix
 oci.containers.myApp = {
@@ -87,7 +87,7 @@ and the [cross-build with dependencies example](https://github.com/Dauliac/nix-o
 For both strategies, nix-oci automatically resolves cross-compiled
 packages via `pkgsCross`. When the container declares
 `package = pkgs.hello`, nix-oci infers the arm64 variant as
-`pkgs.pkgsCross.aarch64-multiplatform.hello` -- no manual `archConfigs`
+`pkgs.pkgsCross.aarch64-multiplatform.hello`, with no manual `archConfigs`
 needed.
 
 nix-oci infers dependencies listed in `dependencies` the same way. Any
@@ -146,12 +146,12 @@ default values and full type details.
 
 ## All multi-arch examples
 
-- [CI multi-arch](https://github.com/Dauliac/nix-oci/blob/main/examples/flake/multi-arch/ci-multi-arch-01.nix) -- parallel native builds + merge
-- [CI multi-arch with custom tags](https://github.com/Dauliac/nix-oci/blob/main/examples/flake/multi-arch/ci-multi-arch-custom-tags-01.nix) -- multiple tags on the manifest list
-- [CI multi-arch single system](https://github.com/Dauliac/nix-oci/blob/main/examples/flake/multi-arch/ci-multi-arch-single-system-01.nix) -- start with one arch, add more later
-- [Cross-build](https://github.com/Dauliac/nix-oci/blob/main/examples/flake/multi-arch/cross-build-01.nix) -- basic cross-compilation
-- [Cross-build with dependencies](https://github.com/Dauliac/nix-oci/blob/main/examples/flake/multi-arch/cross-build-with-deps-01.nix) -- auto-inferred cross deps
-- [Cross-build jq](https://github.com/Dauliac/nix-oci/blob/main/examples/flake/multi-arch/cross-build-jq-01.nix) -- real-world package
-- [Cross-build non-root](https://github.com/Dauliac/nix-oci/blob/main/examples/flake/multi-arch/cross-build-non-root-01.nix) -- multi-arch with user/labels
-- [Cross-build writeShellApplication](https://github.com/Dauliac/nix-oci/blob/main/examples/flake/multi-arch/cross-build-write-shell-01.nix) -- manual archConfigs override
-- [Single extra arch](https://github.com/Dauliac/nix-oci/blob/main/examples/flake/multi-arch/single-extra-arch-01.nix) -- add arm64 to an amd64-native build
+- [CI multi-arch](https://github.com/Dauliac/nix-oci/blob/main/examples/flake/multi-arch/ci-multi-arch-01.nix): parallel native builds + merge
+- [CI multi-arch with custom tags](https://github.com/Dauliac/nix-oci/blob/main/examples/flake/multi-arch/ci-multi-arch-custom-tags-01.nix): multiple tags on the manifest list
+- [CI multi-arch single system](https://github.com/Dauliac/nix-oci/blob/main/examples/flake/multi-arch/ci-multi-arch-single-system-01.nix): start with one arch, add more later
+- [Cross-build](https://github.com/Dauliac/nix-oci/blob/main/examples/flake/multi-arch/cross-build-01.nix): basic cross-compilation
+- [Cross-build with dependencies](https://github.com/Dauliac/nix-oci/blob/main/examples/flake/multi-arch/cross-build-with-deps-01.nix): auto-inferred cross deps
+- [Cross-build jq](https://github.com/Dauliac/nix-oci/blob/main/examples/flake/multi-arch/cross-build-jq-01.nix): real-world package
+- [Cross-build non-root](https://github.com/Dauliac/nix-oci/blob/main/examples/flake/multi-arch/cross-build-non-root-01.nix): multi-arch with user/labels
+- [Cross-build writeShellApplication](https://github.com/Dauliac/nix-oci/blob/main/examples/flake/multi-arch/cross-build-write-shell-01.nix): manual archConfigs override
+- [Single extra arch](https://github.com/Dauliac/nix-oci/blob/main/examples/flake/multi-arch/single-extra-arch-01.nix): add arm64 to an amd64-native build

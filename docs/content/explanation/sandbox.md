@@ -1,6 +1,6 @@
 +++
 title = "Container sandbox"
-description = "Rootless, isolated shell into any container's filesystem using bubblewrap -- no Docker or Podman required"
+description = "Rootless, isolated shell into any container's filesystem using bubblewrap, no Docker or Podman required"
 +++
 
 # Container sandbox
@@ -14,7 +14,7 @@ nix run .#oci-sandbox-nginx
 ```
 
 This drops you into an interactive bash shell where `/bin`, `/etc`, and
-`/home` are the container's -- not the host's.
+`/home` are the container's, not the host's.
 
 ## How it works
 
@@ -51,15 +51,15 @@ flowchart LR
 
 The sandbox script performs these steps:
 
-1. **Bind-mount `/nix/store`** read-only -- symlinks inside the `buildEnv`
+1. **Bind-mount `/nix/store`** read-only; symlinks inside the `buildEnv`
    resolve through this mount
 2. **Bind-mount `buildEnv` subdirectories** (`/bin`, `/lib`, `/etc`) into
    their FHS positions, read-only
-3. **Copy the home directory** to a writable tmpdir -- tools like starship,
+3. **Copy the home directory** to a writable tmpdir; tools like starship,
    git, and bash need to write to `~/.cache`, `~/.local`, etc.
-4. **Set environment variables** -- `PATH`, `HOME`, `USER`, `TERM`, plus
+4. **Set environment variables**: `PATH`, `HOME`, `USER`, `TERM`, plus
    all container-declared environment variables
-5. **Apply PID namespace isolation** -- processes inside the sandbox cannot
+5. **Apply PID namespace isolation**: processes inside the sandbox cannot
    see or signal host processes
 6. **Exec into bash** (or a user-provided command)
 
@@ -81,12 +81,12 @@ nix run .#oci-sandbox-postgres -- cat /etc/passwd
 
 The sandbox adds `coreutils` and `bash` to `PATH` after the container's
 own `/bin`, so you always have `ls`, `cat`, `grep`, etc. available for
-exploration -- even in minimal containers that only ship a single binary.
+exploration, even in minimal containers that only ship a single binary.
 
 ## Home-manager integration
 
 When a container uses `homeConfig`, the sandbox automatically picks up
-home-manager's dotfiles -- bash configuration, starship prompt, git
+home-manager's dotfiles: bash configuration, starship prompt, git
 identity, and anything else managed by home-manager. nix-oci injects
 container-friendly defaults so the sandbox experience is pleasant out
 of the box, with no configuration required.
@@ -122,24 +122,24 @@ customize the defaults.
 
 Four files implement the sandbox:
 
-- **`nix/lib/oci.nix`** (`mkSandboxScript`) -- pure function that generates
+- **`nix/lib/oci.nix`** (`mkSandboxScript`): pure function that generates
   the bubblewrap wrapper script
-- **`nix/modules/oci/lib/mkSandbox.nix`** -- nix-lib module wrapper,
+- **`nix/modules/oci/lib/mkSandbox.nix`**: nix-lib module wrapper,
   exposes `config.lib.oci.mkSandboxScript`
-- **`nix/modules/oci/internal/packages.nix`** -- `sandboxApps` and
+- **`nix/modules/oci/internal/packages.nix`**: `sandboxApps` and
   `prefixedSandboxApps` options that generate one script per container
-- **`nix/modules/oci/outputs/apps.nix`** -- wires sandbox apps into
+- **`nix/modules/oci/outputs/apps.nix`**: wires sandbox apps into
   `oci.flake.apps`
 
 The sandbox reads the container's `nixosConfig.eval` to obtain the
-`rootFilesystem`, `entrypoint`, `workingDir`, and `user` -- the same
+`rootFilesystem`, `entrypoint`, `workingDir`, and `user`, the same
 data used to build the OCI image.
 
 ## Future work
 
-- **Seccomp enforcement** -- the OCI JSON profile needs BPF compilation
+- **Seccomp enforcement**: the OCI JSON profile needs BPF compilation
   for bubblewrap's `--seccomp` flag
-- **Landlock enforcement** -- requires a wrapper binary that calls
+- **Landlock enforcement**: requires a wrapper binary that calls
   `landlock_restrict_self` before exec
-- **Network isolation** -- opt-in `--unshare-net` flag
-- **Volume mounts** -- bind-mount paths matching `declaredVolumes`
+- **Network isolation**: opt-in `--unshare-net` flag
+- **Volume mounts**: bind-mount paths matching `declaredVolumes`

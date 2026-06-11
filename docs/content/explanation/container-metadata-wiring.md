@@ -7,7 +7,7 @@ description = "How user options flow through nix-oci into OCI image config, syst
 
 nix-oci provides a **unified `oci.*` namespace** that works identically
 across flake-parts (build-time), NixOS, and home-manager. Each option
-you set on a container flows through multiple stages -- from module
+you set on a container flows through multiple stages: from module
 option, through OCI image configuration, to systemd services and
 firewall rules.
 
@@ -51,7 +51,7 @@ flowchart TD
 
 ### Ports
 
-Ports are the most widely wired option -- they flow to **four** destinations.
+Ports are the most widely wired option; they flow to **four** destinations.
 
 ```mermaid
 flowchart LR
@@ -92,8 +92,8 @@ flowchart LR
 
 ### Environment
 
-Environment variables are **dual-written** -- baked into the OCI image
-AND passed to the runner at deploy time.
+Environment variables are **dual-written**: baked into the OCI image
+and passed to the runner at deploy time.
 
 ```mermaid
 flowchart LR
@@ -171,13 +171,13 @@ flowchart TD
     style Result fill:#1e1e2e,stroke:#89b4fa,color:#cdd6f4
 ```
 
-The entrypoint is **only** written to the OCI image config -- it is not
+The entrypoint is **only** written to the OCI image config; it is not
 forwarded to the runner service (the container runtime reads it from the
 image).
 
 ### Labels
 
-Labels flow **only** to the OCI image manifest -- they are pure metadata
+Labels flow **only** to the OCI image manifest; they are pure metadata
 with no deploy-time effect. nix-oci automatically generates labels from
 package metadata and container configuration; user-provided labels always
 override auto-generated ones.
@@ -317,7 +317,7 @@ flowchart TD
 
 ### Deploy-only: autoStart and volumes
 
-These options exist **only** in the deploy modules -- they have no effect
+These options exist **only** in the deploy modules; they have no effect
 on the OCI image itself.
 
 ```mermaid
@@ -344,14 +344,14 @@ flowchart LR
     style hm fill:#1e1e2e,stroke:#f5c2e7,color:#cdd6f4
 ```
 
-When you disable [`autoStart`](../reference/nixos-options.html), nix-oci creates only the loader service -- no runner,
+When you disable [`autoStart`](../reference/nixos-options.html), nix-oci creates only the loader service: no runner,
 no firewall rules, no volumes. It loads the image but does not start it.
 
 ## Service dependency chain
 
 Both NixOS and home-manager wire a strict ordering between the loader
 and runner services. When a healthcheck is present and the backend is
-Podman, the runner uses `Type=notify` with `--sdnotify=healthy` -- systemd
+Podman, the runner uses `Type=notify` with `--sdnotify=healthy`; systemd
 waits for the healthcheck to pass before considering the service ready.
 
 ```mermaid
@@ -487,7 +487,7 @@ flowchart TD
 
 ## Healthcheck
 
-Healthchecks are the most deeply wired option -- they flow from the NixOS
+Healthchecks are the most deeply wired option; they flow from the NixOS
 module configuration through the OCI image manifest into systemd service
 readiness.
 
@@ -528,7 +528,7 @@ flowchart TD
     style systemd fill:#1e1e2e,stroke:#a6da95,color:#cdd6f4
 ```
 
-#### HTTP services -- injected health endpoints
+#### HTTP services: injected health endpoints
 
 For HTTP servers, adapters **inject** a native health endpoint when the
 user hasn't defined one. This avoids probing `/` (which might 404).
@@ -537,9 +537,9 @@ user hasn't defined one. This avoids probing `/` (which might 404).
 |---|---|---|
 | **nginx** | `stub_status` server on `127.0.0.1:10246` via `appendHttpConfig` (skipped if user has `/health`, `/healthz`, or `stub_status`) | `curl -f http://127.0.0.1:10246/` |
 | **httpd** | `mod_status` at `/_nix_oci_health` via `extraConfig` (`Require local`) | `curl -f http://localhost:${port}/_nix_oci_health?auto` |
-| **Caddy** | None needed -- built-in admin API at `localhost:2019` | `curl -f http://localhost:2019/config/` |
+| **Caddy** | None needed; built-in admin API at `localhost:2019` | `curl -f http://localhost:2019/config/` |
 
-#### Non-HTTP services -- native CLI tools
+#### Non-HTTP services: native CLI tools
 
 | Service | Native tool | Health signal |
 |---|---|---|
@@ -592,7 +592,7 @@ modules wire `--sdnotify=healthy` into the runner service:
 ## StopSignal
 
 The stop signal tells the container runtime which signal to send for
-**graceful shutdown**. Different services need different signals -- using
+**graceful shutdown**. Different services need different signals; using
 the wrong one can cause data loss or abrupt termination.
 
 ```mermaid
@@ -617,10 +617,10 @@ flowchart LR
 
 | Service | Signal | Why |
 |---|---|---|
-| **nginx** | `SIGQUIT` | Graceful worker shutdown -- finish serving current requests |
-| **httpd** | `SIGWINCH` | Graceful stop -- finish current requests (not `SIGTERM` which is immediate) |
+| **nginx** | `SIGQUIT` | Graceful worker shutdown: finish serving current requests |
+| **httpd** | `SIGWINCH` | Graceful stop: finish current requests (not `SIGTERM` which is immediate) |
 | **Caddy** | `SIGTERM` | Graceful with connection draining |
-| **PostgreSQL** | `SIGINT` | Fast shutdown -- rollback active transactions. `SIGQUIT` can hang waiting for clients |
+| **PostgreSQL** | `SIGINT` | Fast shutdown: rollback active transactions. `SIGQUIT` can hang waiting for clients |
 | **Redis** | `SIGTERM` | Save dataset (if configured) and exit gracefully |
 | **BIND** | `SIGTERM` | Clean shutdown |
 | **dnsmasq** | `SIGTERM` | Clean shutdown |
@@ -686,7 +686,7 @@ uses the runtime default. Set it explicitly when needed.
 ## Declared volumes
 
 OCI `Volumes` declares paths in the image that contain **persistent data**.
-This is image-level metadata -- it tells the container runtime which paths
+This is image-level metadata; it tells the container runtime which paths
 the runtime should treat as named volumes (surviving container restarts).
 
 This is **separate from** deploy-time `volumes` (host bind mounts like

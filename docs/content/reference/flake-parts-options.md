@@ -10,7 +10,7 @@ See also:
 
 - [flake-parts documentation](https://flake.parts)
 - [nix-oci on flake.parts](https://flake.parts/options/nix-oci.html)
-- [nix2container](https://github.com/nlewo/nix2container) -- the backend used to build images
+- [nix2container](https://github.com/nlewo/nix2container): the backend used to build images
 - [nix-oci source: `nix/modules/oci/`](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci)
 
 ## Top-level Options

@@ -71,8 +71,8 @@ sudo nixos-rebuild switch --flake .#my-server
 
 nix-oci creates two systemd services:
 
-- `oci-load-my-webserver.service` -- loads the image from the Nix store into Podman
-- `podman-my-webserver.service` -- runs the container (only when `autoStart = true`)
+- `oci-load-my-webserver.service`: loads the image from the Nix store into Podman
+- `podman-my-webserver.service`: runs the container (only when `autoStart = true`)
 
 ## 4. Verify
 

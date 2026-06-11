@@ -4,19 +4,19 @@ title = "nix-oci container module options"
 
 # nix-oci Container Module Options
 
-**Build OCI containers from NixOS modules** -- this is one of nix-oci's most powerful features.
+**Build OCI containers from NixOS modules**: this is one of nix-oci's most powerful features.
 
 Instead of writing Dockerfiles or manually assembling root filesystems, you write
 standard [NixOS module configuration](https://nixos.org/manual/nixos/stable/#sec-writing-modules)
 and nix-oci builds a minimal OCI image from it. You can turn any NixOS service
-module into a container -- nginx, caddy, redis, postgresql,
+module into a container: nginx, caddy, redis, postgresql,
 grafana, and [thousands more](https://search.nixos.org/options).
 
 See also:
 
 - [NixOS manual: Writing modules](https://nixos.org/manual/nixos/stable/#sec-writing-modules)
-- [NixOS options search](https://search.nixos.org/options) -- find any NixOS service option
-- [NixOS packages search](https://search.nixos.org/packages) -- find packages to include
+- [NixOS options search](https://search.nixos.org/options): find any NixOS service option
+- [NixOS packages search](https://search.nixos.org/packages): find packages to include
 - [NixOS manual: Container chapter](https://nixos.org/manual/nixos/stable/#ch-containers)
 - [nix-oci source: `nix/modules/_nixos/oci/`](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/_nixos/oci)
 
@@ -24,7 +24,7 @@ See also:
 
 When you use `nixosConfig.modules`, nix-oci evaluates your NixOS modules in a
 minimal container context (`boot.isContainer = true`). **You write standard
-NixOS configuration** -- nix-oci handles the rest:
+NixOS configuration**; nix-oci handles the rest:
 
 ```nix
 oci.containers.my-nginx = {
@@ -64,14 +64,14 @@ nix-oci automatically:
 Since the container runs a real NixOS evaluation, you get access to the full
 NixOS module system:
 
-- **Any NixOS service** -- `services.nginx`, `services.redis`, `services.caddy`,
+- **Any NixOS service**: `services.nginx`, `services.redis`, `services.caddy`,
   `services.postgresql`, `services.grafana`, etc.
   ([search all services](https://search.nixos.org/options?query=services.))
-- **System packages** -- `environment.systemPackages` for tools available in the container
-- **Users and groups** -- `users.users`, `users.groups` (nix-oci extracts `/etc/passwd` etc.)
-- **Environment variables** -- from systemd service units and NixOS config
-- **`/etc` files** -- nix-oci includes all NixOS-managed `/etc` entries in the image
-- **Networking config** -- `networking.firewall`, DNS settings, etc.
+- **System packages**: `environment.systemPackages` for tools available in the container
+- **Users and groups**: `users.users`, `users.groups` (nix-oci extracts `/etc/passwd` etc.)
+- **Environment variables**: from systemd service units and NixOS config
+- **`/etc` files**: nix-oci includes all NixOS-managed `/etc` entries in the image
+- **Networking config**: `networking.firewall`, DNS settings, etc.
 
 ## Service adapters
 
@@ -87,7 +87,7 @@ daemon/fork mode). nix-oci includes adapters for common services:
 | postfix | Mail server container adjustments | [`services.postfix`](https://search.nixos.org/options?query=services.postfix) |
 | vsftpd  | FTP server container adjustments | [`services.vsftpd`](https://search.nixos.org/options?query=services.vsftpd) |
 
-**Services without an adapter still work** -- nix-oci extracts the `ExecStart`
+**Services without an adapter still work**: nix-oci extracts the `ExecStart`
 from the systemd unit and uses it as the container entrypoint. If a service
 forks to background, you may need to add a custom adapter or set
 `mainService` to point to the correct unit.
@@ -182,7 +182,7 @@ oci.containers.my-app = {
 
 See also:
 
-- [Container sandbox](../explanation/sandbox.md) -- rootless shell into the container filesystem
+- [Container sandbox](../explanation/sandbox.md): rootless shell into the container filesystem
 - [home-manager options reference](https://nix-community.github.io/home-manager/options.xhtml)
 - [starship configuration](https://starship.rs/config/)
 - [nix-oci source: `homeConfig` options](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci/containers/homeConfig)

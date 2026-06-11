@@ -11,7 +11,7 @@ Contributions are welcome! Here are some ways to help:
 1. Fork and clone the repository
 2. Enter the dev shell: `nix develop` (or use [direnv](https://direnv.net/) for automatic activation)
 3. The dev shell provides all required tools (bats, lefthook, task, convco, typos, etc.)
-4. Git hooks are managed by [lefthook](https://github.com/evilmartians/lefthook) -- they run automatically on commit (formatting, flake check, tests, commit message linting)
+4. Git hooks are managed by [lefthook](https://github.com/evilmartians/lefthook): they run automatically on commit (formatting, flake check, tests, commit message linting)
 5. Make your changes
 6. Submit a pull request
 
@@ -28,7 +28,7 @@ nix-oci is a [flake-parts](https://flake.parts) module. All build-time logic (co
 
 ### import-tree (dendritic module discovery)
 
-Modules are auto-discovered using [import-tree](https://github.com/denful/import-tree) instead of manual import lists. Each `.nix` file under `nix/modules/` is automatically imported -- no need to register new files anywhere.
+Modules are auto-discovered using [import-tree](https://github.com/denful/import-tree) instead of manual import lists. Each `.nix` file under `nix/modules/` is automatically imported; no need to register new files anywhere.
 
 Convention: directories prefixed with `_` (e.g. `_options/`, `_nixos/`, `_nixos-oci/`) are **excluded** from import-tree auto-discovery and must be imported explicitly where needed. Use this for internal submodules, shared option fragments, or modules evaluated in a separate NixOS context.
 
@@ -42,11 +42,11 @@ This gives us typed function signatures, auto-generated reference docs, and test
 
 Core logic lives in pure Nix files under `nix/lib/`:
 
-- `oci.nix` -- core OCI functions (ports, layers, labels, shadow, root, sandbox, seccomp)
-- `container-checks.nix` -- integration check helpers
-- `identity.nix` -- passwd/group file parsing for fromImage base images
-- `deploy.nix` -- deploy helpers (copyScript, autoStart, run args)
-- `eval-container.nix` -- shared NixOS container evaluation function
+- `oci.nix`: core OCI functions (ports, layers, labels, shadow, root, sandbox, seccomp)
+- `container-checks.nix`: integration check helpers
+- `identity.nix`: passwd/group file parsing for fromImage base images
+- `deploy.nix`: deploy helpers (copyScript, autoStart, run args)
+- `eval-container.nix`: shared NixOS container evaluation function
 
 nix-lib wrappers in `nix/modules/oci/lib/` delegate to these pure functions. Deploy modules import them directly (not through nix-lib config).
 
@@ -110,7 +110,7 @@ This ensures:
 
 ### No IFD (Import From Derivation)
 
-nix-oci **never** uses IFD. All evaluation is pure -- no derivation is built during `nix eval`, `nix flake show`, or `nix flake check`.
+nix-oci **never** uses IFD. All evaluation is pure: no derivation is built during `nix eval`, `nix flake show`, or `nix flake check`.
 
 Why this matters:
 
@@ -130,7 +130,7 @@ NixOS service adapters (`nix/modules/_nixos-oci/service-adapters/`) automaticall
 
 ### Assertions for impossible states
 
-Use NixOS/module `assertions` to reject invalid configurations at eval time rather than producing broken images at build time. If a state combination is impossible or nonsensical, **add an assertion** -- don't silently ignore it.
+Use NixOS/module `assertions` to reject invalid configurations at eval time rather than producing broken images at build time. If a state combination is impossible or nonsensical, **add an assertion**, don't silently ignore it.
 
 Examples already in the codebase:
 - `_home-manager-oci/defaults.nix`: asserts `home.username == oci.container.user` (prevents HM user mismatch)
@@ -139,21 +139,21 @@ Examples already in the codebase:
 Guidelines:
 - If two options are mutually exclusive, assert it (e.g. `mainService` vs explicit `package` with entrypoint)
 - If a combination leads to a broken image (empty entrypoint, missing user), assert it
-- Prefer `assert` or module `assertions` over silent fallbacks -- fail loud, fail early
+- Prefer `assert` or module `assertions` over silent fallbacks: fail loud, fail early
 - Write a clear `message` that tells the user what's wrong and how to fix it
 
 ## Project structure
 
-- `nix/modules/oci/` -- flake-parts build-time modules
-- `nix/modules/oci/lib/` -- nix-lib function declarations (typed, documented)
-- `nix/modules/oci/containers/_options/` -- shared per-container option definitions
-- `nix/modules/deploy/` -- NixOS and Home Manager deploy modules
-- `nix/modules/_nixos-oci/` -- NixOS container eval modules (service adapters, entrypoint, hardening)
-- `nix/modules/_home-manager-oci/` -- home-manager container eval defaults and assertions
-- `nix/lib/` -- pure shared libraries (no module system dependency)
-- `examples/` -- usage examples (build, deploy-nixos, deploy-home-manager)
-- `nix/tests/` -- end-to-end and integration tests
-- `docs/` -- documentation source (built with [NDG](https://github.com/feel-co/ndg))
+- `nix/modules/oci/`: flake-parts build-time modules
+- `nix/modules/oci/lib/`: nix-lib function declarations (typed, documented)
+- `nix/modules/oci/containers/_options/`: shared per-container option definitions
+- `nix/modules/deploy/`: NixOS and Home Manager deploy modules
+- `nix/modules/_nixos-oci/`: NixOS container eval modules (service adapters, entrypoint, hardening)
+- `nix/modules/_home-manager-oci/`: home-manager container eval defaults and assertions
+- `nix/lib/`: pure shared libraries (no module system dependency)
+- `examples/`: usage examples (build, deploy-nixos, deploy-home-manager)
+- `nix/tests/`: end-to-end and integration tests
+- `docs/`: documentation source (built with [NDG](https://github.com/feel-co/ndg))
 
 ## Running tests
 
@@ -242,13 +242,13 @@ Every option declaration lives in its own file, with the file path mirroring the
 ## Code style
 
 - Format with `nix fmt`
-- No raw `import` -- use modules or nix-lib
+- No raw `import`; use modules or nix-lib
 - Prefix internal directories with `_` (excluded from import-tree)
 
 ## Contributions we'd love to see
 
-- **New service adapters** -- add foreground mode, healthcheck, and stop signal support for more NixOS services (see `nix/modules/_nixos-oci/service-adapters/` for examples). Any service under `services.*` that can run in a container is a good candidate.
-- **Tests for existing adapters** -- improve coverage of service adapter behavior (healthcheck injection, stop signal detection, entrypoint extraction) with Container Structure Tests or VM integration tests.
+- **New service adapters**: add foreground mode, healthcheck, and stop signal support for more NixOS services (see `nix/modules/_nixos-oci/service-adapters/` for examples). Any service under `services.*` that can run in a container is a good candidate.
+- **Tests for existing adapters**: improve coverage of service adapter behavior (healthcheck injection, stop signal detection, entrypoint extraction) with Container Structure Tests or VM integration tests.
 
 ## Related links
 

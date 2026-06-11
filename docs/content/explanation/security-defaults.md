@@ -15,7 +15,7 @@ Kubernetes [Pod Security Standards](https://kubernetes.io/docs/concepts/security
 Containers built with nix-oci run as a **non-root user** by default
 (see [`isRoot`](../reference/flake-parts-options.html) option reference).
 When you disable `isRoot`, nix-oci creates a dedicated user entry in `/etc/passwd`
-with **UID 4000** and **GID 4000** -- a deliberate choice that avoids
+with **UID 4000** and **GID 4000**, a deliberate choice that avoids
 collisions with both system UIDs (0-999) and typical human UIDs
 (1000-60000).
 
@@ -26,11 +26,11 @@ security anti-pattern. Even with Linux namespaces isolating the container
 from the host, a root process:
 
 - Can modify any file in the container filesystem, including binaries
-  and libraries -- an attacker who gains code execution can trivially
+  and libraries; an attacker who gains code execution can trivially
   persist.
 - May exploit kernel vulnerabilities that check UID 0 as a
   capability gate.
-- Violates the **principle of least privilege** -- most applications do
+- Violates the **principle of least privilege**: most applications do
   not need to bind privileged ports, load kernel modules, or change
   ownership of files.
 
@@ -41,7 +41,7 @@ Regardless of `isRoot`, every container includes minimal
 For non-root containers, both a `root` entry and the application user
 entry exist. This ensures that:
 
-- `getpwnam()` and `getgrnam()` calls resolve correctly -- many
+- `getpwnam()` and `getgrnam()` calls resolve correctly; many
   libraries (including glibc's NSS) fail hard without these files.
 - Log output shows readable usernames instead of raw UIDs.
 - Tools like `su` or `gosu` (when explicitly added) can look up
@@ -58,7 +58,7 @@ verify that your service works without root.
 
 ## Distroless by construction
 
-By default, nix-oci builds from scratch -- no implicit
+By default, nix-oci builds from scratch, with no implicit
 `FROM alpine` or `FROM debian:slim`. nix-oci assembles the container root filesystem
 from **exactly the Nix store paths the application needs**,
 plus a minimal scaffolding. When needed, you can also layer on top of an
@@ -74,7 +74,7 @@ existing image via `fromImage`, but the default is an empty base (from scratch):
 Nothing else. No package manager, no shell (unless explicitly added as a
 dependency), no cron, no init system. This is the Nix equivalent of
 Google's [distroless](https://github.com/GoogleContainerTools/distroless)
-images -- but generated automatically from the dependency closure rather
+images, but generated automatically from the dependency closure rather
 than hand-curated.
 
 ### Why it matters
@@ -86,7 +86,7 @@ than hand-curated.
   nix-oci image for a Go binary is 20-50 MB, compared to 150+ MB for
   an Alpine-based equivalent with a package manager.
 - **No CVE noise**: CVE scanners report vulnerabilities in installed
-  packages. With no unused packages, scan results are relevant -- every
+  packages. With no unused packages, scan results are relevant; every
   reported CVE actually affects your workload.
 - **Reproducibility**: because the image contents are fully determined
   by the Nix closure, two builds of the same flake lock produce
@@ -130,7 +130,7 @@ same `flake.lock`, two builds on different machines produce identical
 image digests. This is a direct consequence of:
 
 - Using Nix derivations (pure, hermetic builds) for all image contents.
-- nix2container's archive-less approach -- the JSON manifest is a
+- nix2container's archive-less approach: the JSON manifest is a
   deterministic function of the input store paths.
 - No timestamps, random IDs, or host-dependent state in the build.
 
@@ -145,8 +145,8 @@ image digests. This is a direct consequence of:
 
 ## Further reading
 
-- [Automatic OCI labels](./automatic-labeling.md) -- how labels encode security posture and K8s PSS level
-- [CIS Docker Benchmark](https://www.cisecurity.org/benchmark/docker) -- industry container security baseline
-- [NIST SP 800-190](https://csrc.nist.gov/pubs/sp/800/190/final) -- application container security guide
-- [Google distroless](https://github.com/GoogleContainerTools/distroless) -- the distroless philosophy
-- [SLSA](https://slsa.dev/) -- supply chain levels for software artifacts
+- [Automatic OCI labels](./automatic-labeling.md): how labels encode security posture and K8s PSS level
+- [CIS Docker Benchmark](https://www.cisecurity.org/benchmark/docker): industry container security baseline
+- [NIST SP 800-190](https://csrc.nist.gov/pubs/sp/800/190/final): application container security guide
+- [Google distroless](https://github.com/GoogleContainerTools/distroless): the distroless philosophy
+- [SLSA](https://slsa.dev/): supply chain levels for software artifacts

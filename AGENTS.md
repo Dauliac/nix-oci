@@ -10,6 +10,14 @@ Before making any code changes, **always read `CONTRIBUTING.md`** at the project
 - Naming conventions (kebab-case filenames)
 - Architecture (flake-parts, NixOS eval bus, service adapters, no IFD)
 
+## Writing style
+
+- Use **plain dashes** (`-`) for lists, never em-dashes (`--` or `—`) in prose. Write short, direct sentences instead of joining clauses with dashes.
+- Avoid filler words and hedging ("simply", "just", "basically", "essentially", "in order to").
+- Prefer active voice. Say what the tool does, not what "is done by" the tool.
+- Do not start sentences with "This means", "This creates", "This ensures" repeatedly. Vary sentence structure.
+- No marketing superlatives ("dramatically", "blazingly fast", "seamlessly"). State facts and let the reader judge.
+
 ## flake.parts-website submodule (`docs/flake-parts-website/`)
 
 This is a fork of `https://github.com/hercules-ci/flake.parts-website`.

@@ -7,8 +7,8 @@ description = "How nix-oci leverages NixOS module evaluation and home-manager to
 
 nix-oci builds on a radical idea: **containers are just NixOS systems
 without a kernel**. Instead of writing Dockerfiles or shell scripts, you
-write NixOS module configuration -- the same language used to configure
-full NixOS machines -- and nix-oci evaluates it into a minimal OCI image.
+write NixOS module configuration, the same language used to configure
+full NixOS machines, and nix-oci evaluates it into a minimal OCI image.
 
 Home-manager extends this further: dotfiles, shell configuration, and
 developer tooling bake into the container at build time, producing
@@ -21,13 +21,13 @@ environments to work in.
 
 Traditional container images suffer from three fundamental issues:
 
-1. **Imperative construction** -- Dockerfiles are sequences of shell
+1. **Imperative construction**: Dockerfiles are sequences of shell
    commands. The final state depends on execution order, layer caching,
    and implicit state from base images.
-2. **No introspection** -- once built, there's no way to ask "what
+2. **No introspection**: once built, there's no way to ask "what
    services does this configure?" or "what user runs this process?" without
    reverse-engineering the image.
-3. **Manual metadata** -- operators must specify healthchecks, stop signals,
+3. **Manual metadata**: operators must specify healthchecks, stop signals,
    exposed ports, and labels by hand and keep them in sync with the
    actual service configuration.
 
@@ -81,7 +81,7 @@ for the full list of auto-derived fields.
 When you use `nixosConfig.modules` or `nixosConfig.mainService` on a container, nix-oci
 performs a full NixOS module evaluation in a minimal context:
 
-1. **Imports** `_nixos/oci/` modules -- entrypoint extraction,
+1. **Imports** `_nixos/oci/` modules: entrypoint extraction,
    healthcheck, hardening, performance, root filesystem assembly
 2. **Passes** container-level options (`package`, `dependencies`,
    `hardening`, `performance`) into the NixOS eval
@@ -90,25 +90,25 @@ performs a full NixOS module evaluation in a minimal context:
    environment variables, users, and home-manager dotfiles
 5. **Assembles** a `buildEnv` root filesystem from the results
 
-The evaluation is lazy -- nix-oci only materializes what the image
+The evaluation is lazy; nix-oci only materializes what the image
 actually needs. A container with `services.nginx` does not pull in
 systemd, sudo, or the full NixOS default package set.
 
 ## Home-manager: dotfiles as infrastructure
 
-Home-manager manages user-level configuration -- shell, prompt, editor,
+Home-manager manages user-level configuration: shell, prompt, editor,
 git, SSH keys, XDG directories. In a container context, this means
 dotfiles are **reproducible build artifacts**, not runtime state.
 
 ### What home-manager enables
 
-- **Shell configuration** -- `.bashrc`, `.zshrc` with aliases, completions,
+- **Shell configuration**: `.bashrc`, `.zshrc` with aliases, completions,
   history settings
-- **Prompt** -- [starship](https://starship.rs/) or any prompt system,
+- **Prompt**: [starship](https://starship.rs/) or any prompt system,
   configured declaratively
-- **Git** -- `.gitconfig` with user identity, aliases, signing
-- **Editor** -- neovim/vim/emacs with plugins and language servers
-- **XDG directories** -- `~/.config/`, `~/.local/share/` populated at
+- **Git**: `.gitconfig` with user identity, aliases, signing
+- **Editor**: neovim/vim/emacs with plugins and language servers
+- **XDG directories**: `~/.config/`, `~/.local/share/` populated at
   build time
 
 ### Container-friendly defaults
@@ -221,14 +221,14 @@ oci.containers.worker = {
 
 Both containers share the same dev-tools baseline but can extend it
 independently. Changes to `dev-tools.nix` propagate to all containers
-that import it -- a single source of truth.
+that import it: a single source of truth.
 
 ## See also
 
-- [Container module options](../reference/nix-oci-container-module-options.md) -- full reference for `nixosConfig` and `homeConfig`
-- [Container sandbox](./sandbox.md) -- interactive shell leveraging home-manager dotfiles
-- [Automatic metadata derivation](./automatic-metadata.md) -- healthchecks, stop signals, working directories from NixOS services
-- [flake-parts options](../reference/flake-parts-options.md) -- build-time container options
-- [home-manager manual](https://nix-community.github.io/home-manager/) -- upstream documentation
-- [home-manager options](https://nix-community.github.io/home-manager/options.xhtml) -- full option reference
-- [NixOS options search](https://search.nixos.org/options) -- find any NixOS service option
+- [Container module options](../reference/nix-oci-container-module-options.md): full reference for `nixosConfig` and `homeConfig`
+- [Container sandbox](./sandbox.md): interactive shell leveraging home-manager dotfiles
+- [Automatic metadata derivation](./automatic-metadata.md): healthchecks, stop signals, working directories from NixOS services
+- [flake-parts options](../reference/flake-parts-options.md): build-time container options
+- [home-manager manual](https://nix-community.github.io/home-manager/): upstream documentation
+- [home-manager options](https://nix-community.github.io/home-manager/options.xhtml): full option reference
+- [NixOS options search](https://search.nixos.org/options): find any NixOS service option

@@ -6,8 +6,8 @@ description = "How nix-oci applies defense-in-depth with seccomp syscall filteri
 # Container hardening
 
 nix-oci provides a declarative hardening system that layers three
-independent Linux kernel primitives -- **seccomp**, **Landlock**, and
-**capabilities** -- into a defense-in-depth posture. Each primitive
+independent Linux kernel primitives (**seccomp**, **Landlock**, and
+**capabilities**) into a defense-in-depth posture. Each primitive
 operates at a different level of the kernel, and combining them
 covers gaps that any single mechanism leaves open.
 
@@ -57,7 +57,7 @@ for the inner `oci.container.hardening.*` options.
 ## Seccomp: syscall filtering
 
 Seccomp uses BPF programs to filter syscalls at the kernel boundary.
-A process that attempts a blocked syscall receives `EPERM` -- the
+A process that attempts a blocked syscall receives `EPERM`; the
 syscall never executes.
 
 ### Predefined profiles
@@ -143,7 +143,7 @@ format. Deploy modules pass it via
 ## Landlock: object-level access control
 
 Landlock is a Linux Security Module (LSM) that operates at the
-**VFS level** -- it controls which specific inodes and TCP ports a
+**VFS level**: it controls which specific inodes and TCP ports a
 process can access, not just which syscalls it can invoke.
 
 Key properties:
@@ -299,7 +299,7 @@ Deploy modules translate to `--security-opt=no-new-privileges`.
 hardening.disableDns = true;
 ```
 
-This rewrites `/etc/nsswitch.conf` to `hosts: files` only -- no DNS
+This rewrites `/etc/nsswitch.conf` to `hosts: files` only, with no DNS
 backend. Applications using hardcoded IP addresses remain unaffected.
 
 Note: `/etc/resolv.conf` is **not** written into the image because
@@ -370,9 +370,9 @@ oci.containers.my-api = {
 
 ## Further reading
 
-- [Security defaults](./security-defaults.md) -- non-root, distroless, reproducibility
-- [Automatic OCI labels](./automatic-labeling.md) -- how labels encode the full security posture
-- [CVE scanning, SBOM & integrity](./cve-sbom-integrity.md) -- vulnerability scanning and compliance
-- [Seccomp BPF](https://www.kernel.org/doc/html/latest/userspace-api/seccomp_filter.html) -- kernel documentation
-- [Landlock LSM](https://docs.kernel.org/security/landlock.html) -- kernel documentation
-- [Linux capabilities](https://man7.org/linux/man-pages/man7/capabilities.7.html) -- man page
+- [Security defaults](./security-defaults.md): non-root, distroless, reproducibility
+- [Automatic OCI labels](./automatic-labeling.md): how labels encode the full security posture
+- [CVE scanning, SBOM & integrity](./cve-sbom-integrity.md): vulnerability scanning and compliance
+- [Seccomp BPF](https://www.kernel.org/doc/html/latest/userspace-api/seccomp_filter.html): kernel documentation
+- [Landlock LSM](https://docs.kernel.org/security/landlock.html): kernel documentation
+- [Linux capabilities](https://man7.org/linux/man-pages/man7/capabilities.7.html): man page

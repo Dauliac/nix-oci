@@ -6,7 +6,7 @@ description = "Build and deploy your first OCI container with nix-oci"
 # Getting Started
 
 This tutorial walks you through building your first container image,
-then deploying it on NixOS -- all from Nix.
+then deploying it on NixOS, all from Nix.
 
 ## Prerequisites
 
@@ -15,7 +15,7 @@ then deploying it on NixOS -- all from Nix.
 
 ::: {.tip}
 The fastest way to get started is the template:
-`nix flake init -t github:Dauliac/nix-oci` -- it scaffolds a ready-to-build flake for you.
+`nix flake init -t github:Dauliac/nix-oci`: it scaffolds a ready-to-build flake for you.
 :::
 
 ## Step 1: Add nix-oci to your flake
@@ -85,8 +85,8 @@ Add the NixOS module to your system configuration:
 ```
 
 This creates two systemd services:
-- `oci-load-hello.service` -- loads the image from the Nix store into Podman
-- `podman-hello.service` -- runs the container
+- `oci-load-hello.service`: loads the image from the Nix store into Podman
+- `podman-hello.service`: runs the container
 
 ## Step 5: Build from a NixOS service (optional)
 
@@ -112,11 +112,11 @@ perSystem = { ... }: {
 ```
 
 nix-oci evaluates the NixOS modules, extracts the entrypoint, users, and
-filesystem, and builds a minimal OCI image -- no Dockerfile needed.
+filesystem, and builds a minimal OCI image; no Dockerfile needed.
 
 ::: {.tip}
 The service adapter for nginx auto-injects a healthcheck endpoint, a stop
-signal (`SIGQUIT`), and foreground mode -- you get production-grade container
+signal (`SIGQUIT`), and foreground mode; you get production-grade container
 metadata automatically. Adapters exist for 10 services: nginx, httpd, caddy,
 postgresql, redis, bind, dnsmasq, postfix, vsftpd, and php-fpm.
 :::
@@ -129,7 +129,7 @@ get pre-extracted at lock time so evaluation stays pure (no IFD):
 
 ::: {.warning}
 Commit the base image identity files to your repository.
-Run the lock command first to extract them -- see the
+Run the lock command first to extract them; see the
 [`fromImage` reference](./reference/flake-parts-options.html) for details.
 :::
 
@@ -251,12 +251,52 @@ system-manager (direct podman flags). Docker-only deployments get the
 healthcheck baked into the image but without systemd integration.
 :::
 
+## Step 11: Enable security scanning (optional)
+
+nix-oci bundles CVE scanners, SBOM generation, image signing,
+credentials leak detection, CIS compliance checks, and OCI config
+policy validation. Enable what you need:
+
+```nix
+perSystem = { ... }: {
+  oci.containers.my-app = {
+    package = pkgs.my-app;
+
+    # CVE scanning
+    cve.trivy.enabled = true;
+
+    # Image linting (CIS Docker Benchmarks)
+    lint.dockle.enabled = true;
+
+    # OCI config policy checking (Conftest / OPA Rego)
+    policy.conftest.enabled = true;
+  };
+};
+```
+
+Run them as flake apps:
+
+```bash
+nix run .#oci-cve-trivy-my-app
+nix run .#oci-lint-dockle-my-app
+nix run .#oci-policy-conftest-my-app
+```
+
+Conftest ships built-in policies that check for root users, leaked
+secrets in env vars, missing OCI labels, and missing entrypoints.
+Override `policy.conftest.policyDir` with your own Rego files to add
+organization-specific rules.
+
+See [CVE scanning, SBOM generation & integrity tests](./explanation/cve-sbom-integrity.html)
+for the full set of security tools.
+
 ## Next steps
 
-- [Container Modules API](./how-to/container-modules-api.html) -- deep dive into `nixosConfig.modules`
-- [Deploy Modules](./how-to/deploy-modules.html) -- NixOS and Home Manager deployment
-- [Hardening](./explanation/hardening.html) -- seccomp, Landlock, capabilities
-- [Performance](./explanation/performance-integrations.html) -- allocators, glibc tunables, march
-- [Automatic metadata](./explanation/automatic-metadata.html) -- healthchecks, stop signals, volumes
-- [Automatic labeling](./explanation/automatic-labeling.html) -- OCI annotations, K8s PSS, security hints
-- [Options Reference](./reference/flake-parts-options.html) -- full option reference
+- [Container Modules API](./how-to/container-modules-api.html): deep dive into `nixosConfig.modules`
+- [Deploy Modules](./how-to/deploy-modules.html): NixOS and Home Manager deployment
+- [Hardening](./explanation/hardening.html): seccomp, Landlock, capabilities
+- [Performance](./explanation/performance-integrations.html): allocators, glibc tunables, march
+- [Automatic metadata](./explanation/automatic-metadata.html): healthchecks, stop signals, volumes
+- [Automatic labeling](./explanation/automatic-labeling.html): OCI annotations, K8s PSS, security hints
+- [Security scanning](./explanation/cve-sbom-integrity.html): CVE, SBOM, signing, Conftest
+- [Options Reference](./reference/flake-parts-options.html): full option reference

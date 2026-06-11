@@ -14,7 +14,7 @@ images and how the project satisfies it.
 
 The OCI [layer specification](https://github.com/opencontainers/image-spec/blob/main/layer.md)
 defines how filesystem changes become tar archives. Every layer
-in an OCI image is a **changeset** -- a set of additions, modifications,
+in an OCI image is a **changeset**: a set of additions, modifications,
 and removals relative to the layers below it.
 
 ### Media types
@@ -29,7 +29,7 @@ The spec defines three layer media types:
 
 nix-oci exposes a [`performance.compression`](../reference/flake-parts-options.html)
 option to choose between gzip (universal compatibility) and zstd (faster, smaller).
-Skopeo applies compression at transport time -- nix2container
+Skopeo applies compression at transport time; nix2container
 builds layer descriptions as JSON and materializes tarballs on-the-fly.
 
 ```nix
@@ -40,12 +40,12 @@ oci.containers.myapp.performance.compression = "zstd";
 
 The spec requires that every layer tar entry includes:
 
-- **uid / gid** -- user and group ownership
-- **uname / gname** -- user and group names
-- **mode** -- permission bits
-- **mtime** -- modification timestamp
-- **xattrs** -- extended attributes (PAX headers)
-- **linkname** -- symlink or hardlink target
+- **uid / gid**: user and group ownership
+- **uname / gname**: user and group names
+- **mode**: permission bits
+- **mtime**: modification timestamp
+- **xattrs**: extended attributes (PAX headers)
+- **linkname**: symlink or hardlink target
 
 nix2container's `buildLayer` and `buildImage` produce tar entries
 directly from Nix store paths, preserving all POSIX attributes.
@@ -84,10 +84,10 @@ that a naive extract-and-repack approach would cause.
 The spec states that a layer tar **MUST NOT** include duplicate entries
 for file paths. nix-oci satisfies this through two mechanisms:
 
-1. **`buildEnv` deduplication** -- the Nix `buildEnv` function merges
+1. **`buildEnv` deduplication**: the Nix `buildEnv` function merges
    package outputs into a single directory tree, resolving collisions
    before nix-oci produces any tar.
-2. **nix2container store-path model** -- each Nix store path appears
+2. **nix2container store-path model**: each Nix store path appears
    exactly once in the layer description. The `foldImageLayers` function
    chains layers so each one excludes paths already present in prior
    layers.
@@ -104,7 +104,7 @@ the link type and target through unchanged).
 
 Whiteout files (`.wh.*` prefix) signal file deletions in a layer
 relative to lower layers. nix-oci builds images **from scratch** by
-default -- there are no lower layers to delete from, so nix-oci does not
+default; there are no lower layers to delete from, so nix-oci does not
 produce whiteout files.
 
 When `fromImage` builds on top of a pulled base image,
