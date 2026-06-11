@@ -44,13 +44,38 @@ in
               signingCfg = containerConfig.signing.cosign;
               appName = "sign-cosign-${containerId}";
 
+              # Resolve the key source at the shell level so both sign and
+              # verify use the same resolved value.
+              #
+              # When keyEnvVar is set, the script reads the env var at
+              # runtime and falls back to the Nix-configured `key` value.
+              # When keyEnvVar is null, the Nix value is baked in.
+              keyPreamble =
+                if signingCfg.keyless then
+                  ""
+                else if signingCfg.keyEnvVar != null then
+                  let
+                    fallback = if signingCfg.key != null then signingCfg.key else "";
+                  in
+                  ''
+                    _COSIGN_KEY="''${${signingCfg.keyEnvVar}:-${fallback}}"
+                    if [ -z "$_COSIGN_KEY" ]; then
+                      echo "[${appName}] ERROR: no cosign key configured -- set \$${signingCfg.keyEnvVar} or oci.signing.cosign.key" >&2
+                      exit 1
+                    fi
+                  ''
+                else
+                  ''
+                    _COSIGN_KEY="${signingCfg.key}"
+                  '';
+
               keyArgs =
                 if signingCfg.keyless then
                   # Keyless: cosign uses OIDC automatically, set yes to
                   # skip interactive confirmation in CI
                   ""
                 else
-                  "--key ${signingCfg.key}";
+                  ''--key "$_COSIGN_KEY"'';
 
               annotationArgs = lib.concatStringsSep " " (
                 lib.mapAttrsToList (k: v: "-a ${lib.escapeShellArg "${k}=${v}"}") signingCfg.annotations
@@ -72,7 +97,7 @@ in
                   in
                   "${identityArg} ${issuerArg}"
                 else
-                  "--key ${signingCfg.key}";
+                  ''--key "$_COSIGN_KEY"'';
 
               verifyBlock =
                 if signingCfg.verify then
@@ -112,6 +137,7 @@ in
 
               COSIGN="${perSystemConfig.packages.cosign}/bin/cosign"
 
+              ${keyPreamble}
               echo "[${appName}] signing $SIGN_REF"
               COSIGN_YES=1 $COSIGN sign ${keyArgs} ${annotationArgs} "$SIGN_REF" >&2
 

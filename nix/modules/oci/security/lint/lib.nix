@@ -68,6 +68,46 @@ in
             '';
         };
 
+        mkCheckLintDockle = {
+          type = types.functionTo types.package;
+          description = "Create derivation check for Dockle container image linting";
+          file = "nix/modules/oci/security/lint/lib.nix";
+          fn =
+            {
+              perSystemConfig,
+              containerId,
+              globalConfig,
+            }:
+            let
+              oci = perSystemConfig.internal.OCIs.${containerId};
+              containerConfig = perSystemConfig.containers.${containerId}.lint.dockle;
+              archive = ociLib.mkDockerArchive {
+                inherit oci;
+                inherit (perSystemConfig.packages) skopeo;
+              };
+              ignoreFlags = lib.concatMapStringsSep " " (
+                id: "--ignore ${lib.escapeShellArg id}"
+              ) containerConfig.ignore;
+              exitLevel = exitLevelToCode.${containerConfig.exitLevel};
+            in
+            pkgs.runCommandLocal "lint-dockle-${containerId}"
+              {
+                buildInputs = [ perSystemConfig.packages.dockle ];
+                meta.description = "Run Dockle lint on ${containerId}.";
+              }
+              ''
+                set -o errexit
+                set -o pipefail
+                set -o nounset
+                ${perSystemConfig.packages.dockle}/bin/dockle \
+                  --input ${archive} \
+                  --exit-level ${exitLevel} \
+                  ${ignoreFlags} \
+                  --exit-code 1
+                touch $out
+              '';
+        };
+
         mkAppLintDockle = {
           type = types.functionTo types.attrs;
           description = "Create flake app for Dockle container image linting";

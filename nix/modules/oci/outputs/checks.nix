@@ -15,7 +15,13 @@ in
         type = types.attrsOf types.package;
         description = "OCI-related checks that can be exposed as flake outputs.";
         readOnly = true;
-        default = config.oci.internal.prefixedDiveChecks // config.oci.internal.prefixedDgossChecks;
+        default =
+          config.oci.internal.prefixedDiveChecks
+          // config.oci.internal.prefixedDgossChecks
+          // config.oci.internal.prefixedPolicyConftestChecks
+          // config.oci.internal.prefixedLintDockleChecks
+          // config.oci.internal.prefixedCredentialsLeakTrivyChecks
+          // config.oci.internal.prefixedSBOMSyftChecks;
       };
     }
   );

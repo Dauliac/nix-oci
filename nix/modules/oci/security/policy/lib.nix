@@ -83,6 +83,61 @@ in
             '';
         };
 
+        mkCheckPolicyConftest = {
+          type = types.functionTo types.package;
+          description = "Create derivation check for Conftest OCI image config policy";
+          file = "nix/modules/oci/security/policy/lib.nix";
+          fn =
+            {
+              perSystemConfig,
+              containerId,
+              globalConfig,
+            }:
+            let
+              oci = perSystemConfig.internal.OCIs.${containerId};
+              containerConfig = perSystemConfig.containers.${containerId}.policy.conftest;
+              archive = ociLib.mkDockerArchive {
+                inherit oci;
+                inherit (perSystemConfig.packages) skopeo;
+              };
+              namespaceFlags = lib.concatMapStringsSep " " (
+                ns: "--namespace ${lib.escapeShellArg ns}"
+              ) containerConfig.namespaces;
+              effectivePolicyDir =
+                if containerConfig.extraPolicyDirs == [ ] then
+                  containerConfig.policyDir
+                else
+                  pkgs.symlinkJoin {
+                    name = "merged-conftest-policies-${containerId}";
+                    paths = [ containerConfig.policyDir ] ++ containerConfig.extraPolicyDirs;
+                  };
+            in
+            pkgs.runCommandLocal "policy-conftest-${containerId}"
+              {
+                buildInputs = [
+                  perSystemConfig.packages.conftest
+                  pkgs.gnutar
+                  pkgs.jq
+                ];
+                meta.description = "Run Conftest OCI policy check on ${containerId}.";
+              }
+              ''
+                set -o errexit
+                set -o pipefail
+                set -o nounset
+                WORK="$(mktemp -d)"
+                trap 'rm -rf "$WORK"' EXIT
+                ${pkgs.gnutar}/bin/tar xf ${archive} -C "$WORK" manifest.json
+                CONFIG_FILE=$(${pkgs.jq}/bin/jq -r '.[0].Config' "$WORK/manifest.json")
+                ${pkgs.gnutar}/bin/tar xf ${archive} -C "$WORK" "$CONFIG_FILE"
+                ${perSystemConfig.packages.conftest}/bin/conftest test "$WORK/$CONFIG_FILE" \
+                  --policy ${effectivePolicyDir} \
+                  ${namespaceFlags} \
+                  --no-color
+                touch $out
+              '';
+        };
+
         mkAppPolicyConftest = {
           type = types.functionTo types.attrs;
           description = "Create flake app for Conftest OCI image config policy checking";

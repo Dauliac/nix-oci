@@ -58,6 +58,40 @@ in
             '';
         };
 
+        mkCheckSBOMSyft = {
+          type = types.functionTo types.package;
+          description = "Create derivation check that generates Syft SBOM (validates SBOM can be produced)";
+          file = "nix/modules/oci/security/sbom/lib.nix";
+          fn =
+            {
+              perSystemConfig,
+              containerId,
+            }:
+            let
+              oci = perSystemConfig.internal.OCIs.${containerId};
+              containerConfig = perSystemConfig.containers.${containerId}.sbom.syft;
+              archive = ociLib.mkDockerArchive {
+                inherit oci;
+                inherit (perSystemConfig.packages) skopeo;
+              };
+              configFlag =
+                if containerConfig.config.enabled then "--config ${containerConfig.config.path}" else "";
+            in
+            pkgs.runCommandLocal "sbom-syft-${containerId}"
+              {
+                buildInputs = [ perSystemConfig.packages.syft ];
+                meta.description = "Generate Syft SBOM for ${containerId}.";
+              }
+              ''
+                set -o errexit
+                set -o pipefail
+                set -o nounset
+                export DOCKER_CONFIG="$(mktemp -d)"
+                ${perSystemConfig.packages.syft}/bin/syft ${configFlag} ${archive} \
+                  --output cyclonedx-json="$out"
+              '';
+        };
+
         mkAppSBOMSyft = {
           type = types.functionTo types.attrs;
           description = "Create flake app for Syft SBOM generation";
