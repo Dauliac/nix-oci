@@ -1,7 +1,7 @@
 # Cross-backend security coherence checks.
 #
 # Detects incoherent compositions between security backends:
-#   seccomp ↔ capabilities ↔ Landlock ↔ DNS/TLS ↔ service detection
+#   seccomp ↔ capabilities ↔ Landlock ↔ AppArmor ↔ DNS/TLS ↔ service detection
 #
 # Assertions = hard build failure (definite runtime breakage).
 # Warnings   = soft trace (suspicious but possibly intentional).
@@ -363,7 +363,82 @@ in
           Fix: set noNewPrivileges = true (default), or acknowledge the risk
           by also relaxing capabilities.
         '';
-      };
+      }
+
+      # -- P5: AppArmor network rules dead if seccomp blocks network --
+      ++
+        optional
+          (
+            cfg.apparmor.enable
+            && cfg.apparmor.customProfile == null
+            && cfg.seccomp.enable
+            && cfg.seccomp.customProfileJson == null
+            && !(profileHasNetwork cfg.seccomp.profile)
+          )
+          {
+            assertion = false;
+            message = ''
+              nix-oci coherence: AppArmor profile includes network rules but
+              seccomp profile "${cfg.seccomp.profile}" blocks ALL network syscalls.
+              AppArmor network rules have NO EFFECT — seccomp intercepts first.
+              Fix: use a network-capable seccomp profile (web-server, database,
+              moderate) or disable AppArmor.
+            '';
+          }
+
+      # -- P6: AppArmor denyPtrace redundant but denyMount/denyUserNamespace
+      #    contradicts capability add SYS_ADMIN --
+      ++
+        optional
+          (
+            cfg.apparmor.enable
+            && cfg.apparmor.customProfile == null
+            && (cfg.apparmor.denyMount || cfg.apparmor.denyUserNamespace)
+            && elem "SYS_ADMIN" cfg.capabilities.add
+          )
+          {
+            assertion = false;
+            message = ''
+              nix-oci coherence: AppArmor denies ${
+                concatStringsSep " and " (
+                  optional cfg.apparmor.denyMount "mount"
+                  ++ optional cfg.apparmor.denyUserNamespace "userns_create"
+                )
+              }
+              but capabilities.add includes SYS_ADMIN which grants these operations.
+              The AppArmor deny rules will block what the capability allows —
+              this is contradictory configuration.
+              Fix: remove SYS_ADMIN from capabilities.add (AppArmor + seccomp
+              already block these), or disable the AppArmor deny rules if you
+              genuinely need SYS_ADMIN.
+            '';
+          }
+
+      # -- C3: AppArmor custom profile makes computed rules opaque --
+      ++
+        optional
+          (
+            cfg.apparmor.enable
+            && cfg.apparmor.customProfile != null
+            && (cfg.apparmor.denyUserNamespace || cfg.apparmor.denyMount || cfg.apparmor.denyPtrace)
+          )
+          {
+            assertion = false;
+            message = ''
+              nix-oci coherence: apparmor.customProfile overrides ALL computed
+              AppArmor rules, but deny options are also set
+              (${
+                concatStringsSep ", " (
+                  optional cfg.apparmor.denyUserNamespace "denyUserNamespace"
+                  ++ optional cfg.apparmor.denyMount "denyMount"
+                  ++ optional cfg.apparmor.denyPtrace "denyPtrace"
+                )
+              }).
+              These deny options have NO EFFECT when a custom profile is used.
+              Fix: remove the deny options (custom profile is authoritative),
+              or remove the custom profile to use computed rules.
+            '';
+          };
 
     # =====================================================================
     #  WARNINGS — soft trace, build succeeds
@@ -399,6 +474,20 @@ in
         LOGGED but NOT BLOCKED. This provides no runtime protection.
         Use mode = "enforce" for production deployments.
       ''
+      # -- D5: AppArmor complain mode --
+      ++ optional (cfg.apparmor.enable && cfg.apparmor.mode == "complain") ''
+        nix-oci coherence: apparmor.mode = "complain" — violations are logged
+        but NOT BLOCKED. This provides no runtime protection from AppArmor.
+        Use mode = "enforce" for production deployments.
+      ''
+      # -- D6: AppArmor host prerequisite --
+      ++ optional cfg.apparmor.enable ''
+        nix-oci coherence: AppArmor profile will be generated for this container.
+        The target host MUST have AppArmor enabled (kernel LSM + apparmor_parser).
+        On NixOS: security.apparmor.enable = true.
+        If the host lacks AppArmor, the container will fail to start or fall back
+        to unconfined mode depending on the runtime.
+      ''
       # -- D4: readOnlyRootfs disabled with hardening enabled --
       ++ optional (!cfg.readOnlyRootfs) ''
         nix-oci coherence: hardening.enable = true but readOnlyRootfs = false.
@@ -427,12 +516,13 @@ in
           (
             (!cfg.seccomp.enable || cfg.seccomp.mode == "audit")
             && !cfg.landlock.enable
+            && (!cfg.apparmor.enable || cfg.apparmor.mode == "complain")
             && cfg.capabilities.drop == [ ]
           )
           ''
             nix-oci coherence: hardening.enable = true but ALL enforcement
-            backends are disabled or in audit mode, and no capabilities are
-            dropped. No meaningful runtime security restrictions are active.
+            backends are disabled or in audit/complain mode, and no capabilities
+            are dropped. No meaningful runtime security restrictions are active.
           '';
   };
 }

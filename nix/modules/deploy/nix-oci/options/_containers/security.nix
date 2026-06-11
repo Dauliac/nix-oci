@@ -1,10 +1,11 @@
 # Per-container: computed runtime security options from hardening config.
 #
 # Translates hardening options into container runtime flags:
-#   - seccomp profile → --security-opt seccomp=PATH
-#   - noNewPrivileges → --security-opt no-new-privileges
-#   - readOnlyRootfs  → --read-only
-#   - capabilities    → --cap-drop / --cap-add
+#   - seccomp profile  → --security-opt seccomp=PATH
+#   - apparmor profile → --security-opt apparmor=PROFILE_NAME
+#   - noNewPrivileges  → --security-opt no-new-privileges
+#   - readOnlyRootfs   → --read-only
+#   - capabilities     → --cap-drop / --cap-add
 #
 # These computed options are consumed by run-services.nix (NixOS) and
 # run-services.nix (home-manager) to wire into the container runner.
@@ -18,6 +19,7 @@
 }:
 let
   h = config.hardening;
+  apparmorProfileName = "nix-oci-${name}";
 in
 {
   options.securityOpts = lib.mkOption {
@@ -33,6 +35,9 @@ in
             hardening = h;
           }
         }"
+      # AppArmor profile
+      ++ lib.optional h.apparmor.enable
+        "--security-opt=apparmor=${apparmorProfileName}"
       # No new privileges
       ++ lib.optional h.noNewPrivileges "--security-opt=no-new-privileges"
       # Read-only rootfs

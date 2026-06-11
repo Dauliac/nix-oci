@@ -275,6 +275,7 @@ in
                       noTlsTrustStore
                       seccomp
                       landlock
+                      apparmor
                       capabilities
                       readOnlyRootfs
                       noNewPrivileges

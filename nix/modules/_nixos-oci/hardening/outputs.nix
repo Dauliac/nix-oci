@@ -489,6 +489,10 @@ in
           "io.github.dauliac.nix-oci.hardening.capabilities-add" =
             lib.concatStringsSep "," cfg.capabilities.add;
         }
+        // lib.optionalAttrs cfg.apparmor.enable {
+          "io.github.dauliac.nix-oci.hardening.apparmor-enabled" = "true";
+          "io.github.dauliac.nix-oci.hardening.apparmor-mode" = cfg.apparmor.mode;
+        }
       );
     };
 
@@ -513,6 +517,91 @@ in
               };
             }
           )
+        else
+          null;
+    };
+
+    apparmorProfile = lib.mkOption {
+      type = lib.types.nullOr lib.types.package;
+      internal = true;
+      readOnly = true;
+      description = "Generated AppArmor profile, or null.";
+      default =
+        let
+          aa = cfg.apparmor;
+          containerName = config.oci.container.name or "container";
+          profileName = "nix-oci-${containerName}";
+
+          flags =
+            if aa.mode == "complain" then
+              "(attach_disconnected,mediate_deleted,complain)"
+            else
+              "(attach_disconnected,mediate_deleted)";
+
+          # Build profile rules from options.
+          rules = lib.concatStringsSep "\n  " (
+            # Base abstractions
+            [ "#include <abstractions/base>" ]
+
+            # Deny user namespace creation (LPE mitigation).
+            ++ lib.optional aa.denyUserNamespace "deny userns_create,"
+
+            # Deny mount operations.
+            ++ lib.optional aa.denyMount "deny mount,"
+
+            # Deny ptrace.
+            ++ lib.optional aa.denyPtrace "deny ptrace (read readby trace traceby),"
+
+            # Default: deny raw network access.
+            ++ [
+              "deny network raw,"
+              "deny network packet,"
+            ]
+
+            # Allow file access for the Nix store (read + execute).
+            ++ [
+              "/nix/store/** mr,"
+              "/nix/store/*/bin/** ix,"
+            ]
+
+            # Standard container paths.
+            ++ [
+              "/dev/null rw,"
+              "/dev/zero r,"
+              "/dev/urandom r,"
+              "/dev/random r,"
+              "/dev/fd/** rw,"
+              "/proc/** r,"
+              "/sys/fs/cgroup/** r,"
+              "/tmp/** rw,"
+              "/run/** rw,"
+            ]
+
+            # Allow network (TCP/UDP) — fine-grained port control is
+            # handled by Landlock, AppArmor provides the coarse allow.
+            ++ [
+              "network tcp,"
+              "network udp,"
+              "network unix,"
+            ]
+
+            # Signal self.
+            ++ [ "signal (send receive) peer=${profileName}," ]
+          );
+
+          profileContent = ''
+            #include <tunables/global>
+
+            profile ${profileName} flags=${flags} {
+              ${rules}
+            }
+          '';
+        in
+        if cfg.enable && aa.enable then
+          if aa.customProfile != null then
+            aa.customProfile
+          else
+            pkgs.writeText "${profileName}.apparmor" profileContent
         else
           null;
     };
