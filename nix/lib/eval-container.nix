@@ -263,8 +263,11 @@ in
                       retries
                       ;
                   };
-                  # Forward build-time hardening options (not runtime hints like
-                  # capabilities/readOnlyRootfs which are applied by deploy modules).
+                  # Forward hardening options for build-time outputs AND
+                  # cross-backend coherence assertions (coherence.nix).
+                  # capabilities/readOnlyRootfs/noNewPrivileges are runtime
+                  # hints (applied by deploy modules), but the NixOS eval
+                  # needs them to validate cross-backend coherence.
                   hardening = {
                     inherit (containerConfig.hardening)
                       enable
@@ -272,6 +275,9 @@ in
                       noTlsTrustStore
                       seccomp
                       landlock
+                      capabilities
+                      readOnlyRootfs
+                      noNewPrivileges
                       ;
                   };
                   # Forward arch-independent performance options.

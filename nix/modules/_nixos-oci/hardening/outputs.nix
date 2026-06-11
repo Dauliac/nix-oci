@@ -473,11 +473,23 @@ in
       internal = true;
       readOnly = true;
       description = "OCI labels encoding runtime security hints.";
-      default = lib.optionalAttrs cfg.enable {
-        "io.github.dauliac.nix-oci.hardening.enabled" = "true";
-        "io.github.dauliac.nix-oci.hardening.no-new-privileges" = "true";
-        "io.github.dauliac.nix-oci.hardening.read-only-rootfs" = "true";
-      };
+      default = lib.optionalAttrs cfg.enable (
+        {
+          "io.github.dauliac.nix-oci.hardening.enabled" = "true";
+          "io.github.dauliac.nix-oci.hardening.no-new-privileges" =
+            if cfg.noNewPrivileges then "true" else "false";
+          "io.github.dauliac.nix-oci.hardening.read-only-rootfs" =
+            if cfg.readOnlyRootfs then "true" else "false";
+        }
+        // lib.optionalAttrs (cfg.capabilities.drop != [ ]) {
+          "io.github.dauliac.nix-oci.hardening.capabilities-drop" =
+            lib.concatStringsSep "," cfg.capabilities.drop;
+        }
+        // lib.optionalAttrs (cfg.capabilities.add != [ ]) {
+          "io.github.dauliac.nix-oci.hardening.capabilities-add" =
+            lib.concatStringsSep "," cfg.capabilities.add;
+        }
+      );
     };
 
     landlockPolicy = lib.mkOption {
