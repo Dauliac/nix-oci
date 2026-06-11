@@ -190,8 +190,8 @@ perSystem = { ... }: {
 };
 ```
 
-See [Hardening](./explanation/security/hardening.html) and
-[Security defaults](./explanation/security/security-defaults.html) for details.
+See [Hardening](./security/hardening.html) and
+[Security defaults](./security/security-defaults.html) for details.
 
 ## Step 9: Enable performance optimizations (optional)
 
@@ -211,7 +211,7 @@ perSystem = { ... }: {
 };
 ```
 
-See [Performance integrations](./explanation/performance/performance-integrations.html)
+See [Performance integrations](./performance/performance-integrations.html)
 for the full set of options.
 
 ## Step 10: Health-aware deployment (optional)
@@ -287,17 +287,17 @@ secrets in env vars, missing OCI labels, and missing entrypoints.
 Override `policy.conftest.policyDir` with your own Rego files to add
 organization-specific rules.
 
-See [Supply-chain security](./explanation/security/index.html)
+See [Supply-chain security](./security/index.html)
 for the full set of security tools.
 
 ## Next steps
 
 - [Container Modules API](./how-to/container-modules-api.html): deep dive into `nixosConfig.modules`
 - [Deploy Modules](./how-to/deploy-modules.html): NixOS and Home Manager deployment
-- [Hardening](./explanation/security/hardening.html): seccomp, Landlock, capabilities
-- [Performance](./explanation/performance/performance-integrations.html): allocators, glibc tunables, march
-- [Automatic metadata](./explanation/architecture/automatic-metadata.html): healthchecks, stop signals, volumes
-- [Automatic labeling](./explanation/architecture/automatic-labeling.html): OCI annotations, K8s PSS, security hints
-- [Security scanning](./explanation/security/index.html): CVE, SBOM, signing, Conftest
-- [Container probes](./explanation/security/container-probes.html): amicontained, CDK, DEEPCE, linPEAS
+- [Hardening](./security/hardening.html): seccomp, Landlock, capabilities
+- [Performance](./performance/performance-integrations.html): allocators, glibc tunables, march
+- [Automatic metadata](./architecture/automatic-metadata.html): healthchecks, stop signals, volumes
+- [Automatic labeling](./architecture/automatic-labeling.html): OCI annotations, K8s PSS, security hints
+- [Security scanning](./security/index.html): CVE, SBOM, signing, Conftest
+- [Container probes](./security/container-probes.html): amicontained, CDK, DEEPCE, linPEAS
 - [Options Reference](./reference/flake-parts-options.html): full option reference

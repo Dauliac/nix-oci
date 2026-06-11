@@ -154,7 +154,7 @@ oci.containers.proxy = {
 Containers can bake [home-manager](https://nix-community.github.io/home-manager/)
 dotfiles into the image with `homeConfig`. When enabled, nix-oci injects
 container-friendly defaults (bash, [starship](https://starship.rs/) prompt)
-that are especially useful with the [container sandbox](../explanation/integration/sandbox.md).
+that are especially useful with the [container sandbox](../integration/sandbox.md).
 
 ```nix
 oci.containers.my-app = {
@@ -182,7 +182,7 @@ oci.containers.my-app = {
 
 See also:
 
-- [Container sandbox](../explanation/integration/sandbox.md): rootless shell into the container filesystem
+- [Container sandbox](../integration/sandbox.md): rootless shell into the container filesystem
 - [home-manager options reference](https://nix-community.github.io/home-manager/options.xhtml)
 - [starship configuration](https://starship.rs/config/)
 - [nix-oci source: `homeConfig` options](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci/containers/homeConfig)

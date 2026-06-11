@@ -36,7 +36,6 @@ in
     in
     {
       nix-lib.lib.oci = {
-
         # ── Non-hermetic probe (needs a running podman/docker daemon) ──
 
         mkContainerProbe = {
@@ -83,24 +82,20 @@ in
                 else
                   ''--entrypoint /probe "$IMAGE" ${args}'';
 
-              failChecks = lib.concatMapStringsSep "\n" (
-                f: ''
-                  if echo "$OUTPUT" | grep -qi ${lib.escapeShellArg f.pattern}; then
-                    echo ""
-                    echo "FAIL: ${f.message}"
-                    ISSUES=$((ISSUES + 1))
-                  fi
-                ''
-              ) failPatterns;
+              failChecks = lib.concatMapStringsSep "\n" (f: ''
+                if echo "$OUTPUT" | grep -qi ${lib.escapeShellArg f.pattern}; then
+                  echo ""
+                  echo "FAIL: ${f.message}"
+                  ISSUES=$((ISSUES + 1))
+                fi
+              '') failPatterns;
 
-              warnChecks = lib.concatMapStringsSep "\n" (
-                w: ''
-                  if echo "$OUTPUT" | grep -qi ${lib.escapeShellArg w.pattern}; then
-                    echo ""
-                    echo "WARN: ${w.message}"
-                  fi
-                ''
-              ) warnPatterns;
+              warnChecks = lib.concatMapStringsSep "\n" (w: ''
+                if echo "$OUTPUT" | grep -qi ${lib.escapeShellArg w.pattern}; then
+                  echo ""
+                  echo "WARN: ${w.message}"
+                fi
+              '') warnPatterns;
             in
             pkgs.writeShellScriptBin name ''
               set -o errexit
@@ -176,14 +171,12 @@ in
                 else
                   ''--entrypoint /probe "${imageRef}" ${args}'';
 
-              failChecks = lib.concatMapStringsSep "\n" (
-                f: ''
-                  if echo "$OUTPUT" | grep -qi ${lib.escapeShellArg f.pattern}; then
-                    echo "FAIL: ${f.message}" >&2
-                    exit 1
-                  fi
-                ''
-              ) failPatterns;
+              failChecks = lib.concatMapStringsSep "\n" (f: ''
+                if echo "$OUTPUT" | grep -qi ${lib.escapeShellArg f.pattern}; then
+                  echo "FAIL: ${f.message}" >&2
+                  exit 1
+                fi
+              '') failPatterns;
             in
             ociLib.mkPodmanSandboxCheck {
               inherit name dockerArchive imageRef;

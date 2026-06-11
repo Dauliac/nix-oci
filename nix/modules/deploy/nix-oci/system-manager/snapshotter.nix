@@ -16,8 +16,8 @@
     let
       cfg = config.oci;
       snap = cfg.snapshotter;
-      snapshotterLib = import ../options/_snapshotter/lib.nix { inherit lib; };
-      snapshotterAssertions = import ../options/_snapshotter/assertions.nix { inherit lib; };
+      snapshotterLib = import ../options/_snapshotter/_lib.nix { inherit lib; };
+      snapshotterAssertions = import ../options/_snapshotter/_assertions.nix { inherit lib; };
       anySnapshotterEnabled = snap.soci.enable || snap.stargz.enable || snap.zstdChunked.enable;
     in
     {

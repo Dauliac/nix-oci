@@ -228,7 +228,7 @@
               nativeBuildInputs = [ pkgs.gnused ];
             }
             ''
-              mkdir -p $out/{how-to,explanation,reference,examples}
+              mkdir -p $out/{security,performance,architecture,integration,how-to,reference,examples}
 
               # Root pages (flat, top of sidebar)
               # README.md and CONTRIBUTING.md are the source of truth, copied here for NDG
@@ -236,13 +236,16 @@
               cp ${../CONTRIBUTING.md} $out/contributing.md
               cp ${../docs/content}/getting-started.md $out/
 
-              # --- How-to guides (including index.md for sidebar group) ---
+              # --- How-to guides ---
               for f in ${../docs/content}/how-to/*.md; do
                 cp "$f" $out/how-to/
               done
 
-              # --- Explanation pages (including subdirectories for nested groups) ---
-              cp -r ${../docs/content}/explanation/. $out/explanation/
+              # --- Thematic explanation pages (each dir = sidebar group) ---
+              cp -r ${../docs/content}/security/. $out/security/
+              cp -r ${../docs/content}/performance/. $out/performance/
+              cp -r ${../docs/content}/architecture/. $out/architecture/
+              cp -r ${../docs/content}/integration/. $out/integration/
 
               # --- Reference: copy templates and inject generated options at markers ---
               for f in ${../docs/content}/reference/*.md; do
@@ -349,36 +352,32 @@
                 position = 1;
               }
               {
-                path = "how-to";
-                position = 1;
-              }
-              {
-                path = "explanation";
-                position = 2;
-              }
-              {
-                path = "explanation/security";
+                path = "security";
                 new_title = "Security";
-                position = 1;
-              }
-              {
-                path = "explanation/performance";
-                new_title = "Performance";
                 position = 2;
               }
               {
-                path = "explanation/architecture";
-                new_title = "Architecture";
+                path = "performance";
+                new_title = "Performance";
                 position = 3;
               }
               {
-                path = "explanation/integration";
-                new_title = "Integration";
+                path = "architecture";
+                new_title = "Architecture";
                 position = 4;
               }
               {
+                path = "integration";
+                new_title = "Integration";
+                position = 5;
+              }
+              {
+                path = "how-to";
+                position = 6;
+              }
+              {
                 path = "reference";
-                position = 3;
+                position = 7;
               }
               # -- Reference: module options (grouped first) --
               {

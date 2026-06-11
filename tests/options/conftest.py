@@ -15,9 +15,19 @@ import pytest
 
 @pytest.fixture(scope="session")
 def client():
-    """Docker SDK client connected to the podman socket."""
-    socket = os.environ.get("DOCKER_HOST", "unix:///run/podman/podman.sock")
-    return docker.DockerClient(base_url=socket)
+    """Docker SDK client via DOCKER_HOST or podman socket fallback."""
+    host = os.environ.get("DOCKER_HOST")
+    if host:
+        return docker.DockerClient(base_url=host)
+    # Fallback: try standard podman socket locations
+    for sock in [
+        "/run/podman/podman.sock",
+        "/var/run/docker.sock",
+    ]:
+        if os.path.exists(sock):
+            return docker.DockerClient(base_url=f"unix://{sock}")
+    # Last resort
+    return docker.from_env()
 
 
 # ── Image-level helpers ───────────────────────────────────────────
@@ -54,13 +64,29 @@ class ImageHelper:
         return self.config.get("Labels", {})
 
     def assert_config(self, expected):
-        """Assert OCI image Config fields match expected values."""
+        """Assert OCI image Config fields match expected values.
+
+        For dict values (Labels, ExposedPorts, Volumes), checks that
+        expected is a SUBSET of actual (auto-labels add extra entries).
+        For other types, checks exact equality.
+        """
         for key, value in expected.items():
             actual = self.config.get(key)
-            assert actual == value, (
-                f"Image {self.image_ref}: expected Config.{key}={value!r}, "
-                f"got: {actual!r}"
-            )
+            if isinstance(value, dict) and isinstance(actual, dict):
+                for k, v in value.items():
+                    assert k in actual, (
+                        f"Image {self.image_ref}: expected Config.{key} to "
+                        f"contain {k!r}={v!r}, got keys: {list(actual.keys())}"
+                    )
+                    assert actual[k] == v, (
+                        f"Image {self.image_ref}: expected Config.{key}.{k}={v!r}, "
+                        f"got: {actual[k]!r}"
+                    )
+            else:
+                assert actual == value, (
+                    f"Image {self.image_ref}: expected Config.{key}={value!r}, "
+                    f"got: {actual!r}"
+                )
 
     def assert_labels(self, expected):
         """Assert OCI labels match expected values."""

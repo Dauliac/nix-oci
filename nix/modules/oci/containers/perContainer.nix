@@ -28,6 +28,8 @@ let
     types
     ;
   cfg = config;
+  # Pure function — nix-lib config.lib.* is unavailable at option-definition time.
+  discoverModules = import ../../../lib/discoverModules.nix { inherit lib; };
 
   # Deferred module type that collects contributions
   deferredModuleWith =
@@ -62,27 +64,10 @@ let
       };
     };
 
-  # All option-declaration-only modules in _options/.
-  # Auto-discovered via readDir so new option files are picked up automatically.
+  # All option-declaration-only modules: container-specific (_options/) + shared (_oci/).
+  # Auto-discovered via nix-lib discoverModules so new files are picked up automatically.
   # Including them as staticModules makes getSubOptions visible to nixosOptionsDoc.
-  discoverModules =
-    dir:
-    let
-      entries = builtins.readDir dir;
-      files = lib.pipe entries [
-        (lib.filterAttrs (name: type: type == "regular" && lib.hasSuffix ".nix" name))
-        builtins.attrNames
-        (map (name: dir + "/${name}"))
-      ];
-      dirs = lib.pipe entries [
-        (lib.filterAttrs (name: type: type == "directory" && !lib.hasPrefix "_" name))
-        builtins.attrNames
-        (lib.concatMap (name: discoverModules (dir + "/${name}")))
-      ];
-    in
-    files ++ dirs;
-
-  optionModules = discoverModules ./_options;
+  optionModules = discoverModules ./_options ++ discoverModules ../_oci;
 
   # Test specification — internal, untyped. Type checking happens in
   # oci.optionTests (testing/option-tests.nix) via _option-test-spec.nix.
@@ -175,7 +160,7 @@ in
                 };
             in
             types.submoduleWith {
-              modules = modules ++ [ turboDefaults ];
+              modules = modules ++ [ turboDefaults ./_bridge.nix ];
               specialArgs = {
                 inherit system pkgs;
                 globalConfig = cfg;
