@@ -7,7 +7,7 @@ description = "How nix-oci optimizes container runtime performance with alternat
 
 nix-oci provides declarative performance tuning that goes beyond
 image size optimization. Five independent optimization axes target
-different bottlenecks -- memory allocation, CPU instruction sets,
+different bottlenecks: memory allocation, CPU instruction sets,
 glibc internals, library selection, and transport compression.
 
 ## The problem
@@ -15,12 +15,12 @@ glibc internals, library selection, and transport compression.
 Default container builds leave significant performance on the table:
 
 - **glibc's ptmalloc2** creates `8 * ncores` arenas based on the
-  *host* CPU count, not the container's cgroup limit -- inflating RSS
+  *host* CPU count, not the container's cgroup limit, inflating RSS
   by 20-40% in memory-constrained containers.
 - **Baseline x86-64** instructions ignore AVX2, AVX-512, and other
-  extensions available on modern CPUs -- crypto, compression, and math
+  extensions available on modern CPUs; crypto, compression, and math
   run slower than necessary.
-- **gzip compression** for OCI layers is universal but slow -- zstd
+- **gzip compression** for OCI layers is universal but slow; zstd
   is 3-5x faster with 12% better compression ratios.
 
 nix-oci addresses each of these with a single option namespace.
@@ -81,7 +81,7 @@ glibc's default allocator (ptmalloc2) targets general
 desktop workloads. In containerized environments with cgroup memory
 limits, it creates too many arenas and wastes RSS.
 
-nix-oci can inject a modern allocator via `LD_PRELOAD` -- no
+nix-oci can inject a modern allocator via `LD_PRELOAD` with no
 recompilation needed. Set
 [`performance.allocator`](../reference/flake-parts-options.html):
 
@@ -110,7 +110,7 @@ performance.allocator = "mimalloc";  # or "tcmalloc"
 
 - **mimalloc**: general default for most containers. Lowest RSS
   overhead for typical workloads with many small allocations.
-- **tcmalloc**: when throughput matters more than RSS -- high-QPS
+- **tcmalloc**: when throughput matters more than RSS; high-QPS
   HTTP servers, data processing pipelines.
 - **disabled** (see [`allocator`](../reference/flake-parts-options.html)
   option reference): when you don't want to risk changing allocation
@@ -148,7 +148,7 @@ GLIBC_TUNABLES=glibc.malloc.arena_max=2:glibc.malloc.mmap_threshold=131072:glibc
 ### The arena problem
 
 ptmalloc2 creates arenas to reduce lock contention. On a 64-core
-host, it creates 512 arenas -- each consuming ~1 MB of virtual memory.
+host, it creates 512 arenas, each consuming ~1 MB of virtual memory.
 However, a container limited to 2 CPUs via cgroups still sees 64 cores
 via `/proc/cpuinfo`, creating 512 arenas for 2 threads. Setting
 `arena_max = 2` fixes this.
@@ -193,13 +193,13 @@ performance.march = "x86-64-v3";
 Setting `march` changes the compiler flags for *all* packages in the
 container. This means:
 
-- Every package is rebuilt from source -- **no Hydra binary cache**.
+- Every package is rebuilt from source: **no Hydra binary cache**.
 - Build times increase significantly.
 - The resulting binaries may use SIMD instructions (AVX2, etc.) that
   improve performance for crypto, compression, and math.
 
 For most users, [`performance.hwcaps`](../reference/flake-parts-options.html)
-(below) is a better choice -- it ships optimized variants of specific
+(below) is a better choice; it ships optimized variants of specific
 hot libraries while keeping baseline packages cached.
 
 ## glibc-hwcaps: runtime CPU-optimized libraries
@@ -208,7 +208,7 @@ glibc-hwcaps is the best-of-both-worlds approach. Instead of
 rebuilding everything, you rebuild **specific libraries** at
 multiple microarchitecture levels and ship them all in the image.
 The dynamic linker selects the best variant at process startup
-based on CPUID -- zero application changes required.
+based on CPUID, with zero application changes required.
 
 ```nix
 performance.hwcaps = {
@@ -299,8 +299,12 @@ performance.compression = "zstd";
   do).
 - Your container runtime is containerd 2.0+ (containerd 1.7.x does
   **not** support zstd).
-- You want faster pulls -- especially impactful for large images with
+- You want faster pulls, especially impactful for large images with
   many layers.
+
+nix-oci also supports `"gzip:estargz"` for lazy pulling via
+stargz-snapshotter, and **SOCI v2** for lazy pulling on AWS Fargate.
+These require the [turbo push backend](./turbo-push-backend.md).
 
 ## Performance labels
 
@@ -315,8 +319,11 @@ documenting the configuration:
 | `io.github.dauliac.nix-oci.performance.compression` | `"zstd"` |
 | `io.github.dauliac.nix-oci.performance.hwcaps-levels` | `"x86-64-v3"` |
 | `io.github.dauliac.nix-oci.performance.march` | `"x86-64-v3"` |
+| `io.github.dauliac.nix-oci.performance.turbo` | `"true"` |
+| `io.github.dauliac.nix-oci.performance.turbo-soci` | `"true"` |
+| `io.github.dauliac.nix-oci.performance.turbo-layer-cache` | `"true"` |
 
-These labels serve as documentation -- `docker inspect` or
+These labels serve as documentation; `docker inspect` or
 `skopeo inspect` reveals exactly what optimizations the image contains.
 
 ## Full performance example
@@ -368,19 +375,20 @@ oci.containers.my-app.nixosConfig.modules = [
 ```
 
 The inner NixOS module produces:
-- `_output.performance.envVars` -- `LD_PRELOAD` and
+- `_output.performance.envVars`: `LD_PRELOAD` and
   `GLIBC_TUNABLES` strings added to the OCI manifest `Env`.
-- `_output.performance.extraDeps` -- allocator packages added to the
+- `_output.performance.extraDeps`: allocator packages added to the
   image's dependency closure.
-- `_output.performance.labels` -- performance labels merged into the
+- `_output.performance.labels`: performance labels merged into the
   image config.
 
 ## Further reading
 
-- [Optimized layer sharing](./optimize-layers.md) -- how hwcaps layers fit into the fold chain
-- [Multi-architecture images](./multi-arch-images.md) -- per-arch march and hwcaps overrides
-- [mimalloc](https://github.com/microsoft/mimalloc) -- Microsoft's allocator
-- [tcmalloc](https://github.com/google/tcmalloc) -- Google's allocator
-- [glibc tunables](https://www.gnu.org/software/libc/manual/html_node/Memory-Allocation-Tunables.html) -- official documentation
-- [glibc-hwcaps](https://www.phoronix.com/news/Glibc-2.33-Coming-HWCAPS) -- glibc 2.33 hwcaps support
-- [zstd OCI compression](https://aws.amazon.com/blogs/containers/reducing-aws-fargate-startup-times-with-zstd-compressed-container-images/) -- AWS Fargate benchmarks
+- [Turbo push backend](./turbo-push-backend.md): cross-machine layer caching, SOCI v2 lazy pulling, eStargz
+- [Optimized layer sharing](./optimize-layers.md): how hwcaps layers fit into the fold chain
+- [Multi-architecture images](./multi-arch-images.md): per-arch march and hwcaps overrides
+- [mimalloc](https://github.com/microsoft/mimalloc): Microsoft's allocator
+- [tcmalloc](https://github.com/google/tcmalloc): Google's allocator
+- [glibc tunables](https://www.gnu.org/software/libc/manual/html_node/Memory-Allocation-Tunables.html): official documentation
+- [glibc-hwcaps](https://www.phoronix.com/news/Glibc-2.33-Coming-HWCAPS): glibc 2.33 hwcaps support
+- [zstd OCI compression](https://aws.amazon.com/blogs/containers/reducing-aws-fargate-startup-times-with-zstd-compressed-container-images/): AWS Fargate benchmarks
