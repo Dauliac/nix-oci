@@ -25,18 +25,12 @@ or Nix's built-in `dockerTools.buildImage` -- follow the same pattern:
 
 ```mermaid
 flowchart LR
-    subgraph "Dockerfile build"
-        direction TB
-        SRC["Source code"] --> D["Dockerfile"]
-        D --> L1["RUN apt-get install<br/>Layer 1 (tar)"]
-        L1 --> L2["COPY . /app<br/>Layer 2 (tar)"]
-        L2 --> L3["RUN npm build<br/>Layer 3 (tar)"]
-        L3 --> TAR["OCI archive<br/>(all layers as tars)"]
-    end
+    SRC["Source code"] --> D["Dockerfile"]
+    D --> L1["Layer 1: apt-get install"]
+    L1 --> L2["Layer 2: COPY . /app"]
+    L2 --> L3["Layer 3: npm build"]
+    L3 --> TAR["OCI archive (tars)"]
     TAR -->|"push entire archive"| REG["Registry"]
-
-    style TAR fill:#f38ba8,stroke:#d20f39,color:#000
-    style REG fill:#a6da95,stroke:#40a02b,color:#000
 ```
 
 This creates two problems:
@@ -56,24 +50,15 @@ a layer, and layers are **ordered and sequential** -- changing one layer
 invalidates all subsequent layers:
 
 ```mermaid
-flowchart TD
-    subgraph "Dockerfile layer invalidation"
-        direction TB
-        BASE["FROM debian:slim"] --> L1["RUN apt-get install openssl"]
-        L1 --> L2["RUN apt-get install nginx"]
-        L2 --> L3["COPY config /etc/nginx"]
-        L3 --> L4["COPY app /var/www"]
-    end
-    CHANGE["Change openssl version"] -.->|"invalidates"| L1
+flowchart LR
+    BASE["FROM debian:slim"] --> L1["apt-get openssl"]
+    L1 --> L2["apt-get nginx"]
+    L2 --> L3["COPY config"]
+    L3 --> L4["COPY app"]
+    CHANGE["Change openssl"] -.->|"invalidates"| L1
     L1 -.->|"rebuilds"| L2
     L2 -.->|"rebuilds"| L3
     L3 -.->|"rebuilds"| L4
-
-    style CHANGE fill:#f38ba8,stroke:#d20f39,color:#000
-    style L1 fill:#f9e2ae,stroke:#e6a800,color:#000
-    style L2 fill:#f9e2ae,stroke:#e6a800,color:#000
-    style L3 fill:#f9e2ae,stroke:#e6a800,color:#000
-    style L4 fill:#f9e2ae,stroke:#e6a800,color:#000
 ```
 
 This means:
@@ -97,22 +82,12 @@ it is a DAG (directed acyclic graph) derived from the package closure,
 not a sequence of imperative instructions:
 
 ```mermaid
-flowchart TD
-    subgraph "nix2container: Nix-derived dependency graph"
-        direction TB
-        PKG["package = pkgs.nginx"] --> CLOSURE["Nix closure analysis"]
-        CLOSURE --> DEP["Dependencies<br/>(glibc, openssl, pcre, zlib)"]
-        CLOSURE --> APP["Application<br/>(nginx binary + config)"]
-        DEP --> JSON1["Layer def (JSON)<br/>deps store paths + digest"]
-        APP --> JSON2["Layer def (JSON)<br/>app store paths + digest"]
-        JSON1 --> MANIFEST["Image manifest<br/>(JSON, ~2 KB)"]
-        JSON2 --> MANIFEST
-    end
-
-    style PKG fill:#89b4fa,stroke:#1e66f5,color:#000
-    style MANIFEST fill:#a6da95,stroke:#40a02b,color:#000
-    style JSON1 fill:#f9e2ae,stroke:#e6a800,color:#000
-    style JSON2 fill:#f9e2ae,stroke:#e6a800,color:#000
+flowchart LR
+    PKG["pkgs.nginx"] --> CLOSURE["Closure analysis"]
+    CLOSURE --> DEP["Deps layer (JSON)"]
+    CLOSURE --> APP["App layer (JSON)"]
+    DEP --> MANIFEST["Manifest (~2 KB)"]
+    APP --> MANIFEST
 ```
 
 The key differences from Dockerfile builds:
@@ -151,22 +126,11 @@ When you push an image:
 
 ```mermaid
 flowchart LR
-    subgraph "Nix store"
-        JSON["Image manifest<br/>(JSON, ~2 KB)"]
-        SP1["/nix/store/...-glibc"]
-        SP2["/nix/store/...-nginx"]
-    end
-    JSON --> SKOPEO["Skopeo<br/>(nix: transport)"]
+    JSON["Manifest (~2 KB)"] --> SKOPEO["Skopeo"]
     SKOPEO -->|"digest check"| REG["Registry"]
-    REG -->|"layer exists"| SKIP["Skip<br/>(0 bytes)"]
-    REG -->|"layer missing"| STREAM["Stream tar<br/>on the fly"]
-    SP1 -.-> STREAM
-    SP2 -.-> STREAM
+    REG -->|"layer exists"| SKIP["Skip (0 bytes)"]
+    REG -->|"layer missing"| STREAM["Stream tar on the fly"]
     STREAM --> REG
-
-    style JSON fill:#f9e2ae,stroke:#e6a800,color:#000
-    style SKIP fill:#a6da95,stroke:#40a02b,color:#000
-    style STREAM fill:#89b4fa,stroke:#1e66f5,color:#000
 ```
 
 This makes pushes dramatically faster:

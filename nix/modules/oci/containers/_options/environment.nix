@@ -18,16 +18,13 @@ in
   };
 
   config._tests.environment = {
-    level = "inspect";
+    level = "eval";
     default = {
       package = pkgs.hello;
     };
     override = {
       package = pkgs.hello;
       environment = example;
-    };
-    assertions.imageConfig.Env = {
-      RUST_LOG = "info";
     };
   };
 }

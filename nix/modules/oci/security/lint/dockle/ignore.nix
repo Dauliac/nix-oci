@@ -1,4 +1,5 @@
-{lib, ...}: {
+{ lib, ... }:
+{
   options.oci.lint.dockle.ignore = lib.mkOption {
     type = lib.types.listOf lib.types.str;
     description = "List of Dockle checkpoint IDs to ignore (e.g. `CIS-DI-0001`).";

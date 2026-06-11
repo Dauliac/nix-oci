@@ -1,4 +1,5 @@
-{lib, ...}: {
+{ lib, ... }:
+{
   options.oci.lint.dockle.exitLevel = lib.mkOption {
     type = lib.types.enum [
       "info"

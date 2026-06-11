@@ -6,7 +6,14 @@
 # References:
 #   - OCI Image Spec v1.1 (zstd support)
 #   - https://aws.amazon.com/blogs/containers/reducing-aws-fargate-startup-times-with-zstd-compressed-container-images/
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
+let
+  example = "zstd";
+in
 {
   options.performance.compression = lib.mkOption {
     type = lib.types.enum [
@@ -22,6 +29,19 @@
         Requires OCI 1.1+ registry (Docker Hub, ECR, GCR, GHCR support it).
         containerd 2.0+ required; containerd 1.7.x does NOT support zstd.
     '';
-    example = "zstd";
+    inherit example;
+  };
+
+  config._tests.performance-compression = {
+    level = "eval";
+    default = {
+      package = pkgs.hello;
+      performance.enable = true;
+    };
+    override = {
+      package = pkgs.hello;
+      performance.enable = true;
+      performance.compression = example;
+    };
   };
 }

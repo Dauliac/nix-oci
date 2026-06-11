@@ -7,7 +7,11 @@
 #
 # This is complementary to Landlock (which operates at VFS level
 # and can restrict *which files/ports* are accessible).
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
 {
   options.hardening.seccomp = lib.mkOption {
     type = lib.types.submodule {
@@ -89,5 +93,28 @@
     };
     default = { };
     description = "Seccomp syscall filtering configuration.";
+  };
+
+  config._tests.hardening-seccomp = {
+    level = "runtime";
+    default = {
+      package = pkgs.busybox;
+      isRoot = true;
+      hardening.enable = true;
+    };
+    override = {
+      package = pkgs.busybox;
+      isRoot = true;
+      hardening.enable = true;
+      hardening.seccomp = {
+        enable = true;
+        profile = "moderate";
+      };
+    };
+    assertions = {
+      imageConfig = {
+        Labels."io.github.dauliac.nix-oci.hardening.seccomp-profile" = "moderate";
+      };
+    };
   };
 }

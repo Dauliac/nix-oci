@@ -8,7 +8,14 @@
 #   - https://github.com/google/tcmalloc
 #   - https://github.com/jemalloc/jemalloc
 #   - https://github.com/microsoft/snmalloc
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
+let
+  example = "jemalloc";
+in
 {
   options.performance.allocator = lib.mkOption {
     type = lib.types.nullOr (
@@ -47,6 +54,20 @@
       The allocator library is added as a container dependency and
       `LD_PRELOAD` is set in the OCI manifest `Env`.
     '';
-    example = "jemalloc";
+    inherit example;
+  };
+
+  config._tests.performance-allocator = {
+    level = "eval";
+    default = {
+      package = pkgs.hello;
+      performance.enable = true;
+    };
+    override = {
+      package = pkgs.hello;
+      performance.enable = true;
+      performance.allocator = example;
+    };
+    assertions.imageConfig.Labels."io.github.dauliac.nix-oci.performance.allocator" = example;
   };
 }

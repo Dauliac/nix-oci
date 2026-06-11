@@ -7,7 +7,14 @@
 # References:
 #   - https://docs.kernel.org/admin-guide/mm/transhuge.html
 #   - https://www.gnu.org/software/libc/manual/html_node/Memory-Allocation-Tunables.html
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
+let
+  exampleThp = "madvise";
+in
 {
   options.performance.hugePages = lib.mkOption {
     type = lib.types.submodule {
@@ -24,18 +31,11 @@
             Transparent Huge Pages mode hint. Sets `glibc.malloc.hugetlb`
             tunable and generates an OCI label for host configuration.
 
-            - `"madvise"` -- recommended for containers. Applications opt
-              in to THP via `madvise(MADV_HUGEPAGE)`. Avoids compaction
-              latency spikes from `always` mode. jemalloc and Go runtime
-              use this automatically.
-
-            - `"always"` -- kernel aggressively promotes to 2MB pages.
-              Can cause latency spikes due to compaction. Best for
-              large-heap, throughput-focused workloads (databases, ML).
-
+            - `"madvise"` -- recommended for containers.
+            - `"always"` -- aggressive, can cause compaction latency spikes.
             - `null` -- no THP hint (host default applies).
           '';
-          example = "madvise";
+          example = exampleThp;
         };
 
         glibcHugetlb = lib.mkOption {
@@ -52,11 +52,7 @@
 
             - `0` -- disabled (default).
             - `1` -- use `MADV_HUGEPAGE` after mmap.
-            - `2` -- use `MAP_HUGETLB` directly (requires hugetlbfs
-              mounted and `ulimits.memlock` set to `"infinity"`).
-
-            When `thpMode` is set and this is `null`, it is automatically
-            derived: `"madvise"` → `1`, `"always"` → `1`.
+            - `2` -- use `MAP_HUGETLB` directly (requires hugetlbfs).
           '';
           example = 1;
         };
@@ -64,5 +60,18 @@
     };
     default = { };
     description = "Huge page configuration for reduced TLB misses and lower page walk latency.";
+  };
+
+  config._tests.performance-huge-pages = {
+    level = "eval";
+    default = {
+      package = pkgs.hello;
+      performance.enable = true;
+    };
+    override = {
+      package = pkgs.hello;
+      performance.enable = true;
+      performance.hugePages.thpMode = exampleThp;
+    };
   };
 }

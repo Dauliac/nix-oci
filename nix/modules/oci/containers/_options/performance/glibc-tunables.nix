@@ -8,7 +8,16 @@
 # References:
 #   - https://www.gnu.org/software/libc/manual/html_node/Memory-Allocation-Tunables.html
 #   - https://sourceware.org/glibc/manual/latest/html_node/Hardware-Capability-Tunables.html
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
+let
+  example = {
+    "glibc.malloc.arena_max" = "2";
+  };
+in
 {
   options.performance.glibcTunables = lib.mkOption {
     type = lib.types.attrsOf lib.types.str;
@@ -26,8 +35,19 @@
 
       Only effective with glibc-based containers (not musl).
     '';
-    example = {
-      "glibc.malloc.arena_max" = "2";
+    inherit example;
+  };
+
+  config._tests.performance-glibc-tunables = {
+    level = "eval";
+    default = {
+      package = pkgs.hello;
+      performance.enable = true;
+    };
+    override = {
+      package = pkgs.hello;
+      performance.enable = true;
+      performance.glibcTunables = example;
     };
   };
 }

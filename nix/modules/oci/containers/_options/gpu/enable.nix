@@ -1,5 +1,9 @@
 # Shared: NVIDIA GPU support master switch.
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
 {
   options.gpu.enable = lib.mkOption {
     type = lib.types.bool;
@@ -23,5 +27,16 @@
       Requires `nixpkgs.config.cudaSupport = true` and
       `nixpkgs.config.allowUnfree = true` in the consuming flake.
     '';
+  };
+
+  config._tests.gpu-enable = {
+    level = "eval";
+    default = {
+      package = pkgs.hello;
+    };
+    override = {
+      package = pkgs.hello;
+      gpu.enable = true;
+    };
   };
 }

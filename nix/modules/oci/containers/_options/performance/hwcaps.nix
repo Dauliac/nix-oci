@@ -10,7 +10,11 @@
 # References:
 #   - https://www.phoronix.com/news/Glibc-2.33-Coming-HWCAPS
 #   - https://www.clearlinux.org/blogs/transparent-use-library-packages-optimized-intel-architecture.html
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
 {
   options.performance.hwcaps = lib.mkOption {
     type = lib.types.submodule {
@@ -58,5 +62,22 @@
     };
     default = { };
     description = "glibc-hwcaps: ship CPU-optimized library variants selected at runtime.";
+  };
+
+  config._tests.performance-hwcaps = {
+    level = "eval";
+    default = {
+      package = pkgs.hello;
+      performance.enable = true;
+    };
+    override = {
+      package = pkgs.hello;
+      performance.enable = true;
+      performance.hwcaps = {
+        enable = true;
+        levels = [ "x86-64-v3" ];
+        libraries = [ pkgs.zlib ];
+      };
+    };
   };
 }

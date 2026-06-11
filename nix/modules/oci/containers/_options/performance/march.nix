@@ -6,7 +6,14 @@
 #
 # For single-arch containers, this is all you need.
 # For multi-arch, override per-arch via archConfigs.
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
+let
+  example = "x86-64-v3";
+in
 {
   options.performance.march = lib.mkOption {
     type = lib.types.nullOr lib.types.str;
@@ -28,6 +35,19 @@
       > locally. Use `performance.hwcaps` for multi-level support without
       > full cache loss.
     '';
-    example = "x86-64-v3";
+    inherit example;
+  };
+
+  config._tests.performance-march = {
+    level = "eval";
+    default = {
+      package = pkgs.hello;
+      performance.enable = true;
+    };
+    override = {
+      package = pkgs.hello;
+      performance.enable = true;
+      performance.march = example;
+    };
   };
 }

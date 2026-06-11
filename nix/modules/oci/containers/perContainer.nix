@@ -84,59 +84,10 @@ let
 
   optionModules = discoverModules ./_options;
 
-  # Test specification submodule — contributed by each option file via config._tests.
-  testSpecType = types.submodule {
-    options = {
-      level = mkOption {
-        type = types.enum [
-          "eval"
-          "build"
-          "inspect"
-          "runtime"
-          "deploy"
-        ];
-        default = "eval";
-        description = "Test depth: eval < build < inspect < runtime < deploy.";
-      };
-
-      default = mkOption {
-        type = types.raw;
-        default = { };
-        description = "Container config using only defaults (tests the default value).";
-      };
-
-      override = mkOption {
-        type = types.raw;
-        default = { };
-        description = "Container config with the example value applied (tests the override).";
-      };
-
-      assertions = mkOption {
-        type = types.submodule {
-          options = {
-            imageConfig = mkOption {
-              type = types.attrsOf types.raw;
-              default = { };
-              description = "Expected fields in the OCI image config (for inspect-level tests).";
-            };
-            runtime = mkOption {
-              type = types.lines;
-              default = "";
-              description = "Python test script for VM tests (for runtime/deploy-level tests).";
-            };
-          };
-        };
-        default = { };
-        description = "Assertions to verify after building/running the container.";
-      };
-
-      exampleFile = mkOption {
-        type = types.nullOr types.path;
-        default = null;
-        description = "Link to an examples/ file for docs cross-reference.";
-      };
-    };
-  };
+  # Test specification — internal, untyped. Type checking happens in
+  # oci.optionTests (testing/option-tests.nix) via _option-test-spec.nix.
+  # Using types.raw here avoids linter conflicts with the shared type.
+  testSpecType = types.raw;
 
   mkPerContainerType = module: deferredModuleWith { staticModules = [ module ] ++ optionModules; };
 in

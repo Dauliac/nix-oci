@@ -7,36 +7,17 @@ nix-oci lets you **build**, **deploy** and **run** containers entirely from Nix 
 ## What you write vs. what you get
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#f5c000', 'primaryTextColor': '#000', 'primaryBorderColor': '#c29200', 'secondaryColor': '#fff3cd', 'secondaryTextColor': '#000', 'secondaryBorderColor': '#c29200', 'tertiaryColor': '#ffeeba', 'tertiaryTextColor': '#000', 'tertiaryBorderColor': '#c29200', 'lineColor': '#c29200', 'textColor': '#000', 'fontFamily': 'system-ui, sans-serif' }}}%%
 flowchart LR
-    subgraph YOU_WRITE ["You write 5 lines of Nix"]
-        direction TB
-        A["services.nginx.enable = true"]
-    end
-
-    YOU_WRITE --> NIXOCI["nix-oci"]
-
-    subgraph YOU_GET ["You get a production-ready container"]
-        direction TB
-        B["Minimal rootfs — no shell, no bloat"]
-        C["Healthcheck auto-injected"]
-        D["Seccomp + Landlock hardening"]
-        E["OCI labels + metadata"]
-        F["Optimized shared layers"]
-        G["Ready to deploy on NixOS"]
-    end
-
-    NIXOCI --> YOU_GET
-
-    style YOU_WRITE fill:#fff3cd,stroke:#c29200,color:#000
-    style NIXOCI fill:#f5c000,stroke:#856404,color:#000,font-weight:bold
-    style YOU_GET fill:#ffeeba,stroke:#c29200,color:#000
+    A["services.nginx.enable = true"] -->|"nix-oci"| B["Minimal image"]
+    B --> C["Healthcheck"]
+    B --> D["Hardening"]
+    B --> E["Labels + metadata"]
+    B --> F["Deploy-ready"]
 ```
 
 ## Three ways to use it
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#f5c000', 'primaryTextColor': '#000', 'primaryBorderColor': '#c29200', 'secondaryColor': '#fff3cd', 'secondaryTextColor': '#000', 'secondaryBorderColor': '#c29200', 'tertiaryColor': '#ffeeba', 'tertiaryTextColor': '#000', 'tertiaryBorderColor': '#c29200', 'lineColor': '#c29200', 'textColor': '#000', 'fontFamily': 'system-ui, sans-serif' }}}%%
 flowchart TD
     START(["I want a container"]) --> Q1{"What's my starting point?"}
 
@@ -53,24 +34,11 @@ flowchart TD
     DEPLOY -->|"User desktop"| D2["modules.homeManager.nix-oci"]
     DEPLOY -->|"Any Linux distro"| D3["modules.systemManager.nix-oci"]
     DEPLOY -->|"CI / Registry"| D4["nix run .#oci-copyToRegistry-hello"]
-
-    style START fill:#f5c000,stroke:#856404,color:#000
-    style Q1 fill:#fff3cd,stroke:#c29200,color:#000
-    style PATH1 fill:#ffeeba,stroke:#c29200,color:#000
-    style PATH2 fill:#ffeeba,stroke:#c29200,color:#000
-    style PATH3 fill:#ffeeba,stroke:#c29200,color:#000
-    style BUILD fill:#f5c000,stroke:#856404,color:#000
-    style DEPLOY fill:#fff3cd,stroke:#c29200,color:#000
-    style D1 fill:#ffeeba,stroke:#c29200,color:#000
-    style D2 fill:#ffeeba,stroke:#c29200,color:#000
-    style D3 fill:#ffeeba,stroke:#c29200,color:#000
-    style D4 fill:#ffeeba,stroke:#c29200,color:#000
 ```
 
 ## What you get for free
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#f5c000', 'primaryTextColor': '#000', 'primaryBorderColor': '#c29200', 'secondaryColor': '#fff3cd', 'secondaryTextColor': '#000', 'secondaryBorderColor': '#c29200', 'tertiaryColor': '#ffeeba', 'tertiaryTextColor': '#000', 'tertiaryBorderColor': '#c29200', 'lineColor': '#c29200', 'textColor': '#000', 'fontFamily': 'system-ui, sans-serif' }}}%%
 flowchart LR
     subgraph NO_CONFIG ["Zero config — enabled by default"]
         direction TB
@@ -94,10 +62,6 @@ flowchart LR
         SBOM["SBOM generation<br/><i>Syft</i>"]
         SIGN["Image signing<br/><i>Cosign</i>"]
     end
-
-    style NO_CONFIG fill:#f5c000,stroke:#856404,color:#000
-    style ONE_LINE fill:#fff3cd,stroke:#c29200,color:#000
-    style SCANNING fill:#ffeeba,stroke:#c29200,color:#000
 ```
 
 ## Features

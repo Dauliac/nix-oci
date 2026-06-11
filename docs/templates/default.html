@@ -18,6 +18,7 @@
         } catch (e) {}
       })();
     </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/iosevka@5/index.css" />
     <link rel="stylesheet" href="{{ stylesheet_path }}" />
     <style>
       @font-face {
@@ -26,7 +27,28 @@
         font-weight: 700;
         font-display: swap;
       }
-      :root { --header-bg: #f5c000; }
+      :root {
+        --header-bg: #f5c000;
+        --font-mono: "Iosevka", monospace;
+        /* Catppuccin Mocha — always dark code blocks (matches one-dark token colors) */
+        --code-bg: #1e1e2e;
+        --code-border: #313244;
+        --code-text: #cdd6f4;
+        /* Catppuccin Latte for inline code */
+        --code-inline-bg: #e6e9ef;
+        --code-inline-border: #ccd0da;
+        --code-inline-text: #4c4f69;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --code-inline-bg: #313244;
+          --code-inline-border: #45475a;
+          --code-inline-text: #cdd6f4;
+        }
+      }
+      body {
+        font-family: "Iosevka", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+      }
       header { color: #000; }
       header a, .site-title a { color: #000 !important; }
       .header-nav a { color: #000 !important; }
@@ -41,6 +63,32 @@
         font-family: "Frames Part One", monospace;
         font-weight: 700;
         letter-spacing: -0.02em;
+      }
+      pre {
+        font-family: "Iosevka", monospace !important;
+        background-color: var(--code-bg) !important;
+        border: 1px solid var(--code-border) !important;
+        border-radius: 8px;
+        padding: 1em !important;
+        color: var(--code-text);
+      }
+      code {
+        font-family: "Iosevka", monospace !important;
+      }
+      :not(pre) > code {
+        background-color: var(--code-inline-bg) !important;
+        border: 1px solid var(--code-inline-border) !important;
+        border-radius: 4px;
+        padding: 0.15em 0.4em;
+        color: var(--code-inline-text);
+      }
+      pre code {
+        background: none !important;
+        border: none !important;
+        padding: 0 !important;
+      }
+      kbd, samp {
+        font-family: "Iosevka", monospace !important;
       }
     </style>
     <script defer src="{{ main_js_path }}"></script>
@@ -121,7 +169,30 @@
 
     <script type="module">
       import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
-      mermaid.initialize({ startOnLoad: false, theme: "neutral" });
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: "base",
+        themeVariables: {
+          primaryColor: "#fff8e1",
+          primaryTextColor: "#333",
+          primaryBorderColor: "#e0a800",
+          secondaryColor: "#fffbec",
+          secondaryTextColor: "#333",
+          secondaryBorderColor: "#e0a800",
+          tertiaryColor: "#fff3cd",
+          tertiaryTextColor: "#333",
+          tertiaryBorderColor: "#e0a800",
+          lineColor: "#d4a017",
+          textColor: "#333",
+          mainBkg: "#fff8e1",
+          nodeBorder: "#e0a800",
+          clusterBkg: "#fffbec",
+          clusterBorder: "#e0a800",
+          edgeLabelBackground: "#fffbec",
+          fontFamily: "'Iosevka', monospace",
+          fontSize: "20px"
+        }
+      });
       document.querySelectorAll("code.language-mermaid").forEach(function (el) {
         var pre = el.parentElement;
         pre.classList.add("mermaid");

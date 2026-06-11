@@ -1,5 +1,9 @@
 # Shared: performance tuning master switch.
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
 {
   options.performance.enable = lib.mkOption {
     type = lib.types.bool;
@@ -16,5 +20,16 @@
       - **glibc tunables** -- tune malloc arenas, tcache, mmap thresholds
       - **hwcaps** -- ship CPU-optimized library variants (glibc-hwcaps, per-arch)
     '';
+  };
+
+  config._tests.performance-enable = {
+    level = "eval";
+    default = {
+      package = pkgs.hello;
+    };
+    override = {
+      package = pkgs.hello;
+      performance.enable = true;
+    };
   };
 }

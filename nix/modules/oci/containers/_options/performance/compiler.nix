@@ -6,7 +6,11 @@
 # References:
 #   - https://wiki.gentoo.org/wiki/LTO
 #   - https://clang.llvm.org/docs/ThinLTO.html
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
 {
   options.performance.compiler = lib.mkOption {
     type = lib.types.submodule {
@@ -23,15 +27,9 @@
             Link-Time Optimization mode.
 
             - `"thin"` -- ThinLTO: fast compile, nearly equal performance
-              to full LTO. Recommended for Clang. Splits analysis into
-              parallel units.
+              to full LTO. Recommended for Clang.
             - `"full"` -- monolithic LTO: best optimization, slowest compile.
-              Analyzes entire link unit at once.
             - `null` -- no LTO.
-
-            > **Warning**: LTO causes full rebuilds of affected packages
-            > (no binary cache hits). Only use for performance-critical
-            > containers where rebuild time is acceptable.
           '';
           example = "thin";
         };
@@ -48,10 +46,8 @@
 
             - `"O2"` -- safe default, good performance.
             - `"O3"` -- aggressive optimization, ~5-15% faster for
-              compute-intensive code. May increase binary size and
-              I-cache pressure.
-            - `"Os"` -- optimize for size. May be faster than O2 for
-              I-cache-bound workloads due to smaller code footprint.
+              compute-intensive code.
+            - `"Os"` -- optimize for size.
           '';
           example = "O3";
         };
@@ -66,15 +62,27 @@
             be overridden by `LD_PRELOAD`, enabling inlining and
             devirtualization within the DSO. 5-10% improvement for
             library-heavy code.
-
-            > **Note**: incompatible with LD_PRELOAD-based allocator
-            > injection for the affected libraries. The allocator
-            > LD_PRELOAD still works for the main binary.
           '';
         };
       };
     };
     default = { };
     description = "Compiler optimization flags applied at container build time.";
+  };
+
+  config._tests.performance-compiler = {
+    level = "eval";
+    default = {
+      package = pkgs.hello;
+      performance.enable = true;
+    };
+    override = {
+      package = pkgs.hello;
+      performance.enable = true;
+      performance.compiler = {
+        lto = "thin";
+        optimizeLevel = "O3";
+      };
+    };
   };
 }

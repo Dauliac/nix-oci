@@ -6,7 +6,18 @@
 #
 # Driver libraries (libcuda.so, libnvidia-ml.so) are NOT included
 # here -- they are always injected at runtime by the host.
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
+let
+  example = [
+    "cudart"
+    "cublas"
+    "cudnn"
+  ];
+in
 {
   options.gpu.runtimeLibraries = lib.mkOption {
     type = lib.types.listOf (
@@ -43,10 +54,19 @@
       Only selected libraries are included to minimize image size.
       Driver libraries (`libcuda.so`) are never bundled.
     '';
-    example = [
-      "cudart"
-      "cublas"
-      "cudnn"
-    ];
+    inherit example;
+  };
+
+  config._tests.gpu-runtime-libraries = {
+    level = "eval";
+    default = {
+      package = pkgs.hello;
+      gpu.enable = true;
+    };
+    override = {
+      package = pkgs.hello;
+      gpu.enable = true;
+      gpu.runtimeLibraries = example;
+    };
   };
 }

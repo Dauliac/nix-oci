@@ -4,7 +4,7 @@
 # structure subtests on the given machine object.
 # Used by both NixOS and system-manager backends.
 ''
-  import json
+  # json is imported in sharedAssertions (loaded first).
 
 
   def wait_for_load(m, name):

@@ -7,7 +7,19 @@
 #   - mimalloc: https://microsoft.github.io/mimalloc/environment.html
 #   - tcmalloc: https://google.github.io/tcmalloc/tuning.html
 #   - jemalloc: https://github.com/jemalloc/jemalloc/blob/dev/TUNING.md
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
+let
+  example = {
+    "narenas" = "2";
+    "dirty_decay_ms" = "5000";
+    "muzzy_decay_ms" = "0";
+    "background_thread" = "true";
+  };
+in
 {
   options.performance.allocatorConfig = lib.mkOption {
     type = lib.types.attrsOf lib.types.str;
@@ -40,11 +52,21 @@
 
       When the selected allocator is `null`, this option is ignored.
     '';
-    example = {
-      "narenas" = "2";
-      "dirty_decay_ms" = "5000";
-      "muzzy_decay_ms" = "0";
-      "background_thread" = "true";
+    inherit example;
+  };
+
+  config._tests.performance-allocator-config = {
+    level = "eval";
+    default = {
+      package = pkgs.hello;
+      performance.enable = true;
+      performance.allocator = "jemalloc";
+    };
+    override = {
+      package = pkgs.hello;
+      performance.enable = true;
+      performance.allocator = "jemalloc";
+      performance.allocatorConfig = example;
     };
   };
 }

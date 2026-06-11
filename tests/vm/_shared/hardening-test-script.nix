@@ -4,19 +4,12 @@
 # hardening subtests on the given machine object.
 # Used by both NixOS and system-manager backends.
 ''
-  import json
   import shlex
 
   NS = "io.github.dauliac.nix-oci"
 
-
-  def wait_for_load(m, name):
-      m.wait_for_unit(f"oci-load-{name}.service")
-
-
-  def image_inspect(m, image_ref):
-      raw = m.succeed(f"podman image inspect {image_ref}")
-      return json.loads(raw)[0]
+  # wait_for_load and image_inspect are defined in structure-test-script.nix
+  # (loaded first in the consolidated test).
 
 
   def assert_label(m, image_ref, key, value):

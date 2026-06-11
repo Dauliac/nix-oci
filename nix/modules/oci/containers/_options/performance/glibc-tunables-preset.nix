@@ -5,7 +5,14 @@
 #
 # References:
 #   - https://www.gnu.org/software/libc/manual/html_node/Memory-Allocation-Tunables.html
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
+let
+  example = "balanced";
+in
 {
   options.performance.glibcTunablesPreset = lib.mkOption {
     type = lib.types.nullOr (
@@ -40,6 +47,19 @@
 
       Only effective with glibc-based containers (not musl).
     '';
-    example = "balanced";
+    inherit example;
+  };
+
+  config._tests.performance-glibc-tunables-preset = {
+    level = "eval";
+    default = {
+      package = pkgs.hello;
+      performance.enable = true;
+    };
+    override = {
+      package = pkgs.hello;
+      performance.enable = true;
+      performance.glibcTunablesPreset = example;
+    };
   };
 }

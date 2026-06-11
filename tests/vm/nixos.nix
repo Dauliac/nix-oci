@@ -63,7 +63,8 @@ in
             return 2;
         }
         CSRC
-        $CC -static -o $out try.c
+        mkdir -p $out/bin
+        $CC -o $out/bin/try-io-uring try.c
       '';
       hardeningContainers = import ./_shared/hardening-containers.nix {
         pkgs = pkgsUnfree;
@@ -95,7 +96,7 @@ in
                 hmShellExample
               ];
 
-              nixpkgs.config.allowUnfree = true;
+              # allowUnfree is already set via pkgsUnfree in runNixOSTest.
               _module.args.home-manager-flake = inputs.home-manager;
 
               virtualisation.podman = {

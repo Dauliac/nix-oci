@@ -180,3 +180,5 @@ untrusted
 backdoors
 grafana
 Grafana
+fromImage
+repo

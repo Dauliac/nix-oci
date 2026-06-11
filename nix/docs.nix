@@ -329,6 +329,18 @@
           output_dir = placeholder "out";
           search.enable = true;
           highlight_code = true;
+          meta_tags = {
+            description = "Build, harden and deploy OCI containers entirely from Nix — including directly from NixOS service definitions";
+            keywords = "nix,oci,container,docker,podman,nixos,flake-parts,nix2container,hardening,seccomp";
+            author = "Dauliac";
+          };
+          opengraph = {
+            "og:title" = "nix-oci — Nix-native OCI containers";
+            "og:description" =
+              "Build, harden and deploy OCI containers entirely from Nix. Write services.nginx.enable = true, get a production-ready container.";
+            "og:type" = "website";
+            "og:url" = "https://dauliac.github.io/nix-oci/";
+          };
           sidebar = {
             ordering = "custom";
             group_by_dir = true;

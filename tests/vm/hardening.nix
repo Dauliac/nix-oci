@@ -36,7 +36,8 @@ in
             return 2;
         }
         CSRC
-        $CC -static -o $out try.c
+        mkdir -p $out/bin
+        $CC -o $out/bin/try-io-uring try.c
       '';
 
       containers = import ./_shared/hardening-containers.nix { inherit pkgs tryIoUring; };

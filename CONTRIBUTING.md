@@ -245,6 +245,11 @@ Every option declaration lives in its own file, with the file path mirroring the
 - No raw `import` -- use modules or nix-lib
 - Prefix internal directories with `_` (excluded from import-tree)
 
+## Contributions we'd love to see
+
+- **New service adapters** -- add foreground mode, healthcheck, and stop signal support for more NixOS services (see `nix/modules/_nixos-oci/service-adapters/` for examples). Any service under `services.*` that can run in a container is a good candidate.
+- **Tests for existing adapters** -- improve coverage of service adapter behavior (healthcheck injection, stop signal detection, entrypoint extraction) with Container Structure Tests or VM integration tests.
+
 ## Related links
 
 - [NixOS manual](https://nixos.org/manual/nixos/stable/)

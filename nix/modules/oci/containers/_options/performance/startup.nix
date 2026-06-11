@@ -6,7 +6,14 @@
 # References:
 #   - ld.so(8): dynamic linker cache
 #   - pthread_attr_setstacksize(3): thread stack size
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
+let
+  exampleStackSize = "512";
+in
 {
   options.performance.startup = lib.mkOption {
     type = lib.types.submodule {
@@ -31,16 +38,31 @@
             the container entrypoint.
 
             Reducing from the default 8MB to 512KB-2MB saves significant
-            virtual memory for containers with many threads (web servers,
-            thread-per-connection models).
+            virtual memory for containers with many threads.
 
             Format: size in KB (e.g. `"512"` for 512KB, `"2048"` for 2MB).
           '';
-          example = "512";
+          example = exampleStackSize;
         };
       };
     };
     default = { };
     description = "Container process startup optimization.";
+  };
+
+  config._tests.performance-startup = {
+    level = "eval";
+    default = {
+      package = pkgs.hello;
+      performance.enable = true;
+    };
+    override = {
+      package = pkgs.hello;
+      performance.enable = true;
+      performance.startup = {
+        ldSoCache = true;
+        stackSize = exampleStackSize;
+      };
+    };
   };
 }

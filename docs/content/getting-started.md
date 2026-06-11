@@ -13,6 +13,11 @@ then deploying it on NixOS -- all from Nix.
 - A flake-based Nix project
 - Nix with flakes enabled
 
+::: {.tip}
+The fastest way to get started is the template:
+`nix flake init -t github:Dauliac/nix-oci` -- it scaffolds a ready-to-build flake for you.
+:::
+
 ## Step 1: Add nix-oci to your flake
 
 ```nix
@@ -109,16 +114,24 @@ perSystem = { ... }: {
 nix-oci evaluates the NixOS modules, extracts the entrypoint, users, and
 filesystem, and builds a minimal OCI image -- no Dockerfile needed.
 
+::: {.tip}
 The service adapter for nginx auto-injects a healthcheck endpoint, a stop
-signal (`SIGQUIT`), and foreground mode. Adapters exist for 10 services:
-nginx, httpd, caddy, postgresql, redis, bind, dnsmasq, postfix, vsftpd,
-and php-fpm.
+signal (`SIGQUIT`), and foreground mode -- you get production-grade container
+metadata automatically. Adapters exist for 10 services: nginx, httpd, caddy,
+postgresql, redis, bind, dnsmasq, postfix, vsftpd, and php-fpm.
+:::
 
 ## Step 6: Build on an external base image (optional)
 
 Use `fromImage` to layer Nix packages on top of an existing OCI image
 (for example from Docker Hub). Identity files (`/etc/passwd`, `/etc/group`)
 get pre-extracted at lock time so evaluation stays pure (no IFD):
+
+::: {.warning}
+Commit the base image identity files to your repository.
+Run the lock command first to extract them -- see the
+[`fromImage` reference](./reference/flake-parts-options.html) for details.
+:::
 
 ```nix
 perSystem = { pkgs, ... }: {
@@ -230,6 +243,13 @@ services wait until the container reports healthy (`READY=1`):
 The generated `podman-my-redis.service` uses `Type=notify` and
 `--sdnotify=healthy`, so any service that depends on it won't start
 until Redis passes its first `redis-cli ping` healthcheck.
+
+::: {.tip}
+Health-aware deployment works with all three deploy targets: NixOS
+(`sdnotify`), Home Manager (Quadlet `Notify=healthy`), and
+system-manager (direct podman flags). Docker-only deployments get the
+healthcheck baked into the image but without systemd integration.
+:::
 
 ## Next steps
 

@@ -8,6 +8,66 @@
 { lib }:
 let
   inherit (lib) mkOption types;
+
+  # Subtype for commands that must succeed
+  succeedsEntryType = types.submodule {
+    options = {
+      command = mkOption {
+        type = types.str;
+        description = "Binary to run as entrypoint.";
+      };
+      args = mkOption {
+        type = types.str;
+        default = "";
+        description = "Arguments passed to the command.";
+      };
+      stdout = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "If set, assert stdout contains this string.";
+      };
+    };
+  };
+
+  # Subtype for commands that must fail
+  failsEntryType = types.submodule {
+    options = {
+      command = mkOption {
+        type = types.str;
+        description = "Binary to run as entrypoint.";
+      };
+      args = mkOption {
+        type = types.str;
+        default = "";
+        description = "Arguments passed to the command.";
+      };
+      exitCode = mkOption {
+        type = types.nullOr types.int;
+        default = null;
+        description = "If set, assert this specific exit code. Otherwise any non-zero.";
+      };
+    };
+  };
+
+  # Subtype for HTTP endpoint checks
+  httpRespondsType = types.submodule {
+    options = {
+      port = mkOption {
+        type = types.port;
+        description = "Port to check.";
+      };
+      path = mkOption {
+        type = types.str;
+        default = "/";
+        description = "HTTP path to request.";
+      };
+      contains = mkOption {
+        type = types.str;
+        default = "";
+        description = "If set, assert response body contains this string.";
+      };
+    };
+  };
 in
 types.submodule {
   options = {
@@ -25,9 +85,23 @@ types.submodule {
 
         - `"eval"` — container config evaluates without error (cheapest).
         - `"build"` — OCI image builds successfully.
-        - `"inspect"` — image metadata contains expected values.
-        - `"runtime"` — container runs correctly in a NixOS VM.
-        - `"deploy"` — full deploy + systemd integration in a NixOS VM.
+        - `"inspect"` — image metadata / file contents (VM, no container run).
+        - `"runtime"` — oneshot `podman run --rm`, check output / exit code.
+        - `"deploy"` — long-running daemon via systemd, check HTTP / env / lifecycle.
+      '';
+    };
+
+    mode = mkOption {
+      type = types.enum [
+        "oneshot"
+        "daemon"
+      ];
+      default = "oneshot";
+      description = ''
+        Container run mode (only relevant for runtime/deploy levels):
+
+        - `"oneshot"` — `podman run --rm`, runs command and exits.
+        - `"daemon"` — deployed via systemd, stays running for interaction.
       '';
     };
 
@@ -49,18 +123,142 @@ types.submodule {
       '';
     };
 
+    testDependencies = mkOption {
+      type = types.listOf types.package;
+      default = [ ];
+      description = ''
+        Extra packages injected into the test container for testing purposes.
+        These are NOT part of the option being tested — they are test harness
+        dependencies (e.g., a C binary that probes io_uring for seccomp tests).
+      '';
+    };
+
     assertions = mkOption {
       type = types.submodule {
         options = {
+          # ── Image-level (inspect, no runtime needed) ─────────────
+
           imageConfig = mkOption {
             type = types.attrsOf types.raw;
             default = { };
-            description = "Expected fields in the OCI image config (for inspect-level tests).";
+            description = ''
+              Expected OCI image Config fields.
+              Checked via `podman image inspect → .Config.<key>`.
+
+              Example: `{ User = "nobody"; ExposedPorts."8080/tcp" = {}; }`
+            '';
           };
+
+          labels = mkOption {
+            type = types.attrsOf types.str;
+            default = { };
+            description = ''
+              Expected OCI labels.
+              Checked via `podman image inspect → .Labels.<key>`.
+
+              Example: `{ "org.opencontainers.image.title" = "my-app"; }`
+            '';
+          };
+
+          fileContains = mkOption {
+            type = types.attrsOf types.str;
+            default = { };
+            description = ''
+              Files in the image that must contain a string.
+              Uses `podman create + cp` to read from image layers directly
+              (bypasses runtime bind-mounts like resolv.conf).
+
+              Example: `{ "/etc/nsswitch.conf" = "files"; }`
+            '';
+          };
+
+          fileNotContains = mkOption {
+            type = types.attrsOf types.str;
+            default = { };
+            description = ''
+              Files in the image that must NOT contain a string.
+
+              Example: `{ "/etc/ssl/certs/ca-bundle.crt" = "BEGIN CERTIFICATE"; }`
+            '';
+          };
+
+          # ── Oneshot (runtime, podman run --rm) ───────────────────
+
+          succeeds = mkOption {
+            type = types.listOf succeedsEntryType;
+            default = [ ];
+            description = ''
+              Commands that must succeed (exit 0) when run via
+              `podman run --rm --entrypoint <command> <image>`.
+              Optionally check stdout contains a string.
+            '';
+          };
+
+          fails = mkOption {
+            type = types.listOf failsEntryType;
+            default = [ ];
+            description = ''
+              Commands that must fail (exit != 0) when run via
+              `podman run --rm --entrypoint <command> <image>`.
+              Used for testing seccomp blocks, capability drops, etc.
+              Optionally assert a specific exit code.
+            '';
+          };
+
+          # ── Daemon (deploy, long-running) ────────────────────────
+
+          httpResponds = mkOption {
+            type = types.nullOr httpRespondsType;
+            default = null;
+            description = ''
+              HTTP endpoint check with built-in wait/retry.
+              Uses `wait_for_open_port` + `wait_until_succeeds` + `curl`.
+            '';
+          };
+
+          processEnv = mkOption {
+            type = types.attrsOf types.str;
+            default = { };
+            description = ''
+              Expected process environment variables.
+              Read from `/proc/1/environ` inside the running container
+              (captures OCI-configured env vars that `env` may not show).
+
+              Example: `{ LD_PRELOAD = "jemalloc"; }`
+            '';
+          };
+
+          containerInspect = mkOption {
+            type = types.attrsOf types.raw;
+            default = { };
+            description = ''
+              Expected `podman inspect` fields (dot-path notation).
+
+              Example: `{ "HostConfig.LogConfig.Type" = "passthrough"; }`
+            '';
+          };
+
+          systemdProps = mkOption {
+            type = types.attrsOf types.str;
+            default = { };
+            description = ''
+              Expected systemd service properties.
+              Checked via `systemctl show <service> --property=<keys>`.
+
+              Example: `{ Type = "notify"; NotifyAccess = "all"; }`
+            '';
+          };
+
+          # ── Escape hatch ─────────────────────────────────────────
+
           runtime = mkOption {
             type = types.lines;
             default = "";
-            description = "Python test script for VM tests (for runtime/deploy-level tests).";
+            description = ''
+              Raw Python test script (escape hatch). In the pytest
+              context, this becomes a standalone test function body
+              with `client` (docker SDK) available.
+            '';
           };
         };
       };
