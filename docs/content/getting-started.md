@@ -287,7 +287,7 @@ secrets in env vars, missing OCI labels, and missing entrypoints.
 Override `policy.conftest.policyDir` with your own Rego files to add
 organization-specific rules.
 
-See [CVE scanning, SBOM generation & integrity tests](./explanation/cve-sbom-integrity.html)
+See [Supply-chain security](./explanation/security/index.html)
 for the full set of security tools.
 
 ## Next steps
@@ -298,5 +298,5 @@ for the full set of security tools.
 - [Performance](./explanation/performance-integrations.html): allocators, glibc tunables, march
 - [Automatic metadata](./explanation/automatic-metadata.html): healthchecks, stop signals, volumes
 - [Automatic labeling](./explanation/automatic-labeling.html): OCI annotations, K8s PSS, security hints
-- [Security scanning](./explanation/cve-sbom-integrity.html): CVE, SBOM, signing, Conftest
+- [Security scanning](./explanation/security/index.html): CVE, SBOM, signing, Conftest
 - [Options Reference](./reference/flake-parts-options.html): full option reference

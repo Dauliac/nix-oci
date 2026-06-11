@@ -241,10 +241,8 @@
                 cp "$f" $out/how-to/
               done
 
-              # --- Explanation pages (including index.md for sidebar group) ---
-              for f in ${../docs/content}/explanation/*.md; do
-                cp "$f" $out/explanation/
-              done
+              # --- Explanation pages (including subdirectories for nested groups) ---
+              cp -r ${../docs/content}/explanation/. $out/explanation/
 
               # --- Reference: copy templates and inject generated options at markers ---
               for f in ${../docs/content}/reference/*.md; do
@@ -357,6 +355,11 @@
               {
                 path = "explanation";
                 position = 2;
+              }
+              {
+                path = "explanation/security";
+                new_title = "Supply-chain security";
+                position = 1;
               }
               {
                 path = "reference";

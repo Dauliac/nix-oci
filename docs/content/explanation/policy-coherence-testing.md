@@ -185,7 +185,7 @@ Three layers give each concern a clear owner:
 
 ## Further reading
 
-- [CVE scanning, SBOM generation & integrity tests](cve-sbom-integrity.html)
+- [Supply-chain security](security/index.html)
   — detailed coverage of each security tool integration
 - [Security defaults](security-defaults.html)
   — why nix-oci defaults to non-root, distroless containers

@@ -372,7 +372,7 @@ oci.containers.my-api = {
 
 - [Security defaults](./security-defaults.md): non-root, distroless, reproducibility
 - [Automatic OCI labels](./automatic-labeling.md): how labels encode the full security posture
-- [CVE scanning, SBOM & integrity](./cve-sbom-integrity.md): vulnerability scanning and compliance
+- [Supply-chain security](./security/index.md): vulnerability scanning and compliance
 - [Seccomp BPF](https://www.kernel.org/doc/html/latest/userspace-api/seccomp_filter.html): kernel documentation
 - [Landlock LSM](https://docs.kernel.org/security/landlock.html): kernel documentation
 - [Linux capabilities](https://man7.org/linux/man-pages/man7/capabilities.7.html): man page
