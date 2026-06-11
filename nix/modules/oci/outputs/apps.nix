@@ -47,6 +47,7 @@ in
           // config.oci.internal.prefixedAmicontainedApps
           // config.oci.internal.prefixedDeepceApps
           // config.oci.internal.prefixedLinpeasApps
+          // config.oci.internal.prefixedCdkApps
           // config.oci.internal.prefixedSBOMSyftApps
           // config.oci.internal.prefixedSigningCosignApps
           // config.oci.internal.prefixedLintDockleApps
