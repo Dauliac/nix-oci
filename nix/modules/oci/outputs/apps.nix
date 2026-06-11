@@ -44,9 +44,11 @@ in
           // config.oci.internal.prefixedContainerStructureTestApps
           // config.oci.internal.prefixedCredentialsLeakTrivyApps
           // config.oci.internal.prefixedDgossApps
+          // config.oci.internal.prefixedAmicontainedApps
           // config.oci.internal.prefixedSBOMSyftApps
           // config.oci.internal.prefixedSigningCosignApps
           // config.oci.internal.prefixedLintDockleApps
+          // config.oci.internal.prefixedPolicyConftestApps
           // config.oci.internal.prefixedComplianceTrivyApps
           // config.oci.internal.prefixedPushTmpOCIApps
           // config.oci.internal.prefixedMergeMultiArchApps

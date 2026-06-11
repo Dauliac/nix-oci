@@ -1,3 +1,4 @@
+amicontained
 Anchore
 attr
 attrs
@@ -15,6 +16,8 @@ cgroups
 Chainguard
 composable
 Composability
+Conftest
+conftest
 config
 configs
 containerd
@@ -95,6 +98,8 @@ quadlet
 Quadlet
 readOnly
 rebase
+Rego
+rego
 Rebase
 rebased
 rebases
@@ -165,6 +170,7 @@ introspectable
 myApp
 openssl
 OCI
+OPA
 NixOS
 nix2container
 flake
