@@ -24,6 +24,8 @@ containerd
 coreutils
 CVEs
 dataDir
+DEEPCE
+deepce
 declaratively
 deduplicate
 deduplicates
