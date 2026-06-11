@@ -288,8 +288,19 @@ heuristic. Both `mkSimpleOCI` and `mkNixOCI` delegate to it. Flavour
 images go through the same pipeline as regular containers; each
 flavour is a full container evaluated independently.
 
+## Beyond layer sharing: lazy pulling
+
+Layer sharing reduces *how much* is downloaded, but lazy pulling reduces
+*when* bytes are fetched. With the [turbo push backend](./turbo-push-backend.md),
+nix-oci can produce SOCI v2 indexes or eStargz layers that enable
+containers to start before the full image is downloaded. The deploy
+modules (`oci.snapshotter.*`) configure the host-side snapshotters
+that consume these artifacts. See [Turbo push backend](./turbo-push-backend.md)
+for the full picture.
+
 ## Further reading
 
+- [Turbo push backend](./turbo-push-backend.md): cross-machine layer caching, SOCI v2 lazy pulling, eStargz, and deploy-side snapshotter configuration
 - [Nix and layered Docker images](https://grahamc.com/blog/nix-and-layered-docker-images): the original popularity algorithm
 - [nix2container](https://github.com/nlewo/nix2container): the backend that implements layering
 - [Nix & Docker: Layer explicitly without duplicate packages](https://blog.eigenvalue.net/2023-nix2container-everything-once/): the fold pattern for cross-layer deduplication

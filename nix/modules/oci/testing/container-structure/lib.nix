@@ -37,9 +37,14 @@ in
               # Interpolating `${path}` copies the file to the Nix store and
               # fails eval if missing, so we can't defer the check to runtime.
               existingConfigs = lib.filter builtins.pathExists containerConfig.configs;
-              configFlags = lib.concatStringsSep " " (lib.map (config: "--config=${config}") existingConfigs);
+              # Auto-generated coherence config from module config
+              coherenceConfigs = lib.optional (containerConfig.coherence or false) (
+                ociLib.mkCoherenceCst { inherit perSystemConfig containerId; }
+              );
+              allConfigs = coherenceConfigs ++ existingConfigs;
+              configFlags = lib.concatStringsSep " " (lib.map (config: "--config=${config}") allConfigs);
             in
-            if existingConfigs == [ ] then
+            if allConfigs == [ ] then
               pkgs.writeShellScriptBin "container-structure-test-${containerId}" ''
                 echo "[container-structure-test-${containerId}] no config files configured (expected e.g. at ${toString (lib.head containerConfig.configs)}); skipping" >&2
                 exit 0

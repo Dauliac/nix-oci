@@ -340,6 +340,117 @@ These are visible via `skopeo inspect` or `docker inspect`.
 }
 ```
 
+## Deploy-side: snapshotter configuration
+
+The turbo options above control the **build/push** side -- they produce
+SOCI indexes and eStargz layers. For the container runtime to actually
+*consume* these artifacts at pull time, the **host** must have the
+matching snapshotter configured.
+
+nix-oci's deploy modules (`oci.snapshotter.*`) handle this automatically
+for NixOS and system-manager hosts. Home-manager is excluded because
+snapshotters are system-level daemons.
+
+### Runtime compatibility
+
+| Backend | Lazy pull technology | Deploy option |
+|---|---|---|
+| containerd (Docker 25+) | [soci-snapshotter](https://github.com/awslabs/soci-snapshotter) | `oci.snapshotter.soci.enable` |
+| containerd (Docker 25+) | [stargz-snapshotter](https://github.com/containerd/stargz-snapshotter) | `oci.snapshotter.stargz.enable` |
+| Podman / CRI-O | zstd:chunked (native in containers/storage) | `oci.snapshotter.zstdChunked.enable` |
+| Docker (traditional) | None | -- |
+
+::: {.warning}
+**SOCI and stargz are containerd-only.** They run as gRPC proxy
+snapshotters alongside containerd. If your deploy backend is `podman`,
+use `zstdChunked` instead -- it is a native feature of Podman's
+`containers/storage` layer.
+:::
+
+### Auto-activation
+
+When any container has `performance.turbo.soci = true`, the deploy
+module auto-enables `oci.snapshotter.soci` via `mkDefault`. You can
+override this explicitly:
+
+```nix
+# NixOS / system-manager configuration
+{
+  oci = {
+    enable = true;
+    backend = "docker";
+
+    # Explicitly configure the snapshotter
+    snapshotter.soci = {
+      enable = true;
+      socketPath = "/run/soci-snapshotter-grpc/soci-snapshotter-grpc.sock";
+      spanSize = 4194304;  # 4 MiB
+    };
+  };
+}
+```
+
+### What the deploy module configures
+
+For **SOCI** or **stargz** (containerd snapshotters):
+- A systemd service running the snapshotter gRPC daemon
+- containerd `proxy_plugins` configuration pointing to the daemon socket
+
+For **zstd:chunked** (Podman):
+- A `storage.conf` drop-in enabling `pull_options.enable_partial_images`
+
+### Snapshotter options
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `oci.snapshotter.soci.enable` | `bool` | `false` | Enable SOCI v2 proxy snapshotter |
+| `oci.snapshotter.soci.socketPath` | `str` | `/run/soci-snapshotter-grpc/soci-snapshotter-grpc.sock` | gRPC socket path |
+| `oci.snapshotter.soci.spanSize` | `int` | `4194304` | SOCI index span size in bytes |
+| `oci.snapshotter.stargz.enable` | `bool` | `false` | Enable eStargz proxy snapshotter |
+| `oci.snapshotter.stargz.socketPath` | `str` | `/run/containerd-stargz-grpc/containerd-stargz-grpc.sock` | gRPC socket path |
+| `oci.snapshotter.zstdChunked.enable` | `bool` | `false` | Enable Podman partial image pulls |
+
+### Safety assertions
+
+The deploy module enforces valid combinations at eval time:
+
+- `soci.enable` requires `backend != "podman"` (containerd proxy only)
+- `stargz.enable` requires `backend != "podman"` (containerd proxy only)
+- `zstdChunked.enable` requires `backend == "podman"` (native feature)
+- SOCI and stargz are mutually exclusive (only one default snapshotter)
+- zstd:chunked cannot be combined with containerd snapshotters
+
+### End-to-end example
+
+```nix
+{
+  # Build side (flake-parts)
+  perSystem = { pkgs, ... }: {
+    oci.turbo = {
+      enable = true;
+      soci = true;
+    };
+    oci.containers.my-api.package = pkgs.myApi;
+  };
+
+  # Deploy side (NixOS)
+  nixosConfigurations.server = {
+    oci = {
+      enable = true;
+      backend = "docker";
+      snapshotter.soci.enable = true;  # or auto-enabled by turbo
+      containers.my-api = {
+        imageRef = "registry.example.com/my-api:latest";
+        autoStart = true;
+      };
+    };
+  };
+}
+```
+
+The build host pushes images with SOCI indexes; the deploy host pulls
+them lazily via the soci-snapshotter daemon.
+
 ## Decision guide: SOCI vs. eStargz vs. zstd
 
 ```mermaid
@@ -351,11 +462,13 @@ flowchart TD
     RUNTIME -->|"AWS Fargate /<br/>containerd + soci-snapshotter"| SOCI["turbo.soci = true<br/>compression = gzip"]
     RUNTIME -->|"containerd +<br/>stargz-snapshotter"| ESTARGZ["compression = gzip:estargz"]
     RUNTIME -->|"containerd 2.0+<br/>(no lazy pull needed)"| ZSTD["compression = zstd<br/>(fastest decompress)"]
-    RUNTIME -->|"Docker / Podman /<br/>older containerd"| GZIP["compression = gzip<br/>(universal)"]
+    RUNTIME -->|"Podman / CRI-O"| ZSTDCHUNKED["compression = zstd<br/>+ snapshotter.zstdChunked"]
+    RUNTIME -->|"Docker (traditional) /<br/>older containerd"| GZIP["compression = gzip<br/>(universal)"]
 
     style SOCI fill:#89b4fa,stroke:#1e66f5,color:#000
     style ESTARGZ fill:#a6da95,stroke:#40a02b,color:#000
     style ZSTD fill:#b4befe,stroke:#7287fd,color:#000
+    style ZSTDCHUNKED fill:#cba6f7,stroke:#8839ef,color:#000
     style CACHE fill:#f9e2ae,stroke:#e6a800,color:#000
 ```
 

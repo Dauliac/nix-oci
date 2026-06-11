@@ -168,6 +168,10 @@ in
                     sociSpanSize = lib.mkDefault (globalTurbo.sociSpanSize or 4194304);
                     layerCache = lib.mkDefault (globalTurbo.layerCache or true);
                   };
+                  # Turbo's cross-machine layer cache benefits massively from
+                  # deduplicated layers — without optimizeLayers, the cache sees
+                  # a single monolithic layer that changes on every rebuild.
+                  config.optimizeLayers = lib.mkDefault (globalTurbo.enable or false);
                 };
             in
             types.submoduleWith {
