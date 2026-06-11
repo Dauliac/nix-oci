@@ -28,9 +28,28 @@
         font-display: swap;
       }
       :root {
+        /* Catppuccin Latte — light mode, yellow accent */
+        --bg-color: #eff1f5;
+        --bg-surface: #e6e9ef;
+        --bg-surface-2: #dce0e8;
+        --text-color: #4c4f69;
+        --text-muted: #6c6f85;
+        --heading-color: #4c4f69;
+        --link-color: #df8e1d;
+        --link-hover-color: #d47e0a;
+        --border-color: #ccd0da;
+        --table-border-color: #bcc0cc;
         --header-bg: #f5c000;
+        --header-text: #4c4f69;
+        --sidebar-bg: #e6e9ef;
+        --sidebar-hover: #dce0e8;
+        --sidebar-active: #ccd0da;
+        --footer-bg: #e6e9ef;
+        --shadow-color: rgba(76, 79, 105, 0.08);
+        --shadow-color-darker: rgba(76, 79, 105, 0.14);
         --font-mono: "Iosevka", monospace;
-        /* Catppuccin Mocha — always dark code blocks (matches one-dark token colors) */
+
+        /* Catppuccin Mocha — always dark code blocks (matches one-dark tokens) */
         --code-bg: #1e1e2e;
         --code-border: #313244;
         --code-text: #cdd6f4;
@@ -38,22 +57,62 @@
         --code-inline-bg: #e6e9ef;
         --code-inline-border: #ccd0da;
         --code-inline-text: #4c4f69;
+
+        /* Catppuccin Latte admonitions */
+        --admonition-note-color: #1e66f5;
+        --admonition-tip-color: #40a02b;
+        --admonition-warning-color: #df8e1d;
+        --admonition-danger-color: #d20f39;
+        --admonition-info-color: #7287fd;
+        --admonition-important-color: #8839ef;
+        --admonition-example-color: #179299;
+        --admonition-caution-color: #fe640b;
       }
       @media (prefers-color-scheme: dark) {
         :root {
+          /* Catppuccin Mocha — dark mode, yellow accent */
+          --bg-color: #1e1e2e;
+          --bg-surface: #181825;
+          --bg-surface-2: #313244;
+          --text-color: #cdd6f4;
+          --text-muted: #a6adc8;
+          --heading-color: #cdd6f4;
+          --link-color: #f9e2af;
+          --link-hover-color: #f5c000;
+          --border-color: #313244;
+          --table-border-color: #45475a;
+          --header-bg: #181825;
+          --header-text: #cdd6f4;
+          --sidebar-bg: #181825;
+          --sidebar-hover: #313244;
+          --sidebar-active: #45475a;
+          --footer-bg: #181825;
+          --shadow-color: rgba(0, 0, 0, 0.3);
+          --shadow-color-darker: rgba(0, 0, 0, 0.45);
+
           --code-inline-bg: #313244;
           --code-inline-border: #45475a;
           --code-inline-text: #cdd6f4;
+
+          /* Catppuccin Mocha admonitions */
+          --admonition-note-color: #89b4fa;
+          --admonition-tip-color: #a6e3a1;
+          --admonition-warning-color: #f9e2af;
+          --admonition-danger-color: #f38ba8;
+          --admonition-info-color: #b4befe;
+          --admonition-important-color: #cba6f7;
+          --admonition-example-color: #94e2d5;
+          --admonition-caution-color: #fab387;
         }
       }
       body {
         font-family: "Iosevka", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
       }
-      header { color: #000; }
-      header a, .site-title a { color: #000 !important; }
-      .header-nav a { color: #000 !important; }
-      #search-input { background: #fff; color: #000; border: 1px solid #000; }
-      #search-input::placeholder { color: #555; }
+      header { color: var(--header-text); }
+      header a, .site-title a { color: var(--header-text) !important; }
+      .header-nav a { color: var(--header-text) !important; }
+      #search-input { background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); }
+      #search-input::placeholder { color: var(--text-muted); }
       .site-title a {
         font-family: "Frames Part One", monospace;
         font-weight: 700;
@@ -125,21 +184,19 @@
         z-index: 2;
         font-weight: 600;
       }
-      @media (prefers-color-scheme: dark) {
-        .table-scroll {
-          border-color: #45475a;
-        }
-        .table-scroll th,
-        .table-scroll td {
-          border-color: #45475a;
-        }
-        .table-scroll th:first-child,
-        .table-scroll td:first-child {
-          background: #1e1e2e;
-        }
-        .table-scroll th {
-          background: #1e1e2e;
-        }
+      .table-scroll {
+        border-color: var(--border-color);
+      }
+      .table-scroll th,
+      .table-scroll td {
+        border-color: var(--border-color);
+      }
+      .table-scroll th:first-child,
+      .table-scroll td:first-child {
+        background: var(--bg-surface);
+      }
+      .table-scroll th {
+        background: var(--bg-surface);
       }
     </style>
     <script defer src="{{ main_js_path }}"></script>
