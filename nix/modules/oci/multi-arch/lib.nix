@@ -42,12 +42,29 @@ in
                 else
                   containerConfig.name;
               compression = containerConfig.performance.compression or "gzip";
-              compressFlag = if compression == "zstd" then "--dest-compress-format zstd" else "";
+              turboEnabled = containerConfig.performance.turbo.enable or false;
+              sociEnabled = turboEnabled && (containerConfig.performance.turbo.soci or false);
+              sociSpanSize = containerConfig.performance.turbo.sociSpanSize or 4194304;
+              compressFlag =
+                if compression == "zstd" then
+                  "--dest-compress-format zstd"
+                else if compression == "gzip:estargz" then
+                  "--dest-compress-format gzip:estargz"
+                else
+                  "";
+              sociFlags =
+                if sociEnabled then "--dest-soci --dest-soci-span-size=${toString sociSpanSize}" else "";
+              skopeoPackage =
+                if turboEnabled then perSystemConfig.packages.skopeoTurbo else perSystemConfig.packages.skopeo;
             in
+            assert turboEnabled -> perSystemConfig.packages.skopeoTurbo != null;
+            assert sociEnabled -> compression != "zstd";
+            assert sociEnabled -> compression != "gzip:estargz";
+            assert (compression == "gzip:estargz") -> turboEnabled;
             pkgs.writeShellApplication {
               name = "push-tmp-${containerId}";
               runtimeInputs = [
-                perSystemConfig.packages.skopeo
+                skopeoPackage
                 pkgs.git
               ];
               text = ''
@@ -61,7 +78,7 @@ in
                   echo "==> Pushing per-arch (${arch}) OCI image to local OCI dir"
                   echo "    source: nix:${ociOutput}"
                   echo "    target: $DEST"
-                  skopeo copy --insecure-policy ${compressFlag} \
+                  skopeo copy --insecure-policy ${compressFlag} ${sociFlags} \
                     nix:${ociOutput} \
                     "$DEST"
                   DIGEST="$(skopeo inspect --format '{{.Digest}}' "$DEST" 2>/dev/null || echo 'unknown')"
@@ -71,7 +88,7 @@ in
                   echo "==> Pushing per-arch (${arch}) OCI image"
                   echo "    source: nix:${ociOutput}"
                   echo "    target: $DEST"
-                  skopeo copy ${compressFlag} \
+                  skopeo copy ${compressFlag} ${sociFlags} \
                     nix:${ociOutput} \
                     "$DEST"
                   DIGEST="$(skopeo inspect --format '{{.Digest}}' "$DEST" 2>/dev/null || echo 'unknown')"

@@ -232,6 +232,27 @@
         "type": "github"
       }
     },
+    "nix2container-turbo": {
+      "inputs": {
+        "nix2container": [
+          "nix2container"
+        ],
+        "nixpkgs": "nixpkgs_2"
+      },
+      "locked": {
+        "lastModified": 1775421695,
+        "narHash": "sha256-bXcXwmC68HXQ9ytdMnMkk9k46/5tN9WlWj9cdskrtVQ=",
+        "owner": "schlarpc",
+        "repo": "nix2container-turbo",
+        "rev": "e4a48c940f47763de299d8ff67f26bb67b3c4b49",
+        "type": "github"
+      },
+      "original": {
+        "owner": "schlarpc",
+        "repo": "nix2container-turbo",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1767028467,
@@ -264,6 +285,22 @@
     },
     "nixpkgs_2": {
       "locked": {
+        "lastModified": 1775113697,
+        "narHash": "sha256-/x3jbkUZWyJcQO0q1rN8dqL+mLLB+h6LXUPBHNRUllE=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "f6ba52fb13545014793832a6ac14549f28b9b25b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "f6ba52fb13545014793832a6ac14549f28b9b25b",
+        "type": "github"
+      }
+    },
+    "nixpkgs_3": {
+      "locked": {
         "lastModified": 1779796641,
         "narHash": "sha256-ZsIrKmhp4vbBXoXXmR/tBXA/UCsAQiJL9vsgZEduhVY=",
         "owner": "NixOS",
@@ -284,7 +321,8 @@
         "import-tree": "import-tree",
         "nix-lib": "nix-lib",
         "nix2container": "nix2container",
-        "nixpkgs": "nixpkgs_2"
+        "nix2container-turbo": "nix2container-turbo",
+        "nixpkgs": "nixpkgs_3"
       }
     },
     "systems": {

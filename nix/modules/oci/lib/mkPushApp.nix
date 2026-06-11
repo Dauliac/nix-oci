@@ -53,12 +53,29 @@
             # (or only fires for missing attributes, not null values), so guard explicitly.
             registryFallback = if containerConfig.registry != null then containerConfig.registry else "";
             compression = containerConfig.performance.compression or "gzip";
-            compressFlag = if compression == "zstd" then "--dest-compress-format zstd" else "";
+            turboEnabled = containerConfig.performance.turbo.enable or false;
+            sociEnabled = turboEnabled && (containerConfig.performance.turbo.soci or false);
+            sociSpanSize = containerConfig.performance.turbo.sociSpanSize or 4194304;
+            compressFlag =
+              if compression == "zstd" then
+                "--dest-compress-format zstd"
+              else if compression == "gzip:estargz" then
+                "--dest-compress-format gzip:estargz"
+              else
+                "";
+            sociFlags =
+              if sociEnabled then "--dest-soci --dest-soci-span-size=${toString sociSpanSize}" else "";
+            skopeoPackage =
+              if turboEnabled then perSystemConfig.packages.skopeoTurbo else perSystemConfig.packages.skopeo;
           in
+          assert turboEnabled -> perSystemConfig.packages.skopeoTurbo != null;
+          assert sociEnabled -> compression != "zstd";
+          assert sociEnabled -> compression != "gzip:estargz";
+          assert (compression == "gzip:estargz") -> turboEnabled;
           pkgs.writeShellApplication {
             name = appName;
             runtimeInputs = [
-              perSystemConfig.packages.skopeo
+              skopeoPackage
             ];
             text = ''
               REGISTRY="''${CIMERA_OCI_REGISTRY:-''${CI_REGISTRY_IMAGE:-${registryFallback}}}"
@@ -86,7 +103,7 @@
               else
                 echo "[${appName}] pushing ${containerId} -> $REF"
 
-                skopeo copy --retry-times 3 ${compressFlag} \
+                skopeo copy --retry-times 3 ${compressFlag} ${sociFlags} \
                   "nix:${ociOutput}" "$DEST" >&2
 
                 DIGEST="$(skopeo inspect --format '{{.Digest}}' "$DEST" 2>/dev/null || echo 'unknown')"

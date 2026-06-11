@@ -36,6 +36,15 @@
             // lib.optionalAttrs ((cfg.march or null) != null) {
               "${ns}.performance.march" = cfg.march;
             }
+            // lib.optionalAttrs (cfg.turbo.enable or false) {
+              "${ns}.performance.turbo" = "true";
+            }
+            // lib.optionalAttrs ((cfg.turbo.enable or false) && (cfg.turbo.soci or false)) {
+              "${ns}.performance.turbo-soci" = "true";
+            }
+            // lib.optionalAttrs ((cfg.turbo.enable or false) && (cfg.turbo.layerCache or true)) {
+              "${ns}.performance.turbo-layer-cache" = "true";
+            }
           );
         tests = {
           "generates labels with allocator" = {
@@ -47,6 +56,11 @@
                 compression = "gzip";
                 hwcaps.enable = false;
                 march = null;
+                turbo = {
+                  enable = false;
+                  soci = false;
+                  layerCache = true;
+                };
               };
             };
             assertions = [
@@ -69,9 +83,45 @@
                 compression = "gzip";
                 hwcaps.enable = false;
                 march = null;
+                turbo = {
+                  enable = false;
+                  soci = false;
+                  layerCache = true;
+                };
               };
             };
             expected = { };
+          };
+          "includes turbo and soci labels" = {
+            args = {
+              performance = {
+                enable = true;
+                allocator = null;
+                glibcTunables = { };
+                compression = "gzip";
+                hwcaps.enable = false;
+                march = null;
+                turbo = {
+                  enable = true;
+                  soci = true;
+                  layerCache = true;
+                };
+              };
+            };
+            assertions = [
+              {
+                name = "has turbo label";
+                check = result: result."io.github.dauliac.nix-oci.performance.turbo" == "true";
+              }
+              {
+                name = "has soci label";
+                check = result: result."io.github.dauliac.nix-oci.performance.turbo-soci" == "true";
+              }
+              {
+                name = "has layer-cache label";
+                check = result: result."io.github.dauliac.nix-oci.performance.turbo-layer-cache" == "true";
+              }
+            ];
           };
           "includes zstd compression label" = {
             args = {
@@ -82,6 +132,11 @@
                 compression = "zstd";
                 hwcaps.enable = false;
                 march = null;
+                turbo = {
+                  enable = false;
+                  soci = false;
+                  layerCache = true;
+                };
               };
             };
             assertions = [

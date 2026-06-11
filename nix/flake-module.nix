@@ -19,7 +19,15 @@ inputs: {
         oci.packages = {
           nix2container = inputs.nix2container.packages.${system}.nix2container;
           skopeo = inputs.nix2container.packages.${system}.skopeo-nix2container;
-        };
+        }
+        // (
+          if inputs ? nix2container-turbo then
+            {
+              skopeoTurbo = inputs.nix2container-turbo.packages.${system}.skopeo;
+            }
+          else
+            { }
+        );
       };
   };
 }

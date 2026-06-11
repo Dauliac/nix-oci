@@ -5,6 +5,10 @@
     nix2container = {
       url = "github:nlewo/nix2container";
     };
+    nix2container-turbo = {
+      url = "github:schlarpc/nix2container-turbo";
+      inputs.nix2container.follows = "nix2container";
+    };
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
     };
