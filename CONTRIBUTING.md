@@ -242,8 +242,30 @@ Every option declaration lives in its own file, with the file path mirroring the
 ## Code style
 
 - Format with `nix fmt`
-- No raw `import`; use modules or nix-lib
 - Prefix internal directories with `_` (excluded from import-tree)
+
+### No raw `import` — use modules or nix-lib
+
+**Never use `import` to pull in another module file.** All module composition goes through auto-discovery (`import-tree`, `discoverModules`, `builtins.readDir`) or explicit module system `imports` lists. Raw `import ./foo.nix` bypasses the module system, creates invisible coupling, and breaks the one-file-per-option contract.
+
+| Allowed | Forbidden |
+|---------|-----------|
+| `imports = [ ./foo.nix ];` (module system) | `import ./foo.nix { inherit lib; }` |
+| Auto-discovery via `import-tree` / `discoverModules` | `let x = import ./helpers.nix;` |
+| `builtins.readFile` for data files (JSON, text) | `import (pkgs.runCommand ...)` (IFD) |
+| Pure library imports in `nix/lib/*.nix` (shared libs) | Importing a module file as a plain function |
+
+**Exceptions** (the only places raw `import` is acceptable):
+
+- **`nix/lib/*.nix`** pure library files — these are not modules; they are plain functions imported by modules or nix-lib wrappers. Example: `import ./oci.nix { inherit lib; }` in `eval-container.nix`.
+- **`import-tree` itself** — the root entry point that bootstraps auto-discovery.
+- **`builtins.readFile`** — reading committed data files (passwd, JSON configs) is fine.
+
+Why this matters:
+- Auto-discovery means **dropping a file makes it exist** — no import list to forget
+- Module-system `imports` get merged, deduplicated, and ordered correctly
+- Raw `import` evaluates immediately and skips merge/override/priority logic
+- Debugging circular imports is trivial when all composition goes through the module system
 
 ## Contributions we'd love to see
 
