@@ -299,4 +299,5 @@ for the full set of security tools.
 - [Automatic metadata](./explanation/automatic-metadata.html): healthchecks, stop signals, volumes
 - [Automatic labeling](./explanation/automatic-labeling.html): OCI annotations, K8s PSS, security hints
 - [Security scanning](./explanation/security/index.html): CVE, SBOM, signing, Conftest
+- [Container probes](./explanation/container-probes.html): amicontained, CDK, DEEPCE, linPEAS
 - [Options Reference](./reference/flake-parts-options.html): full option reference

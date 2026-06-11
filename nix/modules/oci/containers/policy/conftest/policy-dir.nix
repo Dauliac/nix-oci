@@ -12,7 +12,7 @@ in
     { ... }:
     {
       oci.perContainer =
-        { ... }:
+        { pkgs, ... }:
         {
           options.policy.conftest.policyDir = lib.mkOption {
             type = lib.types.path;

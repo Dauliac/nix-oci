@@ -12,13 +12,23 @@ in
     { ... }:
     {
       oci.perContainer =
-        { ... }:
+        { pkgs, ... }:
         {
           options.test.cdk.enabled = lib.mkOption {
             type = lib.types.bool;
             description = "Whether to enable CDK container security auditing for this container.";
             default = cfg.oci.test.cdk.enabled;
             defaultText = lib.literalExpression "config.oci.test.cdk.enabled";
+          };
+          config._tests.test-cdk-enabled = {
+            level = "eval";
+            default = {
+              package = pkgs.hello;
+            };
+            override = {
+              package = pkgs.hello;
+              test.cdk.enabled = true;
+            };
           };
         };
     };

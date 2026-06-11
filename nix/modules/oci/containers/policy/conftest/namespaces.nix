@@ -12,7 +12,7 @@ in
     { ... }:
     {
       oci.perContainer =
-        { ... }:
+        { pkgs, ... }:
         {
           options.policy.conftest.namespaces = lib.mkOption {
             type = lib.types.listOf lib.types.str;
@@ -23,6 +23,19 @@ in
               "main"
               "custom"
             ];
+          };
+          config._tests.policy-conftest-namespaces = {
+            level = "eval";
+            default = {
+              package = pkgs.hello;
+            };
+            override = {
+              package = pkgs.hello;
+              policy.conftest.namespaces = [
+                "main"
+                "custom"
+              ];
+            };
           };
         };
     };

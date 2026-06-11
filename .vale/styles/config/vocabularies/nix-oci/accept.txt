@@ -8,6 +8,7 @@ buildImage
 buildpack
 Buildpacks
 bubblewrap
+busybox
 bwrap
 Caddy
 caddy
