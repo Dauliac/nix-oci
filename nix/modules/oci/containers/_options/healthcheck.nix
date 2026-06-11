@@ -3,12 +3,32 @@
 # Defines the HEALTHCHECK that gets baked into the OCI image manifest.
 # When deployed with Podman + --sdnotify=healthy, systemd waits for the
 # healthcheck to pass before considering the container service "ready".
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
+let
+  exampleCommand = [
+    "curl"
+    "-f"
+    "http://localhost:8080/health"
+  ];
+in
 {
   options.healthcheck = {
     command = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
+      defaultText = lib.literalMD ''
+        Auto-derived by service adapters when available:
+        - **nginx**: `curl` stub\_status or `/health` endpoint
+        - **caddy**: `curl` admin API (`localhost:2019`)
+        - **PostgreSQL**: `pg_isready`
+        - **Redis**: `redis-cli ping`
+        - **BIND/dnsmasq**: `dig` DNS query
+        - **Postfix**: `postfix status`
+      '';
       description = ''
         Health check command (CMD form).
         When non-empty, baked into the OCI image as `Healthcheck.Test`.
@@ -18,11 +38,7 @@
 
         Example: `[ "curl" "-f" "http://localhost:8080/health" ]`
       '';
-      example = [
-        "curl"
-        "-f"
-        "http://localhost:8080/health"
-      ];
+      example = exampleCommand;
     };
 
     interval = lib.mkOption {
@@ -47,6 +63,19 @@
       type = lib.types.int;
       default = 3;
       description = "Number of consecutive failures before the container is considered unhealthy.";
+    };
+  };
+
+  config._tests.healthcheck = {
+    level = "inspect";
+    default = {
+      package = pkgs.hello;
+    };
+    override = {
+      package = pkgs.hello;
+      healthcheck.command = exampleCommand;
+      healthcheck.interval = 10;
+      healthcheck.retries = 5;
     };
   };
 }

@@ -10,7 +10,7 @@ a self-described **"archive-less `dockerTools.buildImage` implementation"** --
 to build OCI images using a fundamentally different approach than traditional
 tools: layers are never materialized as tar archives in the Nix store.
 Instead, they exist as **JSON descriptions** of store paths, and actual
-tarballs are only produced at the moment they are needed -- when loading into
+nix2container only produces tarballs at the moment a consumer needs them -- when loading into
 a runtime or pushing to a registry.
 
 ## The problem with archive-based builds
@@ -214,7 +214,7 @@ and [Ship your Go applications faster to Cloud Run with ko (Google Cloud Blog)](
 
 [Jib](https://github.com/GoogleContainerTools/jib) integrates with Maven and
 Gradle to build Java container images without a Docker daemon. It splits the
-application into three layers -- dependencies, resources, and classes -- so that
+application into three layers -- dependencies, resources, and classes -- and
 a code-only change rebuilds and pushes only the thin classes layer. Jib pushes
 layers in parallel directly to the registry, skipping the local `docker save`
 step entirely.
@@ -260,7 +260,7 @@ and [One Docker image to rule them all (DERLIN)](https://blog.derlin.ch/nixery-o
 
 nix2container stands out by combining Nix's reproducibility guarantees with
 truly archive-less builds: the Nix store only ever contains JSON metadata,
-and the actual image bytes are generated at the moment they are needed.
+and nix2container generates the actual image bytes only at the moment the consumer needs them.
 
 ## Why it matters for nix-oci
 

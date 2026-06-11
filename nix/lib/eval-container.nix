@@ -289,6 +289,16 @@ in
                       compiler
                       ;
                   };
+                  # Forward GPU options to inner eval (env vars, deps, labels).
+                  gpu = {
+                    inherit (containerConfig.gpu)
+                      enable
+                      capabilities
+                      cudaVersion
+                      runtimeLibraries
+                      forwardCompat
+                      ;
+                  };
                 };
               }
             )

@@ -3,7 +3,14 @@
 # Controls how aggressively nix2container splits store paths into sub-layers
 # within each logical layer (deps, app). Only effective when
 # optimizeLayers = true.
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
+let
+  example = "minimal";
+in
 {
   options.layerStrategy = lib.mkOption {
     type = lib.types.enum [
@@ -29,6 +36,17 @@
         images in the same registry. Best for registries hosting many
         images with overlapping dependencies.
     '';
-    example = "minimal";
+    inherit example;
+  };
+
+  config._tests.layer-strategy = {
+    level = "eval";
+    default = {
+      package = pkgs.hello;
+    };
+    override = {
+      package = pkgs.hello;
+      layerStrategy = example;
+    };
   };
 }

@@ -82,28 +82,6 @@ in
     };
   };
 
-  options.homeConfig = {
-    homeManagerFlake = mkOption {
-      type = types.nullOr types.unspecified;
-      description = ''
-        The home-manager flake input. When set, enables home-manager
-        integration for this container.
-        Example: homeConfig.homeManagerFlake = inputs.home-manager;
-      '';
-      default = null;
-    };
-
-    modules = mkOption {
-      type = types.listOf types.unspecified;
-      description = ''
-        Home-manager modules for this container user's home directory.
-        These configure dotfiles, shell, git, editor, etc.
-        Requires homeConfig.homeManagerFlake to be set.
-      '';
-      default = [ ];
-    };
-  };
-
   config = lib.mkIf enabled {
     # Auto-derive user from eval (service package → package → containerName).
     user = lib.mkDefault result.containerUser;

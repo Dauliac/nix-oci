@@ -5,6 +5,9 @@
 # - System-level: nixosConfig.mainService with service adapter (redis)
 # - User-level:   nix-oci builds+loads image into rootless podman via home-manager
 #
+# Uses shared assertions from _shared/assertions.nix for DRY with the
+# system-manager deploy test (deploy-system-manager.nix).
+#
 # Run: nix build .#checks.x86_64-linux.vm-deploy-integration -L
 {
   inputs,
@@ -14,6 +17,7 @@
 let
   nixosModule = config.flake.modules.nixos.nix-oci;
   homeManagerModule = config.flake.modules.homeManager.nix-oci;
+  sharedAssertions = import ./_shared/assertions.nix;
 in
 {
   perSystem =
@@ -25,6 +29,7 @@ in
     let
       nixosExample = ../../examples/deploy-nixos/http-server.nix;
       redisExample = ../../examples/deploy-nixos/redis-nixos-config.nix;
+      perfExample = ../../examples/deploy-nixos/perf-tuned-server.nix;
       hmShellExample = ../../examples/deploy-nixos/shell-with-home-manager.nix;
       hmExample = ../../examples/deploy-home-manager/http-server.nix;
       dockerSdkCheck = pkgs.writeText "check_docker_sdk.py" (
@@ -47,6 +52,7 @@ in
                 nixosModule
                 nixosExample
                 redisExample
+                perfExample
                 hmShellExample
               ];
 
@@ -109,7 +115,7 @@ in
             };
 
           testScript = ''
-            import json
+            ${sharedAssertions}
 
             machine.wait_for_unit("multi-user.target")
 
@@ -117,39 +123,17 @@ in
             # NixOS system-level tests (http-server -- bare package mode)
             # ===================================================================
 
-            with subtest("nixos: load service completes"):
-                machine.wait_for_unit("oci-load-http-server.service")
-
-            with subtest("nixos: load service is oneshot with RemainAfterExit"):
-                props = machine.succeed(
-                    "systemctl show oci-load-http-server.service "
-                    "--property=Type,RemainAfterExit,ActiveState"
-                )
-                assert "Type=oneshot" in props, f"Expected Type=oneshot: {props}"
-                assert "RemainAfterExit=yes" in props, f"Expected RemainAfterExit=yes: {props}"
-                assert "ActiveState=active" in props, f"Expected ActiveState=active: {props}"
+            with subtest("nixos: load service lifecycle"):
+                assert_load_service(machine, "http-server")
 
             with subtest("nixos: container service starts"):
-                machine.wait_for_unit("podman-http-server.service")
+                assert_runner_starts(machine, "http-server")
 
             with subtest("nixos: runner service depends on loader"):
-                deps = machine.succeed(
-                    "systemctl show podman-http-server.service "
-                    "--property=After,Requires"
-                )
-                assert "oci-load-http-server.service" in deps, \
-                    f"Runner must depend on loader: {deps}"
+                assert_runner_depends_on_loader(machine, "http-server")
 
             with subtest("nixos: image present in podman"):
-                images_json = machine.succeed("podman images --format json")
-                images = json.loads(images_json)
-                names = []
-                for img in images:
-                    for key in ("Names", "names", "RepoTags"):
-                        if key in img and img[key]:
-                            names.extend(img[key])
-                assert any("http-server" in n for n in names), \
-                    f"http-server image not found: {names}"
+                assert_image_loaded(machine, "http-server")
 
             with subtest("nixos: firewall allows port 8080"):
                 rules = machine.succeed("iptables -L nixos-fw -n")
@@ -157,12 +141,7 @@ in
                     f"Firewall should allow port 8080: {rules}"
 
             with subtest("nixos: HTTP server responds"):
-                machine.wait_for_open_port(8080)
-                machine.wait_until_succeeds(
-                    "curl -sf http://localhost:8080/index.html", timeout=30
-                )
-                response = machine.succeed("curl -sf http://localhost:8080/index.html")
-                assert "nix-oci-test-ok" in response, f"Bad response: {response}"
+                assert_http_responds(machine, 8080, "nix-oci-test-ok")
 
             with subtest("nixos: Docker SDK deep inspection"):
                 machine.succeed("python3 ${dockerSdkCheck}")
@@ -171,30 +150,17 @@ in
             # NixOS system-level tests (redis -- nixosConfig.mainService mode)
             # ===================================================================
 
-            with subtest("nixos-redis: load service completes"):
-                machine.wait_for_unit("oci-load-redis.service")
+            with subtest("nixos-redis: load service lifecycle"):
+                assert_load_service(machine, "redis")
 
             with subtest("nixos-redis: container service starts"):
-                machine.wait_for_unit("podman-redis.service")
+                assert_runner_starts(machine, "redis")
 
             with subtest("nixos-redis: runner depends on loader"):
-                deps = machine.succeed(
-                    "systemctl show podman-redis.service "
-                    "--property=After,Requires"
-                )
-                assert "oci-load-redis.service" in deps, \
-                    f"Runner must depend on loader: {deps}"
+                assert_runner_depends_on_loader(machine, "redis")
 
             with subtest("nixos-redis: image present in podman"):
-                images_json = machine.succeed("podman images --format json")
-                images = json.loads(images_json)
-                names = []
-                for img in images:
-                    for key in ("Names", "names", "RepoTags"):
-                        if key in img and img[key]:
-                            names.extend(img[key])
-                assert any("redis" in n for n in names), \
-                    f"redis image not found: {names}"
+                assert_image_loaded(machine, "redis")
 
             with subtest("nixos-redis: firewall allows port 6379"):
                 rules = machine.succeed("iptables -L nixos-fw -n")
@@ -227,32 +193,119 @@ in
                     f"Expected SIGTERM stop signal: {stop_signal}"
 
             # ===================================================================
+            # NixOS system-level tests (perf-server -- performance module)
+            # ===================================================================
+
+            with subtest("perf: load service lifecycle"):
+                assert_load_service(machine, "perf-server")
+
+            with subtest("perf: container service starts"):
+                assert_runner_starts(machine, "perf-server")
+
+            with subtest("perf: image present in podman"):
+                assert_image_loaded(machine, "perf-server")
+
+            with subtest("perf: HTTP server responds"):
+                assert_http_responds(machine, 8081, "nix-oci-perf-ok")
+
+            with subtest("perf: jemalloc LD_PRELOAD in container env"):
+                # Read the PID 1 environment inside the container to see
+                # OCI-configured env vars (podman exec env may not show them).
+                proc_env = machine.succeed(
+                    "podman exec perf-server cat /proc/1/environ"
+                ).replace("\x00", "\n")
+                img_env = [l for l in proc_env.strip().split("\n") if l]
+                img_env_str = " ".join(img_env)
+                assert "LD_PRELOAD=" in img_env_str and "libjemalloc" in img_env_str, \
+                    f"Expected LD_PRELOAD with jemalloc in env: {img_env}"
+
+            with subtest("perf: MALLOC_CONF in env"):
+                assert any("MALLOC_CONF=" in e for e in img_env), \
+                    f"Expected MALLOC_CONF env var: {img_env}"
+                malloc_conf = [e for e in img_env if "MALLOC_CONF=" in e][0]
+                assert "muzzy_decay_ms:0" in malloc_conf, \
+                    f"Expected muzzy_decay_ms:0 (container safety default): {malloc_conf}"
+                assert "narenas:2" in malloc_conf, \
+                    f"Expected narenas:2 from allocatorConfig: {malloc_conf}"
+
+            with subtest("perf: GLIBC_TUNABLES in env"):
+                assert any("GLIBC_TUNABLES=" in e for e in img_env), \
+                    f"Expected GLIBC_TUNABLES env var: {img_env}"
+                tunables = [e for e in img_env if "GLIBC_TUNABLES=" in e][0]
+                assert "arena_max=4" in tunables, \
+                    f"Expected balanced preset arena_max=4: {tunables}"
+
+            with subtest("perf: systemd MemoryHigh property"):
+                props = machine.succeed(
+                    "systemctl show podman-perf-server.service "
+                    "--property=MemoryHigh"
+                )
+                assert "419430400" in props or "400M" in props, \
+                    f"Expected MemoryHigh=400M: {props}"
+
+            with subtest("perf: systemd CPUWeight property"):
+                props = machine.succeed(
+                    "systemctl show podman-perf-server.service "
+                    "--property=CPUWeight"
+                )
+                assert "200" in props, f"Expected CPUWeight=200: {props}"
+
+            with subtest("perf: systemd OOMScoreAdjust property"):
+                props = machine.succeed(
+                    "systemctl show podman-perf-server.service "
+                    "--property=OOMScoreAdjust"
+                )
+                assert "-100" in props, f"Expected OOMScoreAdjust=-100: {props}"
+
+            with subtest("perf: container has --log-driver=passthrough"):
+                inspect = machine.succeed("podman inspect perf-server")
+                data = json.loads(inspect)
+                log_driver = data[0].get("HostConfig", {}).get("LogConfig", {}).get("Type", "")
+                assert log_driver == "passthrough", \
+                    f"Expected log-driver passthrough: {log_driver}"
+
+            with subtest("perf: container has sysctl from web-server preset"):
+                inspect = machine.succeed("podman inspect perf-server")
+                data = json.loads(inspect)
+                sysctls = data[0].get("HostConfig", {}).get("Sysctls", {})
+                assert sysctls.get("net.core.somaxconn") == "65535", \
+                    f"Expected somaxconn=65535 from web-server preset: {sysctls}"
+                assert sysctls.get("net.ipv4.tcp_fastopen") == "3", \
+                    f"Expected tcp_fastopen=3 from web-server preset: {sysctls}"
+
+            with subtest("perf: container has tmpfs mount"):
+                inspect = machine.succeed("podman inspect perf-server")
+                data = json.loads(inspect)
+                mounts = data[0].get("Mounts", [])
+                tmpfs_dests = [m.get("Destination", "") for m in mounts if m.get("Type") == "tmpfs"]
+                assert "/tmp" in tmpfs_dests, \
+                    f"Expected /tmp tmpfs mount: {mounts}"
+
+            with subtest("perf: performance OCI labels present"):
+                c_inspect = machine.succeed("podman inspect perf-server")
+                c_data = json.loads(c_inspect)
+                labels = c_data[0].get("Config", {}).get("Labels", {})
+                ns = "io.github.dauliac.nix-oci"
+                assert labels.get(f"{ns}.performance.enabled") == "true", \
+                    f"Expected performance.enabled label: {labels}"
+                assert labels.get(f"{ns}.performance.allocator") == "jemalloc", \
+                    f"Expected allocator=jemalloc label: {labels}"
+
+            # ===================================================================
             # NixOS system-level tests (dev-shell -- homeConfig in deploy)
             # ===================================================================
 
-            with subtest("nixos-dev-shell: load service completes"):
-                machine.wait_for_unit("oci-load-dev-shell.service")
+            with subtest("nixos-dev-shell: load service lifecycle"):
+                assert_load_service(machine, "dev-shell")
 
             with subtest("nixos-dev-shell: container service starts"):
-                machine.wait_for_unit("podman-dev-shell.service")
+                assert_runner_starts(machine, "dev-shell")
 
             with subtest("nixos-dev-shell: image present in podman"):
-                images_json = machine.succeed("podman images --format json")
-                images = json.loads(images_json)
-                names = []
-                for img in images:
-                    for key in ("Names", "names", "RepoTags"):
-                        if key in img and img[key]:
-                            names.extend(img[key])
-                assert any("dev-shell" in n for n in names), \
-                    f"dev-shell image not found: {names}"
+                assert_image_loaded(machine, "dev-shell")
 
             with subtest("nixos-dev-shell: container runs and exec works"):
-                result = machine.succeed(
-                    "podman exec dev-shell echo dev-shell-ok"
-                )
-                assert "dev-shell-ok" in result, \
-                    f"Expected dev-shell-ok: {result}"
+                assert_container_exec(machine, "dev-shell", "echo dev-shell-ok", "dev-shell-ok")
 
             with subtest("nixos-dev-shell: home directory exists for non-root user"):
                 result = machine.succeed(
@@ -269,53 +322,20 @@ in
             uid = machine.succeed("id -u testuser").strip()
             machine.wait_for_unit(f"user@{uid}.service")
 
-            with subtest("home-manager: load service completes"):
-                machine.wait_for_unit("oci-load-http-server.service", "testuser")
-
-            with subtest("home-manager: load service is oneshot with RemainAfterExit"):
-                props = machine.succeed(
-                    "su - testuser -c '"
-                    "XDG_RUNTIME_DIR=/run/user/$(id -u) "
-                    "systemctl --user show oci-load-http-server.service "
-                    "--property=Type,RemainAfterExit,ActiveState'"
-                )
-                assert "Type=oneshot" in props, f"Expected Type=oneshot: {props}"
-                assert "RemainAfterExit=yes" in props, f"Expected RemainAfterExit=yes: {props}"
-                assert "ActiveState=active" in props, f"Expected ActiveState=active: {props}"
+            with subtest("home-manager: load service lifecycle"):
+                assert_load_service(machine, "http-server", user="testuser")
 
             with subtest("home-manager: runner service starts"):
-                machine.wait_for_unit("podman-http-server.service", "testuser")
+                assert_runner_starts(machine, "http-server", user="testuser")
 
             with subtest("home-manager: runner service depends on loader"):
-                deps = machine.succeed(
-                    "su - testuser -c '"
-                    "XDG_RUNTIME_DIR=/run/user/$(id -u) "
-                    "systemctl --user show podman-http-server.service "
-                    "--property=After,Requires'"
-                )
-                assert "oci-load-http-server.service" in deps, \
-                    f"Runner must depend on loader: {deps}"
+                assert_runner_depends_on_loader(machine, "http-server", user="testuser")
 
             with subtest("home-manager: image loaded in rootless podman"):
-                images_json = machine.succeed(
-                    "su - testuser -c 'podman images --format json'"
-                )
-                images = json.loads(images_json)
-                names = []
-                for img in images:
-                    for key in ("Names", "names", "RepoTags"):
-                        if key in img and img[key]:
-                            names.extend(img[key])
-                assert any("http-server" in n for n in names), \
-                    f"http-server not found: {names}"
+                assert_image_loaded(machine, "http-server", user="testuser")
 
             with subtest("home-manager: container runs and serves HTTP"):
-                machine.wait_for_open_port(9090)
-                machine.wait_until_succeeds(
-                    "curl -sf http://localhost:9090/index.html", timeout=30
-                )
-                response = machine.succeed("curl -sf http://localhost:9090/index.html")
-                assert "nix-oci-test-ok" in response, f"Bad response: {response}"
+                assert_http_responds(machine, 9090, "nix-oci-test-ok")
 
             with subtest("home-manager: podman CLI deep inspection"):
                 machine.succeed(

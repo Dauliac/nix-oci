@@ -8,7 +8,14 @@
 # buildEnv store path itself becomes a phantom DB entry. This is harmless
 # for in-container nix usage but can confuse CI pipelines that check DB
 # consistency. Enable this when you need to run nix inside the container.
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
+let
+  example = true;
+in
 {
   options.initializeNixDatabase = lib.mkOption {
     type = lib.types.bool;
@@ -27,6 +34,17 @@
       This is harmless for in-container Nix usage but may confuse workflows
       that validate database-vs-disk consistency.
     '';
-    example = true;
+    inherit example;
+  };
+
+  config._tests.initialize-nix-database = {
+    level = "build";
+    default = {
+      package = pkgs.hello;
+    };
+    override = {
+      package = pkgs.hello;
+      initializeNixDatabase = example;
+    };
   };
 }

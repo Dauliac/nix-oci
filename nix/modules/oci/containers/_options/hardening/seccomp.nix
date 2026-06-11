@@ -24,6 +24,7 @@
             "moderate"
             "web-server"
             "database"
+            "gpu-compute"
           ];
           default = "moderate";
           description = ''
@@ -46,10 +47,15 @@
               syscalls (fadvise64, msync, mincore). Suitable for
               PostgreSQL, Redis, and similar services.
 
+            - `"gpu-compute"` -- web-server base plus CUDA/GPU
+              syscalls (perf_event_open, memfd_create, NUMA memory
+              policy). Relaxes ioctl filtering for GPU command
+              submission. Auto-selected when `gpu.enable = true`.
+
             In the inner NixOS module, the profile auto-defaults to
-            `"web-server"` when a known web server service (nginx,
-            httpd) is detected, and `"database"` when PostgreSQL
-            or Redis is detected.
+            `"gpu-compute"` when GPU is enabled, `"web-server"` when
+            a known web server is detected, and `"database"` when
+            PostgreSQL or Redis is detected.
           '';
         };
 

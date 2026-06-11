@@ -105,6 +105,7 @@
                   generatedLabels
                   // (out.hardening.labels or { })
                   // (out.performance.labels or { })
+                  // (out.gpu.labels or { })
                   // (oci.labels or { });
               }
               // (

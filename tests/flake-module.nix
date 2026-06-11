@@ -20,5 +20,6 @@
     ./vm/flake-module.nix
     ./lint/flake-module.nix
     ./build/flake-module.nix
+    ./options/flake-module.nix
   ];
 }

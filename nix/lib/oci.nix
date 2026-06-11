@@ -246,6 +246,25 @@ let
         }
       );
 
+    mkGpuLabels =
+      { gpu }:
+      lib.optionalAttrs (gpu.enable or false) (
+        {
+          "${ns}.gpu.enabled" = "true";
+          "${ns}.gpu.capabilities" = gpu.capabilities or "compute,utility";
+          "${ns}.gpu.operator-compatible" = "true";
+        }
+        // lib.optionalAttrs ((gpu.cudaVersion or null) != null) {
+          "${ns}.gpu.cuda-version" = gpu.cudaVersion;
+        }
+        // lib.optionalAttrs ((gpu.runtimeLibraries or [ ]) != [ ]) {
+          "${ns}.gpu.runtime-libraries" = lib.concatStringsSep "," gpu.runtimeLibraries;
+        }
+        // lib.optionalAttrs (gpu.forwardCompat or false) {
+          "${ns}.gpu.forward-compat" = "true";
+        }
+      );
+
     # -- Layer building --
 
     mkDepsLayer =
@@ -511,12 +530,10 @@ let
 
     # -- Seccomp --
 
-    mkSeccompProfile =
-      {
-        name,
-        hardening,
-        pkgs,
-      }:
+    # Pure version: returns the profile attrset (no derivation).
+    # Used by unit tests and by mkSeccompProfile.
+    mkSeccompProfileData =
+      { hardening }:
       let
         architectures = [
           "SCMP_ARCH_X86_64"
@@ -789,6 +806,15 @@ let
           }
         ];
 
+        gpuComputeSyscalls = [
+          "perf_event_open"
+          "sched_setaffinity"
+          "mbind"
+          "set_mempolicy"
+          "get_mempolicy"
+          "migrate_pages"
+        ];
+
         mkProfile = defaultAction: syscallRules: {
           inherit defaultAction architectures;
           syscalls = syscallRules;
@@ -849,6 +875,25 @@ let
             ++ socketArgFilter
             ++ ioctlArgFilter
           );
+          gpu-compute = mkProfile "SCMP_ACT_ERRNO" (
+            [
+              {
+                names = lib.unique (
+                  baseSyscalls
+                  ++ fileIoSyscalls
+                  ++ eventLoopSyscalls
+                  ++ networkSyscalls
+                  ++ threadingSyscalls
+                  ++ fsWriteSyscalls
+                  ++ gpuComputeSyscalls
+                  ++ [ "memfd_create" ]
+                );
+                action = "SCMP_ACT_ALLOW";
+              }
+            ]
+            ++ cloneArgFilter
+            ++ socketArgFilter
+          );
           moderate = mkProfile "SCMP_ACT_ALLOW" (
             [
               {
@@ -880,10 +925,21 @@ let
           else
             profile;
       in
+      effectiveProfile;
+
+    # Derivation version: wraps mkSeccompProfileData with pkgs.writeText.
+    mkSeccompProfile =
+      {
+        name,
+        hardening,
+        pkgs,
+      }:
       if hardening.seccomp.customProfileJson != null then
         hardening.seccomp.customProfileJson
       else
-        pkgs.writeText "seccomp-${name}.json" (builtins.toJSON effectiveProfile);
+        pkgs.writeText "seccomp-${name}.json" (
+          builtins.toJSON (self.mkSeccompProfileData { inherit hardening; })
+        );
 
     # -- NixOS eval helpers (pure cores) --
 

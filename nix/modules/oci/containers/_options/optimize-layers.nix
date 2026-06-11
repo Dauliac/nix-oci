@@ -7,7 +7,14 @@
 # References:
 #   - https://grahamc.com/blog/nix-and-layered-docker-images
 #   - https://blog.eigenvalue.net/2023-nix2container-everything-once/
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
+let
+  example = true;
+in
 {
   options.optimizeLayers = lib.mkOption {
     type = lib.types.bool;
@@ -39,6 +46,17 @@
       for the original algorithm and [nix2container](https://github.com/nlewo/nix2container)
       for the implementation used here.
     '';
-    example = true;
+    inherit example;
+  };
+
+  config._tests.optimize-layers = {
+    level = "eval";
+    default = {
+      package = pkgs.hello;
+    };
+    override = {
+      package = pkgs.hello;
+      optimizeLayers = example;
+    };
   };
 }

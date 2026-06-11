@@ -1,5 +1,9 @@
 # Shared: automatic OCI label generation toggle.
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
 {
   options.autoLabels = lib.mkOption {
     type = lib.types.bool;
@@ -15,5 +19,16 @@
       - Hardening hints (`io.github.dauliac.nix-oci.hardening.*`): security posture
       - Kubernetes PSS level (`io.github.dauliac.nix-oci.kubernetes.pod-security-standard`)
     '';
+  };
+
+  config._tests.auto-labels = {
+    level = "eval";
+    default = {
+      package = pkgs.hello;
+    };
+    override = {
+      package = pkgs.hello;
+      autoLabels = false;
+    };
   };
 }

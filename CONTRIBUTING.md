@@ -175,6 +175,70 @@ Lefthook runs automatically on commit:
 - **pre-commit**: `nix fmt`, `nix flake show`, `nix flake check`, `task test`
 - **commit-msg**: [convco](https://convco.github.io/check/) (conventional commits) + typos check
 
+## Module patterns: one file per option
+
+Every option declaration lives in its own file, with the file path mirroring the option namespace path. This is the **core architectural pattern** of nix-oci.
+
+### Rule: file path = option path
+
+```
+# Option: oci.container.hardening.seccomp
+# File:   _nixos-oci/hardening/seccomp.nix
+
+# Option: oci.cve.trivy.ignore.rootPath
+# File:   security/cve/trivy/ignore/root-path.nix
+
+# Option: performance.runtime.memory (deploy submodule)
+# File:   _performance/memory.nix
+```
+
+### How to add a new option
+
+1. **Create one `.nix` file** declaring the single option at its full dotted path:
+   ```nix
+   # nix/modules/oci/containers/_options/my-feature.nix
+   { lib, ... }:
+   {
+     options.myFeature = lib.mkOption {
+       type = lib.types.bool;
+       default = false;
+       description = "Enable my feature.";
+     };
+   }
+   ```
+
+2. **No registration needed** — `perContainer.nix` auto-discovers files in `_options/` via `discoverModules` (recursive `builtins.readDir`). For flake-level options, `import-tree` auto-discovers them.
+
+3. **For submodule options** (e.g. `performance.runtime.*`), add the file to the `_performance/` directory. The `default.nix` auto-discovers it via `builtins.readDir`.
+
+4. **For `_nixos-oci/` options**, follow the split pattern:
+   - Pure option declarations → `feature/option-name.nix`
+   - Computed outputs → `feature/outputs.nix`
+   - Assertions + config → `feature/config.nix`
+
+### When NOT to split
+
+- **Submodule inner options** (`types.submodule { options = { ... }; }`): keep together in one file (e.g. `seccomp.nix` declares the whole seccomp submodule with enable/profile/mode/customProfileJson)
+- **OCI struct fields** (healthcheck command/interval/timeout/retries): keep together — they map 1:1 to a single OCI config struct
+- **Computed outputs** that aggregate multiple options: keep in `outputs.nix`
+- **Type-coupled structural files** (perContainer, perTag, perArch): can't split
+
+### Auto-discovery mechanisms
+
+| Context | Mechanism | Skip prefix |
+|---------|-----------|-------------|
+| Flake-parts top-level | `import-tree ./modules` | `_` |
+| Per-container options | `discoverModules ./_options` (builtins.readDir) | `_` |
+| Deploy submodule | `_performance/default.nix` (builtins.readDir) | `default.nix` |
+| `_nixos-oci/` modules | `import-tree ../../../_nixos-oci` | `_` |
+
+### Naming conventions
+
+- Use **kebab-case** for filenames: `glibc-tunables-preset.nix`, not `glibcTunablesPreset.nix`
+- Match the **last segment** of the option path: `oci.container.hardening.disableDns` → `disable-dns.nix`
+- Submodules get a single file named after the submodule: `seccomp.nix`, `landlock.nix`
+- Subdirectories mirror namespace nesting: `cve/trivy/ignore/root-path.nix`
+
 ## Code style
 
 - Format with `nix fmt`

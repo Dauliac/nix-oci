@@ -72,6 +72,11 @@ in
       # Nix binary for nix-store --load-db (used by nix-vm-test mountStore).
       nixBinPath = "${lib.getBin pkgs.nix}/bin";
 
+      # Tools needed in the VM shell for assertions.
+      # Symlinked into /usr/local/bin (in default PATH on Debian).
+      podmanPkg = pkgs.podman;
+      curlPkg = pkgs.curl;
+
       # nix-vm-test API: Debian 13 cloud image with 9p + overlay store.
       vmTest = inputs.nix-vm-test.lib.${system}.debian."13" {
         memorySize = 2048;
@@ -87,9 +92,15 @@ in
         testScript = ''
           ${sharedAssertions}
 
-          # Wait for store mount and boot
-          vm.wait_for_unit("mount-store.service")
+          # Wait for boot (mount-store is a oneshot WantedBy=multi-user.target,
+          # so the Nix store is already mounted when multi-user.target is reached)
           vm.wait_for_unit("multi-user.target")
+
+          # Symlink Nix-built tools into /usr/local/bin (in default PATH
+          # on Debian). vm.succeed() runs each command in a fresh subshell,
+          # so export PATH doesn't persist — symlinks are the reliable way.
+          vm.succeed("ln -sf ${podmanPkg}/bin/podman /usr/local/bin/podman")
+          vm.succeed("ln -sf ${curlPkg}/bin/curl /usr/local/bin/curl")
 
           # ===================================================================
           # Apply system-manager config
@@ -104,10 +115,12 @@ in
               )
 
           with subtest("system-manager: activate config"):
-              vm.succeed("${systemManagerPkg}/bin/system-manager activate")
-
-          # Give systemd a moment to process new units
-          vm.succeed("systemctl daemon-reload")
+              # Activation may log a timeout warning for slow systemd jobs
+              # (image loading takes time) but still succeeds.
+              vm.succeed(
+                  "${systemManagerPkg}/bin/system-manager activate "
+                  "--store-path ${systemConfig}"
+              )
 
           # ===================================================================
           # Container lifecycle tests (isomorphic with NixOS deploy test)

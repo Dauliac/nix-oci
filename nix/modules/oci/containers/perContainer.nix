@@ -63,51 +63,80 @@ let
     };
 
   # All option-declaration-only modules in _options/.
-  # Including them as staticModules makes getSubOptions visible to nixosOptionsDoc
-  # (e.g. for the flake.parts website documentation).
-  optionModules = [
-    ./_options/auto-labels.nix
-    ./_options/declared-volumes.nix
-    ./_options/dependencies.nix
-    ./_options/entrypoint.nix
-    ./_options/environment.nix
-    ./_options/healthcheck.nix
-    ./_options/initialize-nix-database.nix
-    ./_options/is-root.nix
-    ./_options/labels.nix
-    ./_options/name.nix
-    ./_options/optimize-layers.nix
-    ./_options/package.nix
-    ./_options/ports.nix
-    ./_options/stop-signal.nix
-    ./_options/tag.nix
-    ./_options/user.nix
-    ./_options/working-dir.nix
-    ./_options/hardening/enable.nix
-    ./_options/hardening/dns.nix
-    ./_options/hardening/tls.nix
-    ./_options/hardening/seccomp.nix
-    ./_options/hardening/landlock.nix
-    ./_options/hardening/capabilities.nix
-    ./_options/hardening/rootfs.nix
-    ./_options/hardening/privileges.nix
-    ./_options/performance/enable.nix
-    ./_options/performance/allocator.nix
-    ./_options/performance/allocator-config.nix
-    ./_options/performance/glibc-tunables.nix
-    ./_options/performance/glibc-tunables-preset.nix
-    ./_options/performance/compression.nix
-    ./_options/performance/march.nix
-    ./_options/performance/hwcaps.nix
-    ./_options/performance/huge-pages.nix
-    ./_options/performance/startup.nix
-    ./_options/performance/compiler.nix
-    ./_options/gpu/enable.nix
-    ./_options/gpu/capabilities.nix
-    ./_options/gpu/cuda-version.nix
-    ./_options/gpu/runtime-libraries.nix
-    ./_options/gpu/forward-compat.nix
-  ];
+  # Auto-discovered via readDir so new option files are picked up automatically.
+  # Including them as staticModules makes getSubOptions visible to nixosOptionsDoc.
+  discoverModules =
+    dir:
+    let
+      entries = builtins.readDir dir;
+      files = lib.pipe entries [
+        (lib.filterAttrs (name: type: type == "regular" && lib.hasSuffix ".nix" name))
+        builtins.attrNames
+        (map (name: dir + "/${name}"))
+      ];
+      dirs = lib.pipe entries [
+        (lib.filterAttrs (name: type: type == "directory" && !lib.hasPrefix "_" name))
+        builtins.attrNames
+        (lib.concatMap (name: discoverModules (dir + "/${name}")))
+      ];
+    in
+    files ++ dirs;
+
+  optionModules = discoverModules ./_options;
+
+  # Test specification submodule — contributed by each option file via config._tests.
+  testSpecType = types.submodule {
+    options = {
+      level = mkOption {
+        type = types.enum [
+          "eval"
+          "build"
+          "inspect"
+          "runtime"
+          "deploy"
+        ];
+        default = "eval";
+        description = "Test depth: eval < build < inspect < runtime < deploy.";
+      };
+
+      default = mkOption {
+        type = types.raw;
+        default = { };
+        description = "Container config using only defaults (tests the default value).";
+      };
+
+      override = mkOption {
+        type = types.raw;
+        default = { };
+        description = "Container config with the example value applied (tests the override).";
+      };
+
+      assertions = mkOption {
+        type = types.submodule {
+          options = {
+            imageConfig = mkOption {
+              type = types.attrsOf types.raw;
+              default = { };
+              description = "Expected fields in the OCI image config (for inspect-level tests).";
+            };
+            runtime = mkOption {
+              type = types.lines;
+              default = "";
+              description = "Python test script for VM tests (for runtime/deploy-level tests).";
+            };
+          };
+        };
+        default = { };
+        description = "Assertions to verify after building/running the container.";
+      };
+
+      exampleFile = mkOption {
+        type = types.nullOr types.path;
+        default = null;
+        description = "Link to an examples/ file for docs cross-reference.";
+      };
+    };
+  };
 
   mkPerContainerType = module: deferredModuleWith { staticModules = [ module ] ++ optionModules; };
 in
@@ -134,6 +163,16 @@ in
                 description = "Internal: the container attribute name.";
               };
               config._containerName = lib.mkDefault name;
+
+              # Per-option test specifications.
+              # Each option file contributes via config._tests.<optionName>.
+              options._tests = mkOption {
+                type = types.attrsOf testSpecType;
+                default = { };
+                internal = true;
+                visible = false;
+                description = "Internal: test specifications contributed by each option file.";
+              };
             }
           );
           default = { };

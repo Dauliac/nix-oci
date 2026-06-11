@@ -1,5 +1,9 @@
 # Shared: hardening master switch.
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
 {
   options.hardening.enable = lib.mkOption {
     type = lib.types.bool;
@@ -19,5 +23,16 @@
       to the inner NixOS module at `oci.container.hardening` and can
       be overridden through NixOS module composition.
     '';
+  };
+
+  config._tests.hardening-enable = {
+    level = "eval";
+    default = {
+      package = pkgs.hello;
+    };
+    override = {
+      package = pkgs.hello;
+      hardening.enable = true;
+    };
   };
 }

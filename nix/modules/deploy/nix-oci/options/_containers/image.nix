@@ -91,6 +91,7 @@ let
           generatedLabels
           // (out.hardening.labels or { })
           // (out.performance.labels or { })
+          // (out.gpu.labels or { })
           // (config.labels or { });
       }
       // lib.optionalAttrs (config.ports != [ ]) {
@@ -179,69 +180,6 @@ let
   };
 in
 {
-  # Whether the built image has a healthcheck (from eval or raw config).
-  # Consumed by run-services for sdnotify integration.
-  options.hasHealthcheck = lib.mkOption {
-    type = lib.types.bool;
-    readOnly = true;
-    description = "Whether the container image has a healthcheck configured.";
-    default =
-      if useNixosEval then (out.healthcheck or null) != null else config.healthcheck.command != [ ];
-  };
-
-  # Healthcheck details for runtime injection via podman flags.
-  # Workaround for nix2container upstream bug #197 (Healthcheck dropped from image config).
-  options.healthcheckConfig = lib.mkOption {
-    type = lib.types.nullOr (
-      lib.types.submodule {
-        options = {
-          command = lib.mkOption {
-            type = lib.types.listOf lib.types.str;
-            description = "Healthcheck command.";
-          };
-          interval = lib.mkOption {
-            type = lib.types.int;
-            description = "Interval between checks in seconds.";
-          };
-          timeout = lib.mkOption {
-            type = lib.types.int;
-            description = "Timeout per check in seconds.";
-          };
-          startPeriod = lib.mkOption {
-            type = lib.types.int;
-            description = "Grace period before checks start in seconds.";
-          };
-          retries = lib.mkOption {
-            type = lib.types.int;
-            description = "Number of consecutive failures before unhealthy.";
-          };
-        };
-      }
-    );
-    readOnly = true;
-    internal = true;
-    description = "Resolved healthcheck config (from eval or raw options).";
-    default =
-      let
-        hc =
-          if useNixosEval then
-            out.healthcheck or null
-          else if config.healthcheck.command != [ ] then
-            {
-              inherit (config.healthcheck)
-                command
-                interval
-                timeout
-                startPeriod
-                retries
-                ;
-            }
-          else
-            null;
-      in
-      hc;
-  };
-
   options.image = lib.mkOption {
     type = lib.types.package;
     readOnly = true;

@@ -7,11 +7,28 @@
 #
 # For NixOS containers, auto-derived from systemd StateDirectory,
 # RuntimeDirectory, CacheDirectory, and LogsDirectory.
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
+let
+  example = [
+    "/var/lib/postgresql"
+    "/var/log/nginx"
+  ];
+in
 {
   options.declaredVolumes = lib.mkOption {
     type = lib.types.listOf lib.types.str;
     default = [ ];
+    defaultText = lib.literalMD ''
+      Auto-derived from systemd service directories:
+      - `StateDirectory` → `/var/lib/<dir>`
+      - `RuntimeDirectory` → `/run/<dir>`
+      - `CacheDirectory` → `/var/cache/<dir>`
+      - `LogsDirectory` → `/var/log/<dir>`
+    '';
     description = ''
       OCI volume mount point declarations baked into the image manifest.
       These tell the container runtime which paths contain persistent data.
@@ -24,9 +41,21 @@
 
       This is separate from deploy-time `volumes` (host bind mounts).
     '';
-    example = [
-      "/var/lib/postgresql"
-      "/var/log/nginx"
-    ];
+    inherit example;
+  };
+
+  config._tests.declared-volumes = {
+    level = "inspect";
+    default = {
+      package = pkgs.hello;
+    };
+    override = {
+      package = pkgs.hello;
+      declaredVolumes = example;
+    };
+    assertions.imageConfig.Volumes = {
+      "/var/lib/postgresql" = { };
+      "/var/log/nginx" = { };
+    };
   };
 }

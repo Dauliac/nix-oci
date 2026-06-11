@@ -1,5 +1,9 @@
 # Shared: TLS trust store restriction.
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
 {
   options.hardening.noTlsTrustStore = lib.mkOption {
     type = lib.types.bool;
@@ -12,5 +16,18 @@
       This is a nuclear option -- most applications that make any
       outbound HTTP requests will break.
     '';
+  };
+
+  config._tests.hardening-tls = {
+    level = "eval";
+    default = {
+      package = pkgs.hello;
+      hardening.enable = true;
+    };
+    override = {
+      package = pkgs.hello;
+      hardening.enable = true;
+      hardening.noTlsTrustStore = true;
+    };
   };
 }

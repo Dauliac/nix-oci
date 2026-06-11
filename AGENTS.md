@@ -1,5 +1,15 @@
 # Agents Directives
 
+## IMPORTANT: Always read CONTRIBUTING.md first
+
+Before making any code changes, **always read `CONTRIBUTING.md`** at the project root. It documents:
+- The one-file-per-option module pattern (file path = option path)
+- How to add new options (auto-discovery, no registration needed)
+- When NOT to split files (submodules, OCI structs, type-coupled files)
+- Auto-discovery mechanisms (import-tree, discoverModules, default.nix)
+- Naming conventions (kebab-case filenames)
+- Architecture (flake-parts, NixOS eval bus, service adapters, no IFD)
+
 ## flake.parts-website submodule (`docs/flake-parts-website/`)
 
 This is a fork of `https://github.com/hercules-ci/flake.parts-website`.

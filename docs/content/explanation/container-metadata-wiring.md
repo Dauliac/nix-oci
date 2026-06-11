@@ -245,7 +245,7 @@ See [Automatic OCI labels](./automatic-labeling.md) for full details.
 ### Config files
 
 nix-oci includes config file derivations in the container root filesystem.
-They appear in the **app layer** when `optimizeLayers` is enabled.
+They appear in the **app layer** when you enable `optimizeLayers`.
 
 ```mermaid
 flowchart LR
@@ -344,7 +344,7 @@ flowchart LR
     style hm fill:#1e1e2e,stroke:#f5c2e7,color:#cdd6f4
 ```
 
-When [`autoStart`](../reference/nixos-options.html) is disabled, nix-oci creates only the loader service -- no runner,
+When you disable [`autoStart`](../reference/nixos-options.html), nix-oci creates only the loader service -- no runner,
 no firewall rules, no volumes. It loads the image but does not start it.
 
 ## Service dependency chain

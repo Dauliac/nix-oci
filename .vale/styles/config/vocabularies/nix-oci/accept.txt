@@ -97,6 +97,7 @@ readOnly
 rebase
 Rebase
 rebased
+rebases
 rebasing
 redis
 Rekor

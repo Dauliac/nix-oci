@@ -110,6 +110,62 @@ let
         "udp"
       ];
 
+    # Extract host port from a port mapping spec (the part before ':').
+    parseHostPort =
+      spec:
+      let
+        hostContainer = builtins.head (lib.splitString "/" spec);
+        hostStr = builtins.head (lib.splitString ":" hostContainer);
+        parsed = builtins.tryEval (lib.toInt hostStr);
+      in
+      if parsed.success then parsed.value else null;
+
+    # All valid Linux capabilities (man 7 capabilities).
+    validCapabilities = [
+      "ALL"
+      "AUDIT_CONTROL"
+      "AUDIT_READ"
+      "AUDIT_WRITE"
+      "BLOCK_SUSPEND"
+      "BPF"
+      "CHECKPOINT_RESTORE"
+      "CHOWN"
+      "DAC_OVERRIDE"
+      "DAC_READ_SEARCH"
+      "FOWNER"
+      "FSETID"
+      "IPC_LOCK"
+      "IPC_OWNER"
+      "KILL"
+      "LEASE"
+      "LINUX_IMMUTABLE"
+      "MAC_ADMIN"
+      "MAC_OVERRIDE"
+      "MKNOD"
+      "NET_ADMIN"
+      "NET_BIND_SERVICE"
+      "NET_BROADCAST"
+      "NET_RAW"
+      "PERFMON"
+      "SETFCAP"
+      "SETGID"
+      "SETPCAP"
+      "SETUID"
+      "SYS_ADMIN"
+      "SYS_BOOT"
+      "SYS_CHROOT"
+      "SYS_MODULE"
+      "SYS_NICE"
+      "SYS_PACCT"
+      "SYS_PTRACE"
+      "SYS_RAWIO"
+      "SYS_RESOURCE"
+      "SYS_TIME"
+      "SYS_TTY_CONFIG"
+      "SYSLOG"
+      "WAKE_ALARM"
+    ];
+
     # Valid hwcaps levels per architecture (static, matches arch.nix).
     hwcapsLevelsForSystem = {
       "x86_64-linux" = [
@@ -261,6 +317,15 @@ let
         # -- healthcheck port not in declared/detected ports --
         healthcheckPortUncovered =
           enabled && hcPort != null && allPorts != [ ] && !(lib.elem hcPort allPorts);
+
+        # -- Duplicate host port mappings --
+        hostPorts = builtins.filter (p: p != null) (map self.parseHostPort (containerConfig.ports or [ ]));
+        uniqueHostPorts = lib.unique hostPorts;
+        duplicateHostPorts = builtins.filter (p: lib.count (x: x == p) hostPorts > 1) uniqueHostPorts;
+
+        # -- Invalid capability names --
+        allCaps = capsAdd ++ capsDrop;
+        invalidCaps = builtins.filter (c: !(lib.elem c self.validCapabilities)) allCaps;
       in
       # -- Package conflict (error) --
       (
@@ -501,6 +566,33 @@ let
             This may indicate the healthcheck is checking an unreachable endpoint.
             Fix: add "${toString hcPort}" to `ports` or verify the healthcheck URL.
           '' ""
+        else
+          ""
+      )
+      # -- Duplicate host port mappings (error) --
+      + (
+        if duplicateHostPorts != [ ] then
+          throw ''
+            Container "${name}": duplicate host port(s): ${
+              lib.concatMapStringsSep ", " toString duplicateHostPorts
+            }.
+            Each host port can only be bound once. Multiple containers or mappings
+            using the same host port will fail at runtime.
+            Fix: use unique host ports for each mapping.
+          ''
+        else
+          ""
+      )
+      # -- Invalid capability names (error) --
+      + (
+        if invalidCaps != [ ] then
+          throw ''
+            Container "${name}": invalid Linux capability name(s): ${lib.concatStringsSep ", " invalidCaps}.
+            Valid capabilities: ALL, CHOWN, DAC_OVERRIDE, FOWNER, FSETID, KILL, SETGID,
+            SETUID, SETPCAP, NET_BIND_SERVICE, NET_RAW, NET_ADMIN, SYS_CHROOT,
+            SYS_ADMIN, SYS_PTRACE, MKNOD, AUDIT_WRITE, SETFCAP, ...
+            See: man 7 capabilities
+          ''
         else
           ""
       );

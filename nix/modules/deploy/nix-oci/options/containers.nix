@@ -36,6 +36,20 @@ let
             modules = [
               sharedOptions
               deployExtensions
+              # Shared options may set config._tests.* — declare the
+              # option here so deploy submodules accept those values.
+              (
+                { lib, ... }:
+                {
+                  options._tests = lib.mkOption {
+                    type = lib.types.attrsOf lib.types.unspecified;
+                    default = { };
+                    internal = true;
+                    visible = false;
+                    description = "Internal: test specifications (ignored in deploy context).";
+                  };
+                }
+              )
             ];
             specialArgs = {
               inherit
