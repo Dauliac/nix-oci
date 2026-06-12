@@ -1,7 +1,8 @@
 # Consolidated NixOS VM test -- all container checks in one VM boot.
 #
 # Merges: deploy, structure, hardening, nixos-containers, GPU.
-# Uses shared container definitions and test scripts from _shared/.
+# Uses shared container definitions from _shared/ and pytest suites
+# from ../suites/.
 #
 # Run: nix build .#checks.x86_64-linux.vm-nixos -L
 {
@@ -12,13 +13,6 @@
 let
   nixosModule = config.flake.modules.nixos.nix-oci;
   homeManagerModule = config.flake.modules.homeManager.nix-oci;
-
-  # Shared test scripts
-  sharedAssertions = import ./_shared/assertions.nix;
-  structureTestScript = import ./_shared/structure-test-script.nix;
-  hardeningTestScript = import ./_shared/hardening-test-script.nix;
-  nixosContainersTestScript = import ./_shared/nixos-containers-test-script.nix;
-  gpuTestScript = import ./_shared/gpu-test-script.nix;
 in
 {
   perSystem =
@@ -71,13 +65,26 @@ in
         inherit tryIoUring;
       };
 
-      # Python check scripts for deploy tests
-      dockerSdkCheck = pkgsUnfree.writeText "check_docker_sdk.py" (
-        builtins.readFile ./_python/check_docker_sdk.py
+      # Pytest suite: all .py test files assembled into a single derivation
+      pytestEnv = pkgsUnfree.python3.withPackages (
+        ps: with ps; [
+          docker
+          pytest
+          pytest-xdist
+          requests
+          tenacity
+        ]
       );
-      podmanCliCheck = pkgsUnfree.writeText "check_podman_rootless.py" (
-        builtins.readFile ./_python/check_podman_rootless.py
-      );
+
+      testSuite = pkgsUnfree.runCommand "vm-nixos-test-suite" { } ''
+        mkdir -p $out
+        cp ${../suites/conftest.py} $out/conftest.py
+        cp ${../suites/test_structure.py} $out/test_structure.py
+        cp ${../suites/test_hardening.py} $out/test_hardening.py
+        cp ${../suites/test_services.py} $out/test_services.py
+        cp ${../suites/test_gpu.py} $out/test_gpu.py
+        cp ${../suites/test_deploy.py} $out/test_deploy.py
+      '';
     in
     {
       checks = lib.optionalAttrs pkgsUnfree.stdenv.isLinux {
@@ -220,151 +227,52 @@ in
                   };
               };
 
-              environment.systemPackages = with pkgs; [
-                curl
-                iptables
-                redis
-                (python3.withPackages (ps: [
-                  ps.docker
-                  ps.urllib3
-                ]))
+              environment.systemPackages = [
+                pytestEnv
+                pkgs.curl
+                pkgs.iptables
+                pkgs.redis
               ];
             };
 
           testScript = ''
-            ${sharedAssertions}
-            ${structureTestScript}
-            ${hardeningTestScript}
-            ${nixosContainersTestScript}
-            ${gpuTestScript}
-
             machine.wait_for_unit("multi-user.target")
+            machine.wait_for_unit("podman.socket")
 
-            # =================================================================
-            # Deploy: http-server (bare package mode)
-            # =================================================================
+            # Wait for all image loaders
+            units = machine.succeed(
+                "systemctl list-units 'oci-load-*' --no-legend --plain "
+                "| awk '{print $1}'"
+            ).strip()
+            for unit in units.split("\n"):
+                if unit.strip():
+                    machine.wait_for_unit(unit.strip())
 
-            with subtest("deploy: load service lifecycle"):
-                assert_load_service(machine, "http-server")
-
-            with subtest("deploy: container service starts"):
-                assert_runner_starts(machine, "http-server")
-
-            with subtest("deploy: runner depends on loader"):
-                assert_runner_depends_on_loader(machine, "http-server")
-
-            with subtest("deploy: image present"):
-                assert_image_loaded(machine, "http-server")
-
-            with subtest("deploy: firewall allows port 8080"):
-                rules = machine.succeed("iptables -L nixos-fw -n")
-                assert "8080" in rules, f"Firewall should allow 8080: {rules}"
-
-            with subtest("deploy: HTTP server responds"):
-                assert_http_responds(machine, 8080, "nix-oci-test-ok")
-
-            with subtest("deploy: Docker SDK deep inspection"):
-                machine.succeed("python3 ${dockerSdkCheck}")
-
-            # =================================================================
-            # Deploy: redis (nixosConfig.mainService + sdnotify)
-            # =================================================================
-
-            with subtest("deploy-redis: load + start"):
-                assert_load_service(machine, "redis")
-                assert_runner_starts(machine, "redis")
-                assert_runner_depends_on_loader(machine, "redis")
-                assert_image_loaded(machine, "redis")
-
-            with subtest("deploy-redis: firewall allows port 6379"):
-                rules = machine.succeed("iptables -L nixos-fw -n")
-                assert "6379" in rules, f"Firewall should allow 6379: {rules}"
-
-            with subtest("deploy-redis: responds to PING"):
-                machine.wait_for_open_port(6379)
-                machine.wait_until_succeeds(
-                    "redis-cli -h 127.0.0.1 -p 6379 ping", timeout=30
-                )
-                response = machine.succeed("redis-cli -h 127.0.0.1 -p 6379 ping")
-                assert "PONG" in response, f"Expected PONG: {response}"
-
-            with subtest("deploy-redis: sdnotify Type=notify"):
-                props = machine.succeed(
-                    "systemctl show podman-redis.service "
-                    "--property=Type,NotifyAccess"
-                )
-                assert "Type=notify" in props, f"Expected Type=notify: {props}"
-                assert "NotifyAccess=all" in props, f"Expected NotifyAccess=all: {props}"
-
-            with subtest("deploy-redis: stop signal SIGTERM"):
-                inspect = machine.succeed("podman inspect redis")
-                data = json.loads(inspect)
-                sig = data[0].get("Config", {}).get("StopSignal", "")
-                assert sig in ("SIGTERM", "15"), f"Expected SIGTERM: {sig}"
-
-            # =================================================================
-            # Deploy: dev-shell (homeConfig in deploy)
-            # =================================================================
-
-            with subtest("deploy-dev-shell: load + start"):
-                assert_load_service(machine, "dev-shell")
-                assert_runner_starts(machine, "dev-shell")
-                assert_image_loaded(machine, "dev-shell")
-
-            with subtest("deploy-dev-shell: exec works"):
-                assert_container_exec(machine, "dev-shell", "echo dev-shell-ok", "dev-shell-ok")
-
-            with subtest("deploy-dev-shell: /home/dev exists"):
-                result = machine.succeed("podman exec dev-shell ls -d /home/dev")
-                assert "/home/dev" in result, f"Expected /home/dev: {result}"
-
-            # =================================================================
-            # Deploy: home-manager (rootless podman)
-            # =================================================================
-
+            # Enable linger for home-manager rootless tests
             machine.succeed("loginctl enable-linger testuser")
             uid = machine.succeed("id -u testuser").strip()
             machine.wait_for_unit(f"user@{uid}.service")
+            machine.wait_for_unit("oci-load-http-server.service", "testuser")
+            machine.wait_for_unit("podman-http-server.service", "testuser")
 
-            with subtest("hm: load service lifecycle"):
-                assert_load_service(machine, "http-server", user="testuser")
+            # Wait for deploy services
+            machine.wait_for_unit("podman-http-server.service")
+            machine.wait_for_unit("podman-redis.service")
+            machine.wait_for_unit("podman-dev-shell.service")
+            machine.wait_for_open_port(8080)
+            machine.wait_for_open_port(6379)
+            machine.wait_for_open_port(9090)
 
-            with subtest("hm: runner starts + depends on loader"):
-                assert_runner_starts(machine, "http-server", user="testuser")
-                assert_runner_depends_on_loader(machine, "http-server", user="testuser")
-
-            with subtest("hm: image loaded"):
-                assert_image_loaded(machine, "http-server", user="testuser")
-
-            with subtest("hm: HTTP responds"):
-                assert_http_responds(machine, 9090, "nix-oci-test-ok")
-
-            with subtest("hm: podman CLI deep inspection"):
-                machine.succeed("su - testuser -c 'python3 ${podmanCliCheck}'")
-
-            # =================================================================
-            # Structure tests
-            # =================================================================
-
-            run_structure_tests(machine)
-
-            # =================================================================
-            # Hardening tests
-            # =================================================================
-
-            run_hardening_tests(machine)
-
-            # =================================================================
-            # NixOS container tests (jq, devShell, postgres)
-            # =================================================================
-
-            run_nixos_containers_tests(machine)
-
-            # =================================================================
-            # GPU tests
-            # =================================================================
-
-            run_gpu_tests(machine)
+            # Copy test suite and run pytest
+            machine.succeed(
+                "cp -r ${testSuite} /tmp/tests && chmod -R u+w /tmp/tests"
+            )
+            machine.succeed(
+                "cd /tmp/tests && "
+                "DOCKER_HOST=unix:///run/podman/podman.sock "
+                "TEST_BACKEND=nixos "
+                "pytest -x -v --tb=short 2>&1"
+            )
           '';
         };
       };

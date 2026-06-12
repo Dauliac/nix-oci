@@ -290,14 +290,12 @@ in
                 vm.succeed("ln -sf ${pytestEnv}/bin/pytest /usr/local/bin/pytest")
                 vm.succeed("ln -sf ${pytestEnv}/bin/python3 /usr/local/bin/python3")
 
-                # Start podman API socket for the docker SDK.
-                # vfs storage driver init is slow on first use.
-                vm.succeed("mkdir -p /run/podman /var/lib/containers/storage /run/containers/storage")
-                vm.succeed(
-                    "${podmanPkg}/bin/podman system service "
-                    "--time=0 unix:///run/podman/podman.sock &"
-                )
-                vm.wait_until_succeeds("test -S /run/podman/podman.sock", timeout=30)
+                # Write podman config BEFORE starting podman or system-manager.
+                # 9p filesystem doesn't support overlay — must use vfs.
+                vm.succeed("mkdir -p /etc/containers /run/podman /var/lib/containers/storage /run/containers/storage")
+                vm.succeed("cat > /etc/containers/storage.conf << 'EOF'\n[storage]\ndriver = \"vfs\"\nrunroot = \"/run/containers/storage\"\ngraphroot = \"/var/lib/containers/storage\"\nEOF")
+                vm.succeed("cat > /etc/containers/policy.json << 'EOF'\n{\"default\":[{\"type\":\"insecureAcceptAnything\"}]}\nEOF")
+                vm.succeed("cat > /etc/containers/registries.conf << 'EOF'\n[registries.search]\nregistries = []\nEOF")
 
                 # Apply system-manager config (loads + starts containers)
                 with subtest("system-manager: register config"):
@@ -317,6 +315,15 @@ in
                 # Wait for all images to load
                 ${mkLoadWaits "vm"}
                 ${mkDeployWaits "vm"}
+
+                # Start podman API socket for pytest (after images are loaded).
+                # Use execute() — succeed() may hang on background processes.
+                vm.execute(
+                    "nohup ${podmanPkg}/bin/podman system service "
+                    "--time=0 unix:///run/podman/podman.sock "
+                    ">/dev/null 2>&1 &"
+                )
+                vm.wait_until_succeeds("test -S /run/podman/podman.sock", timeout=60)
 
                 # Run the same pytest suite as NixOS
                 vm.succeed("cp -r ${testSuite} /tmp/tests && chmod -R u+w /tmp/tests")

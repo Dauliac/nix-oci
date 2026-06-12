@@ -1,7 +1,7 @@
 # Consolidated system-manager VM test -- all checks in one Debian 13 boot.
 #
 # Merges: deploy, structure, hardening.
-# Isomorphic with nixos.nix: same shared assertions, same container defs.
+# Isomorphic with nixos.nix: same container defs, same pytest suites.
 #
 # Run: nix build .#checks.x86_64-linux.vm-system-manager -L
 {
@@ -11,11 +11,6 @@
 }:
 let
   systemManagerModule = config.flake.modules.systemManager.nix-oci;
-
-  # Shared test scripts
-  sharedAssertions = import ./_shared/assertions.nix;
-  structureTestScript = import ./_shared/structure-test-script.nix;
-  hardeningTestScript = import ./_shared/hardening-test-script.nix;
 in
 {
   perSystem =
@@ -111,6 +106,25 @@ in
         ];
       };
 
+      # Pytest suite: structure + hardening + basic deploy only
+      pytestEnv = pkgs.python3.withPackages (
+        ps: with ps; [
+          docker
+          pytest
+          pytest-xdist
+          requests
+          tenacity
+        ]
+      );
+
+      testSuite = pkgs.runCommand "vm-system-manager-test-suite" { } ''
+        mkdir -p $out
+        cp ${../suites/conftest.py} $out/conftest.py
+        cp ${../suites/test_structure.py} $out/test_structure.py
+        cp ${../suites/test_hardening.py} $out/test_hardening.py
+        cp ${../suites/test_deploy.py} $out/test_deploy.py
+      '';
+
       vmTest = inputs.nix-vm-test.lib.${system}.debian."13" {
         memorySize = 2048;
         cpus = 4;
@@ -122,16 +136,14 @@ in
         ];
 
         testScript = ''
-          ${sharedAssertions}
-          ${structureTestScript}
-          ${hardeningTestScript}
-
           # Boot
           vm.wait_for_unit("multi-user.target")
 
           # Symlink tools into PATH
           vm.succeed("ln -sf ${podmanPkg}/bin/podman /usr/local/bin/podman")
           vm.succeed("ln -sf ${curlPkg}/bin/curl /usr/local/bin/curl")
+          vm.succeed("ln -sf ${pytestEnv}/bin/python3 /usr/local/bin/python3")
+          vm.succeed("ln -sf ${pytestEnv}/bin/pytest /usr/local/bin/pytest")
 
           # Apply system-manager config
           with subtest("system-manager: register"):
@@ -148,39 +160,33 @@ in
                   "--store-path ${systemConfig}"
               )
 
-          # =================================================================
-          # Deploy: http-server lifecycle
-          # =================================================================
+          # Wait for all image loaders
+          vm.succeed("sleep 5")  # let systemd settle
+          units = vm.succeed(
+              "systemctl list-units 'oci-load-*' --no-legend --plain "
+              "| awk '{print $1}'"
+          ).strip()
+          for unit in units.split("\n"):
+              if unit.strip():
+                  vm.wait_for_unit(unit.strip())
 
-          with subtest("deploy: load service lifecycle"):
-              assert_load_service(vm, "http-server")
+          # Wait for deploy services
+          vm.wait_for_unit("podman-http-server.service")
+          vm.wait_for_open_port(8080)
 
-          with subtest("deploy: container starts"):
-              assert_runner_starts(vm, "http-server")
+          # Start podman socket for Docker SDK access
+          vm.succeed("systemctl start podman.socket")
 
-          with subtest("deploy: runner depends on loader"):
-              assert_runner_depends_on_loader(vm, "http-server")
-
-          with subtest("deploy: image present"):
-              assert_image_loaded(vm, "http-server")
-
-          with subtest("deploy: HTTP responds"):
-              assert_http_responds(vm, 8080, "nix-oci-test-ok")
-
-          with subtest("deploy: exec works"):
-              assert_container_exec(vm, "http-server", "echo exec-ok", "exec-ok")
-
-          # =================================================================
-          # Structure tests
-          # =================================================================
-
-          run_structure_tests(vm)
-
-          # =================================================================
-          # Hardening tests
-          # =================================================================
-
-          run_hardening_tests(vm)
+          # Copy test suite and run pytest
+          vm.succeed(
+              "cp -r ${testSuite} /tmp/tests && chmod -R u+w /tmp/tests"
+          )
+          vm.succeed(
+              "cd /tmp/tests && "
+              "DOCKER_HOST=unix:///run/podman/podman.sock "
+              "TEST_BACKEND=system-manager "
+              "pytest -x -v --tb=short 2>&1"
+          )
         '';
       };
     in
