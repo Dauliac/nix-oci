@@ -328,6 +328,8 @@ These labels serve as documentation; `docker inspect` or
 
 ## Full performance example
 
+See the [flake-parts option reference](../reference/flake-parts-options.html) for all `performance.*` options.
+
 ```nix
 oci.containers.my-api = {
   package = pkgs.myApi;
@@ -360,7 +362,7 @@ oci.containers.my-api = {
 ## NixOS container integration
 
 When using `nixosConfig`, you can set performance options through
-NixOS module composition:
+NixOS module composition. See [`oci.container.performance`](../reference/nix-oci-container-module-options.html) in the container module option reference.
 
 ```nix
 oci.containers.my-app.nixosConfig.modules = [

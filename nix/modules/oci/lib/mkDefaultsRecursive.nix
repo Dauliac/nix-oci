@@ -13,9 +13,6 @@
     file = "nix/modules/oci/lib/mkDefaultsRecursive.nix";
     fn =
       priority: attrs:
-      lib.mapAttrsRecursiveCond
-        builtins.isAttrs
-        (_path: value: lib.mkOverride priority value)
-        attrs;
+      lib.mapAttrsRecursiveCond builtins.isAttrs (_path: value: lib.mkOverride priority value) attrs;
   };
 }

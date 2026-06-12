@@ -26,7 +26,9 @@
                 hash = "sha256-tvt0z0vPGtBrwEJK9IHf+W6YzwaAPUUMTZo7Yhtjlm4=";
               };
             };
-            src = srcs.${pkgs.stdenv.hostPlatform.system} or (throw "cdk: unsupported platform ${pkgs.stdenv.hostPlatform.system}");
+            src =
+              srcs.${pkgs.stdenv.hostPlatform.system}
+                or (throw "cdk: unsupported platform ${pkgs.stdenv.hostPlatform.system}");
           in
           pkgs.stdenvNoCC.mkDerivation {
             pname = "cdk";

@@ -59,6 +59,7 @@ oci.containers.my-nginx = {
 
 That's it. nix-oci evaluates the NixOS modules, extracts the nginx binary
 as the entrypoint, creates a non-root `nginx` user, and builds a minimal image.
+See [`nixosConfig`](../reference/nix-oci-container-module-options.html) in the container module option reference.
 
 ## 3. Build and test
 
@@ -124,7 +125,7 @@ oci.containers.my-caddy = {
 
 ## 6. Add container structure tests
 
-Validate your container image with CST:
+Validate your container image with CST (see [`test.containerStructureTest`](../reference/flake-parts-options.html) in the option reference):
 
 ```nix
 oci.containers.my-nginx = {
@@ -154,6 +155,8 @@ nix run .#oci-container-structure-test-my-nginx
 ```
 
 ## 7. Push to a registry
+
+See [`registry`](../reference/flake-parts-options.html) and [`push`](../reference/flake-parts-options.html) in the option reference.
 
 ```nix
 oci.containers.my-nginx = {

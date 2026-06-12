@@ -1,5 +1,8 @@
 # Port validation checks: format, privileged ports, duplicates.
-{ lib, helpers }:
+{
+  lib,
+  helpers,
+}:
 ctx:
 let
   inherit (ctx)
@@ -29,7 +32,9 @@ let
     && dropsAll
     && !hasNetBindService;
 
-  hostPorts = builtins.filter (p: p != null) (map helpers.parseHostPort (containerConfig.ports or [ ]));
+  hostPorts = builtins.filter (p: p != null) (
+    map helpers.parseHostPort (containerConfig.ports or [ ])
+  );
   uniqueHostPorts = lib.unique hostPorts;
   duplicateHostPorts = builtins.filter (p: lib.count (x: x == p) hostPorts > 1) uniqueHostPorts;
 in

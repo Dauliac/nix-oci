@@ -52,6 +52,7 @@ in
           // config.oci.internal.prefixedSigningCosignApps
           // config.oci.internal.prefixedLintDockleApps
           // config.oci.internal.prefixedPolicyConftestApps
+          // config.oci.internal.prefixedLicenseConftestApps
           // config.oci.internal.prefixedComplianceTrivyApps
           // config.oci.internal.prefixedPushTmpOCIApps
           // config.oci.internal.prefixedMergeMultiArchApps

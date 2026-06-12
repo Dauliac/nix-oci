@@ -1,5 +1,8 @@
 # Landlock coherence checks: missing bind ports, healthcheck connect.
-{ lib, helpers }:
+{
+  lib,
+  helpers,
+}:
 ctx:
 let
   inherit (ctx)

@@ -1,5 +1,8 @@
 # Layer strategy coherence check.
-{ lib, helpers }:
+{
+  lib,
+  helpers,
+}:
 ctx:
 let
   inherit (ctx) name containerConfig;

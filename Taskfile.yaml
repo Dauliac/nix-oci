@@ -14,7 +14,7 @@ tasks:
   #   test:lint      Formatting + prose
   #
   # Non-hermetic (needs daemon/network):
-  #   test:e2e       Bats suites (CST, security scans, multi-arch)
+  #   test:e2e       Pytest suites (CST, security scans, multi-arch)
   #
   test:
     desc: Run all tests (hermetic checks + e2e)
@@ -39,19 +39,18 @@ tasks:
     cmds:
       - nix build .#checks.x86_64-linux.treefmt .#checks.x86_64-linux.lint-vale -L 2>&1 | nom
   test:e2e:
-    desc: Run non-hermetic e2e bats suites (needs daemon)
-    dir: ./tests/e2e/bats/
+    desc: Run non-hermetic e2e pytest suites (needs daemon)
+    dir: ./tests/nonhermetic/
     cmds:
       - |
-        # Pre-compute flake discovery once to avoid SQLite contention
-        # when multiple bats files run setup_file() in parallel.
+        # Pre-compute flake discovery once for pytest parametrization.
         FLAKE_REF="git+file://$(git rev-parse --show-toplevel)"
         system="$(uname -m | sed 's/x86_64/x86_64-linux/;s/aarch64/aarch64-linux/')"
         export NIX_OCI_APPS_JSON=$(nix eval --json "${FLAKE_REF}#apps.${system}" --apply builtins.attrNames)
         export NIX_OCI_PKGS_JSON=$(nix eval --json "${FLAKE_REF}#packages.${system}" --apply builtins.attrNames)
         export NIX_OCI_FLAKE_REF="$FLAKE_REF"
         export NIX_OCI_SYSTEM="$system"
-        bats . --jobs {{.BATS_JOBS | default "3"}} --timing --trace --print-output-on-failure
+        pytest -v --tb=short -n {{.PYTEST_JOBS | default "3"}} .
   test:fmt:
     desc: Format the project tree with nix fmt
     cmds:

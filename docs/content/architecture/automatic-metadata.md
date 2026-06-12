@@ -27,6 +27,8 @@ oci.containers.db = {
 # -> Deploy: --sdnotify=healthy (Podman waits for health before READY=1)
 ```
 
+See [`nixosConfig`](../reference/nix-oci-container-module-options.md) in the container module option reference.
+
 ### How it works
 
 Service adapters in `_nixos/oci/service-adapters/` introspect the
@@ -184,3 +186,5 @@ repeat this information.
 - [Automatic OCI labels](./automatic-labeling.md): auto-generated labels from package metadata
 - [Container metadata wiring](./container-metadata-wiring.md): how all options flow into OCI config
 - [Design choices](./design-choices.md): overview of all defaults and rationale
+- [Container module options](../reference/nix-oci-container-module-options.md): full reference for `nixosConfig`, `mainService`, and all per-container options
+- [flake-parts options](../reference/flake-parts-options.md): build-time container options

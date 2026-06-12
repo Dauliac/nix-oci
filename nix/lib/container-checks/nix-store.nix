@@ -1,5 +1,8 @@
 # Nix store mutual exclusion check: hostStore/hostDaemon vs installNix.
-{ lib, helpers }:
+{
+  lib,
+  helpers,
+}:
 ctx:
 let
   inherit (ctx) name containerConfig;

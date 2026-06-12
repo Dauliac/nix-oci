@@ -1,4 +1,8 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  ...
+}:
 {
   options.cve.vulnix.whitelist.rootPath = lib.mkOption {
     type = lib.types.path;

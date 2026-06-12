@@ -542,28 +542,22 @@ in
           rules = lib.concatStringsSep "\n  " (
             # Base abstractions
             [ "#include <abstractions/base>" ]
-
             # Deny user namespace creation (LPE mitigation).
             ++ lib.optional aa.denyUserNamespace "deny userns_create,"
-
             # Deny mount operations.
             ++ lib.optional aa.denyMount "deny mount,"
-
             # Deny ptrace.
-            ++ lib.optional aa.denyPtrace "deny ptrace (read readby trace traceby),"
-
+            ++ lib.optional aa.denyPtrace "deny ptrace (read read trace traceby),"
             # Default: deny raw network access.
             ++ [
               "deny network raw,"
               "deny network packet,"
             ]
-
             # Allow file access for the Nix store (read + execute).
             ++ [
               "/nix/store/** mr,"
               "/nix/store/*/bin/** ix,"
             ]
-
             # Standard container paths.
             ++ [
               "/dev/null rw,"
@@ -576,7 +570,6 @@ in
               "/tmp/** rw,"
               "/run/** rw,"
             ]
-
             # Allow network (TCP/UDP) — fine-grained port control is
             # handled by Landlock, AppArmor provides the coarse allow.
             ++ [
@@ -584,7 +577,6 @@ in
               "network udp,"
               "network unix,"
             ]
-
             # Signal self.
             ++ [ "signal (send receive) peer=${profileName}," ]
           );

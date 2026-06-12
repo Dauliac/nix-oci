@@ -1,5 +1,8 @@
 # Entrypoint coherence checks: package conflict, forking service, empty entrypoint.
-{ lib, helpers }:
+{
+  lib,
+  helpers,
+}:
 ctx:
 let
   inherit (ctx)

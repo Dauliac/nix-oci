@@ -1,4 +1,8 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  ...
+}:
 {
   options.sbom.path = lib.mkOption {
     type = lib.types.path;

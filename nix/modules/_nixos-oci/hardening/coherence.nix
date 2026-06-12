@@ -364,7 +364,6 @@ in
           by also relaxing capabilities.
         '';
       }
-
       # -- P5: AppArmor network rules dead if seccomp blocks network --
       ++
         optional
@@ -385,7 +384,6 @@ in
               moderate) or disable AppArmor.
             '';
           }
-
       # -- P6: AppArmor denyPtrace redundant but denyMount/denyUserNamespace
       #    contradicts capability add SYS_ADMIN --
       ++
@@ -401,8 +399,7 @@ in
             message = ''
               nix-oci coherence: AppArmor denies ${
                 concatStringsSep " and " (
-                  optional cfg.apparmor.denyMount "mount"
-                  ++ optional cfg.apparmor.denyUserNamespace "userns_create"
+                  optional cfg.apparmor.denyMount "mount" ++ optional cfg.apparmor.denyUserNamespace "userns_create"
                 )
               }
               but capabilities.add includes SYS_ADMIN which grants these operations.
@@ -413,7 +410,6 @@ in
               genuinely need SYS_ADMIN.
             '';
           }
-
       # -- C3: AppArmor custom profile makes computed rules opaque --
       ++
         optional

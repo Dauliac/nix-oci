@@ -225,6 +225,8 @@ oci.containers.my-app = {
 };
 ```
 
+See [`labels`](../reference/flake-parts-options.html) and [`autoLabels`](../reference/flake-parts-options.html) in the flake-parts option reference.
+
 ## Why it matters
 
 - **Compliance**: [Kyverno has a built-in "Require Image Source" policy](https://kyverno.io/policies/other/require-image-source/require-image-source/)

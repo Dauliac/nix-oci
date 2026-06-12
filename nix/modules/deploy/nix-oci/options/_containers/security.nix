@@ -36,8 +36,7 @@ in
           }
         }"
       # AppArmor profile
-      ++ lib.optional h.apparmor.enable
-        "--security-opt=apparmor=${apparmorProfileName}"
+      ++ lib.optional h.apparmor.enable "--security-opt=apparmor=${apparmorProfileName}"
       # No new privileges
       ++ lib.optional h.noNewPrivileges "--security-opt=no-new-privileges"
       # Read-only rootfs

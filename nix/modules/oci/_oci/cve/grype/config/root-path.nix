@@ -1,4 +1,8 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  ...
+}:
 {
   options.cve.grype.config.rootPath = lib.mkOption {
     type = lib.types.path;

@@ -51,6 +51,8 @@ Create `containers/my-app.nix`:
 
 ### Use it in flake-parts (CI builds)
 
+See [`oci.containers`](../reference/flake-parts-options.html) in the flake-parts option reference.
+
 ```nix
 # flake.nix
 perSystem = { pkgs, ... }: {
@@ -66,6 +68,8 @@ nix run .#oci-push-my-app-latest
 ```
 
 ### Use it in NixOS (deploy)
+
+See [`oci.containers`](../reference/nixos-options.html) in the NixOS option reference.
 
 ```nix
 # configuration.nix
@@ -86,6 +90,8 @@ nix run .#oci-push-my-app-latest
 Both targets share the container definition. NixOS adds `autoStart` on top.
 
 ### Use it in Home Manager (deploy)
+
+See [`oci.containers`](../reference/home-manager-options.html) in the Home Manager option reference.
 
 ```nix
 # home.nix

@@ -233,6 +233,8 @@ perSystem = { ... }: {
 };
 ```
 
+See [`optimizeLayers`](../reference/flake-parts-options.html) and [`layerStrategy`](../reference/flake-parts-options.html) in the flake-parts option reference.
+
 ### Deploy modules (NixOS / Home Manager / system-manager)
 
 ```nix
@@ -243,7 +245,11 @@ oci.containers.my-app = {
 };
 ```
 
+See the deploy option references: [NixOS](../reference/nixos-options.html), [Home Manager](../reference/home-manager-options.html), [system-manager](../reference/system-manager-options.html).
+
 ## Example: production + debug flavour
+
+See [`flavours`](../reference/flake-parts-options.html) in the flake-parts option reference.
 
 ```nix
 oci.containers.my-app = {

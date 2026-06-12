@@ -5,23 +5,25 @@
 # config spec (config.User, config.Env, config.Labels, etc.).
 package main
 
+import rego.v1
+
 # Deny containers running as root
-deny[msg] {
+deny contains msg if {
 	input.config.User == "root"
 	msg := "container must not run as root (User is 'root')"
 }
 
-deny[msg] {
+deny contains msg if {
 	input.config.User == "0"
 	msg := "container must not run as root (User is '0')"
 }
 
-deny[msg] {
+deny contains msg if {
 	input.config.User == "0:0"
 	msg := "container must not run as root (User is '0:0')"
 }
 
-deny[msg] {
+deny contains msg if {
 	input.config.User == ""
 	msg := "container User is empty — defaults to root at runtime"
 }
@@ -36,12 +38,10 @@ _secret_patterns := [
 	"CREDENTIALS",
 ]
 
-deny[msg] {
-	some i
-	env := input.config.Env[i]
+deny contains msg if {
+	some env in input.config.Env
 	key := split(env, "=")[0]
-	some pattern
-	pattern := _secret_patterns[_]
+	some pattern in _secret_patterns
 	contains(upper(key), pattern)
 	# Only flag if there is an actual value (not just a declaration)
 	parts := split(env, "=")
@@ -51,29 +51,29 @@ deny[msg] {
 }
 
 # Warn on missing OCI standard labels
-warn[msg] {
+warn contains msg if {
 	not _has_label("org.opencontainers.image.source")
 	msg := "missing recommended label: org.opencontainers.image.source"
 }
 
-warn[msg] {
+warn contains msg if {
 	not _has_label("org.opencontainers.image.description")
 	msg := "missing recommended label: org.opencontainers.image.description"
 }
 
 # Deny images with no entrypoint
-deny[msg] {
+deny contains msg if {
 	not input.config.Entrypoint
 	msg := "image has no Entrypoint set"
 }
 
-deny[msg] {
+deny contains msg if {
 	input.config.Entrypoint
 	count(input.config.Entrypoint) == 0
 	msg := "image Entrypoint is empty"
 }
 
 # Helper: check if a label key exists
-_has_label(key) {
+_has_label(key) if {
 	input.config.Labels[key]
 }

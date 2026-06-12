@@ -60,7 +60,7 @@ nix run .#oci-cve-grype-<name>
 nix run .#oci-cve-vulnix-<name>
 ```
 
-Enable in your container config:
+Enable in your container config (see [`cve.*`](../reference/flake-parts-options.html) in the option reference):
 
 ```nix
 oci.cve.trivy.enabled = true;
@@ -123,6 +123,8 @@ oci.containers.my-app = {
 };
 ```
 
+See [`flavours`](../reference/flake-parts-options.html) in the flake-parts option reference.
+
 ```bash
 # Build the debug variant
 nix build .#oci-my-app-debug
@@ -147,6 +149,8 @@ oci.containers.my-app = {
   };
 };
 ```
+
+See [`multiArch`](../reference/flake-parts-options.html) in the flake-parts option reference.
 
 ```bash
 # Build the multi-arch manifest

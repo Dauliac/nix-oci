@@ -1,4 +1,8 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  ...
+}:
 {
   options.sbom.syft.config.rootPath = lib.mkOption {
     type = lib.types.path;

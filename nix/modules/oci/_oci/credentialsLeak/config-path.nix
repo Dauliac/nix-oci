@@ -1,4 +1,8 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  ...
+}:
 {
   options.credentialsLeak.configPath = lib.mkOption {
     type = lib.types.path;

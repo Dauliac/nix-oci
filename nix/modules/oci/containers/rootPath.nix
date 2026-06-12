@@ -15,7 +15,11 @@ in
     { ... }:
     {
       oci.perContainer =
-        { name, lib, ... }:
+        {
+          name,
+          lib,
+          ...
+        }:
         {
           config.rootPath = lib.mkDefault (cfg.oci.rootPath + name + "/");
         };

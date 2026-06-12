@@ -44,6 +44,8 @@ The fastest way to get started is the template:
 }
 ```
 
+See [`oci.containers.<name>`](./reference/flake-parts-options.html) in the flake-parts option reference.
+
 ## Step 2: Build the image
 
 ```bash
@@ -84,6 +86,8 @@ Add the NixOS module to your system configuration:
 }
 ```
 
+See [`oci.containers.<name>`](./reference/nixos-options.html) in the NixOS option reference.
+
 This creates two systemd services:
 - `oci-load-hello.service`: loads the image from the Nix store into Podman
 - `podman-hello.service`: runs the container
@@ -113,6 +117,7 @@ perSystem = { ... }: {
 
 nix-oci evaluates the NixOS modules, extracts the entrypoint, users, and
 filesystem, and builds a minimal OCI image; no Dockerfile needed.
+See [`nixosConfig`](./reference/nix-oci-container-module-options.html) in the container module option reference.
 
 ::: {.tip}
 The service adapter for nginx auto-injects a healthcheck endpoint, a stop
@@ -171,6 +176,8 @@ perSystem = { ... }: {
 };
 ```
 
+See [`homeConfig`](./reference/nix-oci-container-module-options.html) in the container module option reference.
+
 ## Step 8: Enable hardening (optional)
 
 Enable seccomp, Landlock, capability dropping, and more.
@@ -190,8 +197,9 @@ perSystem = { ... }: {
 };
 ```
 
-See [Hardening](./security/hardening.html) and
-[Security defaults](./security/security-defaults.html) for details.
+See [Hardening](./security/hardening.html),
+[Security defaults](./security/security-defaults.html), and
+[`hardening.*`](./reference/flake-parts-options.html) in the option reference for details.
 
 ## Step 9: Enable performance optimizations (optional)
 
@@ -212,7 +220,7 @@ perSystem = { ... }: {
 ```
 
 See [Performance integrations](./performance/performance-integrations.html)
-for the full set of options.
+and [`performance.*`](./reference/flake-parts-options.html) in the option reference for details.
 
 ## Step 10: Health-aware deployment (optional)
 
@@ -288,7 +296,7 @@ Override `policy.conftest.policyDir` with your own Rego files to add
 organization-specific rules.
 
 See [Supply-chain security](./security/index.html)
-for the full set of security tools.
+and [`cve.*`, `lint.*`, `policy.*`](./reference/flake-parts-options.html) in the option reference for the full set of security tools.
 
 ## Next steps
 

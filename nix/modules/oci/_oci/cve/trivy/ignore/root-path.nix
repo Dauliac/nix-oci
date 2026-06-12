@@ -1,4 +1,8 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  ...
+}:
 {
   options.cve.trivy.ignore.rootPath = lib.mkOption {
     type = lib.types.path;

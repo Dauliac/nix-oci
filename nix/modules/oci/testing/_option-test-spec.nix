@@ -145,12 +145,22 @@ types.submodule {
       '';
     };
 
+    container = mkOption {
+      type = types.raw;
+      default = { };
+      description = ''
+        Container config for this BDD test scenario.
+        Used by the new .test.nix BDD system.
+      '';
+    };
+
     default = mkOption {
       type = types.raw;
       default = { };
       description = ''
         Container config using only defaults.
         Tests that the option's default value produces a valid container.
+        (Legacy _tests system — use `container` for new BDD specs.)
       '';
     };
 
@@ -160,6 +170,7 @@ types.submodule {
       description = ''
         Container config with the example value applied.
         Tests that overriding the option with its documented example works.
+        (Legacy _tests system — use `container` for new BDD specs.)
       '';
     };
 

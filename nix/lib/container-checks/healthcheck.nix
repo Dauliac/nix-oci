@@ -1,5 +1,8 @@
 # Healthcheck coherence checks: TLS, DNS, port coverage.
-{ lib, helpers }:
+{
+  lib,
+  helpers,
+}:
 ctx:
 let
   inherit (ctx)

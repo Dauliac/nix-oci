@@ -104,7 +104,8 @@ flavours.debug = {
 };
 ```
 
-See [Optimized layer sharing](./optimize-layers.md) for how images
+See [`flavours`](../reference/flake-parts-options.html) in the option reference and
+[Optimized layer sharing](./optimize-layers.md) for how images
 sharing common dependencies benefit from registry-level deduplication.
 
 ## Security tooling built in
@@ -120,6 +121,7 @@ nix-oci includes optional, declarative security scanning:
 | **cosign** | Image signing ([keyless](../reference/flake-parts-options.html) mode) | `oci.signing.cosign.enabled` |
 | **Trivy** | Credentials leak detection | `oci.credentialsLeak.trivy.enabled` |
 
+See the [flake-parts option reference](../reference/flake-parts-options.html) for all security scanning options.
 All scanners run as Nix derivations or flake checks, integrating into CI
 without extra tooling.
 

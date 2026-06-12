@@ -170,14 +170,38 @@ class SystemdHelper:
     """Query and assert on systemd unit properties."""
 
     @staticmethod
+    def _resolve_uid(user):
+        """Resolve a username to its UID."""
+        import pwd
+        try:
+            return pwd.getpwnam(user).pw_uid
+        except KeyError:
+            return os.getuid()
+
+    @staticmethod
     def show(unit, *properties, user=None):
-        cmd = ["systemctl"]
-        env = None
-        if user:
-            cmd.append("--user")
-            env = {**os.environ, "XDG_RUNTIME_DIR": f"/run/user/{os.getuid()}"}
-        cmd.extend(["show", unit, f"--property={','.join(properties)}"])
-        result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+        if user and user != os.environ.get("USER", "root"):
+            # Root querying another user's systemd: use sudo -u to get
+            # the correct DBUS_SESSION_BUS_ADDRESS.
+            uid = SystemdHelper._resolve_uid(user)
+            prop_arg = f"--property={','.join(properties)}"
+            cmd = [
+                "sudo", "-u", user,
+                "env", f"XDG_RUNTIME_DIR=/run/user/{uid}",
+                f"DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{uid}/bus",
+                "systemctl", "--user", "show", unit, prop_arg,
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+        else:
+            cmd = ["systemctl"]
+            env = None
+            if user:
+                cmd.append("--user")
+                uid = SystemdHelper._resolve_uid(user)
+                env = {**os.environ, "XDG_RUNTIME_DIR": f"/run/user/{uid}",
+                       "DBUS_SESSION_BUS_ADDRESS": f"unix:path=/run/user/{uid}/bus"}
+            cmd.extend(["show", unit, f"--property={','.join(properties)}"])
+            result = subprocess.run(cmd, capture_output=True, text=True, env=env)
         assert result.returncode == 0, f"Failed to query {unit}: {result.stderr}"
         return result.stdout
 

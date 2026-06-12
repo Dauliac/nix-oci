@@ -1,4 +1,8 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  ...
+}:
 {
   options.cve.configPath = lib.mkOption {
     type = lib.types.path;

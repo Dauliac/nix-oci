@@ -1,5 +1,8 @@
 # Capability name validation.
-{ lib, helpers }:
+{
+  lib,
+  helpers,
+}:
 ctx:
 let
   inherit (ctx) name containerConfig;

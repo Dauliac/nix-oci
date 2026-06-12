@@ -13,11 +13,12 @@ let
   discoverModules = import ../../../lib/discoverModules.nix { inherit lib; };
   filters = import ../../../lib/discoverFilters.nix { inherit lib; };
 
-  # Discover .test.nix files from the _options directory.
+  # Discover .test.nix files from the _tests directory.
   # These are flake-parts modules that set config.perSystem.test.oci.perContainer.*.
-  # Currently empty (no .test.nix files yet — created during migration phase).
+  # The _tests/ dir is _-prefixed so import-tree skips it (avoids importing
+  # .test.nix files as submodule options). Only the test-collector imports them.
   testModules = discoverModules {
-    dir = ../containers/_options;
+    dir = ../containers/_tests;
     filter = filters.test;
   };
 in

@@ -66,6 +66,8 @@ tooling.
 
 ### Enable globally
 
+See [`oci.test.*`](../reference/flake-parts-options.html) in the flake-parts option reference.
+
 ```nix
 # All containers get all probes
 oci.test.amicontained.enabled = true;

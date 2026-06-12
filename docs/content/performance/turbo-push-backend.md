@@ -67,6 +67,8 @@ flowchart TD
 
 ### Global (all containers)
 
+See [`oci.turbo`](../reference/flake-parts-options.html) in the flake-parts option reference.
+
 ```nix
 perSystem = { ... }: {
   oci.turbo = {
@@ -77,6 +79,8 @@ perSystem = { ... }: {
 ```
 
 ### Per-container
+
+See [`performance.turbo`](../reference/flake-parts-options.html) in the flake-parts option reference.
 
 ```nix
 oci.containers.my-app = {
@@ -174,6 +178,8 @@ performance.turbo = {
 };
 ```
 
+See [`performance.turbo.soci`](../reference/flake-parts-options.html) in the flake-parts option reference.
+
 ### How it works
 
 1. During push, turbo generates a **zTOC** (table of contents) for
@@ -234,6 +240,8 @@ oci.containers.my-app = {
   };
 };
 ```
+
+See [`performance.compression`](../reference/flake-parts-options.html) in the flake-parts option reference.
 
 ### Requirements
 
@@ -389,6 +397,8 @@ override this explicitly:
   };
 }
 ```
+
+See [`oci.snapshotter`](../reference/nixos-options.html) in the NixOS option reference and [`oci.snapshotter`](../reference/system-manager-options.html) in the system-manager option reference.
 
 ### What the deploy module configures
 

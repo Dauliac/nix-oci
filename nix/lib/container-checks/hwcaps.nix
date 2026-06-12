@@ -1,5 +1,8 @@
 # Hardware capabilities (hwcaps) architecture validation.
-{ lib, helpers }:
+{
+  lib,
+  helpers,
+}:
 ctx:
 let
   inherit (ctx) name containerConfig system;

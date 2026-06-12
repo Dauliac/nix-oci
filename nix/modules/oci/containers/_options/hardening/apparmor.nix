@@ -93,7 +93,7 @@
             Deny ptrace of other processes.
 
             Prevents process inspection and memory manipulation attacks.
-            Enforced via AppArmor `deny ptrace (read, readby, trace, traceby),`
+            Enforced via AppArmor `deny ptrace (read, read, trace, traceby),`
             rule.
           '';
         };

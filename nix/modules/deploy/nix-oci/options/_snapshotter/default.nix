@@ -10,7 +10,10 @@ let
       entries = builtins.readDir dir;
       names = builtins.attrNames entries;
       nixFiles = builtins.filter (
-        name: name != "default.nix" && builtins.match ".*\\.nix" name != null
+        name:
+        name != "default.nix"
+        && builtins.substring 0 1 name != "_"
+        && builtins.match ".*\\.nix" name != null
       ) names;
       subDirs = builtins.filter (
         name: entries.${name} == "directory" && builtins.substring 0 1 name != "_"

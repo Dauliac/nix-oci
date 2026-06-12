@@ -1,5 +1,8 @@
 # Seccomp coherence checks: strict vs networking, forking, allocator.
-{ lib, helpers }:
+{
+  lib,
+  helpers,
+}:
 ctx:
 let
   inherit (ctx)

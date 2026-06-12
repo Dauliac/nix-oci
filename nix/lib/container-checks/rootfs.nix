@@ -1,5 +1,8 @@
 # Read-only rootfs checks: writable directories not covered by volumes.
-{ lib, helpers }:
+{
+  lib,
+  helpers,
+}:
 ctx:
 let
   inherit (ctx)

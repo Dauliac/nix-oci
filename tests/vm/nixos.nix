@@ -183,7 +183,9 @@ in
                   gpu-basic = {
                     package = pkgs.busybox;
                     isRoot = true;
-                    nixosConfig.modules = [ ];
+                    nixosConfig.modules = [
+                      { nixpkgs.config.allowUnfree = true; }
+                    ];
                     gpu = {
                       enable = true;
                       capabilities = [
