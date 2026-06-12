@@ -160,11 +160,15 @@ in
                 };
             in
             types.submoduleWith {
-              modules = modules ++ [ turboDefaults ./_bridge.nix ];
+              modules = modules ++ [
+                turboDefaults
+                ./_bridge.nix
+              ];
               specialArgs = {
                 inherit system pkgs;
                 globalConfig = cfg;
                 perSystemConfig = config;
+                examplesDir = ../../../examples;
               };
               class = "perContainer";
             }
