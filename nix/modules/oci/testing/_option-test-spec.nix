@@ -71,6 +71,46 @@ let
 in
 types.submodule {
   options = {
+    # ── BDD metadata (rendered in NDG docs) ────────────────
+    given = mkOption {
+      type = types.str;
+      default = "";
+      description = "BDD precondition / context (rendered in test coverage docs).";
+    };
+
+    "when" = mkOption {
+      type = types.str;
+      default = "";
+      description = "BDD action or trigger (rendered in test coverage docs).";
+    };
+
+    "then" = mkOption {
+      type = types.str;
+      default = "";
+      description = "BDD expected outcome (rendered in test coverage docs).";
+    };
+
+    target = mkOption {
+      type = types.enum [
+        "oci"
+        "nixos-oci"
+        "home-manager-oci"
+        "deploy-nixos"
+        "deploy-home-manager"
+      ];
+      default = "oci";
+      description = ''
+        Which test harness to use:
+        - `"oci"` — flake-parts container (podman run).
+        - `"nixos-oci"` — NixOS container eval + systemd.
+        - `"home-manager-oci"` — home-manager activation.
+        - `"deploy-nixos"` — full NixOS deployment.
+        - `"deploy-home-manager"` — home-manager deployment.
+      '';
+    };
+
+    # ── Existing fields ────────────────────────────────────
+
     level = mkOption {
       type = types.enum [
         "eval"
