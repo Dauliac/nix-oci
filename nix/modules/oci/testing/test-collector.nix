@@ -1,7 +1,8 @@
 # Collects BDD test specs from .test.nix files.
 #
 # Declares the test.oci.perContainer option tree where .test.nix files
-# contribute their BDD specs. Collection logic is wired in F3.
+# contribute their BDD specs. Discovers .test.nix files via discoverModules
+# and imports them as flake-parts modules.
 {
   lib,
   flake-parts-lib,
@@ -9,8 +10,21 @@
 }:
 let
   testSpecType = import ./_option-test-spec.nix { inherit lib; };
+  discoverModules = import ../../../lib/discoverModules.nix { inherit lib; };
+  filters = import ../../../lib/discoverFilters.nix { inherit lib; };
+
+  # Discover .test.nix files from the _options directory.
+  # These are flake-parts modules that set config.perSystem.test.oci.perContainer.*.
+  # Currently empty (no .test.nix files yet — created during migration phase).
+  testModules = discoverModules {
+    dir = ../containers/_options;
+    filter = filters.test;
+  };
 in
 {
+  # Import discovered .test.nix files as flake-parts modules.
+  imports = testModules;
+
   options.perSystem = flake-parts-lib.mkPerSystemOption (
     { ... }:
     {
