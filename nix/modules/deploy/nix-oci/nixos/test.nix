@@ -19,6 +19,7 @@
           ./_test/_podman-config.nix
           ./_test/_db-config.nix
           ./_test/_cosign-config.nix
+          ./_test/_apps-config.nix
         ];
     };
 }
