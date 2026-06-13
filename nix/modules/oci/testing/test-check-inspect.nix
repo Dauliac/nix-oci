@@ -1,7 +1,7 @@
 # Generate inspect-level checks from BDD test specs.
 #
-# For each test spec where level="inspect", compiles assertions to
-# Rego policies and runs them via conftest against the OCI image config.
+# Registers mkInspectCheck via nix-lib. Uses mkRegoFromBddAssertions
+# from config.lib.oci (registered in rego-gen.nix).
 {
   lib,
   flake-parts-lib,
@@ -15,14 +15,13 @@ in
     {
       config,
       pkgs,
-      system,
       ...
     }:
     let
       ociLib = config.lib.oci or { };
       allSpecs = config.test.oci.perContainer or { };
+      hasRegoGen = (ociLib.test.mkRegoFromBddAssertions or null) != null;
 
-      # Filter specs where level = "inspect"
       inspectSpecs = lib.concatMapAttrs (
         group: scenarios:
         lib.concatMapAttrs (
@@ -30,18 +29,17 @@ in
         ) scenarios
       ) allSpecs;
 
-      # Generate a check for each inspect spec
-      mkInspectCheck =
-        name: spec:
+      mkInspectCheckFn =
+        {
+          name,
+          spec,
+        }:
         let
-          # Compile BDD assertions to Rego
           regoDir = ociLib.test.mkRegoFromBddAssertions {
             assertions = spec.assertions;
             testName = name;
           };
         in
-        # For now, just create the Rego — the full conftest pipeline integration
-        # requires building the container image first, which will be wired in I1.
         pkgs.runCommandLocal "inspect-check-${name}" { } ''
           echo "Generated Rego policy for ${name}:"
           cat ${regoDir}/*.rego
@@ -53,10 +51,15 @@ in
         type = types.attrsOf types.package;
         internal = true;
         readOnly = true;
-        default = lib.mapAttrs' (
-          name: spec: lib.nameValuePair "bdd-inspect-${name}" (mkInspectCheck name spec)
-        ) inspectSpecs;
-        description = "Inspect-level BDD checks compiled from test specs to Rego policies.";
+        default = lib.optionalAttrs hasRegoGen (
+          lib.mapAttrs' (
+            name: spec:
+            lib.nameValuePair "bdd-inspect-${name}" (mkInspectCheckFn {
+              inherit name spec;
+            })
+          ) inspectSpecs
+        );
+        description = "Inspect-level BDD checks.";
       };
     }
   );

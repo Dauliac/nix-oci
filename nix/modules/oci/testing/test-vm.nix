@@ -1,20 +1,17 @@
 # Extract container configs from runtime/deploy BDD test specs.
 #
-# Filters test specs where level in {runtime, deploy} and extracts
-# their container attrsets for injection into the NixOS VM test.
-# The VM assembly and test script generation is handled by I1.
+# Exposes extracted data as internal options for the VM test builder.
 {
   lib,
   flake-parts-lib,
   ...
 }:
 {
-  config.perSystem =
+  options.perSystem = flake-parts-lib.mkPerSystemOption (
     { config, ... }:
     let
-      allSpecs = config.test.oci.perContainer;
+      allSpecs = config.test.oci.perContainer or { };
 
-      # Filter specs where level requires a VM (runtime or deploy)
       vmSpecs = lib.concatMapAttrs (
         group: scenarios:
         lib.concatMapAttrs (
@@ -30,24 +27,13 @@
             { }
         ) scenarios
       ) allSpecs;
-
-      # Extract container configs from specs, keyed by spec name
-      vmContainers = lib.mapAttrs (_name: spec: spec.container) vmSpecs;
-
-      # Extract assertions for Python test generation (used by I1)
-      vmAssertions = lib.mapAttrs (_name: spec: {
-        inherit (spec) assertions;
-        given = spec.given or "";
-        "when" = spec."when" or "";
-        "then" = spec."then" or "";
-      }) vmSpecs;
     in
     {
       options.test.oci._vmContainers = lib.mkOption {
         type = lib.types.attrsOf lib.types.raw;
         internal = true;
         readOnly = true;
-        default = vmContainers;
+        default = lib.mapAttrs (_: spec: spec.container) vmSpecs;
         description = "Container configs extracted from runtime/deploy BDD specs.";
       };
 
@@ -55,8 +41,14 @@
         type = lib.types.attrsOf lib.types.raw;
         internal = true;
         readOnly = true;
-        default = vmAssertions;
+        default = lib.mapAttrs (_: spec: {
+          inherit (spec) assertions;
+          given = spec.given or "";
+          "when" = spec."when" or "";
+          "then" = spec."then" or "";
+        }) vmSpecs;
         description = "Assertions extracted from runtime/deploy BDD specs.";
       };
-    };
+    }
+  );
 }

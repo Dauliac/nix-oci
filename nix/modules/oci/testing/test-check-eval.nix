@@ -2,13 +2,13 @@
 #
 # For each test spec where level="eval", creates a nix derivation
 # that evaluates the container config and asserts no error.
+# Registers mkEvalCheck via nix-lib.
+{ lib, ... }:
+let
+  inherit (lib) types;
+in
 {
-  lib,
-  flake-parts-lib,
-  ...
-}:
-{
-  options.perSystem = flake-parts-lib.mkPerSystemOption (
+  config.perSystem =
     {
       config,
       pkgs,
@@ -19,7 +19,6 @@
       allSpecs = config.test.oci.perContainer or { };
       collectedModules = config.oci.perContainer._collectedModules or [ ];
 
-      # Filter specs where level = "eval"
       evalSpecs = lib.concatMapAttrs (
         group: scenarios:
         lib.concatMapAttrs (
@@ -27,9 +26,12 @@
         ) scenarios
       ) allSpecs;
 
-      # Generate a check for each eval spec
-      mkEvalCheck =
-        name: spec:
+      mkEvalCheckFn =
+        {
+          name,
+          spec,
+          collectedModules ? config.oci.perContainer._collectedModules or [ ],
+        }:
         let
           eval = lib.evalModules {
             modules = collectedModules ++ [ { config = spec.container; } ];
@@ -42,16 +44,26 @@
           };
         in
         pkgs.runCommandLocal "eval-check-${name}" { } ''
-          # Force evaluation of the container config
           echo "Evaluating container config for ${name}..."
           echo "${builtins.toJSON eval.config.entrypoint}" > /dev/null
           touch $out
         '';
     in
     {
+      nix-lib.lib.oci.test = {
+        mkEvalCheck = {
+          type = types.functionTo types.package;
+          description = "Create an eval-level BDD check derivation from a test spec.";
+          file = "nix/modules/oci/testing/test-check-eval.nix";
+          fn = mkEvalCheckFn;
+        };
+      };
+
       checks = lib.mapAttrs' (
-        name: spec: lib.nameValuePair "bdd-eval-${name}" (mkEvalCheck name spec)
+        name: spec:
+        lib.nameValuePair "bdd-eval-${name}" (mkEvalCheckFn {
+          inherit name spec collectedModules;
+        })
       ) evalSpecs;
-    }
-  );
+    };
 }
