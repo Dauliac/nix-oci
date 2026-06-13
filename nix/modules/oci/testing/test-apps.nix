@@ -1,13 +1,12 @@
-# Test flake apps by running them as systemd services in a NixOS VM.
+# Test flake apps by running one app per tool in a NixOS VM.
 #
-# Defines a test container at the perSystem level (to generate app scripts),
-# then passes those scripts to the NixOS test module which wraps them as
-# systemd oneshot services. The VM boots, loads the container, and runs
-# each app service.
+# Defines ONE minimal test container at perSystem level, generates
+# all app scripts for it, then runs each unique tool once in the VM.
+# One container × one app per tool = ~15 runs (not N×M).
 #
 # Architecture:
-# - test-apps.nix (this file): defines test container + builds VM check
-# - _test/_apps-config.nix (NixOS module): converts app scripts → systemd
+# - test-apps.nix (this file): defines test container + passes apps to VM
+# - _test/_apps-config.nix (NixOS module): converts app scripts → systemd oneshots
 {
   config,
   lib,
@@ -17,9 +16,12 @@
 let
   nixosModule = config.flake.modules.nixos.nix-oci or null;
   nixosTestModule = config.flake.modules.nixos.nix-oci-test or null;
+
+  # Unique container ID for app testing — won't collide with user containers
+  appTestContainerId = "__bdd-app-test__";
 in
 {
-  options.perSystem = flake-parts-lib.mkPerSystemOption (
+  config.perSystem =
     {
       config,
       pkgs,
@@ -28,59 +30,40 @@ in
     }:
     let
       testHelpers = import ../../../../tests/lib.nix { inherit pkgs lib; };
-      ociLib = config.lib.oci or { };
-      hasOciLib = ociLib != { };
-      canBuildTest = nixosModule != null && nixosTestModule != null && hasOciLib && pkgs.stdenv.isLinux;
+      canBuildTest = nixosModule != null && nixosTestModule != null && pkgs.stdenv.isLinux;
 
-      # We need containers defined at perSystem level to generate app scripts.
-      # Check if any containers exist (they come from oci.containers).
-      containerNames = lib.attrNames (config.oci.containers or { });
-      hasContainers = containerNames != [ ];
+      # Filter apps for our test container only
+      appPrefix = "oci-";
+      appSuffix = "-${appTestContainerId}";
+      testApps = lib.filterAttrs (name: _: lib.hasPrefix appPrefix name && lib.hasSuffix appSuffix name) (
+        config.oci.flake.apps or { }
+      );
+      hasTestApps = testApps != { };
+    in
+    {
+      # Define ONE minimal test container with all tools enabled
+      oci.containers.${appTestContainerId} = {
+        package = pkgs.hello;
+        user = "nobody";
+        entrypoint = [ "${pkgs.hello}/bin/hello" ];
+        labels = {
+          "org.opencontainers.image.title" = "bdd-app-test";
+          "org.opencontainers.image.source" = "https://github.com/Dauliac/nix-oci";
+          "org.opencontainers.image.description" = "Minimal container for app testing";
+        };
+        # Enable all tools so apps get generated
+        policy.conftest.enabled = true;
+        lint.dockle.enabled = true;
+        sbom.syft.enabled = true;
+        test.dive.enabled = true;
+      };
 
-      # Pick the first container for app testing (or skip if none)
-      testContainerId = if hasContainers then lib.head containerNames else null;
-
-      # Collect app scripts for the test container
-      mkAppScripts =
-        containerId:
-        let
-          # Only include apps where the underlying function exists
-          tryApp =
-            name: fn: args:
-            let
-              tried = builtins.tryEval (fn args);
-            in
-            lib.optionalAttrs tried.success { ${name} = tried.value; };
-        in
-        (tryApp "policy-conftest" ociLib.mkScriptPolicyConftest {
-          perSystemConfig = config.oci;
-          globalConfig = { };
-          inherit containerId;
-        })
-        // (tryApp "lint-dockle" ociLib.mkScriptLintDockle {
-          perSystemConfig = config.oci;
-          globalConfig = { };
-          inherit containerId;
-        })
-        // (tryApp "sbom-syft" ociLib.mkScriptSBOMSyft {
-          perSystemConfig = config.oci;
-          inherit containerId;
-        });
-
-      appTestCheck = lib.optionalAttrs (canBuildTest && hasContainers) {
+      checks = lib.optionalAttrs (canBuildTest && hasTestApps) {
         bdd-apps = testHelpers.mkVMTest {
           name = "nix-oci-app-tests";
 
           nodes.machine =
-            { pkgs, ... }:
-            let
-              appScripts = mkAppScripts testContainerId;
-              # Convert scripts to app format for the NixOS module
-              appAttrs = lib.mapAttrs (name: script: {
-                type = "app";
-                program = "${script}/bin/${name}-${testContainerId}";
-              }) appScripts;
-            in
+            { ... }:
             {
               imports = [
                 nixosModule
@@ -89,38 +72,29 @@ in
 
               testing = {
                 enable = true;
-                appScripts = appAttrs;
+                appScripts = testApps;
               };
 
               oci = {
                 enable = true;
                 backend = "podman";
-                containers.${testContainerId} = config.oci.containers.${testContainerId};
+                # Only deploy the test container
+                containers.${appTestContainerId} = config.oci.containers.${appTestContainerId};
               };
             };
 
-          testScript =
-            let
-              appScripts = mkAppScripts testContainerId;
-            in
-            ''
-              machine.wait_for_unit("multi-user.target")
-              machine.wait_for_unit("podman.socket")
+          testScript = ''
+            machine.wait_for_unit("multi-user.target")
+            machine.wait_for_unit("podman.socket")
+            machine.wait_for_unit("oci-load-${appTestContainerId}.service")
 
-              # Wait for container image to be loaded
-              machine.wait_for_unit("oci-load-${testContainerId}.service")
-
-              # Run each app as systemd oneshot and verify success
-              ${lib.concatMapStringsSep "\n" (name: ''
-                with subtest("${name}"):
-                    machine.succeed("systemctl start nix-oci-app-${name}.service")
-              '') (lib.attrNames appScripts)}
-            '';
+            # Run each app (one per tool) as systemd oneshot
+            ${lib.concatMapStringsSep "\n" (name: ''
+              with subtest("${name}"):
+                  machine.succeed("systemctl start nix-oci-app-${name}.service")
+            '') (lib.attrNames testApps)}
+          '';
         };
       };
-    in
-    {
-      checks = appTestCheck;
-    }
-  );
+    };
 }
