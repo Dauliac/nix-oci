@@ -4,9 +4,9 @@
 # and verifies the full pipeline: apps, checks, VM tests.
 #
 # Run:
-#   nix flake check ./tests/bdd
-#   nix build ./tests/bdd#checks.x86_64-linux.bdd-vm -L
-#   nix run ./tests/bdd#oci-policy-conftest-test-hello
+#   nix flake check ./tests
+#   nix build ./tests#checks.x86_64-linux.bdd-vm -L
+#   nix run ./tests#oci-policy-conftest-test-hello
 {
   description = "nix-oci BDD test suite";
 
@@ -27,7 +27,6 @@
       ...
     }:
     let
-      # Import the parent nix-oci flake via get-flake
       nix-oci = get-flake ../.;
     in
     flake-parts.lib.mkFlake { inherit inputs; } {
@@ -37,27 +36,20 @@
       ];
 
       imports = [
-        # The real nix-oci consumer module — same as any user would import
         nix-oci.modules.flake.nix-oci
-        # Test infrastructure (currently bundled in main module via import-tree)
         nix-oci.modules.flake.nix-oci-test
       ];
 
-      # Enable OCI outputs (apps, checks, packages)
       oci.enabled = true;
 
       perSystem =
+        { pkgs, ... }:
         {
-          pkgs,
-          lib,
-          system,
-          config,
-          ...
-        }:
-        {
-          # ── Test containers ──────────────────────────────────
-          # One minimal container with all tools enabled.
-          # This generates REAL apps and checks — same as a user's project.
+          # Minimal devShell to avoid "no value defined" error
+          devShells.default = pkgs.mkShell { };
+
+          # ── Test container ──────────────────────────────────
+          # One container with all tools enabled — generates real apps + checks.
           oci.containers.test-hello = {
             package = pkgs.hello;
             user = "nobody";
