@@ -14,6 +14,7 @@
     get-flake.url = "github:ursi/get-flake";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     flake-parts.url = "github:hercules-ci/flake-parts";
+    import-tree.url = "github:denful/import-tree";
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -39,6 +40,8 @@
         nix-oci.modules.flake.nix-oci
         nix-oci.modules.flake.nix-oci-test
       ];
+
+      _module.args.import-tree = inputs.import-tree;
 
       oci.enabled = true;
 

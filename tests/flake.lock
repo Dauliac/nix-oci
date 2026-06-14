@@ -71,6 +71,21 @@
         "type": "github"
       }
     },
+    "import-tree": {
+      "locked": {
+        "lastModified": 1778781969,
+        "narHash": "sha256-Jjuz5CmSkur8KvLDoGa+vylEp+RkQtv4mt/qcMznpH0=",
+        "owner": "denful",
+        "repo": "import-tree",
+        "rev": "d321337efd0f23a9eb14a42adb7b2c29313ab274",
+        "type": "github"
+      },
+      "original": {
+        "owner": "denful",
+        "repo": "import-tree",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1780952837,
@@ -107,6 +122,7 @@
         "flake-parts": "flake-parts",
         "get-flake": "get-flake",
         "home-manager": "home-manager",
+        "import-tree": "import-tree",
         "nixpkgs": "nixpkgs"
       }
     }
