@@ -1,10 +1,8 @@
-# BDD VM test builder.
+# BDD VM test builder with policy gates.
 #
-# Collects all non-eval test specs (build/inspect/runtime/deploy),
-# builds containers as VM dependencies, and generates a NixOS VM test.
-#
-# Uses options.perSystem for internal option declarations and
-# config.perSystem for check generation (can't mix in one block).
+# Collects all non-eval test specs, defines containers at perSystem
+# level (triggers image build + policy runner infrastructure),
+# builds gate stamps, and assembles a NixOS VM test.
 {
   config,
   lib,
@@ -16,7 +14,6 @@ let
   nixosTestModule = config.flake.modules.nixos.nix-oci-test or null;
   pythonGen = import ./_python-gen.nix { inherit lib; };
 
-  # Helper to extract VM specs from the collected test specs
   extractVmSpecs =
     allSpecs:
     lib.concatMapAttrs (
@@ -27,7 +24,7 @@ let
     ) allSpecs;
 in
 {
-  # Internal options for extracted data
+  # Internal options
   options.perSystem = flake-parts-lib.mkPerSystemOption (
     { config, ... }:
     let
@@ -55,7 +52,7 @@ in
     }
   );
 
-  # VM check generation
+  # VM check generation + container definitions + gate stamps
   config.perSystem =
     {
       config,
@@ -66,15 +63,38 @@ in
     }:
     let
       testHelpers = import ../../../../tests/lib.nix { inherit pkgs lib; };
+      ociLib = config.lib.oci or { };
+      hasOciLib = ociLib != { };
       canBuildTest = nixosModule != null && nixosTestModule != null && pkgs.stdenv.isLinux;
 
       vmSpecs = extractVmSpecs (config.test.oci.perContainer or { });
       hasVmSpecs = vmSpecs != { };
       vmContainers = lib.mapAttrs (_: spec: spec.container) vmSpecs;
+      containerNames = lib.attrNames vmContainers;
 
       runtimeSpecs = lib.filterAttrs (_: s: s.level == "runtime") vmSpecs;
       deploySpecs = lib.filterAttrs (_: s: s.level == "deploy") vmSpecs;
       hasRuntimeOrDeploy = runtimeSpecs != { } || deploySpecs != { };
+
+      # Build gate stamps per container using registered policy runners
+      runners = config.oci.internal.policyRunners or { };
+      enabledPureRunners = lib.filterAttrs (
+        _: r: r.enabled && r.tier == "pure" && r.mkStamp != null
+      ) runners;
+
+      gateStampsPerContainer = lib.genAttrs containerNames (
+        containerId:
+        lib.mapAttrsToList (
+          runnerName: runner:
+          let
+            tried = builtins.tryEval (runner.mkStamp { inherit containerId; });
+          in
+          if tried.success then tried.value else null
+        ) enabledPureRunners
+      );
+
+      # Filter out nulls (failed stamps — container may not have the tool enabled)
+      cleanGateStamps = lib.mapAttrs (_: stamps: lib.filter (s: s != null) stamps) gateStampsPerContainer;
 
       pytestCode = lib.concatMapStringsSep "\n\n" (
         name:
@@ -102,6 +122,9 @@ in
       '';
     in
     {
+      # Define test containers at perSystem level so policy runners can see them
+      oci.containers = lib.mkIf hasVmSpecs vmContainers;
+
       checks = lib.optionalAttrs (canBuildTest && hasVmSpecs) {
         bdd-vm = testHelpers.mkVMTest {
           name = "nix-oci-bdd-vm";
@@ -114,7 +137,11 @@ in
                 nixosTestModule
               ];
 
-              testing.enable = true;
+              testing = {
+                enable = true;
+                # Pass gate stamps to NixOS module
+                policyGate.stamps = cleanGateStamps;
+              };
 
               oci = {
                 enable = true;
@@ -137,13 +164,12 @@ in
             machine.wait_for_unit("multi-user.target")
             machine.wait_for_unit("podman.socket")
 
-            # Wait for all container images to be loaded
-            ${lib.concatMapStringsSep "\n" (name: ''machine.wait_for_unit("oci-load-${name}.service")'') (
-              lib.attrNames vmContainers
-            )}
+            # Wait for gate + load services
+            ${lib.concatMapStringsSep "\n" (
+              name: ''machine.wait_for_unit("oci-load-${name}.service")''
+            ) containerNames}
 
             ${lib.optionalString hasRuntimeOrDeploy ''
-              # Copy test suite and run pytest
               machine.copy_from_host("${testSuiteFile}", "/tmp/test_bdd_vm.py")
               machine.succeed(
                   "cd /tmp && DOCKER_HOST=unix:///run/podman/podman.sock "

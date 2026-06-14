@@ -20,6 +20,7 @@
           ./_test/_db-config.nix
           ./_test/_cosign-config.nix
           ./_test/_apps-config.nix
+          ./_test/_gate-config.nix
         ];
     };
 }
