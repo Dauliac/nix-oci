@@ -2,42 +2,9 @@ version: "3"
 
 tasks:
   default:
-    desc: Run all BDD checks
-    cmds:
-      - nix flake check . 2>&1 | nom
-
-  vm:
-    desc: Build and run the BDD VM test
+    desc: Run the BDD VM test (builds all containers + runs all assertions)
     cmds:
       - nix build '.#checks.x86_64-linux.bdd-vm' -L 2>&1 | nom
-
-  eval:
-    desc: Build all BDD eval checks
-    cmds:
-      - nix build '.#checks.x86_64-linux.bdd-eval-entrypoint--eval-defaults' '.#checks.x86_64-linux.bdd-eval-hardening-seccomp--eval-defaults' '.#checks.x86_64-linux.bdd-eval-user--eval-defaults' '.#checks.x86_64-linux.bdd-eval-ports--eval-defaults' -L 2>&1 | nom
-
-  eval:all:
-    desc: Build ALL BDD eval checks (68)
-    cmds:
-      - |
-        nix eval '.#checks.x86_64-linux' --apply 'x: builtins.filter (n: builtins.substring 0 8 n == "bdd-eval") (builtins.attrNames x)' --json \
-          | jq -r '.[]' \
-          | xargs -I{} echo '.#checks.x86_64-linux.{}' \
-          | xargs nix build -L 2>&1 | nom
-
-  apps:
-    desc: Build the BDD apps test
-    cmds:
-      - nix build '.#checks.x86_64-linux.bdd-apps' -L 2>&1 | nom
-
-  oci:
-    desc: Build all OCI tool checks (dive, dockle, conftest, syft)
-    cmds:
-      - |
-        nix eval '.#checks.x86_64-linux' --apply 'x: builtins.filter (n: builtins.substring 0 3 n == "oci") (builtins.attrNames x)' --json \
-          | jq -r '.[]' \
-          | xargs -I{} echo '.#checks.x86_64-linux.{}' \
-          | xargs nix build -L 2>&1 | nom
 
   show:
     desc: Show all flake outputs
@@ -48,18 +15,3 @@ tasks:
     desc: List all check names
     cmds:
       - nix eval '.#checks.x86_64-linux' --apply 'x: builtins.attrNames x' --json
-
-  run:conftest:
-    desc: Run conftest app for test-hello
-    cmds:
-      - nix run '.#oci-policy-conftest-test-hello'
-
-  run:dockle:
-    desc: Run dockle app for test-hello
-    cmds:
-      - nix run '.#oci-lint-dockle-test-hello'
-
-  run:syft:
-    desc: Run syft SBOM app for test-hello
-    cmds:
-      - nix run '.#oci-sbom-syft-test-hello'
