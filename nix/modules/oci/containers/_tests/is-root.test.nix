@@ -9,7 +9,7 @@
           given = "a container with default is-root";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds";
-          level = "eval";
+          level = "build";
           target = "oci";
           container = {
             package = pkgs.hello;
@@ -20,7 +20,7 @@
           given = "a container with is-root set to false";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds with non-root user";
-          level = "eval";
+          level = "build";
           target = "oci";
           container = {
             package = pkgs.hello;

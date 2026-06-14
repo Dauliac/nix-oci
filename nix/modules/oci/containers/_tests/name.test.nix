@@ -9,7 +9,7 @@
           given = "a container with default name";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds and name defaults to attribute name";
-          level = "eval";
+          level = "build";
           target = "oci";
           container = {
             package = pkgs.hello;
@@ -20,7 +20,7 @@
           given = "a container with a custom image name";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds with the custom name";
-          level = "eval";
+          level = "build";
           target = "oci";
           container = {
             package = pkgs.hello;

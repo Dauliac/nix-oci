@@ -9,7 +9,7 @@
           given = "a container with no environment variables";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds with empty environment";
-          level = "eval";
+          level = "build";
           target = "oci";
           container.package = pkgs.hello;
         };
@@ -18,7 +18,7 @@
           given = "a container with custom environment variables";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds";
-          level = "eval";
+          level = "build";
           target = "oci";
           container = {
             package = pkgs.hello;

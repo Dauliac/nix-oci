@@ -9,7 +9,7 @@
           given = "a container with no declared volumes";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds";
-          level = "eval";
+          level = "build";
           target = "oci";
           container.package = pkgs.hello;
         };
@@ -18,7 +18,7 @@
           given = "a container with declared volumes";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds with volumes configured";
-          level = "eval";
+          level = "build";
           target = "oci";
           container = {
             package = pkgs.hello;

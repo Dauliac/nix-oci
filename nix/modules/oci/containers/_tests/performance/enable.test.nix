@@ -9,7 +9,7 @@
           given = "a container with default performance.enable";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds";
-          level = "eval";
+          level = "build";
           target = "oci";
           container.package = pkgs.hello;
         };

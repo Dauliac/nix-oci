@@ -13,7 +13,7 @@
           given = "a container with hardening enabled and seccomp defaults";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds without error";
-          level = "eval";
+          level = "build";
           target = "oci";
           container = {
             package = pkgs.busybox;

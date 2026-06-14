@@ -9,7 +9,7 @@
           given = "a container with no healthcheck configured";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds";
-          level = "eval";
+          level = "build";
           target = "oci";
           container.package = pkgs.hello;
         };
@@ -18,7 +18,7 @@
           given = "a container with a healthcheck command";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds with healthcheck configured";
-          level = "eval";
+          level = "build";
           target = "oci";
           container = {
             package = pkgs.hello;

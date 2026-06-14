@@ -9,7 +9,7 @@
           given = "a container with no custom labels";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds with empty labels";
-          level = "eval";
+          level = "build";
           target = "oci";
           container = {
             package = pkgs.hello;

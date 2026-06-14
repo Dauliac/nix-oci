@@ -9,7 +9,7 @@
           given = "a container with default hardening.privileges";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds";
-          level = "eval";
+          level = "build";
           target = "oci";
           container = {
             package = pkgs.hello;
@@ -21,7 +21,7 @@
           given = "a container with hardening enabled including privileges";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds with privileges configured";
-          level = "eval";
+          level = "build";
           target = "oci";
           container = {
             package = pkgs.hello;

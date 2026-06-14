@@ -9,7 +9,7 @@
           given = "a container with default layer optimization";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds";
-          level = "eval";
+          level = "build";
           target = "oci";
           container.package = pkgs.hello;
         };
@@ -18,7 +18,7 @@
           given = "a container with layer optimization enabled";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds with optimized layers";
-          level = "eval";
+          level = "build";
           target = "oci";
           container = {
             package = pkgs.hello;

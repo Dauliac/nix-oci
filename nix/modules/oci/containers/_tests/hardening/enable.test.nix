@@ -9,7 +9,7 @@
           given = "a container with default hardening settings";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds";
-          level = "eval";
+          level = "build";
           target = "oci";
           container.package = pkgs.hello;
         };
@@ -18,7 +18,7 @@
           given = "a container with hardening enabled";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds with hardening active";
-          level = "eval";
+          level = "build";
           target = "oci";
           container = {
             package = pkgs.hello;

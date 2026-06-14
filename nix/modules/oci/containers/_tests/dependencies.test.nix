@@ -9,7 +9,7 @@
           given = "a container with no extra dependencies";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds";
-          level = "eval";
+          level = "build";
           target = "oci";
           container.package = pkgs.hello;
         };
@@ -18,7 +18,7 @@
           given = "a container with extra dependencies";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds with dependencies included";
-          level = "eval";
+          level = "build";
           target = "oci";
           container = {
             package = pkgs.hello;

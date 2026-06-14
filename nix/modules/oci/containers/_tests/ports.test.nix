@@ -9,7 +9,7 @@
           given = "a container with no ports configured";
           "when" = "the container config is evaluated";
           "then" = "evaluation succeeds with empty ports";
-          level = "eval";
+          level = "build";
           target = "oci";
           container = {
             package = pkgs.hello;
