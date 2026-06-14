@@ -11,4 +11,5 @@
   ];
 
   config.flake.modules.flake.nix-oci = import ./flake-module.nix inputs;
+  config.flake.modules.flake.nix-oci-test = import ./test-flake-module.nix inputs;
 }

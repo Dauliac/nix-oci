@@ -75,10 +75,13 @@ in
       vmContainers = lib.mapAttrs (_: spec: spec.container) vmSpecs;
       containerNames = lib.attrNames vmContainers;
 
+      inspectSpecs = lib.filterAttrs (_: s: s.level == "inspect") vmSpecs;
       runtimeSpecs = lib.filterAttrs (_: s: s.level == "runtime") vmSpecs;
       deploySpecs = lib.filterAttrs (_: s: s.level == "deploy") vmSpecs;
-      hasRuntimeOrDeploy = runtimeSpecs != { } || deploySpecs != { };
+      testableSpecs = inspectSpecs // runtimeSpecs // deploySpecs;
+      hasTestableSpecs = testableSpecs != { };
 
+      # Generate pytest code for ALL testable specs (inspect + runtime + deploy)
       pytestCode = lib.concatMapStringsSep "\n\n" (
         name:
         let
@@ -91,10 +94,11 @@ in
           "when" = spec."when" or "";
           "then" = spec."then" or "";
         }
-      ) (lib.attrNames (runtimeSpecs // deploySpecs));
+      ) (lib.attrNames testableSpecs);
 
       testSuiteFile = pkgs.writeText "test_bdd_vm.py" ''
         import docker
+        import json
         import pytest
 
         @pytest.fixture
@@ -144,7 +148,8 @@ in
               name: ''machine.wait_for_unit("oci-load-${name}.service")''
             ) containerNames}
 
-            ${lib.optionalString hasRuntimeOrDeploy ''
+            ${lib.optionalString hasTestableSpecs ''
+              # Run pytest with inspect + runtime + deploy assertions
               machine.copy_from_host("${testSuiteFile}", "/tmp/test_bdd_vm.py")
               machine.succeed(
                   "cd /tmp && DOCKER_HOST=unix:///run/podman/podman.sock "
