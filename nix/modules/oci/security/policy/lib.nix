@@ -85,7 +85,7 @@ in
 
         mkCheckPolicyConftest = {
           type = types.functionTo types.package;
-          description = "Create derivation check for Conftest OCI image config policy (transient archive)";
+          description = "Run Conftest OCI policy check directly on nix2container image.json (no archive)";
           file = "nix/modules/oci/security/policy/lib.nix";
           fn =
             {
@@ -112,22 +112,11 @@ in
               {
                 nativeBuildInputs = [
                   perSystemConfig.packages.conftest
-                  perSystemConfig.packages.skopeo
-                  pkgs.gnutar
-                  pkgs.jq
-                  pkgs.python3
                 ];
                 meta.description = "Run Conftest OCI policy check on ${containerId}.";
               }
               ''
-                ${ociLib.mkTransientArchive {
-                  inherit oci;
-                  skopeo = perSystemConfig.packages.skopeo;
-                }}
-                ${pkgs.gnutar}/bin/tar xf archive.tar manifest.json
-                CONFIG_FILE=$(${pkgs.jq}/bin/jq -r '.[0].Config' manifest.json)
-                ${pkgs.gnutar}/bin/tar xf archive.tar "$CONFIG_FILE"
-                ${perSystemConfig.packages.conftest}/bin/conftest test "$CONFIG_FILE" \
+                ${perSystemConfig.packages.conftest}/bin/conftest test ${oci} \
                   --policy ${effectivePolicyDir} \
                   ${namespaceFlags} \
                   --no-color

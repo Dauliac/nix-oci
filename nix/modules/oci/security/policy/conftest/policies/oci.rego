@@ -1,30 +1,31 @@
 # Built-in nix-oci Conftest policies for OCI image config.
 #
-# These rules validate the OCI image configuration JSON extracted from
-# the docker archive. The input schema matches the Docker/OCI image
-# config spec (config.User, config.Env, config.Labels, etc.).
+# Input is the nix2container image.json directly.
+# The config is at input["image-config"].
 package main
 
 import rego.v1
 
+_config := input["image-config"]
+
 # Deny containers running as root
 deny contains msg if {
-	input.config.User == "root"
+	_config.User == "root"
 	msg := "container must not run as root (User is 'root')"
 }
 
 deny contains msg if {
-	input.config.User == "0"
+	_config.User == "0"
 	msg := "container must not run as root (User is '0')"
 }
 
 deny contains msg if {
-	input.config.User == "0:0"
+	_config.User == "0:0"
 	msg := "container must not run as root (User is '0:0')"
 }
 
 deny contains msg if {
-	input.config.User == ""
+	_config.User == ""
 	msg := "container User is empty — defaults to root at runtime"
 }
 
@@ -39,11 +40,10 @@ _secret_patterns := [
 ]
 
 deny contains msg if {
-	some env in input.config.Env
+	some env in _config.Env
 	key := split(env, "=")[0]
 	some pattern in _secret_patterns
 	contains(upper(key), pattern)
-	# Only flag if there is an actual value (not just a declaration)
 	parts := split(env, "=")
 	count(parts) > 1
 	parts[1] != ""
@@ -63,17 +63,17 @@ warn contains msg if {
 
 # Deny images with no entrypoint
 deny contains msg if {
-	not input.config.Entrypoint
+	not _config.Entrypoint
 	msg := "image has no Entrypoint set"
 }
 
 deny contains msg if {
-	input.config.Entrypoint
-	count(input.config.Entrypoint) == 0
+	_config.Entrypoint
+	count(_config.Entrypoint) == 0
 	msg := "image Entrypoint is empty"
 }
 
 # Helper: check if a label key exists
 _has_label(key) if {
-	input.config.Labels[key]
+	_config.Labels[key]
 }
