@@ -168,15 +168,33 @@ let
         let
           safeKey = lib.replaceStrings [ "." "-" ] [ "_" "_" ] key;
           jsonValue = builtins.toJSON value;
+          isDict = builtins.isAttrs value;
         in
-        ''
-          _expected_${safeKey} = json.loads(${pyStr jsonValue})
-          _actual_${safeKey} = config.get(${pyStr key})
-          assert _actual_${safeKey} == _expected_${safeKey}, (
-              "Expected Config." + ${pyStr key} + " == " + json.dumps(_expected_${safeKey}) +
-              ", got: " + repr(_actual_${safeKey})
-          )
-        ''
+        if isDict then
+          # Subset check for dict values (e.g. Labels — image may have auto-generated extras)
+          ''
+            _expected_${safeKey} = json.loads(${pyStr jsonValue})
+            _actual_${safeKey} = config.get(${pyStr key}) or {}
+            for _k, _v in _expected_${safeKey}.items():
+                assert _k in _actual_${safeKey}, (
+                    "Expected Config." + ${pyStr key} + "[" + repr(_k) + "] to exist, "
+                    "got keys: " + repr(list(_actual_${safeKey}.keys()))
+                )
+                assert _actual_${safeKey}[_k] == _v, (
+                    "Expected Config." + ${pyStr key} + "[" + repr(_k) + "] == " + repr(_v) +
+                    ", got: " + repr(_actual_${safeKey}[_k])
+                )
+          ''
+        else
+          # Exact match for scalar values (e.g. User, Entrypoint, WorkingDir)
+          ''
+            _expected_${safeKey} = json.loads(${pyStr jsonValue})
+            _actual_${safeKey} = config.get(${pyStr key})
+            assert _actual_${safeKey} == _expected_${safeKey}, (
+                "Expected Config." + ${pyStr key} + " == " + json.dumps(_expected_${safeKey}) +
+                ", got: " + repr(_actual_${safeKey})
+            )
+          ''
       ) configAttrs;
     in
     ''
