@@ -10,8 +10,3 @@ tasks:
     desc: Show all flake outputs
     cmds:
       - nix flake show .
-
-  list:
-    desc: List all check names
-    cmds:
-      - nix eval '.#checks.x86_64-linux' --apply 'x: builtins.attrNames x' --json
