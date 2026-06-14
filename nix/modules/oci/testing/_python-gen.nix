@@ -163,11 +163,21 @@ let
   mkImageConfig =
     containerName: configAttrs:
     let
-      checks = mapAttrsToList (key: value: ''
-        assert config.get(${pyStr key}) == ${pyStr (builtins.toJSON value)}, (
-            f"Expected Config.${key} == ${builtins.toJSON value}, got: {config.get(${pyStr key})!r}"
-        )
-      '') configAttrs;
+      checks = mapAttrsToList (
+        key: value:
+        let
+          safeKey = lib.replaceStrings [ "." "-" ] [ "_" "_" ] key;
+          jsonValue = builtins.toJSON value;
+        in
+        ''
+          _expected_${safeKey} = json.loads(${pyStr jsonValue})
+          _actual_${safeKey} = config.get(${pyStr key})
+          assert _actual_${safeKey} == _expected_${safeKey}, (
+              "Expected Config." + ${pyStr key} + " == " + json.dumps(_expected_${safeKey}) +
+              ", got: " + repr(_actual_${safeKey})
+          )
+        ''
+      ) configAttrs;
     in
     ''
       # imageConfig checks
