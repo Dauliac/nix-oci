@@ -85,7 +85,7 @@ in
 
         mkCheckPolicyConftest = {
           type = types.functionTo types.package;
-          description = "Create derivation check for Conftest OCI image config policy";
+          description = "Create derivation check for Conftest OCI image config policy (transient archive)";
           file = "nix/modules/oci/security/policy/lib.nix";
           fn =
             {
@@ -96,10 +96,6 @@ in
             let
               oci = perSystemConfig.internal.OCIs.${containerId};
               containerConfig = perSystemConfig.containers.${containerId}.policy.conftest;
-              archive = ociLib.mkDockerArchive {
-                inherit oci;
-                inherit (perSystemConfig.packages) skopeo;
-              };
               namespaceFlags = lib.concatMapStringsSep " " (
                 ns: "--namespace ${lib.escapeShellArg ns}"
               ) containerConfig.namespaces;
@@ -114,23 +110,24 @@ in
             in
             pkgs.runCommandLocal "policy-conftest-${containerId}"
               {
-                buildInputs = [
+                nativeBuildInputs = [
                   perSystemConfig.packages.conftest
+                  perSystemConfig.packages.skopeo
                   pkgs.gnutar
                   pkgs.jq
+                  pkgs.python3
                 ];
                 meta.description = "Run Conftest OCI policy check on ${containerId}.";
               }
               ''
-                set -o errexit
-                set -o pipefail
-                set -o nounset
-                WORK="$(mktemp -d)"
-                trap 'rm -rf "$WORK"' EXIT
-                ${pkgs.gnutar}/bin/tar xf ${archive} -C "$WORK" manifest.json
-                CONFIG_FILE=$(${pkgs.jq}/bin/jq -r '.[0].Config' "$WORK/manifest.json")
-                ${pkgs.gnutar}/bin/tar xf ${archive} -C "$WORK" "$CONFIG_FILE"
-                ${perSystemConfig.packages.conftest}/bin/conftest test "$WORK/$CONFIG_FILE" \
+                ${ociLib.mkTransientArchive {
+                  inherit oci;
+                  skopeo = perSystemConfig.packages.skopeo;
+                }}
+                ${pkgs.gnutar}/bin/tar xf archive.tar manifest.json
+                CONFIG_FILE=$(${pkgs.jq}/bin/jq -r '.[0].Config' manifest.json)
+                ${pkgs.gnutar}/bin/tar xf archive.tar "$CONFIG_FILE"
+                ${perSystemConfig.packages.conftest}/bin/conftest test "$CONFIG_FILE" \
                   --policy ${effectivePolicyDir} \
                   ${namespaceFlags} \
                   --no-color
