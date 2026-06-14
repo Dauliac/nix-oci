@@ -76,8 +76,8 @@
               (import ./nix/flake-module.nix inputs)
               # Treefmt formatter and check
               ./nix/treefmt.nix
-              # All test categories (unit, vm, lint, build)
-              ./tests/flake-module.nix
+              # Tests are now in the standalone test flake (tests/flake.nix)
+              # Run: nix flake check ./tests
             ];
             oci.enabled = true;
             oci.enableFlakeOutputs = false;
