@@ -28,7 +28,7 @@
     }:
     let
       # Import the parent nix-oci flake via get-flake
-      nix-oci = get-flake ../..;
+      nix-oci = get-flake ../.;
     in
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [
