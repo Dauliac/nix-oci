@@ -47,7 +47,7 @@ tasks:
   list:
     desc: List all check names
     cmds:
-      - nix eval '.#checks.x86_64-linux' --apply 'x: builtins.attrNames x' --json | jq -r '.[]'
+      - nix eval '.#checks.x86_64-linux' --apply 'x: builtins.attrNames x' --json
 
   run:conftest:
     desc: Run conftest app for test-hello
