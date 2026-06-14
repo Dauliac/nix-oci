@@ -32,19 +32,23 @@ in
             }:
             let
               oci = perSystemConfig.internal.OCIs.${containerId};
-              dockerArchive = ociLib.mkDockerArchive {
-                inherit oci;
-                inherit (perSystemConfig.packages) skopeo;
-              };
             in
             pkgs.runCommandLocal "dive-${containerId}"
               {
-                buildInputs = [ perSystemConfig.packages.dive ];
+                nativeBuildInputs = [
+                  perSystemConfig.packages.dive
+                  perSystemConfig.packages.skopeo
+                  pkgs.gnutar
+                  pkgs.python3
+                ];
                 meta.description = "Run dive on built image.";
               }
               ''
-                set -e
-                ${perSystemConfig.packages.dive}/bin/dive --source docker-archive --ci ${dockerArchive}
+                ${ociLib.mkTransientArchive {
+                  inherit oci;
+                  skopeo = perSystemConfig.packages.skopeo;
+                }}
+                ${perSystemConfig.packages.dive}/bin/dive --source docker-archive --ci archive.tar
                 touch $out
               '';
         };

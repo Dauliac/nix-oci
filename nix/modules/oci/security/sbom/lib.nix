@@ -70,24 +70,26 @@ in
             let
               oci = perSystemConfig.internal.OCIs.${containerId};
               containerConfig = perSystemConfig.containers.${containerId}.sbom.syft;
-              archive = ociLib.mkDockerArchive {
-                inherit oci;
-                inherit (perSystemConfig.packages) skopeo;
-              };
               configFlag =
                 if containerConfig.config.enabled then "--config ${containerConfig.config.path}" else "";
             in
             pkgs.runCommandLocal "sbom-syft-${containerId}"
               {
-                buildInputs = [ perSystemConfig.packages.syft ];
+                nativeBuildInputs = [
+                  perSystemConfig.packages.syft
+                  perSystemConfig.packages.skopeo
+                  pkgs.gnutar
+                  pkgs.python3
+                ];
                 meta.description = "Generate Syft SBOM for ${containerId}.";
               }
               ''
-                set -o errexit
-                set -o pipefail
-                set -o nounset
+                ${ociLib.mkTransientArchive {
+                  inherit oci;
+                  skopeo = perSystemConfig.packages.skopeo;
+                }}
                 export DOCKER_CONFIG="$(mktemp -d)"
-                ${perSystemConfig.packages.syft}/bin/syft ${configFlag} ${archive} \
+                ${perSystemConfig.packages.syft}/bin/syft ${configFlag} archive.tar \
                   --output cyclonedx-json="$out"
               '';
         };

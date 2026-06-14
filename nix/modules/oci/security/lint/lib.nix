@@ -81,10 +81,6 @@ in
             let
               oci = perSystemConfig.internal.OCIs.${containerId};
               containerConfig = perSystemConfig.containers.${containerId}.lint.dockle;
-              archive = ociLib.mkDockerArchive {
-                inherit oci;
-                inherit (perSystemConfig.packages) skopeo;
-              };
               ignoreFlags = lib.concatMapStringsSep " " (
                 id: "--ignore ${lib.escapeShellArg id}"
               ) containerConfig.ignore;
@@ -92,15 +88,21 @@ in
             in
             pkgs.runCommandLocal "lint-dockle-${containerId}"
               {
-                buildInputs = [ perSystemConfig.packages.dockle ];
+                nativeBuildInputs = [
+                  perSystemConfig.packages.dockle
+                  perSystemConfig.packages.skopeo
+                  pkgs.gnutar
+                  pkgs.python3
+                ];
                 meta.description = "Run Dockle lint on ${containerId}.";
               }
               ''
-                set -o errexit
-                set -o pipefail
-                set -o nounset
+                ${ociLib.mkTransientArchive {
+                  inherit oci;
+                  skopeo = perSystemConfig.packages.skopeo;
+                }}
                 ${perSystemConfig.packages.dockle}/bin/dockle \
-                  --input ${archive} \
+                  --input archive.tar \
                   --exit-level ${exitLevel} \
                   ${ignoreFlags} \
                   --exit-code 1

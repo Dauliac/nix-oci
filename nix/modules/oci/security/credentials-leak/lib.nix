@@ -67,22 +67,24 @@ in
             }:
             let
               oci = perSystemConfig.internal.OCIs.${containerId};
-              archive = ociLib.mkDockerArchive {
-                inherit oci;
-                inherit (perSystemConfig.packages) skopeo;
-              };
             in
             pkgs.runCommandLocal "credentials-leak-trivy-${containerId}"
               {
-                buildInputs = [ perSystemConfig.packages.trivy ];
+                nativeBuildInputs = [
+                  perSystemConfig.packages.trivy
+                  perSystemConfig.packages.skopeo
+                  pkgs.gnutar
+                  pkgs.python3
+                ];
                 meta.description = "Run Trivy credentials leak scan on ${containerId}.";
               }
               ''
-                set -o errexit
-                set -o pipefail
-                set -o nounset
+                ${ociLib.mkTransientArchive {
+                  inherit oci;
+                  skopeo = perSystemConfig.packages.skopeo;
+                }}
                 export DOCKER_CONFIG="$(mktemp -d)"
-                ${perSystemConfig.packages.trivy}/bin/trivy fs --scanners secret ${archive}
+                ${perSystemConfig.packages.trivy}/bin/trivy fs --scanners secret archive.tar
                 touch $out
               '';
         };
