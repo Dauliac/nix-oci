@@ -73,7 +73,6 @@
             { containerId, ... }:
             ociLib.mkCheckSBOMSyft {
               perSystemConfig = config.oci;
-              globalConfig = { };
               inherit containerId;
             };
         };
@@ -86,7 +85,6 @@
             { containerId, ... }:
             ociLib.mkCheckCredentialsLeakTrivy {
               perSystemConfig = config.oci;
-              globalConfig = { };
               inherit containerId;
             };
         };

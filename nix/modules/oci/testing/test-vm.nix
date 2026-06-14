@@ -1,8 +1,13 @@
-# BDD VM test builder with policy gates.
+# BDD VM test builder.
 #
-# Collects all non-eval test specs, defines containers at perSystem
-# level (triggers image build + policy runner infrastructure),
-# builds gate stamps, and assembles a NixOS VM test.
+# Collects all non-eval test specs, assembles a NixOS VM test that
+# builds containers (as VM dependencies) and runs Python assertions.
+#
+# Gate stamps are NOT wired yet — they require the full build pipeline
+# (nix2container + all flake inputs) which isn't available when
+# containers are defined inside VM node configs. The gate will be
+# wired once containers are defined at perSystem level with proper
+# flake input propagation (future work).
 {
   config,
   lib,
@@ -52,7 +57,7 @@ in
     }
   );
 
-  # VM check generation + container definitions + gate stamps
+  # VM check generation
   config.perSystem =
     {
       config,
@@ -63,8 +68,6 @@ in
     }:
     let
       testHelpers = import ../../../../tests/lib.nix { inherit pkgs lib; };
-      ociLib = config.lib.oci or { };
-      hasOciLib = ociLib != { };
       canBuildTest = nixosModule != null && nixosTestModule != null && pkgs.stdenv.isLinux;
 
       vmSpecs = extractVmSpecs (config.test.oci.perContainer or { });
@@ -75,26 +78,6 @@ in
       runtimeSpecs = lib.filterAttrs (_: s: s.level == "runtime") vmSpecs;
       deploySpecs = lib.filterAttrs (_: s: s.level == "deploy") vmSpecs;
       hasRuntimeOrDeploy = runtimeSpecs != { } || deploySpecs != { };
-
-      # Build gate stamps per container using registered policy runners
-      runners = config.oci.internal.policyRunners or { };
-      enabledPureRunners = lib.filterAttrs (
-        _: r: r.enabled && r.tier == "pure" && r.mkStamp != null
-      ) runners;
-
-      gateStampsPerContainer = lib.genAttrs containerNames (
-        containerId:
-        lib.mapAttrsToList (
-          runnerName: runner:
-          let
-            tried = builtins.tryEval (runner.mkStamp { inherit containerId; });
-          in
-          if tried.success then tried.value else null
-        ) enabledPureRunners
-      );
-
-      # Filter out nulls (failed stamps — container may not have the tool enabled)
-      cleanGateStamps = lib.mapAttrs (_: stamps: lib.filter (s: s != null) stamps) gateStampsPerContainer;
 
       pytestCode = lib.concatMapStringsSep "\n\n" (
         name:
@@ -122,9 +105,6 @@ in
       '';
     in
     {
-      # Define test containers at perSystem level so policy runners can see them
-      oci.containers = lib.mkIf hasVmSpecs vmContainers;
-
       checks = lib.optionalAttrs (canBuildTest && hasVmSpecs) {
         bdd-vm = testHelpers.mkVMTest {
           name = "nix-oci-bdd-vm";
@@ -137,11 +117,7 @@ in
                 nixosTestModule
               ];
 
-              testing = {
-                enable = true;
-                # Pass gate stamps to NixOS module
-                policyGate.stamps = cleanGateStamps;
-              };
+              testing.enable = true;
 
               oci = {
                 enable = true;
@@ -164,7 +140,6 @@ in
             machine.wait_for_unit("multi-user.target")
             machine.wait_for_unit("podman.socket")
 
-            # Wait for gate + load services
             ${lib.concatMapStringsSep "\n" (
               name: ''machine.wait_for_unit("oci-load-${name}.service")''
             ) containerNames}
