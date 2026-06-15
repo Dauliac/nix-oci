@@ -72,7 +72,14 @@ in
 
       vmSpecs = extractVmSpecs (config.test.oci.perContainer or { });
       hasVmSpecs = vmSpecs != { };
-      vmContainers = lib.mapAttrs (_: spec: spec.container) vmSpecs;
+      # Inject test defaults: fine-grained layers + optimized for best cache
+      vmContainers = lib.mapAttrs (
+        _: spec:
+        lib.recursiveUpdate spec.container {
+          layerStrategy = lib.mkDefault "fine-grained";
+          optimizeLayers = lib.mkDefault true;
+        }
+      ) vmSpecs;
       containerNames = lib.attrNames vmContainers;
 
       inspectSpecs = lib.filterAttrs (_: s: s.level == "inspect") vmSpecs;
