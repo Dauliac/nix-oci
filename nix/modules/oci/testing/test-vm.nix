@@ -72,7 +72,14 @@ in
 
       vmSpecs = extractVmSpecs (config.test.oci.perContainer or { });
       hasVmSpecs = vmSpecs != { };
-      # Set autoStart + mode only for runtime/deploy specs
+      inspectSpecs = lib.filterAttrs (_: s: s.level == "inspect") vmSpecs;
+      runtimeSpecs = lib.filterAttrs (_: s: s.level == "runtime") vmSpecs;
+      deploySpecs = lib.filterAttrs (_: s: s.level == "deploy") vmSpecs;
+
+      # Only containers that need to RUN go into oci.containers (runtime/deploy).
+      # Build-only: built as Nix derivation deps (no podman needed).
+      # Inspect: checked by conftest on image.json (no podman needed).
+      loadableSpecs = runtimeSpecs // deploySpecs;
       vmContainers = lib.mapAttrs (
         _name: spec:
         spec.container
@@ -84,16 +91,12 @@ in
           autoStart = true;
           mode = "daemon";
         }
-      ) vmSpecs;
+      ) loadableSpecs;
       containerNames = lib.attrNames vmContainers;
-
-      inspectSpecs = lib.filterAttrs (_: s: s.level == "inspect") vmSpecs;
-      runtimeSpecs = lib.filterAttrs (_: s: s.level == "runtime") vmSpecs;
-      deploySpecs = lib.filterAttrs (_: s: s.level == "deploy") vmSpecs;
-      testableSpecs = inspectSpecs // runtimeSpecs // deploySpecs;
+      testableSpecs = runtimeSpecs // deploySpecs;
       hasTestableSpecs = testableSpecs != { };
 
-      # Generate pytest code for ALL testable specs (inspect + runtime + deploy)
+      # Generate pytest code for runtime + deploy specs only
       pytestCode = lib.concatMapStringsSep "\n\n" (
         name:
         let
