@@ -30,9 +30,9 @@
             }:
             lib.recursiveUpdate {
               virtualisation = {
-                cores = 4;
-                memorySize = 2048;
-                diskSize = 4096;
+                cores = 8;
+                memorySize = 4096;
+                diskSize = 8192;
               };
               documentation.enable = false;
             } (if builtins.isFunction nodeCfg then nodeCfg { inherit pkgs lib; } else nodeCfg)
