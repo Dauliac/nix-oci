@@ -72,19 +72,17 @@ in
 
       vmSpecs = extractVmSpecs (config.test.oci.perContainer or { });
       hasVmSpecs = vmSpecs != { };
-      # Set autoStart + mode based on spec level for the deploy module
+      # Set autoStart + mode only for runtime/deploy specs
       vmContainers = lib.mapAttrs (
         _name: spec:
         spec.container
-        // {
+        // lib.optionalAttrs (spec.level == "runtime") {
           autoStart = true;
-          mode =
-            if spec.level == "runtime" then
-              "oneshot"
-            else if spec.level == "deploy" then
-              "daemon"
-            else
-              "daemon"; # build/inspect don't run, but need autoStart for loading
+          mode = "oneshot";
+        }
+        // lib.optionalAttrs (spec.level == "deploy") {
+          autoStart = true;
+          mode = "daemon";
         }
       ) vmSpecs;
       containerNames = lib.attrNames vmContainers;
