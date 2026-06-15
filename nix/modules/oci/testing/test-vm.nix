@@ -72,7 +72,21 @@ in
 
       vmSpecs = extractVmSpecs (config.test.oci.perContainer or { });
       hasVmSpecs = vmSpecs != { };
-      vmContainers = lib.mapAttrs (_: spec: spec.container) vmSpecs;
+      # Set autoStart + mode based on spec level for the deploy module
+      vmContainers = lib.mapAttrs (
+        _name: spec:
+        spec.container
+        // {
+          autoStart = true;
+          mode =
+            if spec.level == "runtime" then
+              "oneshot"
+            else if spec.level == "deploy" then
+              "daemon"
+            else
+              "daemon"; # build/inspect don't run, but need autoStart for loading
+        }
+      ) vmSpecs;
       containerNames = lib.attrNames vmContainers;
 
       inspectSpecs = lib.filterAttrs (_: s: s.level == "inspect") vmSpecs;
@@ -154,9 +168,15 @@ in
             machine.wait_for_unit("multi-user.target")
             machine.wait_for_unit("podman.socket")
 
+            # Wait for all container images to be loaded
             ${lib.concatMapStringsSep "\n" (
               name: ''machine.wait_for_unit("oci-load-${name}.service")''
             ) containerNames}
+
+            # Wait for runtime/deploy container services to complete/start
+            ${lib.concatMapStringsSep "\n" (name: ''machine.wait_for_unit("podman-${name}.service")'') (
+              lib.attrNames (runtimeSpecs // deploySpecs)
+            )}
 
             ${lib.optionalString hasTestableSpecs ''
               # Run pytest with inspect + runtime + deploy assertions

@@ -70,9 +70,15 @@
             after = [ "oci-load-${name}.service" ];
             requires = [ "oci-load-${name}.service" ];
             serviceConfig =
+              # Oneshot mode: run once, don't restart, record exit status.
+              lib.optionalAttrs ((container.mode or "daemon") == "oneshot") {
+                Type = "oneshot";
+                RemainAfterExit = true;
+                Restart = "no";
+              }
               # sdnotify: Type=notify + NotifyAccess=all so systemd waits
               # for the healthcheck READY=1 before starting dependents.
-              lib.optionalAttrs useSdnotify {
+              // lib.optionalAttrs (useSdnotify && (container.mode or "daemon") != "oneshot") {
                 Type = "notify";
                 NotifyAccess = "all";
               }
