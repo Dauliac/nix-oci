@@ -22,7 +22,7 @@
           target = "oci";
           container = {
             package = pkgs.hello;
-            layerStrategy = "minimal";
+            layerStrategy = "fine-grained";
           };
         };
       };
