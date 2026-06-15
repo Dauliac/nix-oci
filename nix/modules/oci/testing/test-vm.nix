@@ -126,15 +126,17 @@ in
               oci = {
                 enable = true;
                 backend = "podman";
-                # Test defaults: fine-grained layers for best cache
-                containers = lib.mapAttrs (
-                  _: c:
-                  c
-                  // {
-                    layerStrategy = c.layerStrategy or "fine-grained";
-                    optimizeLayers = c.optimizeLayers or true;
-                  }
-                ) vmContainers;
+                # Test defaults via perContainer
+                perContainer = [
+                  (
+                    { lib, ... }:
+                    {
+                      config.layerStrategy = lib.mkDefault "fine-grained";
+                      config.optimizeLayers = lib.mkDefault true;
+                    }
+                  )
+                ];
+                containers = vmContainers;
               };
 
               environment.systemPackages = [

@@ -20,6 +20,7 @@ let
 
   mod =
     {
+      config,
       lib,
       pkgs,
       nix2container,
@@ -28,46 +29,67 @@ let
     }:
     let
       ociLib = mkOciLib lib;
+
+      testsSink =
+        { lib, ... }:
+        {
+          options._tests = lib.mkOption {
+            type = lib.types.attrsOf lib.types.unspecified;
+            default = { };
+            internal = true;
+            visible = false;
+            description = "Internal: test specifications (ignored in deploy context).";
+          };
+        };
+
+      baseModules = [
+        sharedOptions
+        deployExtensions
+        testsSink
+      ];
     in
     {
-      options.oci.containers = lib.mkOption {
-        type = lib.types.attrsOf (
-          lib.types.submoduleWith {
-            modules = [
-              sharedOptions
-              deployExtensions
-              # Shared options may set config._tests.* — declare the
-              # option here so deploy submodules accept those values.
-              (
-                { lib, ... }:
-                {
-                  options._tests = lib.mkOption {
-                    type = lib.types.attrsOf lib.types.unspecified;
-                    default = { };
-                    internal = true;
-                    visible = false;
-                    description = "Internal: test specifications (ignored in deploy context).";
-                  };
-                }
-              )
+      options.oci = {
+        perContainer = lib.mkOption {
+          type = lib.types.listOf lib.types.deferredModule;
+          default = [ ];
+          description = ''
+            Extra modules applied to every container submodule.
+            Use this to set defaults across all containers:
+
+            ```nix
+            oci.perContainer = [
+              ({ lib, ... }: {
+                config.layerStrategy = lib.mkDefault "fine-grained";
+                config.optimizeLayers = lib.mkDefault true;
+              })
             ];
-            specialArgs = {
-              inherit
-                pkgs
-                nix2container
-                ociLib
-                ociNixOSModules
-                nixLibNixosModule
-                ;
-            };
-          }
-        );
-        default = { };
-        description = ''
-          OCI containers to build, load, and optionally run.
-          Each entry builds an image via nix2container and creates
-          a systemd service to load it into the container runtime.
-        '';
+            ```
+          '';
+        };
+
+        containers = lib.mkOption {
+          type = lib.types.attrsOf (
+            lib.types.submoduleWith {
+              modules = baseModules ++ config.oci.perContainer;
+              specialArgs = {
+                inherit
+                  pkgs
+                  nix2container
+                  ociLib
+                  ociNixOSModules
+                  nixLibNixosModule
+                  ;
+              };
+            }
+          );
+          default = { };
+          description = ''
+            OCI containers to build, load, and optionally run.
+            Each entry builds an image via nix2container and creates
+            a systemd service to load it into the container runtime.
+          '';
+        };
       };
     };
 in
