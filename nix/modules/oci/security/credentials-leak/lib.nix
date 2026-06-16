@@ -1,116 +1,86 @@
 # Credentials leak detection functions (Trivy)
-{
-  lib,
-  config,
-  flake-parts-lib,
-  ...
-}:
-let
-  inherit (lib) types;
-in
-{
-  config.perSystem =
-    {
-      pkgs,
-      lib,
-      config,
-      ...
-    }:
-    let
-      ociLib = config.lib.oci or { };
-    in
-    {
-      nix-lib.lib.oci = {
-        mkScriptCredentialsLeakTrivy = {
-          type = types.functionTo types.package;
-          description = "Generate Trivy credentials leak detection script";
-          file = "nix/modules/oci/security/credentials-leak/lib.nix";
-          fn =
-            {
-              perSystemConfig,
-              containerId,
-            }:
-            let
-              oci = perSystemConfig.internal.OCIs.${containerId};
-              mkTransientArchive = ociLib.mkTransientArchive {
-                inherit oci;
-                skopeo = perSystemConfig.packages.skopeo;
-              };
-            in
-            pkgs.writeShellScriptBin "credentials-leak-trivy-${containerId}" ''
-              set -o errexit
-              set -o pipefail
-              set -o nounset
-              # Use empty docker config to avoid credentials helper issues
-              export DOCKER_CONFIG="$(mktemp -d)"
-              WORK="$(mktemp -d)"
-              trap 'rm -rf "$WORK"' EXIT
-              cd "$WORK"
-              ${mkTransientArchive}
-              TRIVY="${perSystemConfig.packages.trivy}/bin/trivy"
-              # Human-readable output to stdout
-              $TRIVY fs --scanners secret archive.tar
-              # Write GitLab-compatible JSON report when CIMERA_REPORT_DIR is set
-              if [ -n "''${CIMERA_REPORT_DIR:-}" ]; then
-                mkdir -p "$CIMERA_REPORT_DIR"
-                $TRIVY fs --scanners secret archive.tar \
-                  --format json \
-                  --output "$CIMERA_REPORT_DIR/gl-secret-detection-report.json"
-              fi
+import ../../../../lib/mkLibModule.nix (
+  {
+    lib,
+    ociLib,
+    ...
+  }:
+  let
+    thisFile = "nix/modules/oci/security/credentials-leak/lib.nix";
+  in
+  {
+    mkScriptCredentialsLeakTrivy = {
+      type = lib.types.functionTo lib.types.package;
+      description = "Generate Trivy credentials leak detection script";
+      file = thisFile;
+      fn =
+        {
+          perSystemConfig,
+          containerId,
+        }:
+        let
+          oci = perSystemConfig.internal.OCIs.${containerId};
+          trivyBin = "${perSystemConfig.packages.trivy}/bin/trivy";
+        in
+        ociLib.mkArchiveScanScript {
+          name = "credentials-leak-trivy-${containerId}";
+          inherit oci;
+          skopeo = perSystemConfig.packages.skopeo;
+          scanCommand = ''
+            ${trivyBin} fs --scanners secret archive.tar
+          '';
+          reportBlock = ociLib.mkReportBlock {
+            reportCommand = ''
+              ${trivyBin} fs --scanners secret archive.tar \
+                --format json \
+                --output "$CIMERA_REPORT_DIR/gl-secret-detection-report.json"
             '';
+            reportName = "gl-secret-detection-report.json";
+          };
         };
-
-        mkCheckCredentialsLeakTrivy = {
-          type = types.functionTo types.package;
-          description = "Create derivation check for Trivy credentials leak detection";
-          file = "nix/modules/oci/security/credentials-leak/lib.nix";
-          fn =
-            {
-              perSystemConfig,
-              containerId,
-            }:
-            let
-              oci = perSystemConfig.internal.OCIs.${containerId};
-            in
-            pkgs.runCommandLocal "credentials-leak-trivy-${containerId}"
-              {
-                nativeBuildInputs = [
-                  perSystemConfig.packages.trivy
-                  perSystemConfig.packages.skopeo
-                  pkgs.gnutar
-                  pkgs.python3
-                ];
-                meta.description = "Run Trivy credentials leak scan on ${containerId}.";
-              }
-              ''
-                ${ociLib.mkTransientArchive {
-                  inherit oci;
-                  skopeo = perSystemConfig.packages.skopeo;
-                }}
-                export DOCKER_CONFIG="$(mktemp -d)"
-                ${perSystemConfig.packages.trivy}/bin/trivy fs --scanners secret archive.tar
-                touch $out
-              '';
-        };
-
-        mkAppCredentialsLeakTrivy = {
-          type = types.functionTo types.attrs;
-          description = "Create flake app for Trivy credentials leak detection";
-          file = "nix/modules/oci/security/credentials-leak/lib.nix";
-          fn =
-            {
-              perSystemConfig,
-              containerId,
-            }:
-            {
-              type = "app";
-              program = "${
-                ociLib.mkScriptCredentialsLeakTrivy {
-                  inherit perSystemConfig containerId;
-                }
-              }/bin/credentials-leak-trivy-${containerId}";
-            };
-        };
-      };
     };
-}
+
+    mkCheckCredentialsLeakTrivy = {
+      type = lib.types.functionTo lib.types.package;
+      description = "Create derivation check for Trivy credentials leak detection";
+      file = thisFile;
+      fn =
+        {
+          perSystemConfig,
+          containerId,
+        }:
+        let
+          oci = perSystemConfig.internal.OCIs.${containerId};
+        in
+        ociLib.mkArchiveScanCheck {
+          name = "credentials-leak-trivy-${containerId}";
+          metaDescription = "Run Trivy credentials leak scan on ${containerId}.";
+          inherit oci;
+          skopeo = perSystemConfig.packages.skopeo;
+          toolPackages = [ perSystemConfig.packages.trivy ];
+          checkCommand = ''
+            ${perSystemConfig.packages.trivy}/bin/trivy fs --scanners secret archive.tar
+          '';
+        };
+    };
+
+    mkAppCredentialsLeakTrivy = {
+      type = lib.types.functionTo lib.types.attrs;
+      description = "Create flake app for Trivy credentials leak detection";
+      file = thisFile;
+      fn =
+        {
+          perSystemConfig,
+          containerId,
+        }:
+        {
+          type = "app";
+          program = "${
+            ociLib.mkScriptCredentialsLeakTrivy {
+              inherit perSystemConfig containerId;
+            }
+          }/bin/credentials-leak-trivy-${containerId}";
+        };
+    };
+  }
+)

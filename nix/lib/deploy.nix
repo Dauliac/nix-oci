@@ -91,13 +91,31 @@ in
 {
   inherit mkPerfOpts;
   # Select the backend-specific copy script for loading an image.
-  # Returns the nix2container copy derivation (copyToDockerDaemon or copyToPodman).
+  # Three paths:
+  #   1. registry push (copyToRegistry) — enables SOCI lazy pull + layer dedup
+  #   2. docker daemon (copyToDockerDaemon) — direct load into docker/containerd
+  #   3. podman (copyToPodman) — direct load into containers-storage
   copyScript =
     {
       backend,
       container,
+      registry ? null,
     }:
-    if backend == "docker" then container.image.copyToDockerDaemon else container.image.copyToPodman;
+    if registry != null then
+      container.image.copyToRegistry
+    else if backend == "docker" then
+      container.image.copyToDockerDaemon
+    else
+      container.image.copyToPodman;
+
+  # Build the registry image reference for a container.
+  # e.g. "localhost:5000/my-container:latest"
+  registryImageRef =
+    {
+      registry,
+      container,
+    }:
+    "${registry.host}:${toString registry.port}/${container.name}:${container.tag}";
 
   # Filter containers that have autoStart enabled.
   autoStartContainers = containers: lib.filterAttrs (_: c: c.autoStart) containers;

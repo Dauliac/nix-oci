@@ -1,88 +1,67 @@
 # CIS compliance checking functions (Trivy)
-{
-  lib,
-  config,
-  flake-parts-lib,
-  ...
-}:
-let
-  inherit (lib) types;
-in
-{
-  config.perSystem =
-    {
-      pkgs,
-      lib,
-      config,
-      ...
-    }:
-    let
-      ociLib = config.lib.oci or { };
-    in
-    {
-      nix-lib.lib.oci = {
-        mkScriptComplianceTrivy = {
-          type = types.functionTo types.package;
-          description = "Generate Trivy CIS compliance checking script";
-          file = "nix/modules/oci/security/compliance/lib.nix";
-          fn =
-            {
-              perSystemConfig,
-              containerId,
-              globalConfig,
-            }:
-            let
-              oci = perSystemConfig.internal.OCIs.${containerId};
-              containerConfig = perSystemConfig.containers.${containerId}.compliance.trivy;
-              mkTransientArchive = ociLib.mkTransientArchive {
-                inherit oci;
-                skopeo = perSystemConfig.packages.skopeo;
-              };
-            in
-            pkgs.writeShellScriptBin "compliance-trivy-${containerId}" ''
-              set -o errexit
-              set -o pipefail
-              set -o nounset
-              # Use empty docker config to avoid credentials helper issues
-              export DOCKER_CONFIG="$(mktemp -d)"
-              WORK="$(mktemp -d)"
-              trap 'rm -rf "$WORK"' EXIT
-              cd "$WORK"
-              ${mkTransientArchive}
-              TRIVY="${perSystemConfig.packages.trivy}/bin/trivy"
-              COMMON_FLAGS="--input archive.tar --compliance ${lib.escapeShellArg containerConfig.spec} --report ${containerConfig.report}"
-              # Human-readable output to stdout
-              $TRIVY image $COMMON_FLAGS --exit-code 1
-              # Write JSON report when CIMERA_REPORT_DIR is set
-              if [ -n "''${CIMERA_REPORT_DIR:-}" ]; then
-                mkdir -p "$CIMERA_REPORT_DIR"
-                $TRIVY image $COMMON_FLAGS \
-                  --exit-code 0 \
-                  --format json \
-                  --output "$CIMERA_REPORT_DIR/gl-compliance-report.json"
-              fi
+import ../../../../lib/mkLibModule.nix (
+  {
+    lib,
+    ociLib,
+    ...
+  }:
+  let
+    thisFile = "nix/modules/oci/security/compliance/lib.nix";
+  in
+  {
+    mkScriptComplianceTrivy = {
+      type = lib.types.functionTo lib.types.package;
+      description = "Generate Trivy CIS compliance checking script";
+      file = thisFile;
+      fn =
+        {
+          perSystemConfig,
+          containerId,
+          globalConfig,
+        }:
+        let
+          oci = perSystemConfig.internal.OCIs.${containerId};
+          containerConfig = perSystemConfig.containers.${containerId}.compliance.trivy;
+          trivyBin = "${perSystemConfig.packages.trivy}/bin/trivy";
+          commonFlags = "--input archive.tar --compliance ${lib.escapeShellArg containerConfig.spec} --report ${containerConfig.report}";
+        in
+        ociLib.mkArchiveScanScript {
+          name = "compliance-trivy-${containerId}";
+          inherit oci;
+          skopeo = perSystemConfig.packages.skopeo;
+          scanCommand = ''
+            ${trivyBin} image ${commonFlags} --exit-code 1
+          '';
+          reportBlock = ociLib.mkReportBlock {
+            reportCommand = ''
+              ${trivyBin} image ${commonFlags} \
+                --exit-code 0 \
+                --format json \
+                --output "$CIMERA_REPORT_DIR/gl-compliance-report.json"
             '';
+            reportName = "gl-compliance-report.json";
+          };
         };
-
-        mkAppComplianceTrivy = {
-          type = types.functionTo types.attrs;
-          description = "Create flake app for Trivy CIS compliance checking";
-          file = "nix/modules/oci/security/compliance/lib.nix";
-          fn =
-            {
-              perSystemConfig,
-              containerId,
-              globalConfig,
-            }:
-            {
-              type = "app";
-              program = "${
-                ociLib.mkScriptComplianceTrivy {
-                  inherit perSystemConfig containerId globalConfig;
-                }
-              }/bin/compliance-trivy-${containerId}";
-            };
-        };
-      };
     };
-}
+
+    mkAppComplianceTrivy = {
+      type = lib.types.functionTo lib.types.attrs;
+      description = "Create flake app for Trivy CIS compliance checking";
+      file = thisFile;
+      fn =
+        {
+          perSystemConfig,
+          containerId,
+          globalConfig,
+        }:
+        {
+          type = "app";
+          program = "${
+            ociLib.mkScriptComplianceTrivy {
+              inherit perSystemConfig containerId globalConfig;
+            }
+          }/bin/compliance-trivy-${containerId}";
+        };
+    };
+  }
+)

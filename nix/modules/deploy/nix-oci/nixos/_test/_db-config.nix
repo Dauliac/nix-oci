@@ -1,19 +1,9 @@
-# NixOS config: pre-fetched vulnerability DB paths for offline testing.
-{
-  config,
-  lib,
-  ...
-}:
-let
-  cfg = config.testing;
-in
-lib.mkIf cfg.enable {
-  environment.sessionVariables = lib.mkMerge [
-    (lib.mkIf (cfg.db.trivy.path != null) {
-      TRIVY_DB_PATH = toString cfg.db.trivy.path;
-    })
-    (lib.mkIf (cfg.db.grype.path != null) {
-      GRYPE_DB_PATH = toString cfg.db.grype.path;
-    })
-  ];
-}
+# NixOS config: vulnerability DB env vars for offline testing.
+#
+# Users who need pinned DBs can set these env vars directly:
+#   environment.sessionVariables.TRIVY_DB_PATH = "/path/to/db";
+#   environment.sessionVariables.GRYPE_DB_PATH = "/path/to/db";
+#
+# This file is a no-op by default (no DB paths configured).
+{ ... }:
+{ }

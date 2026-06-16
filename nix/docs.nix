@@ -8,8 +8,12 @@
 {
   inputs,
   lib,
+  config,
   ...
 }:
+let
+  flakeModules = config.flake.modules;
+in
 {
   config = {
     perSystem =
@@ -24,6 +28,7 @@
         import-tree = inputs.import-tree;
 
         # --- Flake-parts options (oci.*) ---
+        # Uses the composed module from flake.modules.flake.nix-oci.
         flakePartsEval =
           inputs.flake-parts.lib.evalFlakeModule
             {
@@ -33,7 +38,7 @@
             }
             {
               imports = [
-                (import ./flake-module.nix inputs)
+                flakeModules.flake.nix-oci
               ];
               systems = [ system ];
             };
@@ -217,6 +222,43 @@
         # Extract nix-lib metadata from the nixos-oci eval for docs.
         containerLibsMeta = nixosContainerEval.config.nix-lib._libsMeta or { };
 
+        # --- Testing module docs ---
+
+        # Flake-parts eval WITH test modules (for test.oci.* options + test nix-lib).
+        # Uses the composed modules from flake.modules.flake.* as single entrypoints.
+        testFlakePartsEval =
+          inputs.flake-parts.lib.evalFlakeModule
+            {
+              inputs = inputs // {
+                self = {
+                  inputs = inputs;
+                };
+              };
+            }
+            {
+              imports = [
+                flakeModules.flake.nix-oci
+                flakeModules.flake.nix-oci-test
+              ];
+              systems = [ system ];
+            };
+
+        testPerSystemOptions = testFlakePartsEval.options.perSystem.type.getSubOptions [ ];
+
+        # test.oci.* flake-parts options
+        testFlakePartsDoc = pkgs.nixosOptionsDoc {
+          options = {
+            inherit (testPerSystemOptions) test;
+          };
+          transformOptions = cleanupOptions;
+        };
+
+        # nix-lib docs from the test-aware eval (includes test lib functions).
+        # The test eval's nix-lib.docs.package has all functions (main + test).
+        # We use it specifically for the testing reference page.
+        testNixLibDoc =
+          testFlakePartsEval.config.allSystems.${system}.nix-lib.docs.package or nixLibDoc;
+
         # Diataxis layout with NDG group_by_dir:
         #   Root (flat): index.md (overview), getting-started.md (tutorial)
         #   ▼ How-to:    task-oriented guides
@@ -228,7 +270,7 @@
               nativeBuildInputs = [ pkgs.gnused ];
             }
             ''
-              mkdir -p $out/{security,performance,architecture,integration,how-to,reference,examples}
+              mkdir -p $out/{security,performance,architecture,integration,how-to,reference,test-reference,examples}
 
               # Root pages (flat, top of sidebar)
               # README.md and CONTRIBUTING.md are the source of truth, copied here for NDG
@@ -265,6 +307,15 @@
               sed -i '/<!-- OPTIONS:nix-lib-nixos-deploy -->/r ${nixLibDoc}/nix-lib-nixos-deploy.md' $out/reference/nix-lib-nixos-deploy.md
               sed -i '/<!-- OPTIONS:nix-lib-home-manager-deploy -->/r ${nixLibDoc}/nix-lib-home-manager-deploy.md' $out/reference/nix-lib-home-manager-deploy.md
               sed -i '/<!-- OPTIONS:nix-lib-system-manager-deploy -->/r ${nixLibDoc}/nix-lib-system-manager-deploy.md' $out/reference/nix-lib-system-manager-deploy.md
+
+              # --- Test reference pages (separate sidebar group) ---
+              for f in ${../docs/content}/test-reference/*.md; do
+                cp "$f" $out/test-reference/
+              done
+              chmod -R u+w $out/test-reference
+
+              sed -i '/<!-- OPTIONS:testing-flake-parts -->/r ${testFlakePartsDoc.optionsCommonMark}' $out/test-reference/testing-flake-parts-options.md
+              sed -i '/<!-- OPTIONS:nix-lib-testing -->/r ${testNixLibDoc}/docs.md' $out/test-reference/nix-lib-testing.md
 
               # --- Examples: generate pages with subdir-based sections ---
               # gen_examples_page <title> <dest> <dir>...
@@ -352,18 +403,17 @@
                 position = 1;
               }
               {
-                path = "security";
-                new_title = "Security";
+                path = "how-to";
                 position = 2;
-              }
-              {
-                path = "performance";
-                new_title = "Performance";
-                position = 3;
               }
               {
                 path = "architecture";
                 new_title = "Architecture";
+                position = 3;
+              }
+              {
+                path = "performance";
+                new_title = "Performance";
                 position = 4;
               }
               {
@@ -372,14 +422,19 @@
                 position = 5;
               }
               {
-                path = "how-to";
+                path = "examples";
                 position = 6;
               }
               {
-                path = "reference";
+                path = "security";
+                new_title = "Security";
                 position = 7;
               }
-              # -- Reference: module options (grouped first) --
+              {
+                path = "reference";
+                position = 8;
+              }
+              # -- Reference: module options --
               {
                 path = "reference/flake-parts-options.md";
                 new_title = "Options: flake-parts";
@@ -405,7 +460,7 @@
                 new_title = "Options: system-manager deploy";
                 position = 5;
               }
-              # -- Reference: nix-lib functions (grouped after options) --
+              # -- Reference: nix-lib functions --
               {
                 path = "reference/nix-lib.md";
                 new_title = "nix-lib: flake-parts functions";
@@ -431,9 +486,21 @@
                 new_title = "nix-lib: system-manager deploy functions";
                 position = 10;
               }
+              # -- Test Reference: separate sidebar group (last) --
               {
-                path = "examples";
-                position = 4;
+                path = "test-reference";
+                new_title = "Test Reference";
+                position = 9;
+              }
+              {
+                path = "test-reference/testing-flake-parts-options.md";
+                new_title = "Options: flake-parts testing";
+                position = 1;
+              }
+              {
+                path = "test-reference/nix-lib-testing.md";
+                new_title = "nix-lib: testing functions";
+                position = 2;
               }
             ];
           };
@@ -486,7 +553,7 @@
 
                 - [Source: `nix/modules/oci/lib/`](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci/lib) -- image builders, layers, labels, security, ports, architecture
                 - [Source: `nix/modules/oci/security/`](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci/security) -- CVE, SBOM, signing, compliance, credentials leak, linting
-                - [Source: `nix/modules/oci/testing/`](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci/testing) -- CST, dgoss, dive, podman sandbox
+                - [Source: `nix/modules/oci/_testing/`](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci/_testing) -- CST, dgoss, dive, podman sandbox
 
                 ---
               '';

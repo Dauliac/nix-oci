@@ -1,10 +1,16 @@
 # Test infrastructure flake module.
 #
-# The test modules (test-collector, test-vm, etc.) are already
-# imported by the main nix-oci module via import-tree. This module is
-# a marker that enables test-specific behavior — consumers import it
-# alongside the main module to signal "I want test infrastructure".
+# Consumers import this alongside the main nix-oci module to get:
+# - BDD test collector + VM test builder
+# - Container probes (amicontained, CDK, DEEPCE, linPEAS)
+# - Testing tools (dive, dgoss, CST, podman sandbox)
+# - Policy runner infrastructure
+# - Test apps (nix run .#app-<tool>-<container>)
 #
-# Currently a no-op since all test modules are auto-discovered.
-# Will be used for test-specific configuration in the future.
-_inputs: { }
+# The testing modules live in oci/_testing/ (underscore-prefixed) so they
+# are excluded from the main import-tree. This module explicitly imports them.
+inputs: {
+  imports = [
+    (inputs.import-tree ./modules/oci/_testing)
+  ];
+}

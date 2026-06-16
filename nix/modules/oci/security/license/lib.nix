@@ -1,119 +1,90 @@
 # SBOM license compliance checking functions (Conftest)
-{
-  lib,
-  config,
-  flake-parts-lib,
-  ...
-}:
-let
-  inherit (lib) types;
-in
-{
-  config.perSystem =
-    {
-      pkgs,
-      lib,
-      config,
-      ...
-    }:
-    let
-      ociLib = config.lib.oci or { };
-    in
-    {
-      nix-lib.lib.oci = {
-        mkScriptLicenseConftest = {
-          type = types.functionTo types.package;
-          description = "Generate Conftest SBOM license compliance checking script";
-          file = "nix/modules/oci/security/license/lib.nix";
-          fn =
-            {
-              perSystemConfig,
-              containerId,
-              globalConfig,
-            }:
-            let
-              oci = perSystemConfig.internal.OCIs.${containerId};
-              containerConfig = perSystemConfig.containers.${containerId};
-              licenseConfig = containerConfig.license.conftest;
-              sbomConfig = containerConfig.sbom.syft;
-              mkTransientArchive = ociLib.mkTransientArchive {
-                inherit oci;
-                skopeo = perSystemConfig.packages.skopeo;
-              };
-              namespaceFlags = lib.concatMapStringsSep " " (
-                ns: "--namespace ${lib.escapeShellArg ns}"
-              ) licenseConfig.namespaces;
-              effectivePolicyDir =
-                if licenseConfig.extraPolicyDirs == [ ] then
-                  licenseConfig.policyDir
-                else
-                  pkgs.symlinkJoin {
-                    name = "merged-license-policies-${containerId}";
-                    paths = [ licenseConfig.policyDir ] ++ licenseConfig.extraPolicyDirs;
-                  };
-              configFlag = if sbomConfig.config.enabled then "--config ${sbomConfig.config.path}" else "";
-            in
-            pkgs.writeShellScriptBin "license-conftest-${containerId}" ''
-              set -o errexit
-              set -o pipefail
-              set -o nounset
+import ../../../../lib/mkLibModule.nix (
+  {
+    lib,
+    ociLib,
+    ...
+  }:
+  let
+    thisFile = "nix/modules/oci/security/license/lib.nix";
+  in
+  {
+    mkScriptLicenseConftest = {
+      type = lib.types.functionTo lib.types.package;
+      description = "Generate Conftest SBOM license compliance checking script";
+      file = thisFile;
+      fn =
+        {
+          perSystemConfig,
+          containerId,
+          globalConfig,
+        }:
+        let
+          oci = perSystemConfig.internal.OCIs.${containerId};
+          containerConfig = perSystemConfig.containers.${containerId};
+          licenseConfig = containerConfig.license.conftest;
+          sbomConfig = containerConfig.sbom.syft;
+          namespaceFlags = lib.concatMapStringsSep " " (
+            ns: "--namespace ${lib.escapeShellArg ns}"
+          ) licenseConfig.namespaces;
+          effectivePolicyDir = ociLib.mkMergedPolicyDir {
+            name = "license-${containerId}";
+            baseDir = licenseConfig.policyDir;
+            extraDirs = licenseConfig.extraPolicyDirs;
+          };
+          configFlag = if sbomConfig.config.enabled then "--config ${sbomConfig.config.path}" else "";
+          conftestBin = "${perSystemConfig.packages.conftest}/bin/conftest";
+          syftBin = "${perSystemConfig.packages.syft}/bin/syft";
+        in
+        ociLib.mkArchiveScanScript {
+          name = "license-conftest-${containerId}";
+          inherit oci;
+          skopeo = perSystemConfig.packages.skopeo;
+          scanCommand = ''
+            # Generate CycloneDX SBOM from the container image
+            ${syftBin} ${configFlag} archive.tar \
+              --output cyclonedx-json="$WORK/sbom.cdx.json"
 
-              CONFTEST="${perSystemConfig.packages.conftest}/bin/conftest"
-              SYFT="${perSystemConfig.packages.syft}/bin/syft"
-              WORK="$(mktemp -d)"
-              trap 'rm -rf "$WORK"' EXIT
-              cd "$WORK"
-
-              # Use empty docker config to avoid credentials helper issues
-              export DOCKER_CONFIG="$(mktemp -d)"
-
-              # Create transient archive
-              ${mkTransientArchive}
-
-              # Generate CycloneDX SBOM from the container image
-              $SYFT ${configFlag} archive.tar \
-                --output cyclonedx-json="$WORK/sbom.cdx.json"
-
-              # Run conftest license policies against the SBOM
-              $CONFTEST test "$WORK/sbom.cdx.json" \
+            # Run conftest license policies against the SBOM
+            ${conftestBin} test "$WORK/sbom.cdx.json" \
+              --policy ${effectivePolicyDir} \
+              ${namespaceFlags} \
+              --no-color
+          '';
+          reportBlock = ociLib.mkReportBlock {
+            reportCommand = ''
+              # Also save the SBOM for traceability
+              cp "$WORK/sbom.cdx.json" "$CIMERA_REPORT_DIR/gl-sbom-license-input.cdx.json"
+              ${conftestBin} test "$WORK/sbom.cdx.json" \
                 --policy ${effectivePolicyDir} \
                 ${namespaceFlags} \
-                --no-color
-
-              # Write JSON report when CIMERA_REPORT_DIR is set
-              if [ -n "''${CIMERA_REPORT_DIR:-}" ]; then
-                mkdir -p "$CIMERA_REPORT_DIR"
-                # Also save the SBOM for traceability
-                cp "$WORK/sbom.cdx.json" "$CIMERA_REPORT_DIR/gl-sbom-license-input.cdx.json"
-                $CONFTEST test "$WORK/sbom.cdx.json" \
-                  --policy ${effectivePolicyDir} \
-                  ${namespaceFlags} \
-                  --no-color \
-                  --output json \
-                  > "$CIMERA_REPORT_DIR/gl-license-conftest-report.json" || true
-              fi
+                --no-color \
+                --output json \
+                > "$CIMERA_REPORT_DIR/gl-license-conftest-report.json" || true
             '';
+            reportName = "gl-license-conftest-report.json";
+          };
         };
-
-        mkAppLicenseConftest = {
-          type = types.functionTo types.attrs;
-          description = "Create flake app for Conftest SBOM license compliance checking";
-          file = "nix/modules/oci/security/license/lib.nix";
-          fn =
-            {
-              perSystemConfig,
-              containerId,
-              globalConfig,
-            }:
-            {
-              type = "app";
-              program = "${
-                ociLib.mkScriptLicenseConftest {
-                  inherit perSystemConfig containerId globalConfig;
-                }
-              }/bin/license-conftest-${containerId}";
-            };
-        };
-      };
     };
-}
+
+    mkAppLicenseConftest = {
+      type = lib.types.functionTo lib.types.attrs;
+      description = "Create flake app for Conftest SBOM license compliance checking";
+      file = thisFile;
+      fn =
+        {
+          perSystemConfig,
+          containerId,
+          globalConfig,
+        }:
+        {
+          type = "app";
+          program = "${
+            ociLib.mkScriptLicenseConftest {
+              inherit perSystemConfig containerId globalConfig;
+            }
+          }/bin/license-conftest-${containerId}";
+        };
+    };
+  }
+)

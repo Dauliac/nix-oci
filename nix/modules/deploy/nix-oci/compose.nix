@@ -27,11 +27,13 @@ in
       imports = [
         nixosMods.nix-oci-enable
         nixosMods.nix-oci-backend
+        nixosMods.nix-oci-registry
         nixosMods.nix-oci-snapshotter
         nixosMods.nix-oci-containers
         nixosMods.nix-oci-load-services
         nixosMods.nix-oci-run-services
         nixosMods.nix-oci-snapshotter-config
+        nixosMods.soci-snapshotter
       ];
       _module.args.nix2container = inputs.nix2container.packages.${pkgs.system}.nix2container;
       _module.args.nixLibNixosModule = inputs.nix-lib.nixosModules.default;
@@ -46,6 +48,7 @@ in
         hmMods.nix-oci-containers
         hmMods.nix-oci-load-services
         hmMods.nix-oci-run-services
+        hmMods.soci-snapshotter
       ];
       _module.args.nix2container = inputs.nix2container.packages.${pkgs.system}.nix2container;
       _module.args.nixLibNixosModule = inputs.nix-lib.nixosModules.default;
@@ -57,11 +60,13 @@ in
       imports = [
         smMods.nix-oci-enable
         smMods.nix-oci-backend
+        smMods.nix-oci-registry
         smMods.nix-oci-snapshotter
         smMods.nix-oci-containers
         smMods.nix-oci-load-services
         smMods.nix-oci-run-services
         smMods.nix-oci-snapshotter-config
+        smMods.soci-snapshotter
       ];
       _module.args.nix2container = inputs.nix2container.packages.${pkgs.system}.nix2container;
       _module.args.nixLibNixosModule = inputs.nix-lib.nixosModules.default;

@@ -16,8 +16,10 @@
     }:
     let
       cfg = config.oci;
+      reg = cfg.registry;
       deployLib = import ../../../../lib/deploy.nix { inherit lib; };
       autoStart = deployLib.autoStartContainers cfg.containers;
+      useRegistry = reg.enable;
     in
     {
       config = lib.mkIf (cfg.enable && autoStart != { }) {
@@ -29,11 +31,26 @@
               secOpts = container.securityOpts or [ ];
               perfOpts = deployLib.mkPerfOpts container;
               healthOpts = if cfg.backend == "podman" then deployLib.mkHealthcheckOpts container else [ ];
-              allExtraOpts = secOpts ++ perfOpts ++ healthOpts;
+              allExtraOpts =
+                secOpts
+                ++ perfOpts
+                ++ healthOpts
+                # Allow pulling from insecure local registry.
+                ++ lib.optional useRegistry "--tls-verify=false";
+              imageRef =
+                if useRegistry then
+                  deployLib.registryImageRef {
+                    registry = reg;
+                    inherit container;
+                  }
+                else
+                  container.imageRef;
             in
             {
-              image = container.imageRef;
-              pull = "never";
+              image = imageRef;
+              # Registry path: pull from registry (enables SOCI lazy pull).
+              # Direct path: never pull (image already loaded locally).
+              pull = if useRegistry then "always" else "never";
             }
             // lib.optionalAttrs (container.ports != [ ]) {
               ports = container.ports;

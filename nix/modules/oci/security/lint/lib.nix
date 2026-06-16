@@ -1,138 +1,111 @@
 # Container image linting functions (Dockle)
-{
-  lib,
-  config,
-  flake-parts-lib,
-  ...
-}:
-let
-  inherit (lib) types;
-in
-{
-  config.perSystem =
-    {
-      pkgs,
-      lib,
-      config,
-      ...
-    }:
-    let
-      ociLib = config.lib.oci or { };
+import ../../../../lib/mkLibModule.nix (
+  {
+    lib,
+    ociLib,
+    ...
+  }:
+  let
+    thisFile = "nix/modules/oci/security/lint/lib.nix";
 
-      exitLevelToCode = {
-        "info" = "INFO";
-        "warn" = "WARN";
-        "fatal" = "FATAL";
-      };
-    in
-    {
-      nix-lib.lib.oci = {
-        mkScriptLintDockle = {
-          type = types.functionTo types.package;
-          description = "Generate Dockle container image linting script";
-          file = "nix/modules/oci/security/lint/lib.nix";
-          fn =
-            {
-              perSystemConfig,
-              containerId,
-              globalConfig,
-            }:
-            let
-              oci = perSystemConfig.internal.OCIs.${containerId};
-              containerConfig = perSystemConfig.containers.${containerId}.lint.dockle;
-              mkTransientArchive = ociLib.mkTransientArchive {
-                inherit oci;
-                skopeo = perSystemConfig.packages.skopeo;
-              };
-              ignoreFlags = lib.concatMapStringsSep " " (
-                id: "--ignore ${lib.escapeShellArg id}"
-              ) containerConfig.ignore;
-              exitLevel = exitLevelToCode.${containerConfig.exitLevel};
-            in
-            pkgs.writeShellScriptBin "lint-dockle-${containerId}" ''
-              set -o errexit
-              set -o pipefail
-              set -o nounset
-              WORK="$(mktemp -d)"
-              trap 'rm -rf "$WORK"' EXIT
-              cd "$WORK"
-              ${mkTransientArchive}
-              DOCKLE="${perSystemConfig.packages.dockle}/bin/dockle"
-              COMMON_FLAGS="--input archive.tar --exit-level ${exitLevel} ${ignoreFlags}"
-              # Human-readable output to stdout
-              $DOCKLE $COMMON_FLAGS --exit-code 1
-              # Write JSON report when CIMERA_REPORT_DIR is set
-              if [ -n "''${CIMERA_REPORT_DIR:-}" ]; then
-                mkdir -p "$CIMERA_REPORT_DIR"
-                $DOCKLE $COMMON_FLAGS \
-                  --exit-code 0 \
-                  --format json \
-                  --output "$CIMERA_REPORT_DIR/gl-lint-dockle-report.json"
-              fi
-            '';
-        };
-
-        mkCheckLintDockle = {
-          type = types.functionTo types.package;
-          description = "Create derivation check for Dockle container image linting";
-          file = "nix/modules/oci/security/lint/lib.nix";
-          fn =
-            {
-              perSystemConfig,
-              containerId,
-              globalConfig,
-            }:
-            let
-              oci = perSystemConfig.internal.OCIs.${containerId};
-              containerConfig = perSystemConfig.containers.${containerId}.lint.dockle;
-              ignoreFlags = lib.concatMapStringsSep " " (
-                id: "--ignore ${lib.escapeShellArg id}"
-              ) containerConfig.ignore;
-              exitLevel = exitLevelToCode.${containerConfig.exitLevel};
-            in
-            pkgs.runCommandLocal "lint-dockle-${containerId}"
-              {
-                nativeBuildInputs = [
-                  perSystemConfig.packages.dockle
-                  perSystemConfig.packages.skopeo
-                  pkgs.gnutar
-                  pkgs.python3
-                ];
-                meta.description = "Run Dockle lint on ${containerId}.";
-              }
-              ''
-                ${ociLib.mkTransientArchive {
-                  inherit oci;
-                  skopeo = perSystemConfig.packages.skopeo;
-                }}
-                ${perSystemConfig.packages.dockle}/bin/dockle \
-                  --input archive.tar \
-                  --exit-level ${exitLevel} \
-                  ${ignoreFlags} \
-                  --exit-code 1
-                touch $out
-              '';
-        };
-
-        mkAppLintDockle = {
-          type = types.functionTo types.attrs;
-          description = "Create flake app for Dockle container image linting";
-          file = "nix/modules/oci/security/lint/lib.nix";
-          fn =
-            {
-              perSystemConfig,
-              containerId,
-              globalConfig,
-            }:
-            {
-              type = "app";
-              program = "${
-                ociLib.mkScriptLintDockle {
-                  inherit perSystemConfig containerId globalConfig;
-                }
-              }/bin/lint-dockle-${containerId}";
-            };
-        };
-      };
+    exitLevelToCode = {
+      "info" = "INFO";
+      "warn" = "WARN";
+      "fatal" = "FATAL";
     };
-}
+  in
+  {
+    mkScriptLintDockle = {
+      type = lib.types.functionTo lib.types.package;
+      description = "Generate Dockle container image linting script";
+      file = thisFile;
+      fn =
+        {
+          perSystemConfig,
+          containerId,
+          globalConfig,
+        }:
+        let
+          oci = perSystemConfig.internal.OCIs.${containerId};
+          containerConfig = perSystemConfig.containers.${containerId}.lint.dockle;
+          ignoreFlags = lib.concatMapStringsSep " " (
+            id: "--ignore ${lib.escapeShellArg id}"
+          ) containerConfig.ignore;
+          exitLevel = exitLevelToCode.${containerConfig.exitLevel};
+          dockleBin = "${perSystemConfig.packages.dockle}/bin/dockle";
+          commonFlags = "--input archive.tar --exit-level ${exitLevel} ${ignoreFlags}";
+        in
+        ociLib.mkArchiveScanScript {
+          name = "lint-dockle-${containerId}";
+          inherit oci;
+          skopeo = perSystemConfig.packages.skopeo;
+          scanCommand = ''
+            ${dockleBin} ${commonFlags} --exit-code 1
+          '';
+          reportBlock = ociLib.mkReportBlock {
+            reportCommand = ''
+              ${dockleBin} ${commonFlags} \
+                --exit-code 0 \
+                --format json \
+                --output "$CIMERA_REPORT_DIR/gl-lint-dockle-report.json"
+            '';
+            reportName = "gl-lint-dockle-report.json";
+          };
+        };
+    };
+
+    mkCheckLintDockle = {
+      type = lib.types.functionTo lib.types.package;
+      description = "Create derivation check for Dockle container image linting";
+      file = thisFile;
+      fn =
+        {
+          perSystemConfig,
+          containerId,
+          globalConfig,
+        }:
+        let
+          oci = perSystemConfig.internal.OCIs.${containerId};
+          containerConfig = perSystemConfig.containers.${containerId}.lint.dockle;
+          ignoreFlags = lib.concatMapStringsSep " " (
+            id: "--ignore ${lib.escapeShellArg id}"
+          ) containerConfig.ignore;
+          exitLevel = exitLevelToCode.${containerConfig.exitLevel};
+        in
+        ociLib.mkArchiveScanCheck {
+          name = "lint-dockle-${containerId}";
+          metaDescription = "Run Dockle lint on ${containerId}.";
+          inherit oci;
+          skopeo = perSystemConfig.packages.skopeo;
+          toolPackages = [ perSystemConfig.packages.dockle ];
+          checkCommand = ''
+            ${perSystemConfig.packages.dockle}/bin/dockle \
+              --input archive.tar \
+              --exit-level ${exitLevel} \
+              ${ignoreFlags} \
+              --exit-code 1
+          '';
+        };
+    };
+
+    mkAppLintDockle = {
+      type = lib.types.functionTo lib.types.attrs;
+      description = "Create flake app for Dockle container image linting";
+      file = thisFile;
+      fn =
+        {
+          perSystemConfig,
+          containerId,
+          globalConfig,
+        }:
+        {
+          type = "app";
+          program = "${
+            ociLib.mkScriptLintDockle {
+              inherit perSystemConfig containerId globalConfig;
+            }
+          }/bin/lint-dockle-${containerId}";
+        };
+    };
+  }
+)

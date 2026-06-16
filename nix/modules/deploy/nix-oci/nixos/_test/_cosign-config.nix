@@ -1,14 +1,6 @@
 # NixOS config: local cosign key generation for signing tests.
+{ pkgs, ... }:
 {
-  config,
-  lib,
-  pkgs,
-  ...
-}:
-let
-  cfg = config.testing;
-in
-lib.mkIf (cfg.enable && cfg.cosign.localKeys) {
   systemd.services.nix-oci-cosign-keygen = {
     description = "Generate local cosign key pair for testing";
     wantedBy = [ "multi-user.target" ];

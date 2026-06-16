@@ -20,12 +20,32 @@ in
             Select the backend-specific copy script for loading an OCI image.
             Returns the nix2container copy derivation.
 
-            Arguments (attrset): { backend, container }
+            Three paths:
+              1. registry push (copyToRegistry) — when registry is set
+              2. docker daemon (copyToDockerDaemon) — direct load
+              3. podman (copyToPodman) — direct load
+
+            Arguments (attrset): { backend, container, registry ? null }
             - backend: "docker" or "podman"
-            - container: container config with .image.copyToDockerDaemon and .image.copyToPodman
+            - container: container config with .image.{copyToRegistry,copyToDockerDaemon,copyToPodman}
+            - registry: null or { host, port } for push-based loading
           '';
           file = "nix/lib/deploy.nix";
           fn = deploy.copyScript;
+        };
+
+        registryImageRef = {
+          type = lib.types.functionTo lib.types.str;
+          description = ''
+            Build the registry image reference for a container.
+            Returns e.g. "localhost:5000/my-container:latest".
+
+            Arguments (attrset): { registry, container }
+            - registry: { host, port }
+            - container: container config with .name and .tag
+          '';
+          file = "nix/lib/deploy.nix";
+          fn = deploy.registryImageRef;
         };
 
         autoStartContainers = {

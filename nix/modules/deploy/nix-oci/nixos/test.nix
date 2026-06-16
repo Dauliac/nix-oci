@@ -12,7 +12,7 @@
     { ... }:
     {
       imports =
-        # Auto-discovered option files (enable, registry, turbo, cosign, db, extra-packages)
+        # Auto-discovered option files (enable, registry, turbo, cosign, db, extra-packages, soci-snapshotter)
         (import ./_test/default.nix) ++ [
           # Explicit config files (_-prefixed)
           ./_test/_registry-config.nix
@@ -20,6 +20,7 @@
           ./_test/_db-config.nix
           ./_test/_cosign-config.nix
           ./_test/_apps-config.nix
+          ./_test/_soci-snapshotter-config.nix
         ];
     };
 }
