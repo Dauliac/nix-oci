@@ -3,10 +3,11 @@
 # Uses mkProbeToolBundle with needsShell=true — busybox is injected
 # automatically as the shell interpreter.
 import ../../../../lib/mkLibModule.nix (
-  { ociLib, ... }:
+  { lib, ociLib, ... }:
   let
+    mkBundle = import ../../lib/_mkProbeToolBundle.nix { inherit lib; };
     thisFile = "nix/modules/oci/_testing/deepce/lib.nix";
-    bundle = ociLib.mkProbeToolBundle {
+    bundle = mkBundle {
       toolId = "deepce";
       file = thisFile;
       description = "DEEPCE container escape detection";
@@ -33,7 +34,7 @@ import ../../../../lib/mkLibModule.nix (
           message = "Privileged mode detected";
         }
       ];
-    };
+    } ociLib;
   in
   {
     mkScriptDeepce = bundle.mkScript;

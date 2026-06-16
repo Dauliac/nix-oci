@@ -5,10 +5,11 @@
 # potential weaknesses: capabilities, service accounts, sensitive
 # files, mounted devices, and escape vectors.
 import ../../../../lib/mkLibModule.nix (
-  { ociLib, ... }:
+  { lib, ociLib, ... }:
   let
+    mkBundle = import ../../lib/_mkProbeToolBundle.nix { inherit lib; };
     thisFile = "nix/modules/oci/_testing/cdk/lib.nix";
-    bundle = ociLib.mkProbeToolBundle {
+    bundle = mkBundle {
       toolId = "cdk";
       file = thisFile;
       description = "CDK container security auditing";
@@ -44,7 +45,7 @@ import ../../../../lib/mkLibModule.nix (
           message = "Host block devices accessible (privileged)";
         }
       ];
-    };
+    } ociLib;
   in
   {
     mkScriptCdk = bundle.mkScript;

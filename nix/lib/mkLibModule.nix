@@ -34,19 +34,14 @@ if builtins.isFunction arg then
         config,
         ...
       }:
-      let
-        ociLib = config.lib.oci or { };
-        entries = arg {
-          inherit
-            pkgs
-            lib
-            config
-            ociLib
-            ;
-        };
-      in
       {
-        nix-lib.lib.oci = entries;
+        # Pass ociLib as a lazy thunk — accessing config.lib.oci during
+        # nix-lib.lib.oci definition would create infinite recursion.
+        # The thunk is only forced when fn bodies actually call ociLib.*.
+        nix-lib.lib.oci = arg {
+          inherit pkgs lib config;
+          ociLib = config.lib.oci or { };
+        };
       };
   }
 else
@@ -67,18 +62,10 @@ else
         config,
         ...
       }:
-      let
-        ociLib = config.lib.oci or { };
-        entries = perSystemFn topVars {
-          inherit
-            pkgs
-            lib
-            config
-            ociLib
-            ;
-        };
-      in
       {
-        nix-lib.lib.oci = entries;
+        nix-lib.lib.oci = perSystemFn topVars {
+          inherit pkgs lib config;
+          ociLib = config.lib.oci or { };
+        };
       };
   }

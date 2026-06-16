@@ -3,10 +3,11 @@
 # Uses mkProbeToolBundle with needsShell=true — busybox is injected
 # automatically as the shell interpreter.
 import ../../../../lib/mkLibModule.nix (
-  { ociLib, ... }:
+  { lib, ociLib, ... }:
   let
+    mkBundle = import ../../lib/_mkProbeToolBundle.nix { inherit lib; };
     thisFile = "nix/modules/oci/_testing/linpeas/lib.nix";
-    bundle = ociLib.mkProbeToolBundle {
+    bundle = mkBundle {
       toolId = "linpeas";
       file = thisFile;
       description = "linPEAS privilege escalation auditing";
@@ -31,7 +32,7 @@ import ../../../../lib/mkLibModule.nix (
           message = "Docker socket accessible";
         }
       ];
-    };
+    } ociLib;
   in
   {
     mkScriptLinpeas = bundle.mkScript;

@@ -2,10 +2,11 @@
 #
 # Uses mkProbeToolBundle — static binary, no shell needed.
 import ../../../../lib/mkLibModule.nix (
-  { ociLib, ... }:
+  { lib, ociLib, ... }:
   let
+    mkBundle = import ../../lib/_mkProbeToolBundle.nix { inherit lib; };
     thisFile = "nix/modules/oci/_testing/amicontained/lib.nix";
-    bundle = ociLib.mkProbeToolBundle {
+    bundle = mkBundle {
       toolId = "amicontained";
       file = thisFile;
       description = "amicontained container introspection";
@@ -22,7 +23,7 @@ import ../../../../lib/mkLibModule.nix (
           message = "Seccomp is disabled — no syscall filtering";
         }
       ];
-    };
+    } ociLib;
   in
   {
     mkScriptAmicontained = bundle.mkScript;
