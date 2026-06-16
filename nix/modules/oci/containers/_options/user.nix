@@ -1,7 +1,6 @@
 # Shared: container user.
 {
   lib,
-  examplesDir,
   ...
 }:
 let
@@ -16,7 +15,7 @@ in
 
       Full container example:
       ```nix
-      ${builtins.readFile (examplesDir + "/option-snippets/user.nix")}
+      ${builtins.readFile (../../../../../examples/option-snippets/user.nix)}
       ```
     '';
     inherit example;

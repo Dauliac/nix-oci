@@ -1,7 +1,6 @@
 # Shared: entrypoint command.
 {
   lib,
-  examplesDir,
   ...
 }:
 let
@@ -20,7 +19,7 @@ in
 
       Full container example:
       ```nix
-      ${builtins.readFile (examplesDir + "/option-snippets/entrypoint.nix")}
+      ${builtins.readFile (../../../../../examples/option-snippets/entrypoint.nix)}
       ```
     '';
     inherit example;

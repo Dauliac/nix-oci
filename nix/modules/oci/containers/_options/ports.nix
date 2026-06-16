@@ -1,7 +1,6 @@
 # Shared: port mappings (used by deploy runner + OCI ExposedPorts).
 {
   lib,
-  examplesDir,
   ...
 }:
 let
@@ -20,7 +19,7 @@ in
 
       Full container example:
       ```nix
-      ${builtins.readFile (examplesDir + "/option-snippets/ports.nix")}
+      ${builtins.readFile (../../../../../examples/option-snippets/ports.nix)}
       ```
     '';
     inherit example;

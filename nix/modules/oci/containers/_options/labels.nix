@@ -1,7 +1,6 @@
 # Shared: OCI image labels/metadata.
 {
   lib,
-  examplesDir,
   ...
 }:
 let
@@ -19,7 +18,7 @@ in
 
       Full container example:
       ```nix
-      ${builtins.readFile (examplesDir + "/option-snippets/labels.nix")}
+      ${builtins.readFile (../../../../../examples/option-snippets/labels.nix)}
       ```
     '';
     inherit example;

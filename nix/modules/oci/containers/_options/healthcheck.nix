@@ -5,7 +5,6 @@
 # healthcheck to pass before considering the container service "ready".
 {
   lib,
-  examplesDir,
   ...
 }:
 let
@@ -40,7 +39,7 @@ in
 
         Full container example:
         ```nix
-        ${builtins.readFile (examplesDir + "/option-snippets/healthcheck.nix")}
+        ${builtins.readFile (../../../../../examples/option-snippets/healthcheck.nix)}
         ```
       '';
       example = exampleCommand;

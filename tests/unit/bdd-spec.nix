@@ -8,7 +8,7 @@ let
   pkgs = import flake.inputs.nixpkgs { system = builtins.currentSystem; };
   lib = pkgs.lib;
 
-  specType = import ../../nix/modules/oci/testing/_option-test-spec.nix { inherit lib; };
+  specType = import ../../nix/modules/oci/_testing/_option-test-spec.nix { inherit lib; };
 
   # Evaluate a module that sets all BDD fields plus existing fields.
   evaluated = lib.evalModules {

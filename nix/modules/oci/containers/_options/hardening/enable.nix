@@ -1,7 +1,6 @@
 # Shared: hardening master switch.
 {
   lib,
-  examplesDir,
   ...
 }:
 {
@@ -25,7 +24,7 @@
 
       Full container example:
       ```nix
-      ${builtins.readFile (examplesDir + "/option-snippets/hardening/enable.nix")}
+      ${builtins.readFile (../../../../../../examples/option-snippets/hardening/enable.nix)}
       ```
     '';
   };

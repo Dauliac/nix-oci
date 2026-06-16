@@ -153,7 +153,6 @@ in
                 inherit system pkgs;
                 globalConfig = cfg;
                 perSystemConfig = config;
-                examplesDir = ../../../../examples;
               };
               class = "perContainer";
             }

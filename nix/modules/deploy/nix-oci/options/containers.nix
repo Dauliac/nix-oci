@@ -67,7 +67,6 @@ let
                   ociNixOSModules
                   nixLibNixosModule
                   ;
-                examplesDir = ../../../../../examples;
               };
             }
           );

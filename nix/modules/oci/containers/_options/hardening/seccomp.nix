@@ -9,7 +9,6 @@
 # and can restrict *which files/ports* are accessible).
 {
   lib,
-  examplesDir,
   ...
 }:
 {
@@ -97,7 +96,7 @@
 
       Full container example:
       ```nix
-      ${builtins.readFile (examplesDir + "/option-snippets/hardening/seccomp.nix")}
+      ${builtins.readFile (../../../../../../examples/option-snippets/hardening/seccomp.nix)}
       ```
     '';
   };

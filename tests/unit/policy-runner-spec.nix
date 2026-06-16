@@ -9,7 +9,7 @@ let
   nixpkgs = builtins.getFlake "nixpkgs";
   lib = nixpkgs.lib;
 
-  specModule = ../../nix/modules/oci/testing/_policy-runner-spec.nix;
+  specModule = ../../nix/modules/oci/_testing/_policy-runner-spec.nix;
 
   # Helper: evaluate the spec module with given config and return config values.
   evalSpec =
