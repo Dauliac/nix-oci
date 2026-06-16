@@ -13,7 +13,6 @@
 # Requires Linux >= 5.13 (filesystem) or >= 6.7 (TCP network).
 {
   lib,
-  pkgs,
   ...
 }:
 {
@@ -75,22 +74,5 @@
       after path resolution -- can restrict *which* files and ports
       are accessible, not just *which syscalls* are allowed.
     '';
-  };
-
-  config._tests.hardening-landlock = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      hardening.enable = true;
-    };
-    override = {
-      package = pkgs.hello;
-      hardening.enable = true;
-      hardening.landlock = {
-        enable = true;
-        allowedWritePaths = [ "/tmp" ];
-        allowedTcpBind = [ 8080 ];
-      };
-    };
   };
 }

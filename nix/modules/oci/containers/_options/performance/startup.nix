@@ -8,7 +8,6 @@
 #   - pthread_attr_setstacksize(3): thread stack size
 {
   lib,
-  pkgs,
   ...
 }:
 let
@@ -48,21 +47,5 @@ in
     };
     default = { };
     description = "Container process startup optimization.";
-  };
-
-  config._tests.performance-startup = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      performance.enable = true;
-    };
-    override = {
-      package = pkgs.hello;
-      performance.enable = true;
-      performance.startup = {
-        ldSoCache = true;
-        stackSize = exampleStackSize;
-      };
-    };
   };
 }

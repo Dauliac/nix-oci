@@ -9,7 +9,6 @@
 #   - https://blog.eigenvalue.net/2023-nix2container-everything-once/
 {
   lib,
-  pkgs,
   ...
 }:
 let
@@ -47,16 +46,5 @@ in
       for the implementation used here.
     '';
     inherit example;
-  };
-
-  config._tests.optimize-layers = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-    };
-    override = {
-      package = pkgs.hello;
-      optimizeLayers = example;
-    };
   };
 }

@@ -9,7 +9,6 @@
 #   - https://aws.amazon.com/blogs/aws/aws-fargate-enables-faster-container-startup-using-seekable-oci/
 {
   lib,
-  pkgs,
   ...
 }:
 let
@@ -33,20 +32,5 @@ in
       (SOCI does not support zstd). eStargz and SOCI cannot be combined.
     '';
     inherit example;
-  };
-
-  config._tests.performance-turbo-soci = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      performance.enable = true;
-      performance.turbo.enable = true;
-    };
-    override = {
-      package = pkgs.hello;
-      performance.enable = true;
-      performance.turbo.enable = true;
-      performance.turbo.soci = example;
-    };
   };
 }

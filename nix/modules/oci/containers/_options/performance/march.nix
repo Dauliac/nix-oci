@@ -8,7 +8,6 @@
 # For multi-arch, override per-arch via archConfigs.
 {
   lib,
-  pkgs,
   ...
 }:
 let
@@ -36,18 +35,5 @@ in
       > full cache loss.
     '';
     inherit example;
-  };
-
-  config._tests.performance-march = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      performance.enable = true;
-    };
-    override = {
-      package = pkgs.hello;
-      performance.enable = true;
-      performance.march = example;
-    };
   };
 }

@@ -5,7 +5,6 @@
 # optimizeLayers = true.
 {
   lib,
-  pkgs,
   ...
 }:
 let
@@ -37,16 +36,5 @@ in
         images with overlapping dependencies.
     '';
     inherit example;
-  };
-
-  config._tests.layer-strategy = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-    };
-    override = {
-      package = pkgs.hello;
-      layerStrategy = example;
-    };
   };
 }

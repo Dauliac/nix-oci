@@ -34,9 +34,9 @@ in
             let
               oci = perSystemConfig.internal.OCIs.${containerId};
               containerConfig = perSystemConfig.containers.${containerId}.compliance.trivy;
-              archive = ociLib.mkDockerArchive {
+              mkTransientArchive = ociLib.mkTransientArchive {
                 inherit oci;
-                inherit (perSystemConfig.packages) skopeo;
+                skopeo = perSystemConfig.packages.skopeo;
               };
             in
             pkgs.writeShellScriptBin "compliance-trivy-${containerId}" ''
@@ -45,8 +45,12 @@ in
               set -o nounset
               # Use empty docker config to avoid credentials helper issues
               export DOCKER_CONFIG="$(mktemp -d)"
+              WORK="$(mktemp -d)"
+              trap 'rm -rf "$WORK"' EXIT
+              cd "$WORK"
+              ${mkTransientArchive}
               TRIVY="${perSystemConfig.packages.trivy}/bin/trivy"
-              COMMON_FLAGS="--input ${archive} --compliance ${lib.escapeShellArg containerConfig.spec} --report ${containerConfig.report}"
+              COMMON_FLAGS="--input archive.tar --compliance ${lib.escapeShellArg containerConfig.spec} --report ${containerConfig.report}"
               # Human-readable output to stdout
               $TRIVY image $COMMON_FLAGS --exit-code 1
               # Write JSON report when CIMERA_REPORT_DIR is set

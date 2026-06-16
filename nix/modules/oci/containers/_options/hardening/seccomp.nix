@@ -9,7 +9,7 @@
 # and can restrict *which files/ports* are accessible).
 {
   lib,
-  pkgs,
+  examplesDir,
   ...
 }:
 {
@@ -92,29 +92,13 @@
       };
     };
     default = { };
-    description = "Seccomp syscall filtering configuration.";
-  };
+    description = ''
+      Seccomp syscall filtering configuration.
 
-  config._tests.hardening-seccomp = {
-    level = "runtime";
-    default = {
-      package = pkgs.busybox;
-      isRoot = true;
-      hardening.enable = true;
-    };
-    override = {
-      package = pkgs.busybox;
-      isRoot = true;
-      hardening.enable = true;
-      hardening.seccomp = {
-        enable = true;
-        profile = "moderate";
-      };
-    };
-    assertions = {
-      imageConfig = {
-        Labels."io.github.dauliac.nix-oci.hardening.seccomp-profile" = "moderate";
-      };
-    };
+      Full container example:
+      ```nix
+      ${builtins.readFile (examplesDir + "/option-snippets/hardening/seccomp.nix")}
+      ```
+    '';
   };
 }

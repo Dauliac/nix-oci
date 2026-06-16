@@ -1,7 +1,7 @@
 # Shared: hardening master switch.
 {
   lib,
-  pkgs,
+  examplesDir,
   ...
 }:
 {
@@ -22,17 +22,11 @@
       For containers using `nixosConfig`, these options are forwarded
       to the inner NixOS module at `oci.container.hardening` and can
       be overridden through NixOS module composition.
-    '';
-  };
 
-  config._tests.hardening-enable = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-    };
-    override = {
-      package = pkgs.hello;
-      hardening.enable = true;
-    };
+      Full container example:
+      ```nix
+      ${builtins.readFile (examplesDir + "/option-snippets/hardening/enable.nix")}
+      ```
+    '';
   };
 }

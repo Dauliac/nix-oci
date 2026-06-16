@@ -8,7 +8,6 @@
 # here -- they are always injected at runtime by the host.
 {
   lib,
-  pkgs,
   ...
 }:
 let
@@ -55,18 +54,5 @@ in
       Driver libraries (`libcuda.so`) are never bundled.
     '';
     inherit example;
-  };
-
-  config._tests.gpu-runtime-libraries = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      gpu.enable = true;
-    };
-    override = {
-      package = pkgs.hello;
-      gpu.enable = true;
-      gpu.runtimeLibraries = example;
-    };
   };
 }

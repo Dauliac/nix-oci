@@ -11,12 +11,4 @@
     description = "The main package for the container.";
     example = lib.literalExpression "pkgs.hello";
   };
-
-  config._tests.package = {
-    level = "build";
-    default = { };
-    override = {
-      package = pkgs.hello;
-    };
-  };
 }

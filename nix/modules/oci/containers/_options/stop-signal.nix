@@ -5,7 +5,6 @@
 # uses SIGQUIT for graceful worker shutdown, PostgreSQL uses SIGINT).
 {
   lib,
-  pkgs,
   ...
 }:
 let
@@ -27,17 +26,5 @@ in
       or systemd KillSignal. Falls back to the container runtime default (SIGTERM).
     '';
     inherit example;
-  };
-
-  config._tests.stop-signal = {
-    level = "inspect";
-    default = {
-      package = pkgs.hello;
-    };
-    override = {
-      package = pkgs.hello;
-      stopSignal = example;
-    };
-    assertions.imageConfig.StopSignal = "SIGQUIT";
   };
 }

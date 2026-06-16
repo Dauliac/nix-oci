@@ -30,22 +30,9 @@ let
     let
       ociLib = mkOciLib lib;
 
-      testsSink =
-        { lib, ... }:
-        {
-          options._tests = lib.mkOption {
-            type = lib.types.attrsOf lib.types.unspecified;
-            default = { };
-            internal = true;
-            visible = false;
-            description = "Internal: test specifications (ignored in deploy context).";
-          };
-        };
-
       baseModules = [
         sharedOptions
         deployExtensions
-        testsSink
       ];
     in
     {
@@ -80,6 +67,7 @@ let
                   ociNixOSModules
                   nixLibNixosModule
                   ;
+                examplesDir = ../../../../../examples;
               };
             }
           );

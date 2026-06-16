@@ -8,7 +8,6 @@
 #   - https://github.com/schlarpc/nix2container-turbo
 {
   lib,
-  pkgs,
   ...
 }:
 let
@@ -30,18 +29,5 @@ in
       (ECR, GHCR, Docker Hub, and most modern registries).
     '';
     inherit example;
-  };
-
-  config._tests.performance-turbo-enable = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      performance.enable = true;
-    };
-    override = {
-      package = pkgs.hello;
-      performance.enable = true;
-      performance.turbo.enable = example;
-    };
   };
 }

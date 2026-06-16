@@ -69,11 +69,6 @@ let
   # Including them as staticModules makes getSubOptions visible to nixosOptionsDoc.
   optionModules = discoverModules ./_options ++ discoverModules ../_oci;
 
-  # Test specification — internal, untyped. Type checking happens in
-  # oci.optionTests (testing/option-tests.nix) via _option-test-spec.nix.
-  # Using types.raw here avoids linter conflicts with the shared type.
-  testSpecType = types.raw;
-
   mkPerContainerType = module: deferredModuleWith { staticModules = [ module ] ++ optionModules; };
 in
 {
@@ -99,16 +94,6 @@ in
                 description = "Internal: the container attribute name.";
               };
               config._containerName = lib.mkDefault name;
-
-              # Per-option test specifications.
-              # Each option file contributes via config._tests.<optionName>.
-              options._tests = mkOption {
-                type = types.attrsOf testSpecType;
-                default = { };
-                internal = true;
-                visible = false;
-                description = "Internal: test specifications contributed by each option file.";
-              };
             }
           );
           default = { };
@@ -168,7 +153,7 @@ in
                 inherit system pkgs;
                 globalConfig = cfg;
                 perSystemConfig = config;
-                examplesDir = ../../../examples;
+                examplesDir = ../../../../examples;
               };
               class = "perContainer";
             }

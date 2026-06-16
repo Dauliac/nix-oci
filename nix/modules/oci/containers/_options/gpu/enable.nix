@@ -28,15 +28,4 @@
       `nixpkgs.config.allowUnfree = true` in the consuming flake.
     '';
   };
-
-  config._tests.gpu-enable = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-    };
-    override = {
-      package = pkgs.hello;
-      gpu.enable = true;
-    };
-  };
 }

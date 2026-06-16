@@ -14,11 +14,11 @@
           container.package = pkgs.hello;
         };
 
-        eval-custom-env = {
+        inspect-custom-env = {
           given = "a container with custom environment variables";
-          "when" = "the container config is evaluated";
-          "then" = "evaluation succeeds";
-          level = "build";
+          "when" = "the OCI image is inspected";
+          "then" = "the environment variables are present in image config";
+          level = "inspect";
           target = "oci";
           container = {
             package = pkgs.hello;
@@ -27,6 +27,30 @@
               DEBUG = "1";
             };
           };
+          assertions.imageConfig.Env = [
+            "FOO=bar"
+            "DEBUG=1"
+          ];
+        };
+
+        runtime-env-visible = {
+          given = "a container with environment variable MY_VAR=hello";
+          "when" = "the container process environment is read";
+          "then" = "MY_VAR is present with value hello";
+          level = "runtime";
+          target = "oci";
+          container = {
+            package = pkgs.busybox;
+            isRoot = true;
+            entrypoint = [
+              "${pkgs.busybox}/bin/busybox"
+              "sh"
+              "-c"
+              "cat /proc/1/environ"
+            ];
+            environment.MY_VAR = "hello";
+          };
+          assertions.processEnv.MY_VAR = "hello";
         };
       };
     };

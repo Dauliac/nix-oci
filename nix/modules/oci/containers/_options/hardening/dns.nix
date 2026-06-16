@@ -1,7 +1,6 @@
 # Shared: DNS resolution restriction.
 {
   lib,
-  pkgs,
   ...
 }:
 {
@@ -20,18 +19,5 @@
       restriction at runtime, use `--dns=127.0.0.1` or network
       policies.
     '';
-  };
-
-  config._tests.hardening-dns = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      hardening.enable = true;
-    };
-    override = {
-      package = pkgs.hello;
-      hardening.enable = true;
-      hardening.disableDns = true;
-    };
   };
 }

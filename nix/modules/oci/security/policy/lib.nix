@@ -34,9 +34,9 @@ in
             let
               oci = perSystemConfig.internal.OCIs.${containerId};
               containerConfig = perSystemConfig.containers.${containerId}.policy.conftest;
-              archive = ociLib.mkDockerArchive {
+              mkTransientArchive = ociLib.mkTransientArchive {
                 inherit oci;
-                inherit (perSystemConfig.packages) skopeo;
+                skopeo = perSystemConfig.packages.skopeo;
               };
               namespaceFlags = lib.concatMapStringsSep " " (
                 ns: "--namespace ${lib.escapeShellArg ns}"
@@ -58,11 +58,15 @@ in
               CONFTEST="${perSystemConfig.packages.conftest}/bin/conftest"
               WORK="$(mktemp -d)"
               trap 'rm -rf "$WORK"' EXIT
+              cd "$WORK"
+
+              # Create transient archive
+              ${mkTransientArchive}
 
               # Extract OCI image config from the docker archive
-              ${pkgs.gnutar}/bin/tar xf ${archive} -C "$WORK" manifest.json
+              ${pkgs.gnutar}/bin/tar xf archive.tar -C "$WORK" manifest.json
               CONFIG_FILE=$(${pkgs.jq}/bin/jq -r '.[0].Config' "$WORK/manifest.json")
-              ${pkgs.gnutar}/bin/tar xf ${archive} -C "$WORK" "$CONFIG_FILE"
+              ${pkgs.gnutar}/bin/tar xf archive.tar -C "$WORK" "$CONFIG_FILE"
 
               # Run conftest against the image config
               $CONFTEST test "$WORK/$CONFIG_FILE" \

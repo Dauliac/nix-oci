@@ -36,9 +36,9 @@ in
               containerConfig = perSystemConfig.containers.${containerId};
               licenseConfig = containerConfig.license.conftest;
               sbomConfig = containerConfig.sbom.syft;
-              archive = ociLib.mkDockerArchive {
+              mkTransientArchive = ociLib.mkTransientArchive {
                 inherit oci;
-                inherit (perSystemConfig.packages) skopeo;
+                skopeo = perSystemConfig.packages.skopeo;
               };
               namespaceFlags = lib.concatMapStringsSep " " (
                 ns: "--namespace ${lib.escapeShellArg ns}"
@@ -62,12 +62,16 @@ in
               SYFT="${perSystemConfig.packages.syft}/bin/syft"
               WORK="$(mktemp -d)"
               trap 'rm -rf "$WORK"' EXIT
+              cd "$WORK"
 
               # Use empty docker config to avoid credentials helper issues
               export DOCKER_CONFIG="$(mktemp -d)"
 
+              # Create transient archive
+              ${mkTransientArchive}
+
               # Generate CycloneDX SBOM from the container image
-              $SYFT ${configFlag} ${archive} \
+              $SYFT ${configFlag} archive.tar \
                 --output cyclonedx-json="$WORK/sbom.cdx.json"
 
               # Run conftest license policies against the SBOM

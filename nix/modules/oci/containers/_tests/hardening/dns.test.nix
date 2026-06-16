@@ -17,17 +17,24 @@
           };
         };
 
-        eval-with-hardening = {
-          given = "a container with hardening enabled including dns";
-          "when" = "the container config is evaluated";
-          "then" = "evaluation succeeds with dns configured";
-          level = "build";
+        inspect-dns-disabled = {
+          given = "a container with DNS disabled via hardening";
+          "when" = "the OCI image is inspected";
+          "then" = "resolv.conf is absent or empty in the image";
+          level = "inspect";
           target = "oci";
           container = {
-            package = pkgs.hello;
+            package = pkgs.busybox;
             isRoot = true;
-            hardening.enable = true;
+            hardening = {
+              enable = true;
+              disableDns = true;
+            };
           };
+          assertions.labels = {
+            "io.github.dauliac.nix-oci.hardening.dns-disabled" = "true";
+          };
+          exampleFile = ../../../../../../examples/flake/hardening/hardening-dns-disabled-01.nix;
         };
       };
     };

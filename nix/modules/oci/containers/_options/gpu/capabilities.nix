@@ -9,7 +9,6 @@
 #   - https://github.com/NVIDIA/libnvidia-container (nvc_info.c)
 {
   lib,
-  pkgs,
   ...
 }:
 {
@@ -43,22 +42,5 @@
 
       Default: `["compute" "utility"]` (CUDA compute + nvidia-smi).
     '';
-  };
-
-  config._tests.gpu-capabilities = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      gpu.enable = true;
-    };
-    override = {
-      package = pkgs.hello;
-      gpu.enable = true;
-      gpu.capabilities = [
-        "compute"
-        "utility"
-        "graphics"
-      ];
-    };
   };
 }

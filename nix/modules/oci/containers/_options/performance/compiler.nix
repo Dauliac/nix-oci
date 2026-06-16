@@ -8,7 +8,6 @@
 #   - https://clang.llvm.org/docs/ThinLTO.html
 {
   lib,
-  pkgs,
   ...
 }:
 {
@@ -68,21 +67,5 @@
     };
     default = { };
     description = "Compiler optimization flags applied at container build time.";
-  };
-
-  config._tests.performance-compiler = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      performance.enable = true;
-    };
-    override = {
-      package = pkgs.hello;
-      performance.enable = true;
-      performance.compiler = {
-        lto = "thin";
-        optimizeLevel = "O3";
-      };
-    };
   };
 }

@@ -9,7 +9,6 @@
 # RuntimeDirectory, CacheDirectory, and LogsDirectory.
 {
   lib,
-  pkgs,
   ...
 }:
 let
@@ -42,20 +41,5 @@ in
       This is separate from deploy-time `volumes` (host bind mounts).
     '';
     inherit example;
-  };
-
-  config._tests.declared-volumes = {
-    level = "inspect";
-    default = {
-      package = pkgs.hello;
-    };
-    override = {
-      package = pkgs.hello;
-      declaredVolumes = example;
-    };
-    assertions.imageConfig.Volumes = {
-      "/var/lib/postgresql" = { };
-      "/var/log/nginx" = { };
-    };
   };
 }

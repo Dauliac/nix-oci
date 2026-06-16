@@ -10,7 +10,6 @@
 # consistency. Enable this when you need to run nix inside the container.
 {
   lib,
-  pkgs,
   ...
 }:
 let
@@ -35,16 +34,5 @@ in
       that validate database-vs-disk consistency.
     '';
     inherit example;
-  };
-
-  config._tests.initialize-nix-database = {
-    level = "build";
-    default = {
-      package = pkgs.hello;
-    };
-    override = {
-      package = pkgs.hello;
-      initializeNixDatabase = example;
-    };
   };
 }

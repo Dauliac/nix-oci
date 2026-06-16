@@ -9,7 +9,6 @@
 #   - https://github.com/opencontainers/distribution-spec/blob/main/spec.md#listing-referrers
 {
   lib,
-  pkgs,
   ...
 }:
 let
@@ -32,20 +31,5 @@ in
       Requires an OCI registry supporting the Referrers API.
     '';
     inherit example;
-  };
-
-  config._tests.performance-turbo-layer-cache = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      performance.enable = true;
-      performance.turbo.enable = true;
-    };
-    override = {
-      package = pkgs.hello;
-      performance.enable = true;
-      performance.turbo.enable = true;
-      performance.turbo.layerCache = example;
-    };
   };
 }

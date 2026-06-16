@@ -33,9 +33,9 @@ in
             let
               oci = perSystemConfig.internal.OCIs.${containerId};
               containerConfig = perSystemConfig.containers.${containerId}.sbom.syft;
-              archive = ociLib.mkDockerArchive {
+              mkTransientArchive = ociLib.mkTransientArchive {
                 inherit oci;
-                inherit (perSystemConfig.packages) skopeo;
+                skopeo = perSystemConfig.packages.skopeo;
               };
               configFlag =
                 if containerConfig.config.enabled then "--config ${containerConfig.config.path}" else "";
@@ -46,13 +46,17 @@ in
               set -o nounset
               # Use empty docker config to avoid credentials helper issues
               export DOCKER_CONFIG="$(mktemp -d)"
+              WORK="$(mktemp -d)"
+              trap 'rm -rf "$WORK"' EXIT
+              cd "$WORK"
+              ${mkTransientArchive}
               SYFT="${perSystemConfig.packages.syft}/bin/syft"
               # Human-readable output to stdout
-              $SYFT ${configFlag} ${archive}
+              $SYFT ${configFlag} archive.tar
               # Write GitLab-compatible CycloneDX JSON report when CIMERA_REPORT_DIR is set
               if [ -n "''${CIMERA_REPORT_DIR:-}" ]; then
                 mkdir -p "$CIMERA_REPORT_DIR"
-                $SYFT ${configFlag} ${archive} \
+                $SYFT ${configFlag} archive.tar \
                   --output cyclonedx-json="$CIMERA_REPORT_DIR/gl-sbom-report.cdx.json"
               fi
             '';

@@ -28,17 +28,4 @@ in
       `cudaPackages` in nixpkgs.
     '';
   };
-
-  config._tests.gpu-cuda-version = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      gpu.enable = true;
-    };
-    override = {
-      package = pkgs.hello;
-      gpu.enable = true;
-      gpu.cudaVersion = example;
-    };
-  };
 }

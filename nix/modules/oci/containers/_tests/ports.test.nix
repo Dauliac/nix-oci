@@ -33,6 +33,7 @@
             "8080/tcp" = { };
             "443/tcp" = { };
           };
+          exampleFile = ../../../../../../examples/flake/basics/minimalist-with-healthcheck-01.nix;
         };
       };
     };

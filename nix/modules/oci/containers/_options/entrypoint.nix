@@ -1,7 +1,7 @@
 # Shared: entrypoint command.
 {
   lib,
-  pkgs,
+  examplesDir,
   ...
 }:
 let
@@ -15,19 +15,14 @@ in
   options.entrypoint = lib.mkOption {
     type = lib.types.listOf lib.types.str;
     default = [ ];
-    description = "OCI entrypoint (command + arguments).";
-    inherit example;
-  };
+    description = ''
+      OCI entrypoint (command + arguments).
 
-  config._tests.entrypoint = {
-    level = "inspect";
-    default = {
-      package = pkgs.hello;
-    };
-    override = {
-      package = pkgs.hello;
-      entrypoint = example;
-    };
-    assertions.imageConfig.Entrypoint = example;
+      Full container example:
+      ```nix
+      ${builtins.readFile (examplesDir + "/option-snippets/entrypoint.nix")}
+      ```
+    '';
+    inherit example;
   };
 }

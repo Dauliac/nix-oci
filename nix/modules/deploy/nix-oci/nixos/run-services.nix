@@ -71,15 +71,16 @@
             requires = [ "oci-load-${name}.service" ];
             serviceConfig =
               # Oneshot mode: run once, don't restart, record exit status.
+              # mkForce overrides oci-containers.nix's Type=notify default.
               lib.optionalAttrs ((container.mode or "daemon") == "oneshot") {
-                Type = "oneshot";
+                Type = lib.mkForce "oneshot";
                 RemainAfterExit = true;
-                Restart = "no";
+                Restart = lib.mkForce "no";
               }
               # sdnotify: Type=notify + NotifyAccess=all so systemd waits
               # for the healthcheck READY=1 before starting dependents.
               // lib.optionalAttrs (useSdnotify && (container.mode or "daemon") != "oneshot") {
-                Type = "notify";
+                Type = lib.mkForce "notify";
                 NotifyAccess = "all";
               }
               # cgroup v2 memory controls (supplements --memory from container runtime)

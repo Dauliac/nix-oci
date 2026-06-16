@@ -5,7 +5,6 @@
 # service dataDir, then user home directory.
 {
   lib,
-  pkgs,
   ...
 }:
 let
@@ -31,17 +30,5 @@ in
       For non-NixOS containers, defaults to the user home directory.
     '';
     inherit example;
-  };
-
-  config._tests.working-dir = {
-    level = "inspect";
-    default = {
-      package = pkgs.hello;
-    };
-    override = {
-      package = pkgs.hello;
-      workingDir = example;
-    };
-    assertions.imageConfig.WorkingDir = example;
   };
 }

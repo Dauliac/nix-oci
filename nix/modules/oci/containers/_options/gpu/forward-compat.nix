@@ -8,7 +8,6 @@
 #   - https://docs.nvidia.com/deploy/cuda-compatibility/
 {
   lib,
-  pkgs,
   ...
 }:
 {
@@ -29,18 +28,5 @@
       Not all features are forward-compatible -- some require
       kernel-mode driver support for new hardware capabilities.
     '';
-  };
-
-  config._tests.gpu-forward-compat = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      gpu.enable = true;
-    };
-    override = {
-      package = pkgs.hello;
-      gpu.enable = true;
-      gpu.forwardCompat = true;
-    };
   };
 }

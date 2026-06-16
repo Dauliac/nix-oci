@@ -18,7 +18,6 @@
 # The NixOS eval generates the profile content as a build output.
 {
   lib,
-  pkgs,
   ...
 }:
 {
@@ -114,26 +113,5 @@
     };
     default = { };
     description = "AppArmor MAC profile configuration.";
-  };
-
-  config._tests.hardening-apparmor = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      hardening.enable = true;
-    };
-    override = {
-      package = pkgs.hello;
-      hardening.enable = true;
-      hardening.apparmor = {
-        enable = true;
-        mode = "enforce";
-      };
-    };
-    assertions = {
-      imageConfig = {
-        Labels."io.github.dauliac.nix-oci.hardening.apparmor-enabled" = "true";
-      };
-    };
   };
 }

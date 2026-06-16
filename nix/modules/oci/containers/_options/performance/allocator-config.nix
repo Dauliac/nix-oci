@@ -9,7 +9,6 @@
 #   - jemalloc: https://github.com/jemalloc/jemalloc/blob/dev/TUNING.md
 {
   lib,
-  pkgs,
   ...
 }:
 let
@@ -53,20 +52,5 @@ in
       When the selected allocator is `null`, this option is ignored.
     '';
     inherit example;
-  };
-
-  config._tests.performance-allocator-config = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      performance.enable = true;
-      performance.allocator = "jemalloc";
-    };
-    override = {
-      package = pkgs.hello;
-      performance.enable = true;
-      performance.allocator = "jemalloc";
-      performance.allocatorConfig = example;
-    };
   };
 }

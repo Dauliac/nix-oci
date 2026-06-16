@@ -26,6 +26,23 @@
             hardening.enable = true;
           };
         };
+
+        inspect-hardening-label = {
+          given = "a container with hardening enabled";
+          "when" = "the OCI image is inspected";
+          "then" = "the hardening-enabled label is present";
+          level = "inspect";
+          target = "oci";
+          container = {
+            package = pkgs.busybox;
+            isRoot = true;
+            hardening.enable = true;
+          };
+          assertions.labels = {
+            "io.github.dauliac.nix-oci.hardening.enabled" = "true";
+          };
+          exampleFile = ../../../../../../examples/flake/hardening/hardening-full-01.nix;
+        };
       };
     };
 }

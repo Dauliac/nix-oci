@@ -9,7 +9,6 @@
 #   - https://www.gnu.org/software/libc/manual/html_node/Memory-Allocation-Tunables.html
 {
   lib,
-  pkgs,
   ...
 }:
 let
@@ -60,18 +59,5 @@ in
     };
     default = { };
     description = "Huge page configuration for reduced TLB misses and lower page walk latency.";
-  };
-
-  config._tests.performance-huge-pages = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      performance.enable = true;
-    };
-    override = {
-      package = pkgs.hello;
-      performance.enable = true;
-      performance.hugePages.thpMode = exampleThp;
-    };
   };
 }

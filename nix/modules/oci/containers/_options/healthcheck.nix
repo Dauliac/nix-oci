@@ -5,7 +5,7 @@
 # healthcheck to pass before considering the container service "ready".
 {
   lib,
-  pkgs,
+  examplesDir,
   ...
 }:
 let
@@ -37,6 +37,11 @@ in
         from the NixOS module configuration (ports, endpoints, etc.).
 
         Example: `[ "curl" "-f" "http://localhost:8080/health" ]`
+
+        Full container example:
+        ```nix
+        ${builtins.readFile (examplesDir + "/option-snippets/healthcheck.nix")}
+        ```
       '';
       example = exampleCommand;
     };
@@ -63,19 +68,6 @@ in
       type = lib.types.int;
       default = 3;
       description = "Number of consecutive failures before the container is considered unhealthy.";
-    };
-  };
-
-  config._tests.healthcheck = {
-    level = "inspect";
-    default = {
-      package = pkgs.hello;
-    };
-    override = {
-      package = pkgs.hello;
-      healthcheck.command = exampleCommand;
-      healthcheck.interval = 10;
-      healthcheck.retries = 5;
     };
   };
 }

@@ -2,7 +2,6 @@
 {
   name,
   lib,
-  pkgs,
   ...
 }:
 let
@@ -14,16 +13,5 @@ in
     default = name;
     description = "OCI image name. Defaults to the container attribute name.";
     inherit example;
-  };
-
-  config._tests.name = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-    };
-    override = {
-      package = pkgs.hello;
-      name = example;
-    };
   };
 }

@@ -7,7 +7,6 @@
 #   - https://github.com/awslabs/soci-snapshotter/blob/main/docs/design.md
 {
   lib,
-  pkgs,
   ...
 }:
 let
@@ -31,22 +30,5 @@ in
       Only effective when `performance.turbo.soci = true`.
     '';
     inherit example;
-  };
-
-  config._tests.performance-turbo-soci-span-size = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      performance.enable = true;
-      performance.turbo.enable = true;
-      performance.turbo.soci = true;
-    };
-    override = {
-      package = pkgs.hello;
-      performance.enable = true;
-      performance.turbo.enable = true;
-      performance.turbo.soci = true;
-      performance.turbo.sociSpanSize = example;
-    };
   };
 }

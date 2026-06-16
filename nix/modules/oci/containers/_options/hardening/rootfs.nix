@@ -1,7 +1,6 @@
 # Shared: read-only root filesystem hint.
 {
   lib,
-  pkgs,
   ...
 }:
 {
@@ -15,18 +14,5 @@
       Prevents attackers from writing malware or achieving
       persistence if they gain initial access.
     '';
-  };
-
-  config._tests.hardening-rootfs = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      hardening.enable = true;
-    };
-    override = {
-      package = pkgs.hello;
-      hardening.enable = true;
-      hardening.readOnlyRootfs = false;
-    };
   };
 }

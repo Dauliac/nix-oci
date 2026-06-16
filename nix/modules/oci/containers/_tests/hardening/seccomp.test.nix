@@ -44,6 +44,28 @@
           };
           exampleFile = ../../../../../../examples/flake/hardening/hardening-full-01.nix;
         };
+
+        inspect-strict-profile = {
+          given = "a container with seccomp strict profile";
+          "when" = "the OCI image is inspected";
+          "then" = "the seccomp profile label shows strict";
+          level = "inspect";
+          target = "oci";
+          container = {
+            package = pkgs.busybox;
+            isRoot = true;
+            hardening.enable = true;
+            hardening.seccomp = {
+              enable = true;
+              profile = "strict";
+            };
+          };
+          assertions = {
+            imageConfig.Labels = {
+              "io.github.dauliac.nix-oci.hardening.seccomp-profile" = "strict";
+            };
+          };
+        };
       };
     };
 }

@@ -14,11 +14,11 @@
           container.package = pkgs.hello;
         };
 
-        eval-with-healthcheck = {
+        inspect-healthcheck-baked = {
           given = "a container with a healthcheck command";
-          "when" = "the container config is evaluated";
-          "then" = "evaluation succeeds with healthcheck configured";
-          level = "build";
+          "when" = "the OCI image is inspected";
+          "then" = "the healthcheck is present in the image manifest";
+          level = "inspect";
           target = "oci";
           container = {
             package = pkgs.hello;
@@ -33,6 +33,15 @@
               retries = 3;
             };
           };
+          assertions.imageConfig.Healthcheck = {
+            Test = [
+              "CMD"
+              "curl"
+              "-f"
+              "http://localhost:8080/health"
+            ];
+          };
+          exampleFile = ../../../../../../examples/flake/basics/minimalist-with-healthcheck-01.nix;
         };
       };
     };

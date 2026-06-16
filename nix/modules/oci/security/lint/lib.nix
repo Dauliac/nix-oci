@@ -40,9 +40,9 @@ in
             let
               oci = perSystemConfig.internal.OCIs.${containerId};
               containerConfig = perSystemConfig.containers.${containerId}.lint.dockle;
-              archive = ociLib.mkDockerArchive {
+              mkTransientArchive = ociLib.mkTransientArchive {
                 inherit oci;
-                inherit (perSystemConfig.packages) skopeo;
+                skopeo = perSystemConfig.packages.skopeo;
               };
               ignoreFlags = lib.concatMapStringsSep " " (
                 id: "--ignore ${lib.escapeShellArg id}"
@@ -53,8 +53,12 @@ in
               set -o errexit
               set -o pipefail
               set -o nounset
+              WORK="$(mktemp -d)"
+              trap 'rm -rf "$WORK"' EXIT
+              cd "$WORK"
+              ${mkTransientArchive}
               DOCKLE="${perSystemConfig.packages.dockle}/bin/dockle"
-              COMMON_FLAGS="--input ${archive} --exit-level ${exitLevel} ${ignoreFlags}"
+              COMMON_FLAGS="--input archive.tar --exit-level ${exitLevel} ${ignoreFlags}"
               # Human-readable output to stdout
               $DOCKLE $COMMON_FLAGS --exit-code 1
               # Write JSON report when CIMERA_REPORT_DIR is set

@@ -9,7 +9,6 @@
 #   - https://github.com/schlarpc/nix2container-turbo (eStargz support)
 {
   lib,
-  pkgs,
   ...
 }:
 let
@@ -35,18 +34,5 @@ in
         Cannot be combined with SOCI (`performance.turbo.soci`).
     '';
     inherit example;
-  };
-
-  config._tests.performance-compression = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      performance.enable = true;
-    };
-    override = {
-      package = pkgs.hello;
-      performance.enable = true;
-      performance.compression = example;
-    };
   };
 }

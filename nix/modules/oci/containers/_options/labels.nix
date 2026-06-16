@@ -1,7 +1,7 @@
 # Shared: OCI image labels/metadata.
 {
   lib,
-  pkgs,
+  examplesDir,
   ...
 }:
 let
@@ -14,19 +14,14 @@ in
   options.labels = lib.mkOption {
     type = lib.types.attrsOf lib.types.str;
     default = { };
-    description = "OCI image labels (metadata key-value pairs).";
-    inherit example;
-  };
+    description = ''
+      OCI image labels (metadata key-value pairs).
 
-  config._tests.labels = {
-    level = "inspect";
-    default = {
-      package = pkgs.hello;
-    };
-    override = {
-      package = pkgs.hello;
-      labels = example;
-    };
-    assertions.imageConfig.Labels = example;
+      Full container example:
+      ```nix
+      ${builtins.readFile (examplesDir + "/option-snippets/labels.nix")}
+      ```
+    '';
+    inherit example;
   };
 }

@@ -35,6 +35,25 @@
             "--greeting"
             "world"
           ];
+          exampleFile = ../../../../../../examples/flake/basics/minimalist-with-healthcheck-01.nix;
+        };
+
+        runtime-hello-runs = {
+          given = "a container with hello as entrypoint";
+          "when" = "the container is run";
+          "then" = "it prints a greeting and exits 0";
+          level = "runtime";
+          target = "oci";
+          container = {
+            package = pkgs.hello;
+            entrypoint = [ "${pkgs.hello}/bin/hello" ];
+          };
+          assertions.succeeds = [
+            {
+              command = "${pkgs.hello}/bin/hello";
+              stdout = "Hello, world!";
+            }
+          ];
         };
       };
     };

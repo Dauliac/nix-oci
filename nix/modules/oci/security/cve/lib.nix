@@ -35,9 +35,9 @@ in
             let
               oci = perSystemConfig.internal.OCIs.${containerId};
               containerConfig = perSystemConfig.containers.${containerId}.cve.trivy;
-              archive = ociLib.mkDockerArchive {
+              mkTransientArchive = ociLib.mkTransientArchive {
                 inherit oci;
-                inherit (perSystemConfig.packages) skopeo;
+                skopeo = perSystemConfig.packages.skopeo;
               };
               ignoreFileFlag =
                 if containerConfig.ignore.fileEnabled then "--ignorefile ${containerConfig.ignore.path}" else "";
@@ -64,8 +64,12 @@ in
               set -o nounset
               # Use empty docker config to avoid credentials helper issues
               export DOCKER_CONFIG="$(mktemp -d)"
+              WORK="$(mktemp -d)"
+              trap 'rm -rf "$WORK"' EXIT
+              cd "$WORK"
+              ${mkTransientArchive}
               TRIVY="${perSystemConfig.packages.trivy}/bin/trivy"
-              COMMON_FLAGS="--input ${archive} ${ignoreFileFlag} ${extraIgnoreFileFlag} ${containerExtraIgnoreFileFlag} --scanners vuln"
+              COMMON_FLAGS="--input archive.tar ${ignoreFileFlag} ${extraIgnoreFileFlag} ${containerExtraIgnoreFileFlag} --scanners vuln"
               # Human-readable output to stdout
               $TRIVY image $COMMON_FLAGS --exit-code 1
               # Write GitLab-compatible JSON report when CIMERA_REPORT_DIR is set
@@ -111,9 +115,9 @@ in
             let
               oci = perSystemConfig.internal.OCIs.${containerId};
               containerConfig = perSystemConfig.containers.${containerId}.cve.grype;
-              archive = ociLib.mkDockerArchive {
+              mkTransientArchive = ociLib.mkTransientArchive {
                 inherit oci;
-                inherit (perSystemConfig.packages) skopeo;
+                skopeo = perSystemConfig.packages.skopeo;
               };
               configFlag =
                 if containerConfig.config.enabled then "--config ${containerConfig.config.path}" else "";
@@ -124,13 +128,17 @@ in
               set -o nounset
               # Use empty docker config to avoid credentials helper issues
               export DOCKER_CONFIG="$(mktemp -d)"
+              WORK="$(mktemp -d)"
+              trap 'rm -rf "$WORK"' EXIT
+              cd "$WORK"
+              ${mkTransientArchive}
               GRYPE="${perSystemConfig.packages.grype}/bin/grype"
               # Human-readable output to stdout
-              $GRYPE ${configFlag} ${archive}
+              $GRYPE ${configFlag} archive.tar
               # Write GitLab-compatible JSON report when CIMERA_REPORT_DIR is set
               if [ -n "''${CIMERA_REPORT_DIR:-}" ]; then
                 mkdir -p "$CIMERA_REPORT_DIR"
-                $GRYPE ${configFlag} ${archive} \
+                $GRYPE ${configFlag} archive.tar \
                   --output json \
                   --file "$CIMERA_REPORT_DIR/gl-dependency-scanning-report.json"
               fi

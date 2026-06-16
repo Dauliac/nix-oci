@@ -1,6 +1,6 @@
 # Test infrastructure flake module.
 #
-# The test modules (test-collector, test-check-eval, etc.) are already
+# The test modules (test-collector, test-vm, etc.) are already
 # imported by the main nix-oci module via import-tree. This module is
 # a marker that enables test-specific behavior — consumers import it
 # alongside the main module to signal "I want test infrastructure".

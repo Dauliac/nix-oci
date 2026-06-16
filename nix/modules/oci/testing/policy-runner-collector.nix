@@ -2,7 +2,6 @@
 #
 # Each security/testing tool registers itself via
 # config.perSystem.oci.internal.policyRunners.<name>.
-# The gate (gate.nix) consumes this to build the policy gate.
 {
   lib,
   flake-parts-lib,

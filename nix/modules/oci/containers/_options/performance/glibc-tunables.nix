@@ -10,7 +10,6 @@
 #   - https://sourceware.org/glibc/manual/latest/html_node/Hardware-Capability-Tunables.html
 {
   lib,
-  pkgs,
   ...
 }:
 let
@@ -36,18 +35,5 @@ in
       Only effective with glibc-based containers (not musl).
     '';
     inherit example;
-  };
-
-  config._tests.performance-glibc-tunables = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      performance.enable = true;
-    };
-    override = {
-      package = pkgs.hello;
-      performance.enable = true;
-      performance.glibcTunables = example;
-    };
   };
 }

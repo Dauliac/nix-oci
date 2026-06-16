@@ -63,21 +63,4 @@
     default = { };
     description = "glibc-hwcaps: ship CPU-optimized library variants selected at runtime.";
   };
-
-  config._tests.performance-hwcaps = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      performance.enable = true;
-    };
-    override = {
-      package = pkgs.hello;
-      performance.enable = true;
-      performance.hwcaps = {
-        enable = true;
-        levels = [ "x86-64-v3" ];
-        libraries = [ pkgs.zlib ];
-      };
-    };
-  };
 }

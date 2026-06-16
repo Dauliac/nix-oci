@@ -10,7 +10,6 @@
 #   - https://github.com/microsoft/snmalloc
 {
   lib,
-  pkgs,
   ...
 }:
 let
@@ -55,19 +54,5 @@ in
       `LD_PRELOAD` is set in the OCI manifest `Env`.
     '';
     inherit example;
-  };
-
-  config._tests.performance-allocator = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      performance.enable = true;
-    };
-    override = {
-      package = pkgs.hello;
-      performance.enable = true;
-      performance.allocator = example;
-    };
-    assertions.imageConfig.Labels."io.github.dauliac.nix-oci.performance.allocator" = example;
   };
 }

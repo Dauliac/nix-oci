@@ -1,5 +1,8 @@
 # Pure Nix function that generates Python pytest code from BDD test spec assertions.
 #
+# Only generates runtime assertion code (succeeds, fails, httpResponds, processEnv).
+# Image-level assertions (imageConfig, labels, fileContains) are handled by conftest/Rego.
+#
 # Prefixed with _ so import-tree does not auto-import this as a module.
 #
 # Usage:
@@ -158,96 +161,6 @@ let
               env_dict[k] = v
       ${concatStringsSep "\n" checks}
     '';
-
-  # Generate code for imageConfig assertions.
-  mkImageConfig =
-    containerName: configAttrs:
-    let
-      checks = mapAttrsToList (
-        key: value:
-        let
-          safeKey = lib.replaceStrings [ "." "-" ] [ "_" "_" ] key;
-          jsonValue = builtins.toJSON value;
-          isDict = builtins.isAttrs value;
-        in
-        if isDict then
-          # Subset check for dict values (e.g. Labels — image may have auto-generated extras)
-          ''
-            _expected_${safeKey} = json.loads(${pyStr jsonValue})
-            _actual_${safeKey} = config.get(${pyStr key}) or {}
-            for _k, _v in _expected_${safeKey}.items():
-                assert _k in _actual_${safeKey}, (
-                    "Expected Config." + ${pyStr key} + "[" + repr(_k) + "] to exist, "
-                    "got keys: " + repr(list(_actual_${safeKey}.keys()))
-                )
-                assert _actual_${safeKey}[_k] == _v, (
-                    "Expected Config." + ${pyStr key} + "[" + repr(_k) + "] == " + repr(_v) +
-                    ", got: " + repr(_actual_${safeKey}[_k])
-                )
-          ''
-        else
-          # Exact match for scalar values (e.g. User, Entrypoint, WorkingDir)
-          ''
-            _expected_${safeKey} = json.loads(${pyStr jsonValue})
-            _actual_${safeKey} = config.get(${pyStr key})
-            assert _actual_${safeKey} == _expected_${safeKey}, (
-                "Expected Config." + ${pyStr key} + " == " + json.dumps(_expected_${safeKey}) +
-                ", got: " + repr(_actual_${safeKey})
-            )
-          ''
-      ) configAttrs;
-    in
-    ''
-      # imageConfig checks
-      inspect = client.api.inspect_image(${pyStr "${containerName}:latest"})
-      config = inspect.get("Config", {})
-      ${concatStringsSep "\n" checks}
-    '';
-
-  # Generate code for labels assertions.
-  mkLabels =
-    containerName: labelAttrs:
-    let
-      checks = mapAttrsToList (key: value: ''
-        assert labels.get(${pyStr key}) == ${pyStr value}, (
-            f"Expected label ${key}=${pyStr value}, got: {labels.get(${pyStr key})!r}"
-        )
-      '') labelAttrs;
-    in
-    ''
-      # labels checks
-      inspect = client.api.inspect_image(${pyStr "${containerName}:latest"})
-      labels = inspect.get("Config", {}).get("Labels", {})
-      ${concatStringsSep "\n" checks}
-    '';
-
-  # Generate code for fileContains assertions.
-  mkFileContains =
-    containerName: fileAttrs:
-    let
-      checks = mapAttrsToList (path: expected: ''
-        ih.assert_file_contains(${pyStr path}, ${pyStr expected})
-      '') fileAttrs;
-    in
-    ''
-      # fileContains checks
-      ih = ImageHelper(client, ${pyStr "${containerName}:latest"})
-      ${concatStringsSep "" checks}
-    '';
-
-  # Generate code for fileNotContains assertions.
-  mkFileNotContains =
-    containerName: fileAttrs:
-    let
-      checks = mapAttrsToList (path: excluded: ''
-        ih.assert_file_not_contains(${pyStr path}, ${pyStr excluded})
-      '') fileAttrs;
-    in
-    ''
-      # fileNotContains checks
-      ih = ImageHelper(client, ${pyStr "${containerName}:latest"})
-      ${concatStringsSep "" checks}
-    '';
 in
 {
   # Generate a pytest function body from BDD assertions.
@@ -271,13 +184,7 @@ in
       docstring = mkDocstring given bddWhen bddThen;
 
       sections =
-        (optionalString (a.imageConfig or { } != { }) (mkImageConfig containerName a.imageConfig))
-        + (optionalString (a.labels or { } != { }) (mkLabels containerName a.labels))
-        + (optionalString (a.fileContains or { } != { }) (mkFileContains containerName a.fileContains))
-        + (optionalString (a.fileNotContains or { } != { }) (
-          mkFileNotContains containerName a.fileNotContains
-        ))
-        + (concatMapStringsSep "\n" (mkSucceeds containerName) (a.succeeds or [ ]))
+        (concatMapStringsSep "\n" (mkSucceeds containerName) (a.succeeds or [ ]))
         + (concatMapStringsSep "\n" (mkFails containerName) (a.fails or [ ]))
         + (optionalString (a.httpResponds or null != null) (mkHttpResponds containerName a.httpResponds))
         + (optionalString (a.processEnv or { } != { }) (mkProcessEnv containerName a.processEnv))

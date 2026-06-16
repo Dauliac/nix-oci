@@ -16,16 +16,18 @@
           };
         };
 
-        eval-custom-user = {
-          given = "a container with a custom user";
-          "when" = "the container config is evaluated";
-          "then" = "evaluation succeeds with the custom user";
-          level = "build";
+        inspect-custom-user = {
+          given = "a container with user set to nobody";
+          "when" = "the OCI image is inspected";
+          "then" = "the image User field is nobody";
+          level = "inspect";
           target = "oci";
           container = {
             package = pkgs.hello;
             user = "nobody";
           };
+          assertions.imageConfig.User = "nobody";
+          exampleFile = ../../../../../../examples/flake/basics/with-root-user-and-package-01.nix;
         };
       };
     };

@@ -1,7 +1,6 @@
 # Shared: no-new-privileges flag.
 {
   lib,
-  pkgs,
   ...
 }:
 {
@@ -15,18 +14,5 @@
       Deploy modules translate to
       `--security-opt=no-new-privileges`.
     '';
-  };
-
-  config._tests.hardening-privileges = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-      hardening.enable = true;
-    };
-    override = {
-      package = pkgs.hello;
-      hardening.enable = true;
-      hardening.noNewPrivileges = false;
-    };
   };
 }

@@ -1,7 +1,6 @@
 # Shared: image tag.
 {
   lib,
-  pkgs,
   ...
 }:
 let
@@ -13,16 +12,5 @@ in
     default = "latest";
     description = "OCI image tag.";
     inherit example;
-  };
-
-  config._tests.tag = {
-    level = "eval";
-    default = {
-      package = pkgs.hello;
-    };
-    override = {
-      package = pkgs.hello;
-      tag = example;
-    };
   };
 }

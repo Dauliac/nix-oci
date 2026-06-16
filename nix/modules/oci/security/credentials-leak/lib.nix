@@ -32,9 +32,9 @@ in
             }:
             let
               oci = perSystemConfig.internal.OCIs.${containerId};
-              archive = ociLib.mkDockerArchive {
+              mkTransientArchive = ociLib.mkTransientArchive {
                 inherit oci;
-                inherit (perSystemConfig.packages) skopeo;
+                skopeo = perSystemConfig.packages.skopeo;
               };
             in
             pkgs.writeShellScriptBin "credentials-leak-trivy-${containerId}" ''
@@ -43,13 +43,17 @@ in
               set -o nounset
               # Use empty docker config to avoid credentials helper issues
               export DOCKER_CONFIG="$(mktemp -d)"
+              WORK="$(mktemp -d)"
+              trap 'rm -rf "$WORK"' EXIT
+              cd "$WORK"
+              ${mkTransientArchive}
               TRIVY="${perSystemConfig.packages.trivy}/bin/trivy"
               # Human-readable output to stdout
-              $TRIVY fs --scanners secret ${archive}
+              $TRIVY fs --scanners secret archive.tar
               # Write GitLab-compatible JSON report when CIMERA_REPORT_DIR is set
               if [ -n "''${CIMERA_REPORT_DIR:-}" ]; then
                 mkdir -p "$CIMERA_REPORT_DIR"
-                $TRIVY fs --scanners secret ${archive} \
+                $TRIVY fs --scanners secret archive.tar \
                   --format json \
                   --output "$CIMERA_REPORT_DIR/gl-secret-detection-report.json"
               fi
