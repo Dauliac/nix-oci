@@ -8,6 +8,9 @@
 #   - https://www.phoronix.com/news/Glibc-2.33-Coming-HWCAPS
 #   - https://www.clearlinux.org/blogs/transparent-use-library-packages-optimized-intel-architecture.html
 { lib, ... }:
+let
+  pure = import ../../../lib/oci.nix { inherit lib; };
+in
 {
   config.perSystem =
     {
@@ -29,37 +32,17 @@
         fn =
           {
             nix2container,
-            level, # e.g. "x86-64-v3"
-            libraries, # list of packages to rebuild
+            level,
+            libraries,
           }:
-          let
-            # Create a stdenv targeting the specific march level
-            optimizedStdenv = pkgs.stdenvAdapters.withCFlags [
-              "-march=${level}"
-              "-mtune=${level}"
-            ] pkgs.stdenv;
-
-            # Rebuild each library and extract only .so files
-            optimizedLibs = map (
-              pkg:
-              let
-                rebuilt = pkg.override { stdenv = optimizedStdenv; };
-              in
-              pkgs.runCommand "${pkg.pname or pkg.name}-hwcaps-${level}" { } ''
-                mkdir -p $out/lib/glibc-hwcaps/${level}
-                for so in $(find ${rebuilt}/lib -name '*.so*' -type f 2>/dev/null); do
-                  cp -L "$so" $out/lib/glibc-hwcaps/${level}/
-                done
-              ''
-            ) libraries;
-
-            hwcapsRoot = pkgs.buildEnv {
-              name = "hwcaps-${level}";
-              paths = optimizedLibs;
-              pathsToLink = [ "/lib/glibc-hwcaps" ];
-            };
-          in
-          nix2container.buildLayer { copyToRoot = [ hwcapsRoot ]; };
+          pure.mkHwcapsLayer {
+            inherit
+              pkgs
+              nix2container
+              level
+              libraries
+              ;
+          };
       };
     };
 }

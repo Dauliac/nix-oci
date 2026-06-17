@@ -267,6 +267,40 @@ let
 
     # -- Layer building --
 
+    mkHwcapsLayer =
+      {
+        pkgs,
+        nix2container,
+        level, # e.g. "x86-64-v3"
+        libraries, # list of packages to rebuild
+      }:
+      let
+        optimizedStdenv = pkgs.stdenvAdapters.withCFlags [
+          "-march=${level}"
+          "-mtune=${level}"
+        ] pkgs.stdenv;
+
+        optimizedLibs = map (
+          pkg:
+          let
+            rebuilt = pkg.override { stdenv = optimizedStdenv; };
+          in
+          pkgs.runCommand "${pkg.pname or pkg.name}-hwcaps-${level}" { } ''
+            mkdir -p $out/lib/glibc-hwcaps/${level}
+            for so in $(find ${rebuilt}/lib -name '*.so*' -type f 2>/dev/null); do
+              cp -L "$so" $out/lib/glibc-hwcaps/${level}/
+            done
+          ''
+        ) libraries;
+
+        hwcapsRoot = pkgs.buildEnv {
+          name = "hwcaps-${level}";
+          paths = optimizedLibs;
+          pathsToLink = [ "/lib/glibc-hwcaps" ];
+        };
+      in
+      nix2container.buildLayer { copyToRoot = [ hwcapsRoot ]; };
+
     mkDepsLayer =
       {
         pkgs,

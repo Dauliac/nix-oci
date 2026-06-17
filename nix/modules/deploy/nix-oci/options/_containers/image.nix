@@ -173,11 +173,26 @@ let
 
   copyToRoot = if useNixosEval then evalCopyToRoot else [ legacyRoot ];
 
-  layers = ociLib.mkImageLayers {
-    inherit pkgs nix2container layerStrategy;
-    inherit (config) dependencies;
-    rootPaths = if useNixosEval then evalCopyToRoot else legacyRootPaths;
-  };
+  # hwcaps layers from container-level performance.hwcaps sugar
+  # (same logic as mkSimpleOCI on the flake-parts side).
+  hwcapsCfg = config.performance.hwcaps or { enable = false; };
+  hwcapsLayers = lib.optionals (hwcapsCfg.enable or false) (
+    map (
+      level:
+      ociLib.mkHwcapsLayer {
+        inherit pkgs nix2container level;
+        libraries = hwcapsCfg.libraries or [ ];
+      }
+    ) (hwcapsCfg.levels or [ ])
+  );
+
+  layers =
+    (ociLib.mkImageLayers {
+      inherit pkgs nix2container layerStrategy;
+      inherit (config) dependencies;
+      rootPaths = if useNixosEval then evalCopyToRoot else legacyRootPaths;
+    })
+    ++ hwcapsLayers;
 in
 {
   options.image = lib.mkOption {
@@ -203,6 +218,9 @@ in
           else
             {
               inherit copyToRoot;
+            }
+            // lib.optionalAttrs (hwcapsLayers != [ ]) {
+              layers = hwcapsLayers;
             }
         )
       );
