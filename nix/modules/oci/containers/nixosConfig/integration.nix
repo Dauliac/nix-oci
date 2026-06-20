@@ -20,9 +20,9 @@ in
         }:
         let
           nixosCfg = config.nixosConfig;
-          enabled = nixosCfg.mainService != null || nixosCfg.modules != [ ];
+          mainService = config.mainService or nixosCfg.mainService or null;
+          enabled = mainService != null || nixosCfg.modules != [ ];
           eval = nixosCfg.eval;
-          mainService = nixosCfg.mainService or null;
           out = eval.oci.container._output;
           servicePackage = out.servicePackage or null;
         in

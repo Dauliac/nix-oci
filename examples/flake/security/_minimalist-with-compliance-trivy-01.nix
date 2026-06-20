@@ -11,9 +11,8 @@
       {
         config.oci.containers = {
           minimalistWithComplianceTrivy = {
-            nixosConfig = {
-              mainService = "nginx";
-              modules = [
+            mainService = "nginx";
+            nixosConfig.modules = [
                 (
                   { ... }:
                   {
@@ -38,7 +37,6 @@
                   }
                 )
               ];
-            };
             isRoot = true;
             compliance.trivy = {
               enabled = true;

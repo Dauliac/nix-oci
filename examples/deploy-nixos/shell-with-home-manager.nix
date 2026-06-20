@@ -21,8 +21,8 @@
         curl
       ];
       nixosConfig.modules = [ ];
-      homeConfig = {
-        homeManagerFlake = home-manager-flake;
+      homeManager = {
+        flake = home-manager-flake;
         modules = [
           {
             programs.bash = {

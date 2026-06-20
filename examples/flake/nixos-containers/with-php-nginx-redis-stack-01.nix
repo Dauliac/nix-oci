@@ -93,9 +93,8 @@
           # CONTAINER 1: nginx -- reverse proxy + static files
           # ──────────────────────────────────────────────
           "${containerName "nginx"}" = {
-            nixosConfig = {
-              mainService = "nginx";
-              modules = [
+            mainService = "nginx";
+            nixosConfig.modules = [
                 (
                   { ... }:
                   {
@@ -126,7 +125,6 @@
                   }
                 )
               ];
-            };
             isRoot = true;
             ports = [ "${toString httpPort}:${toString httpPort}" ];
             dependencies = [
@@ -142,9 +140,8 @@
           # CONTAINER 2: PHP-FPM -- application runtime
           # ──────────────────────────────────────────────
           "${containerName "php"}" = {
-            nixosConfig = {
-              mainService = "phpfpm-${project}";
-              modules = [
+            mainService = "phpfpm-${project}";
+            nixosConfig.modules = [
                 (
                   { pkgs, ... }:
                   {
@@ -186,7 +183,6 @@
                   }
                 )
               ];
-            };
             package = pkgs.php;
             ports = [ "${toString phpFpmPort}:${toString phpFpmPort}" ];
             dependencies = [ phpApp ];
@@ -201,9 +197,8 @@
           # CONTAINER 3: Redis -- session cache
           # ──────────────────────────────────────────────
           "${containerName "redis"}" = {
-            nixosConfig = {
-              mainService = "redis-${project}";
-              modules = [
+            mainService = "redis-${project}";
+            nixosConfig.modules = [
                 (
                   { lib, ... }:
                   {
@@ -220,7 +215,6 @@
                   }
                 )
               ];
-            };
             package = pkgs.redis;
             ports = [ "${toString redisPort}:${toString redisPort}" ];
             labels = commonLabels // {

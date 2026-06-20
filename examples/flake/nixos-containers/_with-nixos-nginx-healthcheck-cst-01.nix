@@ -12,9 +12,8 @@
       {
         config.oci.containers = {
           nixosNginxHealthcheck = {
-            nixosConfig = {
-              mainService = "nginx";
-              modules = [
+            mainService = "nginx";
+            nixosConfig.modules = [
                 (
                   { ... }:
                   {
@@ -39,7 +38,6 @@
                   }
                 )
               ];
-            };
             isRoot = true;
             test.containerStructureTest = {
               enabled = true;

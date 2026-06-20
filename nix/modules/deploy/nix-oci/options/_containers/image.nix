@@ -89,9 +89,7 @@ let
         Env = out.envVars;
         Labels =
           generatedLabels
-          // (out.hardening.labels or { })
-          // (out.performance.labels or { })
-          // (out.gpu.labels or { })
+          // (nixosEval.oci.container.generatedLabels or { })
           // (config.labels or { });
       }
       // lib.optionalAttrs (config.ports != [ ]) {

@@ -17,9 +17,8 @@
       {
         config.oci.containers = {
           nixosPostgresExtensions = {
-            nixosConfig = {
-              mainService = "postgresql";
-              modules = [
+            mainService = "postgresql";
+            nixosConfig.modules = [
                 (
                   {
                     pkgs,
@@ -93,7 +92,6 @@
                   }
                 )
               ];
-            };
             isRoot = true;
             ports = [ "5432:5432" ];
             labels = {

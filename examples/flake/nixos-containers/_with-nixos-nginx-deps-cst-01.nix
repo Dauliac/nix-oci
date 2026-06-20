@@ -10,9 +10,8 @@
       {
         config.oci.containers = {
           nixosNginxDeps = {
-            nixosConfig = {
-              mainService = "nginx";
-              modules = [
+            mainService = "nginx";
+            nixosConfig.modules = [
                 (
                   { ... }:
                   {
@@ -37,7 +36,6 @@
                   }
                 )
               ];
-            };
             # nginx needs root to bind port 80
             isRoot = true;
             dependencies = [

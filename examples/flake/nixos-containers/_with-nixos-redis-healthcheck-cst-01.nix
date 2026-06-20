@@ -11,9 +11,8 @@
       {
         config.oci.containers = {
           nixosRedisHealthcheck = {
-            nixosConfig = {
-              mainService = "redis-default";
-              modules = [
+            mainService = "redis-default";
+            nixosConfig.modules = [
                 (
                   { ... }:
                   {
@@ -25,7 +24,6 @@
                   }
                 )
               ];
-            };
             package = pkgs.redis;
             test.containerStructureTest = {
               enabled = true;

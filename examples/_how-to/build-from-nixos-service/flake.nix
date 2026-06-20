@@ -25,9 +25,8 @@
         { ... }:
         {
           oci.containers.my-nginx = {
-            nixosConfig = {
-              mainService = "nginx";
-              modules = [
+            mainService = "nginx";
+            nixosConfig.modules = [
                 (
                   { pkgs, ... }:
                   {
@@ -41,7 +40,6 @@
                   }
                 )
               ];
-            };
           };
         };
     };

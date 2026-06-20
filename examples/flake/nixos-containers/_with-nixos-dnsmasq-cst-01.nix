@@ -10,9 +10,8 @@
       {
         config.oci.containers = {
           nixosDnsmasqCst = {
-            nixosConfig = {
-              mainService = "dnsmasq";
-              modules = [
+            mainService = "dnsmasq";
+            nixosConfig.modules = [
                 (
                   { pkgs, ... }:
                   {
@@ -26,7 +25,6 @@
                           "8.8.8.8"
                           "1.1.1.1"
                         ];
-                      };
                     };
                     environment.systemPackages = with pkgs; [
                       dig

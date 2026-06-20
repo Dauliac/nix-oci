@@ -39,9 +39,8 @@ in
       };
 
       redis = {
-        nixosConfig = {
-          mainService = "redis";
-          modules = [
+        mainService = "redis";
+        nixosConfig.modules = [
             {
               services.redis.servers.default = {
                 enable = true;
@@ -50,7 +49,6 @@ in
               };
             }
           ];
-        };
         autoStart = true;
         ports = [ "6379:6379" ];
         labels = {

@@ -10,9 +10,8 @@
       {
         config.oci.containers = {
           nixosCaddyCst = {
-            nixosConfig = {
-              mainService = "caddy";
-              modules = [
+            mainService = "caddy";
+            nixosConfig.modules = [
                 (
                   { pkgs, ... }:
                   {
@@ -28,7 +27,6 @@
                   }
                 )
               ];
-            };
             isRoot = true;
             test.containerStructureTest = {
               enabled = true;

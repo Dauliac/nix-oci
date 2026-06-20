@@ -28,12 +28,11 @@
               git
             ];
 
-            nixosConfig = {
-              modules = [ ];
+            nixosConfig.modules = [ ];
             };
 
-            homeConfig = {
-              homeManagerFlake = inputs.home-manager;
+            homeManager = {
+              flake = inputs.home-manager;
               # The internal defaults already provide bash + starship.
               # Override or extend here:
               modules = [
@@ -48,7 +47,6 @@
                   }
                 )
               ];
-            };
           };
         };
       };

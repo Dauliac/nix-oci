@@ -453,24 +453,6 @@ in
           null;
     };
 
-    # DEPRECATED: use oci.container.extraPackages. Kept for backward compat.
-    configFiles = lib.mkOption {
-      type = lib.types.listOf lib.types.package;
-      internal = true;
-      readOnly = true;
-      description = "DEPRECATED: hardening config files now flow through extraPackages.";
-      default = [ ];
-    };
-
-    # DEPRECATED: use oci.container.generatedLabels. Kept for backward compat.
-    labels = lib.mkOption {
-      type = lib.types.attrsOf lib.types.str;
-      internal = true;
-      readOnly = true;
-      description = "DEPRECATED: hardening labels now flow through generatedLabels.";
-      default = config.oci.container.generatedLabels;
-    };
-
     landlockPolicy = lib.mkOption {
       type = lib.types.nullOr lib.types.package;
       internal = true;

@@ -19,9 +19,8 @@
       {
         config.oci.containers = {
           nixosNginxReverseProxy = {
-            nixosConfig = {
-              mainService = "nginx";
-              modules = [
+            mainService = "nginx";
+            nixosConfig.modules = [
                 (
                   { pkgs, ... }:
                   let
@@ -177,7 +176,6 @@
                   }
                 )
               ];
-            };
             isRoot = true;
             ports = [ "8080:8080" ];
             environment = {

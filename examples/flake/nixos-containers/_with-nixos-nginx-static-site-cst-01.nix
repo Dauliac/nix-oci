@@ -19,9 +19,8 @@
       {
         config.oci.containers = {
           nixosNginxStaticSite = {
-            nixosConfig = {
-              mainService = "nginx";
-              modules = [
+            mainService = "nginx";
+            nixosConfig.modules = [
                 (
                   { pkgs, ... }:
                   let
@@ -131,7 +130,6 @@
                   }
                 )
               ];
-            };
             isRoot = true;
             ports = [ "8080:8080" ];
             labels = {

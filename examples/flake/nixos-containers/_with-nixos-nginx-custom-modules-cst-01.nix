@@ -18,9 +18,8 @@
       {
         config.oci.containers = {
           nixosNginxCustomModules = {
-            nixosConfig = {
-              mainService = "nginx";
-              modules = [
+            mainService = "nginx";
+            nixosConfig.modules = [
                 (
                   { pkgs, ... }:
                   {
@@ -36,7 +35,6 @@
                           vts
                           moreheaders
                         ];
-                      };
 
                       # Recommended defaults for production
                       recommendedGzipSettings = true;

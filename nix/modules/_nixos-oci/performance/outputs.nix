@@ -115,32 +115,6 @@ let
   ns = "io.github.dauliac.nix-oci";
 in
 {
-  # Backward-compat: old consumers read _output.performance.{envVars,extraDeps,labels}.
-  # These aliases read from the new unified options. Remove after Phase 5/6 migration.
-  options.oci.container._output.performance = {
-    envVars = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      internal = true;
-      readOnly = true;
-      description = "DEPRECATED: use environment.variables. Kept for backward compat.";
-      default = [ ];
-    };
-    extraDeps = lib.mkOption {
-      type = lib.types.listOf lib.types.package;
-      internal = true;
-      readOnly = true;
-      description = "DEPRECATED: use oci.container.extraPackages. Kept for backward compat.";
-      default = [ ];
-    };
-    labels = lib.mkOption {
-      type = lib.types.attrsOf lib.types.str;
-      internal = true;
-      readOnly = true;
-      description = "DEPRECATED: use oci.container.generatedLabels. Kept for backward compat.";
-      default = config.oci.container.generatedLabels;
-    };
-  };
-
   config = lib.mkIf cfg.enable {
     # -- Environment variables (NixOS-native routing) --
     environment.variables =

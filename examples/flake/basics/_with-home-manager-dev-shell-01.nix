@@ -40,8 +40,7 @@
             };
 
             # NixOS module: provides /etc, users, shadow files
-            nixosConfig = {
-              modules = [
+            nixosConfig.modules = [
                 (
                   { pkgs, ... }:
                   {
@@ -52,11 +51,10 @@
                   }
                 )
               ];
-            };
 
             # Home-manager: dotfiles baked into the image
-            homeConfig = {
-              homeManagerFlake = inputs.home-manager;
+            homeManager = {
+              flake = inputs.home-manager;
               modules = [
                 (
                   { pkgs, ... }:

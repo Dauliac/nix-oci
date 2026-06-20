@@ -17,9 +17,8 @@
       {
         config.oci.containers = {
           nixosNginxPerf = {
-            nixosConfig = {
-              mainService = "nginx";
-              modules = [
+            mainService = "nginx";
+            nixosConfig.modules = [
                 (
                   { ... }:
                   {
@@ -36,7 +35,6 @@
                   }
                 )
               ];
-            };
             isRoot = true;
             performance = {
               enable = true;

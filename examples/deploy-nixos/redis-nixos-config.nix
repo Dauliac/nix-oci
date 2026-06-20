@@ -9,9 +9,8 @@
     enable = true;
     backend = "podman";
     containers.redis = {
-      nixosConfig = {
-        mainService = "redis";
-        modules = [
+      mainService = "redis";
+      nixosConfig.modules = [
           {
             services.redis.servers.default = {
               enable = true;
@@ -21,7 +20,6 @@
             };
           }
         ];
-      };
       autoStart = true;
       ports = [ "6379:6379" ];
     };

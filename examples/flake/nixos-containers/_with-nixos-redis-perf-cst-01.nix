@@ -16,9 +16,8 @@
       {
         config.oci.containers = {
           nixosRedisPerf = {
-            nixosConfig = {
-              mainService = "redis";
-              modules = [
+            mainService = "redis";
+            nixosConfig.modules = [
                 (
                   { lib, ... }:
                   {
@@ -34,7 +33,6 @@
                   }
                 )
               ];
-            };
             isRoot = true;
             ports = [ "6379:6379" ];
             performance = {

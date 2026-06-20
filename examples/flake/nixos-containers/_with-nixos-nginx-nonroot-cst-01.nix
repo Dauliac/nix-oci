@@ -11,9 +11,8 @@
       {
         config.oci.containers = {
           nixosNginxNonroot = {
-            nixosConfig = {
-              mainService = "nginx";
-              modules = [
+            mainService = "nginx";
+            nixosConfig.modules = [
                 (
                   { ... }:
                   {
@@ -30,7 +29,6 @@
                   }
                 )
               ];
-            };
             isRoot = false;
             test.containerStructureTest = {
               enabled = true;

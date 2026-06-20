@@ -13,9 +13,8 @@
       {
         config.oci.containers = {
           nixosNginxCst = {
-            nixosConfig = {
-              mainService = "nginx";
-              modules = [
+            mainService = "nginx";
+            nixosConfig.modules = [
                 (
                   { ... }:
                   {
@@ -32,7 +31,6 @@
                   }
                 )
               ];
-            };
             # nginx needs root to bind port 80 and manage worker processes
             isRoot = true;
             test.containerStructureTest = {

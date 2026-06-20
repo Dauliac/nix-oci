@@ -11,9 +11,8 @@
       {
         config.oci.containers = {
           nixosPostgresHealthcheck = {
-            nixosConfig = {
-              mainService = "postgresql";
-              modules = [
+            mainService = "postgresql";
+            nixosConfig.modules = [
                 (
                   { pkgs, ... }:
                   {
@@ -32,7 +31,6 @@
                   }
                 )
               ];
-            };
             isRoot = true;
             test.containerStructureTest = {
               enabled = true;

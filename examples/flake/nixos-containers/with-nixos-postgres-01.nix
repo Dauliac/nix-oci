@@ -14,9 +14,8 @@
       {
         config.oci.containers = {
           nixosPostgres = {
-            nixosConfig = {
-              mainService = "postgresql";
-              modules = [
+            mainService = "postgresql";
+            nixosConfig.modules = [
                 (
                   { pkgs, ... }:
                   {
@@ -42,7 +41,6 @@
                   }
                 )
               ];
-            };
             isRoot = true;
             labels = {
               "org.opencontainers.image.title" = "postgres";

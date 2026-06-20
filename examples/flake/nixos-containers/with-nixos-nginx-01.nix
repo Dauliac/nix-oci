@@ -11,9 +11,8 @@
       {
         config.oci.containers = {
           nginx-nixos = {
-            nixosConfig = {
-              mainService = "nginx";
-              modules = [
+            mainService = "nginx";
+            nixosConfig.modules = [
                 (
                   { ... }:
                   {
@@ -30,7 +29,6 @@
                   }
                 )
               ];
-            };
           };
         };
       };
