@@ -51,9 +51,9 @@ in
   ];
 
   # When a healthcheck is configured, ensure /bin/sh exists so podman
-  # can run --health-cmd via "sh -c". Added to adapterPackages so it
+  # can run --health-cmd via "sh -c". Added to extraPackages so it
   # ends up in the rootFilesystem's buildEnv.
-  config.oci.container._output.adapterPackages = lib.mkIf (cfg.command != [ ]) [ binSh ];
+  config.oci.container.extraPackages = lib.mkIf (cfg.command != [ ]) [ binSh ];
 
   options.oci.container._output.healthcheck = lib.mkOption {
     type = lib.types.nullOr lib.types.attrs;

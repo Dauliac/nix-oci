@@ -16,7 +16,7 @@ let
 in
 {
   options.perSystem = flake-parts-lib.mkPerSystemOption (
-    { ... }:
+    { config, ... }:
     {
       options.oci.turbo = {
         enable = mkOption {
@@ -66,6 +66,25 @@ in
           example = true;
         };
       };
+
+      # Propagate oci.turbo.* defaults to per-container options.
+      config.oci.perContainer =
+        { lib, ... }:
+        let
+          globalTurbo = config.oci.turbo;
+        in
+        {
+          config.performance.turbo = {
+            enable = lib.mkDefault globalTurbo.enable;
+            soci = lib.mkDefault globalTurbo.soci;
+            sociSpanSize = lib.mkDefault globalTurbo.sociSpanSize;
+            layerCache = lib.mkDefault globalTurbo.layerCache;
+          };
+          # Turbo's cross-machine layer cache benefits massively from
+          # deduplicated layers — without optimizeLayers, the cache sees
+          # a single monolithic layer that changes on every rebuild.
+          config.optimizeLayers = lib.mkDefault globalTurbo.enable;
+        };
     }
   );
 }

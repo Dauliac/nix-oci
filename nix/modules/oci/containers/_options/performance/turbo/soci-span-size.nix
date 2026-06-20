@@ -5,10 +5,7 @@
 #
 # References:
 #   - https://github.com/awslabs/soci-snapshotter/blob/main/docs/design.md
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   example = 4194304;
 in

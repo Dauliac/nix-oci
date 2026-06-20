@@ -25,7 +25,6 @@ in
               containerId: _:
               ociLib.mkCheckPolicyConftest {
                 perSystemConfig = config.oci;
-                globalConfig = cfg.oci;
                 inherit containerId;
               }
             ) config.oci.internal.policyConftestOCIs;

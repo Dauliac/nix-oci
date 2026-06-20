@@ -1,7 +1,7 @@
 # nginx: foreground mode + injected health endpoint + stop signal.
 #
-# NixOS nginx uses Type=forking. In containers we inject "daemon off;"
-# to keep the master process in the foreground.
+# NixOS nginx already generates "daemon off;" in its config, keeping
+# the master process in the foreground (required for containers).
 #
 # Healthcheck strategy (priority order):
 # 1. User-defined health endpoint (scan for /health, /healthz, /nginx_status, stub_status)
@@ -98,7 +98,8 @@ let
 in
 {
   config = lib.mkIf isNginx {
-    services.nginx.appendConfig = lib.mkDefault "daemon off;";
+    # NixOS nginx module already sets "daemon off;" in the generated config.
+    # Do NOT append it again — duplicate daemon directives cause nginx to fail.
 
     # Inject internal stub_status server when user has no health endpoint.
     # Uses appendHttpConfig to add a raw server{} block inside the http{}
@@ -120,6 +121,6 @@ in
     ++ lib.optional (!hasUserHealthEndpoint) internalHealthPort;
     oci.container.healthcheck.command = lib.mkDefault healthCmd;
     oci.container.stopSignal = lib.mkDefault "SIGQUIT";
-    oci.container._output.adapterPackages = [ pkgs.curl ];
+    oci.container.extraPackages = [ pkgs.curl ];
   };
 }

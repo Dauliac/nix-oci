@@ -18,6 +18,17 @@ Before making any code changes, **always read `CONTRIBUTING.md`** at the project
 - Do not start sentences with "This means", "This creates", "This ensures" repeatedly. Vary sentence structure.
 - No marketing superlatives ("dramatically", "blazingly fast", "seamlessly"). State facts and let the reader judge.
 
+## Documentation: never duplicate default values
+
+Never quote default values, types, or other option metadata in prose documentation. These are already defined in the Nix module source and auto-generated into the reference pages. Duplicating them creates a maintenance burden and causes drift.
+
+Instead, link to the reference page and let the reader find the defaults there:
+
+- BAD: "`socketPath` defaults to `/run/soci-snapshotter-grpc/soci-snapshotter-grpc.sock`"
+- GOOD: "See [`services.soci-snapshotter`](../reference/nixos-options.html) for all options and defaults."
+
+Do NOT create tables listing option types, defaults, and descriptions in how-to or explanation pages. That information belongs exclusively in the auto-generated reference docs.
+
 ## Documentation: code examples must backlink to the option reference
 
 Every Nix code example in `docs/content/` that references an option (e.g. `oci.containers.*.hardening.enable`, `performance.allocator`, `flavours.debug`) **must** include a nearby backlink to the relevant option reference page. Do not leave code snippets without a way for the reader to reach the full option spec.

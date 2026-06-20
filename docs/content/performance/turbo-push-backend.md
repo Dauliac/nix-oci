@@ -461,6 +461,62 @@ The deploy module enforces valid combinations at eval time:
 The build host pushes images with SOCI indexes; the deploy host pulls
 them lazily via the soci-snapshotter daemon.
 
+### Standalone soci-snapshotter module
+
+nix-oci ships a standalone NixOS/home-manager/system-manager module
+for soci-snapshotter that can be used independently of the `oci.*`
+deploy modules:
+
+```nix
+# NixOS configuration
+{
+  services.soci-snapshotter.enable = true;
+}
+```
+
+The module provides:
+- **NixOS**: systemd service, containerd proxy plugin config, FUSE kernel module, soci CLI
+- **home-manager**: soci CLI in user PATH (daemon requires root)
+- **system-manager**: systemd service, containerd config drop-in, soci CLI
+
+See [`services.soci-snapshotter`](../reference/nixos-options.html) for all options.
+
+### Registry push-based loading
+
+When SOCI is enabled with a containerd backend, nix-oci automatically
+switches from direct image loading (`copyToPodman`/`copyToDockerDaemon`)
+to **registry push-based loading**. This is required because SOCI lazy
+pulling only works when containerd pulls from an OCI registry.
+
+```nix
+{
+  oci = {
+    enable = true;
+    backend = "docker";
+    registry.enable = true;
+  };
+}
+```
+
+See [`oci.registry`](../reference/nixos-options.html) for all options.
+
+The loading flow changes from:
+
+```
+Nix store → skopeo copy → docker-daemon: (bypasses snapshotter)
+```
+
+to:
+
+```
+Nix store → skopeo-n2ct copy → docker://localhost:5000 (with SOCI indexes)
+         → containerd pulls via soci-snapshotter (lazy FUSE mount)
+```
+
+When `performance.turbo.soci = true` is set on any container and
+`backend = "docker"`, both `oci.snapshotter.soci` and `oci.registry`
+are auto-enabled via `mkDefault`.
+
 ## Decision guide: SOCI vs. eStargz vs. zstd
 
 ```mermaid

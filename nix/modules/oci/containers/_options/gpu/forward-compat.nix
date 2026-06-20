@@ -6,10 +6,7 @@
 #
 # References:
 #   - https://docs.nvidia.com/deploy/cuda-compatibility/
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 {
   options.gpu.forwardCompat = lib.mkOption {
     type = lib.types.bool;

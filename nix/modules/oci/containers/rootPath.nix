@@ -1,27 +1,25 @@
 # Per-container rootPath computed default.
 # The option is declared in _oci/rootPath.nix (shared).
-# This module only provides the per-container computed default
-# using mkDefault (priority 1000) to override the bridge (1500).
+# This module provides the per-container computed default
+# using mkDefault, appending the container name to the perSystem base path.
 {
   lib,
-  config,
+  flake-parts-lib,
   ...
 }:
-let
-  cfg = config;
-in
 {
-  config.perSystem =
-    { ... }:
+  options.perSystem = flake-parts-lib.mkPerSystemOption (
+    { config, ... }:
     {
-      oci.perContainer =
+      config.oci.perContainer =
         {
           name,
           lib,
           ...
         }:
         {
-          config.rootPath = lib.mkDefault (cfg.oci.rootPath + name + "/");
+          config.rootPath = lib.mkDefault (config.oci.rootPath + name + "/");
         };
-    };
+    }
+  );
 }

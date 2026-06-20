@@ -34,7 +34,6 @@ in
               containerId: oci:
               ociLib.mkAppLicenseConftest {
                 perSystemConfig = config.oci;
-                globalConfig = cfg.oci;
                 inherit containerId;
               }
             ) config.oci.internal.licenseConftestOCIs;

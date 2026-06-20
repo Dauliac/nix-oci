@@ -34,7 +34,6 @@ in
               containerId: oci:
               ociLib.mkAppComplianceTrivy {
                 perSystemConfig = config.oci;
-                globalConfig = cfg.oci;
                 inherit containerId;
               }
             ) config.oci.internal.complianceTrivyOCIs;

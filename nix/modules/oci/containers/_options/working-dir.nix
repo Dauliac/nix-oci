@@ -3,10 +3,7 @@
 # Sets the working directory for the container process. For NixOS
 # containers, auto-derived from systemd WorkingDirectory, then
 # service dataDir, then user home directory.
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   example = "/var/lib/postgresql";
 in

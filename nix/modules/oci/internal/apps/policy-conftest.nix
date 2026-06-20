@@ -34,7 +34,6 @@ in
               containerId: oci:
               ociLib.mkAppPolicyConftest {
                 perSystemConfig = config.oci;
-                globalConfig = cfg.oci;
                 inherit containerId;
               }
             ) config.oci.internal.policyConftestOCIs;

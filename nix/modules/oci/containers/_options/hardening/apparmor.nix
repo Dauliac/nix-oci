@@ -16,10 +16,7 @@
 # AppArmor profiles are loaded on the HOST, not inside the container.
 # The deploy module generates --security-opt apparmor=<profile-name>.
 # The NixOS eval generates the profile content as a build output.
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 {
   options.hardening.apparmor = lib.mkOption {
     type = lib.types.submodule {

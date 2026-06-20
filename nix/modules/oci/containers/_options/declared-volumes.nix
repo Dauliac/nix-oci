@@ -7,10 +7,7 @@
 #
 # For NixOS containers, auto-derived from systemd StateDirectory,
 # RuntimeDirectory, CacheDirectory, and LogsDirectory.
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   example = [
     "/var/lib/postgresql"

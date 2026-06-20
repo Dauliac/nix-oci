@@ -41,11 +41,14 @@
           }:
           pkgs.runCommandLocal name
             {
-              nativeBuildInputs = toolPackages ++ [
-                skopeo
-                pkgs.gnutar
-                pkgs.python3
-              ] ++ extraBuildInputs;
+              nativeBuildInputs =
+                toolPackages
+                ++ [
+                  skopeo
+                  pkgs.gnutar
+                  pkgs.python3
+                ]
+                ++ extraBuildInputs;
               meta.description = metaDescription;
             }
             ''

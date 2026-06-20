@@ -3,7 +3,7 @@
 # NixOS's environment.defaultPackages pulls in a huge set (systemd, sudo, iptables,
 # openssh, perl, strace, libcap, etc.) that containers don't need. Setting it to []
 # removes ~100 packages and eliminates CVEs from unused Go binaries (e.g. captree).
-# Service adapters add packages via oci.container._output.adapterPackages.
+# Service adapters add packages via oci.container.extraPackages.
 { lib, ... }:
 {
   options.oci.container.fromImageEnabled = lib.mkOption {

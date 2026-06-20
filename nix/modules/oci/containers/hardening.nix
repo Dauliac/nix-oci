@@ -15,7 +15,6 @@
             ./_options/hardening/dns.nix
             ./_options/hardening/tls.nix
             ./_options/hardening/seccomp.nix
-            ./_options/hardening/landlock.nix
             ./_options/hardening/capabilities.nix
             ./_options/hardening/rootfs.nix
             ./_options/hardening/privileges.nix

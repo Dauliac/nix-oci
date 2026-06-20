@@ -1,3 +1,4 @@
+# DEPRECATED: Use mkOCIImage instead. This function is kept for backward compat.
 # OCI mkNixOrSimpleOCI - Build either a Nix or simple container depending on config
 { lib, ... }:
 {
@@ -17,10 +18,10 @@
         description = "Build either a Nix or simple container depending on config";
         file = "nix/modules/oci/lib/mkNixOrSimpleOCI.nix";
         fn =
-          args@{
+          {
             perSystemConfig,
             containerId,
-            globalConfig,
+            ...
           }:
           let
             oci = perSystemConfig.containers.${containerId};
@@ -29,7 +30,7 @@
           if installNix then
             ociLib.mkNixOCI { inherit perSystemConfig containerId; }
           else
-            ociLib.mkSimpleOCI { inherit perSystemConfig containerId globalConfig; };
+            ociLib.mkSimpleOCI { inherit perSystemConfig containerId; };
       };
     };
 }

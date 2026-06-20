@@ -1,11 +1,10 @@
-# Example: Minimalist container with DEEPCE escape detection
+# Example: enable DEEPCE container escape detection probe.
 #
-# Runs `deepce.sh` inside the container (bind-mounted with busybox,
-# not baked in) to enumerate escape vectors and privilege escalation
-# paths.
+# Runs `deepce` inside the container (bind-mounted with busybox)
+# to detect container escape vectors.
 #
 # Usage:
-#   nix run .#oci-deepce-minimalistWithDeepce
+#   nix run .#oci-deepce-example-hello
 { ... }:
 {
   config = {
@@ -13,8 +12,7 @@
       { pkgs, ... }:
       {
         config.oci.containers = {
-          minimalistWithDeepce = {
-            package = pkgs.hello;
+          example-hello = {
             test.deepce.enabled = true;
           };
         };

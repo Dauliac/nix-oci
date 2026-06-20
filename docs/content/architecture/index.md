@@ -1,6 +1,7 @@
 +++
 title = "Architecture & design"
 description = "Design decisions, OCI standards compliance, archive-less building, and how nix-oci derives metadata from NixOS service definitions"
+
 +++
 
 # Architecture & design

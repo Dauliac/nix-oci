@@ -1,23 +1,18 @@
+# Example: enable Syft SBOM generation.
+#
+# Generates a software bill of materials (SBOM) for the built image.
+#
+# Usage:
+#   nix run .#oci-sbom-syft-example-hello
 { ... }:
 {
   config = {
     perSystem =
-      {
-        pkgs,
-        config,
-        ...
-      }:
+      { pkgs, ... }:
       {
         config.oci.containers = {
-          minimalistWithSyft = {
-            package = pkgs.kubectl;
-            sbom.syft = {
-              enabled = true;
-              # config = {
-              #   enabled = true;
-              #   path = ./minimalist-with-sbom-syft-01.yaml;
-              # };
-            };
+          example-hello = {
+            sbom.syft.enabled = true;
           };
         };
       };

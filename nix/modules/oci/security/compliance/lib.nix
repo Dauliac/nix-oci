@@ -17,7 +17,6 @@ import ../../../../lib/mkLibModule.nix (
         {
           perSystemConfig,
           containerId,
-          globalConfig,
         }:
         let
           oci = perSystemConfig.internal.OCIs.${containerId};
@@ -52,13 +51,12 @@ import ../../../../lib/mkLibModule.nix (
         {
           perSystemConfig,
           containerId,
-          globalConfig,
         }:
         {
           type = "app";
           program = "${
             ociLib.mkScriptComplianceTrivy {
-              inherit perSystemConfig containerId globalConfig;
+              inherit perSystemConfig containerId;
             }
           }/bin/compliance-trivy-${containerId}";
         };

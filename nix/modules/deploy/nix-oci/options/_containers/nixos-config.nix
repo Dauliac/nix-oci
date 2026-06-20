@@ -18,12 +18,14 @@ let
   nixosCfg = config.nixosConfig;
   # The NixOS eval is needed when any feature that produces labels,
   # env vars, or filesystem artifacts through the eval pipeline is active.
-  # GPU requires the eval for CUDA env vars, labels, and runtime libraries.
-  # Hardening and performance are handled by the legacy path's mkHardenedConfigs.
   enabled =
     nixosCfg.mainService != null
     || nixosCfg.modules != [ ]
-    || (config.gpu.enable or false);
+    || (config.gpu.enable or false)
+    || (config.performance.enable or false)
+    || (config.hardening.enable or false)
+    || (config.installNix or false)
+    || (config.homeConfig.homeManagerFlake or null) != null;
 
   result = evalContainerLib.evalContainerNixos {
     inherit pkgs ociNixOSModules nixLibNixosModule;

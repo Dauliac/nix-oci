@@ -1,8 +1,5 @@
 # Shared: hardening master switch.
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 {
   options.hardening.enable = lib.mkOption {
     type = lib.types.bool;

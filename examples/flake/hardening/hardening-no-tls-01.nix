@@ -1,8 +1,7 @@
-# Example: container with TLS trust store removed.
+# Example: remove the TLS trust store from the container.
 #
-# The built image has:
-#   - /etc/ssl/certs/ca-bundle.crt replaced with a stub comment
-#   - No valid CA certificates -- all HTTPS connections will fail
+# Strips /etc/ssl/certs/ca-bundle.crt and the SSL_CERT_FILE env var.
+# Useful for containers that should never make outbound HTTPS connections.
 { ... }:
 {
   config = {
@@ -10,13 +9,8 @@
       { pkgs, ... }:
       {
         config.oci.containers = {
-          hardeningNoTls = {
-            package = pkgs.busybox;
-            isRoot = true;
-            hardening = {
-              enable = true;
-              noTlsTrustStore = true;
-            };
+          example-hardened = {
+            hardening.noTlsTrustStore = true;
           };
         };
       };

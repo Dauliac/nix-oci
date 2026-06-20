@@ -1,8 +1,5 @@
 # Shared: port mappings (used by deploy runner + OCI ExposedPorts).
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   example = [
     "8080:8080"

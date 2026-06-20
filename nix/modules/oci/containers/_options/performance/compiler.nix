@@ -6,10 +6,7 @@
 # References:
 #   - https://wiki.gentoo.org/wiki/LTO
 #   - https://clang.llvm.org/docs/ThinLTO.html
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 {
   options.performance.compiler = lib.mkOption {
     type = lib.types.submodule {

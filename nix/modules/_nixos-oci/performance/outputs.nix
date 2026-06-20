@@ -1,3 +1,12 @@
+# Performance outputs: allocator injection, glibc tunables, compiler flags.
+#
+# Uses NixOS-native routing:
+#   - environment.variables for env vars (LD_PRELOAD, MALLOC_CONF, GLIBC_TUNABLES, etc.)
+#   - oci.container.extraPackages for allocator libraries
+#   - oci.container.generatedLabels for OCI metadata
+#
+# The previous pattern of custom _output.performance.{envVars,extraDeps,labels}
+# is replaced by these unified options.
 {
   config,
   lib,
@@ -94,108 +103,117 @@ let
     "abort_conf" = "true";
   };
 
-  allocatorEnvVars =
-    if cfg.allocator == "jemalloc" then
-      let
-        effectiveConf = jemallocDefaults // cfg.allocatorConfig;
-        confStr = lib.concatStringsSep "," (lib.mapAttrsToList (k: v: "${k}:${v}") effectiveConf);
-      in
-      lib.optional (effectiveConf != { }) "MALLOC_CONF=${confStr}"
-    else if cfg.allocator == "mimalloc" then
-      lib.mapAttrsToList (k: v: "MIMALLOC_${k}=${v}") cfg.allocatorConfig
-    else if cfg.allocator == "tcmalloc" then
-      lib.mapAttrsToList (k: v: "TCMALLOC_${k}=${v}") cfg.allocatorConfig
-    else
-      [ ];
+  # Compiler flags
+  comp = cfg.compiler;
+  compilerFlags =
+    lib.optional (comp.optimizeLevel != "O2") "-${comp.optimizeLevel}"
+    ++ lib.optional (comp.lto == "thin") "-flto=thin"
+    ++ lib.optional (comp.lto == "full") "-flto"
+    ++ lib.optional comp.noSemanticInterposition "-fno-semantic-interposition";
+
+  # Label namespace
+  ns = "io.github.dauliac.nix-oci";
 in
 {
+  # Backward-compat: old consumers read _output.performance.{envVars,extraDeps,labels}.
+  # These aliases read from the new unified options. Remove after Phase 5/6 migration.
   options.oci.container._output.performance = {
     envVars = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       internal = true;
       readOnly = true;
-      description = "Performance env vars as KEY=VALUE strings.";
-      default = lib.optionals cfg.enable (
-        lib.optional (
-          allocatorMeta.package != null
-        ) "LD_PRELOAD=${allocatorMeta.package}/lib/${allocatorMeta.soName}"
-        ++ allocatorEnvVars
-        ++ lib.optional (effectiveTunables != { }) "GLIBC_TUNABLES=${tunablesStr}"
-        ++ lib.optional (cfg.startup.stackSize != null) "STACK_SIZE=${cfg.startup.stackSize}"
-        ++ (
-          let
-            comp = cfg.compiler;
-            flags =
-              lib.optional (comp.optimizeLevel != "O2") "-${comp.optimizeLevel}"
-              ++ lib.optional (comp.lto == "thin") "-flto=thin"
-              ++ lib.optional (comp.lto == "full") "-flto"
-              ++ lib.optional comp.noSemanticInterposition "-fno-semantic-interposition";
-          in
-          lib.optional (flags != [ ]) "NIX_CFLAGS_COMPILE=${lib.concatStringsSep " " flags}"
-        )
-      );
+      description = "DEPRECATED: use environment.variables. Kept for backward compat.";
+      default = [ ];
     };
-
     extraDeps = lib.mkOption {
       type = lib.types.listOf lib.types.package;
       internal = true;
       readOnly = true;
-      description = "Packages required by performance tuning (allocator libs).";
-      default = lib.optionals cfg.enable (
-        lib.optional (allocatorMeta.package != null) allocatorMeta.package
-        ++ lib.optional cfg.startup.ldSoCache (
-          pkgs.runCommand "ld-so-cache" { nativeBuildInputs = [ pkgs.glibc.bin ]; } ''
-            mkdir -p $out/etc
-            ldconfig -C $out/etc/ld.so.cache
-          ''
-        )
-      );
+      description = "DEPRECATED: use oci.container.extraPackages. Kept for backward compat.";
+      default = [ ];
     };
-
     labels = lib.mkOption {
       type = lib.types.attrsOf lib.types.str;
       internal = true;
       readOnly = true;
-      description = "OCI labels encoding performance tuning hints.";
-      default =
-        let
-          ns = "io.github.dauliac.nix-oci";
-        in
-        lib.optionalAttrs cfg.enable (
-          {
-            "${ns}.performance.enabled" = "true";
-          }
-          // lib.optionalAttrs (cfg.allocator != null) {
-            "${ns}.performance.allocator" = cfg.allocator;
-          }
-          // lib.optionalAttrs (cfg.allocatorConfig != { }) {
-            "${ns}.performance.allocator-config" = lib.concatStringsSep "," (lib.attrNames cfg.allocatorConfig);
-          }
-          // lib.optionalAttrs (effectiveTunables != { }) {
-            "${ns}.performance.glibc-tunables" = lib.concatStringsSep "," (lib.attrNames effectiveTunables);
-          }
-          // lib.optionalAttrs (cfg.glibcTunablesPreset != null) {
-            "${ns}.performance.glibc-tunables-preset" = cfg.glibcTunablesPreset;
-          }
-          // lib.optionalAttrs (cfg.compiler.lto != null) {
-            "${ns}.performance.compiler.lto" = cfg.compiler.lto;
-          }
-          // lib.optionalAttrs (cfg.compiler.optimizeLevel != "O2") {
-            "${ns}.performance.compiler.optimize-level" = cfg.compiler.optimizeLevel;
-          }
-          // lib.optionalAttrs cfg.compiler.noSemanticInterposition {
-            "${ns}.performance.compiler.no-semantic-interposition" = "true";
-          }
-          // lib.optionalAttrs (cfg.hugePages.thpMode != null) {
-            "${ns}.performance.huge-pages.thp-mode" = cfg.hugePages.thpMode;
-          }
-          // lib.optionalAttrs cfg.startup.ldSoCache {
-            "${ns}.performance.startup.ld-so-cache" = "true";
-          }
-          // lib.optionalAttrs (cfg.startup.stackSize != null) {
-            "${ns}.performance.startup.stack-size" = cfg.startup.stackSize;
-          }
-        );
+      description = "DEPRECATED: use oci.container.generatedLabels. Kept for backward compat.";
+      default = config.oci.container.generatedLabels;
+    };
+  };
+
+  config = lib.mkIf cfg.enable {
+    # -- Environment variables (NixOS-native routing) --
+    environment.variables =
+      lib.optionalAttrs (allocatorMeta.package != null) {
+        LD_PRELOAD = "${allocatorMeta.package}/lib/${allocatorMeta.soName}";
+      }
+      // (
+        if cfg.allocator == "jemalloc" then
+          let
+            effectiveConf = jemallocDefaults // cfg.allocatorConfig;
+            confStr = lib.concatStringsSep "," (lib.mapAttrsToList (k: v: "${k}:${v}") effectiveConf);
+          in
+          lib.optionalAttrs (effectiveConf != { }) { MALLOC_CONF = confStr; }
+        else if cfg.allocator == "mimalloc" then
+          lib.mapAttrs' (k: v: lib.nameValuePair "MIMALLOC_${k}" v) cfg.allocatorConfig
+        else if cfg.allocator == "tcmalloc" then
+          lib.mapAttrs' (k: v: lib.nameValuePair "TCMALLOC_${k}" v) cfg.allocatorConfig
+        else
+          { }
+      )
+      // lib.optionalAttrs (effectiveTunables != { }) {
+        GLIBC_TUNABLES = tunablesStr;
+      }
+      // lib.optionalAttrs (cfg.startup.stackSize != null) {
+        STACK_SIZE = cfg.startup.stackSize;
+      }
+      // lib.optionalAttrs (compilerFlags != [ ]) {
+        NIX_CFLAGS_COMPILE = lib.concatStringsSep " " compilerFlags;
+      };
+
+    # -- Extra packages (unified routing) --
+    oci.container.extraPackages =
+      lib.optional (allocatorMeta.package != null) allocatorMeta.package
+      ++ lib.optional cfg.startup.ldSoCache (
+        pkgs.runCommand "ld-so-cache" { nativeBuildInputs = [ pkgs.glibc.bin ]; } ''
+          mkdir -p $out/etc
+          ldconfig -C $out/etc/ld.so.cache
+        ''
+      );
+
+    # -- Generated labels (unified routing) --
+    oci.container.generatedLabels = {
+      "${ns}.performance.enabled" = "true";
+    }
+    // lib.optionalAttrs (cfg.allocator != null) {
+      "${ns}.performance.allocator" = cfg.allocator;
+    }
+    // lib.optionalAttrs (cfg.allocatorConfig != { }) {
+      "${ns}.performance.allocator-config" = lib.concatStringsSep "," (lib.attrNames cfg.allocatorConfig);
+    }
+    // lib.optionalAttrs (effectiveTunables != { }) {
+      "${ns}.performance.glibc-tunables" = lib.concatStringsSep "," (lib.attrNames effectiveTunables);
+    }
+    // lib.optionalAttrs (cfg.glibcTunablesPreset != null) {
+      "${ns}.performance.glibc-tunables-preset" = cfg.glibcTunablesPreset;
+    }
+    // lib.optionalAttrs (cfg.compiler.lto != null) {
+      "${ns}.performance.compiler.lto" = cfg.compiler.lto;
+    }
+    // lib.optionalAttrs (cfg.compiler.optimizeLevel != "O2") {
+      "${ns}.performance.compiler.optimize-level" = cfg.compiler.optimizeLevel;
+    }
+    // lib.optionalAttrs cfg.compiler.noSemanticInterposition {
+      "${ns}.performance.compiler.no-semantic-interposition" = "true";
+    }
+    // lib.optionalAttrs (cfg.hugePages.thpMode != null) {
+      "${ns}.performance.huge-pages.thp-mode" = cfg.hugePages.thpMode;
+    }
+    // lib.optionalAttrs cfg.startup.ldSoCache {
+      "${ns}.performance.startup.ld-so-cache" = "true";
+    }
+    // lib.optionalAttrs (cfg.startup.stackSize != null) {
+      "${ns}.performance.startup.stack-size" = cfg.startup.stackSize;
     };
   };
 }

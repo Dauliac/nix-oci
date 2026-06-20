@@ -1,11 +1,10 @@
-# Example: Minimalist container with linPEAS privilege escalation audit
+# Example: enable linPEAS privilege escalation audit probe.
 #
-# Runs `linpeas.sh` inside the container (bind-mounted with busybox,
-# not baked in) to enumerate privilege escalation vectors: SUID
-# binaries, writable paths, capabilities, kernel exploits, etc.
+# Runs `linpeas` inside the container (bind-mounted with busybox)
+# to audit for privilege escalation vectors.
 #
 # Usage:
-#   nix run .#oci-linpeas-minimalistWithLinpeas
+#   nix run .#oci-linpeas-example-hello
 { ... }:
 {
   config = {
@@ -13,8 +12,7 @@
       { pkgs, ... }:
       {
         config.oci.containers = {
-          minimalistWithLinpeas = {
-            package = pkgs.hello;
+          example-hello = {
             test.linpeas.enabled = true;
           };
         };

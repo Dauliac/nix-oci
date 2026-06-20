@@ -1,3 +1,4 @@
+# DEPRECATED: Use mkOCIImage instead. This function is kept for backward compat.
 # OCI mkNixOCI - Build a container with Nix support and build users
 #
 # Uses NixOS eval outputs for all image content -- same normalized flow as

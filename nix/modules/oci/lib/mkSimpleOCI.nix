@@ -1,3 +1,4 @@
+# DEPRECATED: Use mkOCIImage instead. This function is kept for backward compat.
 # OCI mkSimpleOCI - Build a simple container without Nix support
 { lib, ... }:
 {
@@ -17,10 +18,10 @@
         description = "Build a simple container without Nix support";
         file = "nix/modules/oci/lib/mkSimpleOCI.nix";
         fn =
-          args@{
+          {
             perSystemConfig,
             containerId,
-            globalConfig,
+            ...
           }:
           let
             oci = perSystemConfig.containers.${containerId};
@@ -35,7 +36,7 @@
                 null
               else
                 ociLib.mkOCIPulledManifestLock {
-                  inherit perSystemConfig containerId globalConfig;
+                  inherit perSystemConfig containerId;
                 };
             optimized = oci.optimizeLayers or false;
             layerStrategy = oci.layerStrategy or "fine-grained";

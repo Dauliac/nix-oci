@@ -6,10 +6,7 @@
 # References:
 #   - ld.so(8): dynamic linker cache
 #   - pthread_attr_setstacksize(3): thread stack size
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   exampleStackSize = "512";
 in

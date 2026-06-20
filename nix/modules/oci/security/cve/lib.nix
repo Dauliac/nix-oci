@@ -18,7 +18,6 @@ import ../../../../lib/mkLibModule.nix (
         {
           perSystemConfig,
           containerId,
-          globalConfig,
         }:
         let
           oci = perSystemConfig.internal.OCIs.${containerId};
@@ -26,23 +25,12 @@ import ../../../../lib/mkLibModule.nix (
           ignoreFileFlag =
             if containerConfig.ignore.fileEnabled then "--ignorefile ${containerConfig.ignore.path}" else "";
           extraIgnoreFile = pkgs.writeText "extra-ignore.ignore" ''
-            ${lib.concatMapStrings (ignore: "${ignore}\n") (globalConfig.cve.trivy.ignore.extra or [ ])}
-          '';
-          extraIgnoreFileFlag =
-            if (lib.length (globalConfig.cve.trivy.ignore.extra or [ ])) > 0 then
-              "--ignorefile ${extraIgnoreFile}"
-            else
-              "";
-          containerExtraIgnoreFile = pkgs.writeText "container-extra-ignore.ignore" ''
             ${lib.concatMapStrings (ignore: "${ignore}\n") containerConfig.ignore.extra}
           '';
-          containerExtraIgnoreFileFlag =
-            if (lib.length containerConfig.ignore.extra) > 0 then
-              "--ignorefile ${containerExtraIgnoreFile}"
-            else
-              "";
+          extraIgnoreFileFlag =
+            if (lib.length containerConfig.ignore.extra) > 0 then "--ignorefile ${extraIgnoreFile}" else "";
           trivyBin = "${perSystemConfig.packages.trivy}/bin/trivy";
-          commonFlags = "--input archive.tar ${ignoreFileFlag} ${extraIgnoreFileFlag} ${containerExtraIgnoreFileFlag} --scanners vuln";
+          commonFlags = "--input archive.tar ${ignoreFileFlag} ${extraIgnoreFileFlag} --scanners vuln";
         in
         ociLib.mkArchiveScanScript {
           name = "trivy-${containerId}";
@@ -71,13 +59,12 @@ import ../../../../lib/mkLibModule.nix (
         {
           perSystemConfig,
           containerId,
-          globalConfig,
         }:
         {
           type = "app";
           program = "${
             ociLib.mkScriptCVETrivy {
-              inherit perSystemConfig containerId globalConfig;
+              inherit perSystemConfig containerId;
             }
           }/bin/trivy-${containerId}";
         };

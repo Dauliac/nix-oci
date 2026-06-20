@@ -7,10 +7,7 @@
 # References:
 #   - https://docs.kernel.org/admin-guide/mm/transhuge.html
 #   - https://www.gnu.org/software/libc/manual/html_node/Memory-Allocation-Tunables.html
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   exampleThp = "madvise";
 in

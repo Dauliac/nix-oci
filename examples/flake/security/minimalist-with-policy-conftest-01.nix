@@ -1,10 +1,10 @@
-# Example: Minimalist container with Conftest OCI policy checking
+# Example: enable Conftest OCI policy checking.
 #
 # Runs `conftest` against the built image's OCI config to validate
 # security policies (no root user, no leaked secrets, labels, etc.).
 #
 # Usage:
-#   nix run .#oci-policy-conftest-minimalistWithPolicyConftest
+#   nix run .#oci-policy-conftest-example-hello
 { ... }:
 {
   config = {
@@ -12,8 +12,7 @@
       { pkgs, ... }:
       {
         config.oci.containers = {
-          minimalistWithPolicyConftest = {
-            package = pkgs.hello;
+          example-hello = {
             policy.conftest.enabled = true;
           };
         };

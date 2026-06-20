@@ -3,10 +3,7 @@
 # Defines the HEALTHCHECK that gets baked into the OCI image manifest.
 # When deployed with Podman + --sdnotify=healthy, systemd waits for the
 # healthcheck to pass before considering the container service "ready".
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   exampleCommand = [
     "curl"

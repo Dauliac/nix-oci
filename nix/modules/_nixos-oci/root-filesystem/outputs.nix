@@ -44,24 +44,15 @@ in
     default =
       let
         package' = if cfg.package != null then [ cfg.package ] else [ ];
-        # Only include packages explicitly added by nix-oci service adapters
-        # (e.g. dig for dnsmasq, fcgi for phpfpm), NOT the full NixOS
-        # environment.systemPackages which drags in systemd, sudo, iptables,
-        # openssh, perl, libcap (with its Go captree binary and 24+ CVEs), etc.
-        # Service binaries are already included via cfg.package and its closure.
-        adapterPackages = cfg._output.adapterPackages or [ ];
       in
       pkgs.buildEnv {
         name = "root";
         paths =
           package'
-          ++ adapterPackages
+          ++ cfg.extraPackages
           ++ cfg._output.shadowFiles
           ++ cfg._output.etcFiles
           ++ cfg.dependencies
-          ++ (cfg._output.hardening.configFiles or [ ])
-          ++ (cfg._output.performance.extraDeps or [ ])
-          ++ (cfg._output.gpu.extraDeps or [ ])
           ++ [
             config.oci.lib.mkHomeDirDrv
             (pkgs.runCommand "fhs-tmp" { } "mkdir -p $out/tmp $out/var/tmp")

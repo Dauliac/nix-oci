@@ -36,6 +36,30 @@
           };
           exampleFile = ../../../../../../examples/flake/hardening/hardening-dns-disabled-01.nix;
         };
+
+        runtime-dns-lookup-fails = {
+          given = "a hardened container with DNS disabled";
+          "when" = "a DNS lookup is attempted";
+          "then" = "the lookup fails (no resolv.conf)";
+          level = "runtime";
+          target = "oci";
+          container = {
+            package = pkgs.busybox;
+            isRoot = true;
+            hardening = {
+              enable = true;
+              disableDns = true;
+            };
+            entrypoint = [ "${pkgs.busybox}/bin/busybox" ];
+          };
+          testDependencies = [ pkgs.busybox ];
+          assertions.fails = [
+            {
+              command = "${pkgs.busybox}/bin/busybox";
+              args = "nslookup example.com";
+            }
+          ];
+        };
       };
     };
 }

@@ -4,13 +4,11 @@
 # Reuses the same nix-lib functions (mkCrossOCI, mkMultiArchOCILayout,
 # mkPushOCILayoutApp) -- those functions are package-source-agnostic.
 {
-  config,
   lib,
   flake-parts-lib,
   ...
 }:
 let
-  cfg = config;
   inherit (lib)
     mkOption
     types
@@ -65,7 +63,6 @@ in
                   targetSystem: archCfg:
                   ociLib.mkCrossOCI {
                     perSystemConfig = config.oci;
-                    globalConfig = cfg.oci;
                     inherit containerId;
                     crossPackage = archCfg.package;
                     crossDependencies = archCfg.dependencies;

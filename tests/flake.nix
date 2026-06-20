@@ -1,7 +1,15 @@
 # Standalone BDD test flake for nix-oci.
 #
-# Imports nix-oci as a real consumer would, defines test containers,
-# and verifies the full pipeline: apps, checks, VM tests.
+# Tests both build (flake-parts) and deploy (NixOS) pipelines by
+# importing example modules via nix/examples.nix (which uses import-tree
+# to auto-discover all examples/flake/* modules).
+#
+# Container coverage:
+#   - Build pipeline:  examples/flake/* (auto-discovered)
+#   - Deploy pipeline: examples/deploy-nixos/* (imported into VM NixOS config)
+#   - BDD specs:       _tests/*.test.nix (auto-discovered by test-collector)
+#
+# Adding a new example to examples/flake/ automatically adds it to tests.
 #
 # Run:
 #   cd tests && task
@@ -13,6 +21,8 @@
     get-flake.url = "github:ursi/get-flake";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     flake-parts.url = "github:hercules-ci/flake-parts";
+    home-manager.url = "github:nix-community/home-manager";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
@@ -24,7 +34,6 @@
     }:
     let
       nix-oci = get-flake ../.;
-      # Merge parent inputs so nix-oci modules find nix2container, import-tree, etc.
       mergedInputs = nix-oci.inputs // inputs;
     in
     flake-parts.lib.mkFlake { inputs = mergedInputs; } {
@@ -36,6 +45,10 @@
       imports = [
         nix-oci.modules.flake.nix-oci
         nix-oci.modules.flake.nix-oci-test
+
+        # Import ALL flake-parts examples (auto-discovered via import-tree).
+        # This is the same module used by the main flake for example validation.
+        ../nix/examples.nix
       ];
 
       _module.args.import-tree = nix-oci.inputs.import-tree;
@@ -47,20 +60,9 @@
         {
           devShells.default = pkgs.mkShell { };
 
-          oci.containers.test-hello = {
-            package = pkgs.hello;
-            user = "nobody";
-            entrypoint = [ "${pkgs.hello}/bin/hello" ];
-            labels = {
-              "org.opencontainers.image.title" = "test-hello";
-              "org.opencontainers.image.source" = "https://github.com/Dauliac/nix-oci";
-              "org.opencontainers.image.description" = "BDD test container";
-            };
-            policy.conftest.enabled = true;
-            lint.dockle.enabled = true;
-            sbom.syft.enabled = true;
-            test.dive.enabled = true;
-          };
+          # Use nix2container-turbo for all pushes — enables cross-machine
+          # layer caching via OCI Referrers API and optimized layers.
+          oci.turbo.enable = true;
         };
     };
 }

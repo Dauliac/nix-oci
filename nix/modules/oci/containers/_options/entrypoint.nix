@@ -1,8 +1,5 @@
 # Shared: entrypoint command.
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   example = [
     "/bin/hello"

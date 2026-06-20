@@ -78,10 +78,7 @@
                   soName = null;
                 };
             presetTunables =
-              if cfg.glibcTunablesPreset or null != null then
-                presetMap.${cfg.glibcTunablesPreset}
-              else
-                { };
+              if cfg.glibcTunablesPreset or null != null then presetMap.${cfg.glibcTunablesPreset} else { };
             mergedTunables = presetTunables // (cfg.glibcTunables or { });
           in
           {

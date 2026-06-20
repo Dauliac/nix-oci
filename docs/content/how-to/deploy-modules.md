@@ -134,6 +134,39 @@ virtualisation.docker.enable = true;
 
 For full option reference, see [NixOS module options](../reference/nixos-options.html).
 
+## Enable SOCI lazy pulling
+
+For faster container startup with large images, enable the SOCI
+snapshotter. This requires the Docker backend (which uses containerd):
+
+```nix
+oci = {
+  enable = true;
+  backend = "docker";
+
+  # Auto-enabled when turbo.soci is set, or enable explicitly:
+  snapshotter.soci.enable = true;
+  registry.enable = true;  # push-based loading via local registry
+
+  containers.my-app = {
+    package = pkgs.myApp;
+    autoStart = true;
+    performance.turbo = {
+      enable = true;
+      soci = true;  # generate SOCI v2 indexes during push
+    };
+  };
+};
+```
+
+With this configuration:
+1. Images are pushed to a local registry with SOCI indexes
+2. containerd pulls lazily via soci-snapshotter (FUSE mount)
+3. Containers start before the full image is extracted
+
+See [Turbo push backend](../performance/turbo-push-backend.html) for
+details on SOCI, eStargz, and layer caching options.
+
 ## Runnable example
 
 A complete, testable flake for deploying on NixOS is available at

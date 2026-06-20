@@ -6,10 +6,7 @@
 #
 # Driver libraries (libcuda.so, libnvidia-ml.so) are NOT included
 # here -- they are always injected at runtime by the host.
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   example = [
     "cudart"

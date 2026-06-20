@@ -1,15 +1,11 @@
-# User-facing entrypoint options for container service extraction.
+# NixOS-only entrypoint options: service adapter integration.
+#
+# Shared options (entrypoint, stopSignal, workingDir, declaredVolumes)
+# come from _options/ via container-options-namespace.nix.
+# These NixOS-only options are set by service adapters during NixOS eval.
 { lib, ... }:
 {
   options.oci.container = {
-    entrypoint = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [ ];
-      defaultText = lib.literalMD ''
-        Auto-derived from `mainService` systemd `ExecStart` when set.
-      '';
-      description = "Container entrypoint. Auto-derived from mainService when set.";
-    };
     mainService = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
@@ -47,40 +43,6 @@
         services where config.services.<name>.dataDir doesn't exist
         at the top level.
       '';
-    };
-    stopSignal = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      defaultText = lib.literalMD ''
-        Auto-derived (strongest to weakest):
-        1. service adapter signal (e.g. `SIGQUIT` for nginx, `SIGINT` for PostgreSQL)
-        2. systemd `KillSignal`
-        3. container runtime default (`SIGTERM`)
-      '';
-      description = "Graceful stop signal. Set by service adapters or auto-derived from systemd KillSignal.";
-    };
-    workingDir = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      defaultText = lib.literalMD ''
-        Auto-derived (strongest to weakest):
-        1. systemd `WorkingDirectory`
-        2. service `dataDir` (e.g. `/var/lib/postgresql`)
-        3. user home directory (`/root` or `/home/<user>`)
-      '';
-      description = "Working directory. Auto-derived from systemd WorkingDirectory, service dataDir, or user home.";
-    };
-    declaredVolumes = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [ ];
-      defaultText = lib.literalMD ''
-        Auto-derived from systemd service directories:
-        - `StateDirectory` → `/var/lib/<dir>`
-        - `RuntimeDirectory` → `/run/<dir>`
-        - `CacheDirectory` → `/var/cache/<dir>`
-        - `LogsDirectory` → `/var/log/<dir>`
-      '';
-      description = "Additional OCI volume mount points (merged with auto-derived from systemd directories).";
     };
   };
 }

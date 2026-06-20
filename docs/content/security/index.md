@@ -1,6 +1,7 @@
 +++
 title = "Supply-chain security"
 description = "How nix-oci integrates vulnerability scanning, SBOM generation, image signing, policy checking, and integrity testing into the Nix build pipeline"
+
 +++
 
 # Supply-chain security

@@ -1,11 +1,10 @@
-# Example: Minimalist container with CDK security auditing
+# Example: enable CDK container exploitation toolkit probe.
 #
-# Runs `cdk evaluate` inside the container (bind-mounted, not baked
-# in) to enumerate escape vectors, capabilities, service accounts,
-# sensitive files, and mounted devices.
+# Runs `cdk` inside the container (bind-mounted, static binary)
+# to detect container exploit vectors.
 #
 # Usage:
-#   nix run .#oci-cdk-minimalistWithCdk
+#   nix run .#oci-cdk-example-hello
 { ... }:
 {
   config = {
@@ -13,8 +12,7 @@
       { pkgs, ... }:
       {
         config.oci.containers = {
-          minimalistWithCdk = {
-            package = pkgs.hello;
+          example-hello = {
             test.cdk.enabled = true;
           };
         };

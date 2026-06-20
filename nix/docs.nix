@@ -256,8 +256,7 @@ in
         # nix-lib docs from the test-aware eval (includes test lib functions).
         # The test eval's nix-lib.docs.package has all functions (main + test).
         # We use it specifically for the testing reference page.
-        testNixLibDoc =
-          testFlakePartsEval.config.allSystems.${system}.nix-lib.docs.package or nixLibDoc;
+        testNixLibDoc = testFlakePartsEval.config.allSystems.${system}.nix-lib.docs.package or nixLibDoc;
 
         # Diataxis layout with NDG group_by_dir:
         #   Root (flat): index.md (overview), getting-started.md (tutorial)
@@ -412,22 +411,22 @@ in
                 position = 3;
               }
               {
+                path = "security";
+                new_title = "Security";
+                position = 4;
+              }
+              {
                 path = "performance";
                 new_title = "Performance";
-                position = 4;
+                position = 5;
               }
               {
                 path = "integration";
                 new_title = "Integration";
-                position = 5;
-              }
-              {
-                path = "examples";
                 position = 6;
               }
               {
-                path = "security";
-                new_title = "Security";
+                path = "examples";
                 position = 7;
               }
               {
@@ -553,7 +552,7 @@ in
 
                 - [Source: `nix/modules/oci/lib/`](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci/lib) -- image builders, layers, labels, security, ports, architecture
                 - [Source: `nix/modules/oci/security/`](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci/security) -- CVE, SBOM, signing, compliance, credentials leak, linting
-                - [Source: `nix/modules/oci/_testing/`](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci/_testing) -- CST, dgoss, dive, podman sandbox
+                - [Source: `nix/modules/oci/testing/`](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci/testing) -- CST, dgoss, dive, container probes
 
                 ---
               '';

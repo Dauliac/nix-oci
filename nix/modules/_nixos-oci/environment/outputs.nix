@@ -1,4 +1,10 @@
 # Environment: SSL, nsswitch, env vars -- config, lib, and outputs
+#
+# Central collector for container environment variables and /etc files.
+# Uses NixOS-native routing:
+#   - Reads env vars from config.environment.variables (set by perf/gpu/nix modules)
+#   - Reads /etc files from oci.container.includedEtcFiles (set by modules that declare etc)
+#   - Still reads user-provided oci.container.environment for explicit vars
 {
   config,
   lib,
@@ -21,18 +27,16 @@ in
     type = lib.types.listOf lib.types.package;
     internal = true;
     readOnly = true;
-    description = "Extracted /etc file derivations (nsswitch, SSL certs).";
+    description = "Extracted /etc file derivations from includedEtcFiles.";
     default =
       let
         etc = config.environment.etc;
         # Runtime-overridden paths (resolv.conf, hostname, hosts) are excluded
         # because container runtimes always bind-mount them at startup.
         runtimeOverridden = config.oci.container.runtimeOverriddenEtcNames;
-        wantedNames = builtins.filter (n: etc ? ${n} && !builtins.elem n runtimeOverridden) [
-          "nsswitch.conf"
-          "ssl/certs/ca-bundle.crt"
-          "nix/nix.conf"
-        ];
+        wantedNames = builtins.filter (
+          n: etc ? ${n} && !builtins.elem n runtimeOverridden
+        ) config.oci.container.includedEtcFiles;
       in
       map (name: config.oci.lib.mkEtcDerivation name etc.${name}) wantedNames;
   };
@@ -52,11 +56,18 @@ in
             "${basePath}:${home}/.nix-profile/bin:/nix/var/nix/profiles/default/bin"
           else
             basePath;
+        skipTls = cfg.hardening.noTlsTrustStore or false;
+
+        # NixOS environment.variables — set by perf, gpu, nix-support, and other modules
+        nixosEnvVars = config.environment.variables or { };
       in
+      # Core identity vars (always present, not overridable via environment.variables)
       [
         "PATH=${path}"
         "USER=${cfg.user}"
         "HOME=${home}"
+      ]
+      ++ lib.optionals (!skipTls) [
         "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
       ]
       ++ lib.optionals (cfg.installNix or false) [
@@ -64,8 +75,21 @@ in
         "LC_ALL=C.UTF-8"
         "NIX_PAGER=cat"
       ]
-      ++ (cfg._output.performance.envVars or [ ])
-      ++ (cfg._output.gpu.envVars or [ ])
+      # NixOS-native env vars (from perf, gpu, nix-support modules)
+      # Filter out vars that are already set above to avoid duplicates
+      ++ lib.mapAttrsToList (k: v: "${k}=${toString v}") (
+        builtins.removeAttrs nixosEnvVars [
+          "PATH"
+          "USER"
+          "HOME"
+          "SSL_CERT_FILE"
+          "LANG"
+          "LC_ALL"
+          "NIX_PAGER"
+        ]
+      )
+      # GPU env vars now flow through environment.variables (above)
+      # User-provided env vars (highest priority, last wins)
       ++ lib.mapAttrsToList (k: v: "${k}=${v}") cfg.environment;
   };
 
@@ -97,7 +121,8 @@ in
         '';
       };
 
-    environment.variables.SSL_CERT_FILE = "/etc/ssl/certs/ca-bundle.crt";
+    # SSL cert -- set via NixOS-native environment.variables
+    environment.variables.SSL_CERT_FILE = lib.mkDefault "/etc/ssl/certs/ca-bundle.crt";
     environment.etc."ssl/certs/ca-bundle.crt".source =
       lib.mkDefault "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
     environment.etc."nsswitch.conf".text = lib.mkDefault ''
@@ -111,5 +136,13 @@ in
       protocols: files
       rpc:       files
     '';
+
+    # Register default /etc files for inclusion
+    oci.container.includedEtcFiles = [
+      "nsswitch.conf"
+    ]
+    ++ lib.optionals (!(config.oci.container.hardening.noTlsTrustStore or false)) [
+      "ssl/certs/ca-bundle.crt"
+    ];
   };
 }

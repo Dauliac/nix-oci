@@ -1,8 +1,5 @@
 # Shared: image tag.
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   example = "v1.0.0";
 in

@@ -74,6 +74,6 @@ in
     ];
     # SIGQUIT: graceful shutdown -- finish serving current requests.
     oci.container.stopSignal = lib.mkDefault "SIGQUIT";
-    oci.container._output.adapterPackages = [ pkgs.fcgi ];
+    oci.container.extraPackages = [ pkgs.fcgi ];
   };
 }

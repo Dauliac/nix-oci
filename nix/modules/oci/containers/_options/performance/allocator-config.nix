@@ -7,10 +7,7 @@
 #   - mimalloc: https://microsoft.github.io/mimalloc/environment.html
 #   - tcmalloc: https://google.github.io/tcmalloc/tuning.html
 #   - jemalloc: https://github.com/jemalloc/jemalloc/blob/dev/TUNING.md
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   example = {
     "narenas" = "2";

@@ -1,6 +1,7 @@
 +++
 title = "Platform integration"
 description = "NixOS and Home Manager integration, multi-architecture images, and hermetic sandbox testing"
+
 +++
 
 # Platform integration

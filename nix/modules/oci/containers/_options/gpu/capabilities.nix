@@ -7,10 +7,7 @@
 # References:
 #   - https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/docker-specialized.html
 #   - https://github.com/NVIDIA/libnvidia-container (nvc_info.c)
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 {
   options.gpu.capabilities = lib.mkOption {
     type = lib.types.listOf (

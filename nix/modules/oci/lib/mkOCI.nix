@@ -1,4 +1,4 @@
-# OCI mkOCI - Main function to build container with all conditional features
+# OCI mkOCI - Main entry point: builds image via mkOCIImage + attaches CI tools
 { lib, ... }:
 {
   config.perSystem =
@@ -17,21 +17,21 @@
         description = "Main function to build container with all conditional features";
         file = "nix/modules/oci/lib/mkOCI.nix";
         fn =
-          args@{
+          {
             perSystemConfig,
             containerId,
-            globalConfig,
+            ...
           }:
           let
             oci = perSystemConfig.containers.${containerId};
-            package = ociLib.mkNixOrSimpleOCI { inherit perSystemConfig containerId globalConfig; };
+            package = ociLib.mkOCIImage { inherit perSystemConfig containerId; };
           in
           package
           // (
             if oci.cve.trivy.enabled then
               {
                 cve.trivy = ociLib.mkScriptCVETrivy {
-                  inherit containerId perSystemConfig globalConfig;
+                  inherit containerId perSystemConfig;
                 };
               }
             else

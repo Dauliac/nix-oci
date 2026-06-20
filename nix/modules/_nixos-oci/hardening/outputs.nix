@@ -453,47 +453,22 @@ in
           null;
     };
 
+    # DEPRECATED: use oci.container.extraPackages. Kept for backward compat.
     configFiles = lib.mkOption {
       type = lib.types.listOf lib.types.package;
       internal = true;
       readOnly = true;
-      description = "Hardened /etc config file derivations.";
-      default = lib.optionals cfg.enable (
-        # NOTE: /etc/resolv.conf is NOT written here -- container runtimes
-        # always bind-mount it at startup, masking any image content.
-        # DNS restriction is enforced via nsswitch.conf (hosts: files only).
-        lib.optionals cfg.noTlsTrustStore [
-          (pkgs.writeTextDir "etc/ssl/certs/ca-bundle.crt" "# TLS trust store removed by nix-oci hardening\n")
-        ]
-      );
+      description = "DEPRECATED: hardening config files now flow through extraPackages.";
+      default = [ ];
     };
 
+    # DEPRECATED: use oci.container.generatedLabels. Kept for backward compat.
     labels = lib.mkOption {
       type = lib.types.attrsOf lib.types.str;
       internal = true;
       readOnly = true;
-      description = "OCI labels encoding runtime security hints.";
-      default = lib.optionalAttrs cfg.enable (
-        {
-          "io.github.dauliac.nix-oci.hardening.enabled" = "true";
-          "io.github.dauliac.nix-oci.hardening.no-new-privileges" =
-            if cfg.noNewPrivileges then "true" else "false";
-          "io.github.dauliac.nix-oci.hardening.read-only-rootfs" =
-            if cfg.readOnlyRootfs then "true" else "false";
-        }
-        // lib.optionalAttrs (cfg.capabilities.drop != [ ]) {
-          "io.github.dauliac.nix-oci.hardening.capabilities-drop" =
-            lib.concatStringsSep "," cfg.capabilities.drop;
-        }
-        // lib.optionalAttrs (cfg.capabilities.add != [ ]) {
-          "io.github.dauliac.nix-oci.hardening.capabilities-add" =
-            lib.concatStringsSep "," cfg.capabilities.add;
-        }
-        // lib.optionalAttrs cfg.apparmor.enable {
-          "io.github.dauliac.nix-oci.hardening.apparmor-enabled" = "true";
-          "io.github.dauliac.nix-oci.hardening.apparmor-mode" = cfg.apparmor.mode;
-        }
-      );
+      description = "DEPRECATED: hardening labels now flow through generatedLabels.";
+      default = config.oci.container.generatedLabels;
     };
 
     landlockPolicy = lib.mkOption {

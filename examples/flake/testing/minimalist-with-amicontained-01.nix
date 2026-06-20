@@ -1,10 +1,10 @@
-# Example: Minimalist container with amicontained introspection
+# Example: enable amicontained introspection probe.
 #
 # Runs `amicontained` inside the container (bind-mounted, not baked in)
 # to report on runtime, capabilities, seccomp, and namespaces.
 #
 # Usage:
-#   nix run .#oci-amicontained-minimalistWithAmicontained
+#   nix run .#oci-amicontained-example-hello
 { ... }:
 {
   config = {
@@ -12,8 +12,7 @@
       { pkgs, ... }:
       {
         config.oci.containers = {
-          minimalistWithAmicontained = {
-            package = pkgs.hello;
+          example-hello = {
             test.amicontained.enabled = true;
           };
         };

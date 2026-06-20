@@ -6,10 +6,7 @@
 #
 # References:
 #   - https://github.com/schlarpc/nix2container-turbo
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   example = true;
 in

@@ -5,7 +5,7 @@
 {
   lib,
   import-tree,
-  nixLibNixosModule,
+  nixLibNixosModule ? null,
   ...
 }:
 let
@@ -15,7 +15,11 @@ let
 in
 {
   config.perSystem =
-    { pkgs, ... }:
+    {
+      pkgs,
+      nixLibNixosModule ? null,
+      ...
+    }:
     {
       oci.perContainer =
         {
@@ -36,7 +40,7 @@ in
           basePasswdPath =
             if hasFromImage then
               flakeLib.mkOCIPulledBasePasswdPath {
-                inherit (globalConfig.oci) fromImageManifestRootPath;
+                inherit (perSystemConfig.oci) fromImageManifestRootPath;
                 inherit (config) fromImage;
               }
             else
@@ -44,7 +48,7 @@ in
           baseGroupPath =
             if hasFromImage then
               flakeLib.mkOCIPulledBaseGroupPath {
-                inherit (globalConfig.oci) fromImageManifestRootPath;
+                inherit (perSystemConfig.oci) fromImageManifestRootPath;
                 inherit (config) fromImage;
               }
             else

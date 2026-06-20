@@ -23,7 +23,6 @@ import ../../../../lib/mkLibModule.nix (
         {
           perSystemConfig,
           containerId,
-          globalConfig,
         }:
         let
           oci = perSystemConfig.internal.OCIs.${containerId};
@@ -62,7 +61,6 @@ import ../../../../lib/mkLibModule.nix (
         {
           perSystemConfig,
           containerId,
-          globalConfig,
         }:
         let
           oci = perSystemConfig.internal.OCIs.${containerId};
@@ -96,13 +94,12 @@ import ../../../../lib/mkLibModule.nix (
         {
           perSystemConfig,
           containerId,
-          globalConfig,
         }:
         {
           type = "app";
           program = "${
             ociLib.mkScriptLintDockle {
-              inherit perSystemConfig containerId globalConfig;
+              inherit perSystemConfig containerId;
             }
           }/bin/lint-dockle-${containerId}";
         };

@@ -1,11 +1,9 @@
 version: "3"
-
 tasks:
   default:
     desc: Run the BDD VM test (builds all containers + runs all assertions)
     cmds:
       - nix build '.#checks.x86_64-linux.bdd-vm' -L 2>&1 | nom
-
   show:
     desc: Show all flake outputs
     cmds:

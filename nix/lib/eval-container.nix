@@ -233,22 +233,27 @@ in
           ]
           ++ lib.optional (nixLibNixosModule != null) nixLibNixosModule
           ++ [
-            # Pass cycle-safe container options into the NixOS module
+            # Forward container options to the NixOS eval.
+            #
+            # Options are declared by container-options-namespace.nix (from _options/)
+            # and NixOS-only files (users, entrypoint, nix-support, base).
+            #
+            # Generic forward: pass all Tier 1 fields from containerConfig.
+            # mkIf guards prevent overriding service adapter mkDefault values
+            # with null/[] defaults.
             (
               { lib, ... }:
               {
                 nixpkgs.hostPlatform = lib.mkDefault pkgs.system;
                 oci.container = {
-                  package = containerConfig.package;
+                  # Identity (cycle-safe)
+                  inherit (containerConfig) package dependencies;
                   user = nixosEvalUser;
                   isRoot = containerIsRoot;
                   inherit mainService fromImageEnabled;
                   installNix = containerConfig.installNix or false;
-                  # dependencies, hardening don't depend on eval -- safe to pass
-                  dependencies = containerConfig.dependencies;
-                  # Forward user-provided OCI metadata so the NixOS eval merges
-                  # them with auto-derived values. Use mkIf to avoid overriding
-                  # service adapter mkDefault values with null/[] defaults.
+
+                  # Runtime (mkIf guards for nullable/empty fields)
                   inherit (containerConfig) environment;
                   entrypoint = lib.mkIf (containerConfig.entrypoint != [ ]) containerConfig.entrypoint;
                   stopSignal = lib.mkIf (containerConfig.stopSignal != null) containerConfig.stopSignal;
@@ -263,49 +268,18 @@ in
                       retries
                       ;
                   };
-                  # Forward hardening options for build-time outputs AND
-                  # cross-backend coherence assertions (coherence.nix).
-                  # capabilities/readOnlyRootfs/noNewPrivileges are runtime
-                  # hints (applied by deploy modules), but the NixOS eval
-                  # needs them to validate cross-backend coherence.
-                  hardening = {
-                    inherit (containerConfig.hardening)
-                      enable
-                      disableDns
-                      noTlsTrustStore
-                      seccomp
-                      landlock
-                      apparmor
-                      capabilities
-                      readOnlyRootfs
-                      noNewPrivileges
-                      ;
-                  };
-                  # Forward arch-independent performance options.
-                  # Arch-specific options (march, hwcaps) are consumed directly
-                  # by image builders via archConfigs, not the NixOS eval.
-                  performance = {
-                    inherit (containerConfig.performance)
-                      enable
-                      allocator
-                      allocatorConfig
-                      glibcTunables
-                      glibcTunablesPreset
-                      hugePages
-                      startup
-                      compiler
-                      ;
-                  };
-                  # Forward GPU options to inner eval (env vars, deps, labels).
-                  gpu = {
-                    inherit (containerConfig.gpu)
-                      enable
-                      capabilities
-                      cudaVersion
-                      runtimeLibraries
-                      forwardCompat
-                      ;
-                  };
+
+                  # Hardening and GPU — forward entire sub-configs
+                  inherit (containerConfig) hardening gpu;
+
+                  # Performance — forward Tier 1 only (exclude Tier 2: compression, march, hwcaps, turbo)
+                  performance = builtins.removeAttrs (containerConfig.performance or { }) [
+                    "compression"
+                    "march"
+                    "hwcaps"
+                    "turbo"
+                    "runtime"
+                  ];
                 };
               }
             )

@@ -25,6 +25,9 @@
             initializeNixDatabase = true;
           };
         };
+
+        # TODO: add runtime test for installNix once the option is available
+        # in the shared _oci/ options (currently flake-parts only).
       };
     };
 }

@@ -9,7 +9,11 @@
 { ... }:
 {
   flake.modules.homeManager.soci-snapshotter =
-    { config, lib, ... }:
+    {
+      config,
+      lib,
+      ...
+    }:
     let
       cfg = config.services.soci-snapshotter;
     in

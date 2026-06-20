@@ -5,5 +5,4 @@
 #   environment.sessionVariables.GRYPE_DB_PATH = "/path/to/db";
 #
 # This file is a no-op by default (no DB paths configured).
-{ ... }:
-{ }
+{ ... }: { }

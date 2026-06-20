@@ -1,3 +1,4 @@
+{ pkgs, ... }:
 {
   package = pkgs.python3;
   entrypoint = [

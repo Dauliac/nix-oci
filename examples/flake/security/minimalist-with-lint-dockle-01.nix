@@ -1,10 +1,10 @@
-# Example: Minimalist container with Dockle image linting
+# Example: enable Dockle image linting.
 #
 # Runs `dockle` against the built image to check CIS Docker Benchmarks
 # and container best practices.
 #
 # Usage:
-#   nix run .#oci-lint-dockle-minimalistWithLintDockle
+#   nix run .#oci-lint-dockle-example-hello
 { ... }:
 {
   config = {
@@ -12,8 +12,7 @@
       { pkgs, ... }:
       {
         config.oci.containers = {
-          minimalistWithLintDockle = {
-            package = pkgs.hello;
+          example-hello = {
             lint.dockle.enabled = true;
           };
         };

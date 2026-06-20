@@ -1,8 +1,5 @@
 # Shared: DNS resolution restriction.
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 {
   options.hardening.disableDns = lib.mkOption {
     type = lib.types.bool;

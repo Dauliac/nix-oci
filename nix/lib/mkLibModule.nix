@@ -50,7 +50,11 @@ else
     topLevelFn = arg.topLevel or (_: { });
     perSystemFn = arg.perSystem;
   in
-  topArgs@{ lib, config, ... }:
+  topArgs@{
+    lib,
+    config,
+    ...
+  }:
   let
     topVars = topLevelFn topArgs;
   in

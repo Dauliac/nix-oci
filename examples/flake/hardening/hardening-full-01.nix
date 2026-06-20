@@ -1,10 +1,11 @@
 # Example: fully hardened container.
 #
 # Enables all build-time hardening features:
-#   - DNS disabled
-#   - TLS trust store removed
 #   - Seccomp profile set to strict
 #   - Runtime hints: drop all caps, read-only rootfs, no-new-privileges
+#
+# DNS and TLS removal are set in separate example files and merged
+# via the module system (same container name: example-hardened).
 { ... }:
 {
   config = {
@@ -12,13 +13,11 @@
       { pkgs, ... }:
       {
         config.oci.containers = {
-          hardeningFull = {
+          example-hardened = {
             package = pkgs.busybox;
             isRoot = true;
             hardening = {
               enable = true;
-              disableDns = true;
-              noTlsTrustStore = true;
               seccomp = {
                 enable = true;
                 profile = "strict";

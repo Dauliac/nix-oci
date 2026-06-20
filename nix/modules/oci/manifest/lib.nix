@@ -32,12 +32,12 @@ in
             {
               perSystemConfig,
               containerId,
-              globalConfig,
+              ...
             }:
             let
               oci = perSystemConfig.containers.${containerId};
               manifestLockPath = flakeLib.mkOCIPulledManifestLockPath {
-                inherit (globalConfig) fromImageManifestRootPath;
+                inherit (perSystemConfig) fromImageManifestRootPath;
                 inherit (oci) fromImage;
               };
               fromImage' = (builtins.removeAttrs oci.fromImage [ "enabled" ]) // {
@@ -55,11 +55,11 @@ in
             {
               self,
               perSystemConfig,
-              globalConfig,
+              ...
             }:
             let
               manifestRootPath = flakeLib.mkOCIPulledManifestLockRelativeRootPath {
-                inherit (globalConfig) fromImageManifestRootPath;
+                inherit (perSystemConfig) fromImageManifestRootPath;
                 inherit self;
               };
               update = lib.concatStringsSep "\n" (
@@ -71,26 +71,26 @@ in
                     manifestPath = flakeLib.mkOCIPulledManifestLockRelativePath {
                       inherit self;
                       manifestLockPath = flakeLib.mkOCIPulledManifestLockPath {
-                        inherit (globalConfig) fromImageManifestRootPath;
+                        inherit (perSystemConfig) fromImageManifestRootPath;
                         inherit fromImage;
                       };
                     };
                     passwdPath = flakeLib.mkOCIPulledManifestLockRelativePath {
                       inherit self;
                       manifestLockPath = flakeLib.mkOCIPulledBasePasswdPath {
-                        inherit (globalConfig) fromImageManifestRootPath;
+                        inherit (perSystemConfig) fromImageManifestRootPath;
                         inherit fromImage;
                       };
                     };
                     groupPath = flakeLib.mkOCIPulledManifestLockRelativePath {
                       inherit self;
                       manifestLockPath = flakeLib.mkOCIPulledBaseGroupPath {
-                        inherit (globalConfig) fromImageManifestRootPath;
+                        inherit (perSystemConfig) fromImageManifestRootPath;
                         inherit fromImage;
                       };
                     };
                     manifest = ociLib.mkOCIPulledManifestLock {
-                      inherit perSystemConfig containerId globalConfig;
+                      inherit perSystemConfig containerId;
                     };
                   in
                   ''

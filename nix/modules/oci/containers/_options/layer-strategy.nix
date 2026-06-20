@@ -3,10 +3,7 @@
 # Controls how aggressively nix2container splits store paths into sub-layers
 # within each logical layer (deps, app). Only effective when
 # optimizeLayers = true.
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   example = "minimal";
 in

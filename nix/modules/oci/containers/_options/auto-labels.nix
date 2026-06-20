@@ -1,8 +1,5 @@
 # Shared: automatic OCI label generation toggle.
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 {
   options.autoLabels = lib.mkOption {
     type = lib.types.bool;

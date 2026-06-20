@@ -61,6 +61,6 @@ in
     ];
     # SIGWINCH: graceful stop -- finish serving current requests, then exit.
     oci.container.stopSignal = lib.mkDefault "SIGWINCH";
-    oci.container._output.adapterPackages = [ pkgs.curl ];
+    oci.container.extraPackages = [ pkgs.curl ];
   };
 }

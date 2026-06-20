@@ -1,3 +1,7 @@
+# Example: container with additional runtime dependencies.
+#
+# Adds extra packages beyond the main package into the container.
+# Dependencies are included in the OCI image alongside the main binary.
 { ... }:
 {
   config = {
@@ -5,11 +9,9 @@
       { pkgs, ... }:
       {
         config.oci.containers = {
-          minimalistWithDependencies = {
-            package = pkgs.kubectl;
+          example-hello = {
             dependencies = [
-              pkgs.bash
-              pkgs.kubectl-cnpg
+              pkgs.coreutils
             ];
           };
         };

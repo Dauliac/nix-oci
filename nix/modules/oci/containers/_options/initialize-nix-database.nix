@@ -8,10 +8,7 @@
 # buildEnv store path itself becomes a phantom DB entry. This is harmless
 # for in-container nix usage but can confuse CI pipelines that check DB
 # consistency. Enable this when you need to run nix inside the container.
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   example = true;
 in

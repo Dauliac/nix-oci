@@ -1,8 +1,5 @@
 # Shared: runtime environment variables.
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   example = {
     RUST_LOG = "info";

@@ -2,10 +2,7 @@
 #
 # Capabilities partition root's monolithic privilege into distinct units.
 # Deploy modules translate these to --cap-drop / --cap-add flags.
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   exampleAdd = [ "NET_BIND_SERVICE" ];
 in

@@ -1,8 +1,7 @@
-# Example: container with DNS resolution disabled.
+# Example: disable DNS resolution in the container.
 #
-# The built image has:
-#   - Empty /etc/resolv.conf
-#   - /etc/nsswitch.conf with hosts: files (no dns backend)
+# Removes DNS-related files and restricts nsswitch.conf to files-only
+# resolution. Useful for containers that should never resolve hostnames.
 { ... }:
 {
   config = {
@@ -10,13 +9,8 @@
       { pkgs, ... }:
       {
         config.oci.containers = {
-          hardeningDnsDisabled = {
-            package = pkgs.busybox;
-            isRoot = true;
-            hardening = {
-              enable = true;
-              disableDns = true;
-            };
+          example-hardened = {
+            hardening.disableDns = true;
           };
         };
       };

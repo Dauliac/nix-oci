@@ -4,7 +4,7 @@
 # - Creates 32 nixbld build users and the nixbld group (via NixOS users module)
 # - Creates a nobody user (required by Nix)
 # - Configures /etc/nix/nix.conf with flakes enabled
-# - Adds nix, bash, coreutils to oci.container._output.adapterPackages
+# - Adds nix, bash, coreutils to oci.container.extraPackages
 # - Provides /nix/var directory derivation and permissions as outputs
 #
 # This replaces the hand-written mkNixShadowSetup and mkNixOCILayer shadow
@@ -95,8 +95,8 @@ in
       experimental-features = nix-command flakes
     '';
 
-    # Nix packages -- included in _output.rootFilesystem via systemPackages
-    oci.container._output.adapterPackages = [
+    # Nix packages -- included via unified extraPackages
+    oci.container.extraPackages = [
       pkgs.nix
       pkgs.bashInteractive
       pkgs.coreutils
@@ -106,5 +106,8 @@ in
         ln -s ${pkgs.bashInteractive}/bin/bash $out/bin/sh
       '')
     ];
+
+    # Register nix.conf for container inclusion
+    oci.container.includedEtcFiles = [ "nix/nix.conf" ];
   };
 }

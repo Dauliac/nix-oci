@@ -8,10 +8,7 @@
 #   - https://github.com/google/tcmalloc
 #   - https://github.com/jemalloc/jemalloc
 #   - https://github.com/microsoft/snmalloc
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   example = "jemalloc";
 in

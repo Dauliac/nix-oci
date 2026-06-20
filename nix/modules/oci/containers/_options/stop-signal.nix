@@ -3,10 +3,7 @@
 # Defines the signal sent to the container process for graceful shutdown.
 # For NixOS containers, service adapters auto-derive this (e.g., nginx
 # uses SIGQUIT for graceful worker shutdown, PostgreSQL uses SIGINT).
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   example = "SIGQUIT";
 in

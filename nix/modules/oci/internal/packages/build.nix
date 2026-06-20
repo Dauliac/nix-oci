@@ -26,7 +26,6 @@ in
               containerId: containerConfig:
               ociLib.mkOCI {
                 perSystemConfig = config.oci;
-                globalConfig = cfg.oci;
                 inherit containerId;
               }
             ) config.oci.containers;
@@ -47,7 +46,6 @@ in
                 syntheticId: _:
                 ociLib.mkOCI {
                   perSystemConfig = allPerSystem;
-                  globalConfig = cfg.oci;
                   containerId = syntheticId;
                 }
               ) flavourContainers;

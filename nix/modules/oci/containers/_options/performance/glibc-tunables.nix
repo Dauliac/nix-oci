@@ -8,10 +8,7 @@
 # References:
 #   - https://www.gnu.org/software/libc/manual/html_node/Memory-Allocation-Tunables.html
 #   - https://sourceware.org/glibc/manual/latest/html_node/Hardware-Capability-Tunables.html
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   example = {
     "glibc.malloc.arena_max" = "2";

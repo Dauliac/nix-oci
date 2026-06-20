@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 let
@@ -102,6 +103,32 @@ in
           rpc:       files
         ''
       );
+
+      # -- Unified routing: extraPackages for hardening config files --
+      oci.container.extraPackages = lib.optionals cfg.noTlsTrustStore [
+        (pkgs.writeTextDir "etc/ssl/certs/ca-bundle.crt" "# TLS trust store removed by nix-oci hardening\n")
+      ];
+
+      # -- Unified routing: generatedLabels for hardening hints --
+      oci.container.generatedLabels = {
+        "io.github.dauliac.nix-oci.hardening.enabled" = "true";
+        "io.github.dauliac.nix-oci.hardening.no-new-privileges" =
+          if cfg.noNewPrivileges then "true" else "false";
+        "io.github.dauliac.nix-oci.hardening.read-only-rootfs" =
+          if cfg.readOnlyRootfs then "true" else "false";
+      }
+      // lib.optionalAttrs (cfg.capabilities.drop != [ ]) {
+        "io.github.dauliac.nix-oci.hardening.capabilities-drop" =
+          lib.concatStringsSep "," cfg.capabilities.drop;
+      }
+      // lib.optionalAttrs (cfg.capabilities.add != [ ]) {
+        "io.github.dauliac.nix-oci.hardening.capabilities-add" =
+          lib.concatStringsSep "," cfg.capabilities.add;
+      }
+      // lib.optionalAttrs cfg.apparmor.enable {
+        "io.github.dauliac.nix-oci.hardening.apparmor-enabled" = "true";
+        "io.github.dauliac.nix-oci.hardening.apparmor-mode" = cfg.apparmor.mode;
+      };
     })
   ];
 }

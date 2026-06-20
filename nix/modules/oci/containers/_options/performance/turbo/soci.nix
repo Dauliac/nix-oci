@@ -7,10 +7,7 @@
 # References:
 #   - https://github.com/awslabs/soci-snapshotter
 #   - https://aws.amazon.com/blogs/aws/aws-fargate-enables-faster-container-startup-using-seekable-oci/
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   example = true;
 in

@@ -52,11 +52,7 @@ import ../../../../lib/mkLibModule.nix (
                 _COSIGN_KEY="${signingCfg.key}"
               '';
 
-          keyArgs =
-            if signingCfg.keyless then
-              ""
-            else
-              ''--key "$_COSIGN_KEY"'';
+          keyArgs = if signingCfg.keyless then "" else ''--key "$_COSIGN_KEY"'';
 
           annotationArgs = lib.concatStringsSep " " (
             lib.mapAttrsToList (k: v: "-a ${lib.escapeShellArg "${k}=${v}"}") signingCfg.annotations

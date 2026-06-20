@@ -1,20 +1,24 @@
-# Mount all flake-level oci.* options as a types.submoduleWith.
-# Discovered by import-tree. Option files in _oci/ define options
-# at relative paths (e.g. options.cve.trivy.enabled) and the
-# submodule provides the oci.* namespace prefix.
+# Top-level flake-parts oci.* options.
 #
-# Uses the pure discoverModules function (not nix-lib) because
-# option type definitions cannot reference config.* values.
+# Only flake-scoped control flags live here.
+# All per-container options live in _oci/ (mounted by perContainer.nix).
+# Shared defaults are applied via oci.perContainer, not via a bridge.
 { lib, ... }:
-let
-  discoverModules = import ../../lib/discoverModules.nix { inherit lib; };
-in
 {
-  options.oci = lib.mkOption {
-    type = lib.types.submoduleWith {
-      modules = discoverModules ./_oci;
+  options.oci = {
+    enabled = lib.mkEnableOption "Enable the OCI module.";
+
+    enableFlakeOutputs = lib.mkOption {
+      type = lib.types.bool;
+      description = "Whether to automatically expose OCI apps, packages, and checks as flake outputs.";
+      default = true;
+      example = false;
     };
-    default = { };
-    description = "OCI container image configuration.";
+
+    enableDevShell = lib.mkOption {
+      type = lib.types.bool;
+      description = "Whether to enable the flake development shell.";
+      default = false;
+    };
   };
 }

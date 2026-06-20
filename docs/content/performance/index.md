@@ -1,6 +1,7 @@
 +++
 title = "Performance & optimization"
 description = "Build-time and runtime performance optimizations: allocators, glibc tunables, march, layer strategies, and the turbo push backend"
+
 +++
 
 # Performance & optimization
@@ -21,4 +22,5 @@ hardware-specific tuning.
 
 - [Turbo push backend](turbo-push-backend.html)
   — nix2container-turbo: cross-machine layer cache, SOCI v2 lazy pull,
-  content-addressable chunk store
+  content-addressable chunk store, standalone soci-snapshotter module,
+  registry push-based loading

@@ -1,8 +1,5 @@
 # Shared: container user.
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   example = "nobody";
 in

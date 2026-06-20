@@ -1,8 +1,5 @@
 # Shared: TLS trust store restriction.
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 {
   options.hardening.noTlsTrustStore = lib.mkOption {
     type = lib.types.bool;

@@ -48,10 +48,11 @@
                 "Push OCI image ${container.imageRef} to registry ${reg.host}:${toString reg.port}"
               else
                 "Load OCI image ${container.imageRef} into ${cfg.backend}";
-            after =
-              [ "network.target" ]
-              ++ lib.optional (cfg.backend == "docker" && !useRegistry) "docker.service"
-              ++ lib.optional useRegistry "docker-registry.service";
+            after = [
+              "network.target"
+            ]
+            ++ lib.optional (cfg.backend == "docker" && !useRegistry) "docker.service"
+            ++ lib.optional useRegistry "docker-registry.service";
             requires =
               lib.optional (cfg.backend == "docker" && !useRegistry) "docker.service"
               ++ lib.optional useRegistry "docker-registry.service";

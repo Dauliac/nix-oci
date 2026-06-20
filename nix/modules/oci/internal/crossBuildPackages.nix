@@ -1,12 +1,10 @@
 # Internal options for cross-build multi-arch OCI images
 {
-  config,
   lib,
   flake-parts-lib,
   ...
 }:
 let
-  cfg = config;
   inherit (lib)
     mkOption
     types
@@ -46,7 +44,6 @@ in
                   targetSystem: archCfg:
                   ociLib.mkCrossOCI {
                     perSystemConfig = config.oci;
-                    globalConfig = cfg.oci;
                     inherit containerId;
                     crossPackage = archCfg.package;
                     crossDependencies = archCfg.dependencies;

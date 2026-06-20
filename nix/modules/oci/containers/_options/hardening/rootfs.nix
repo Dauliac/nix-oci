@@ -1,8 +1,5 @@
 # Shared: read-only root filesystem hint.
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 {
   options.hardening.readOnlyRootfs = lib.mkOption {
     type = lib.types.bool;

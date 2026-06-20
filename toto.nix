@@ -25,7 +25,7 @@ in
     { ... }:
     {
       nix-lib.lib.oci.push = {
-        # functions here that are usefull for push
+        # functions here that are useful for push
       };
       test.oci.perContainer.push.container001 = {
         # Here get of the push example code, definition of a list of asserts for this container, blablabla.
@@ -43,7 +43,7 @@ in
     { ... }:
     {
       nix-lib.lib.test.oci.perContainer.push = {
-        # functions here that are usefull for push
+        # functions here that are useful for push
       };
       test.oci.perContainer.push.container001 = {
         # Here get of the push example code, definition of a list of asserts for this container, blablabla.

@@ -118,37 +118,8 @@ in
           # containers can be evaluated through the same module pipeline).
           apply =
             modules:
-            let
-              # Propagate global oci.turbo.* defaults to per-container options.
-              # This must live here (not in _options/) because static modules
-              # are introspected by getSubOptions which cannot resolve perSystemConfig.
-              turboDefaults =
-                {
-                  lib,
-                  perSystemConfig,
-                  ...
-                }:
-                let
-                  globalTurbo = perSystemConfig.oci.turbo or { };
-                in
-                {
-                  config.performance.turbo = {
-                    enable = lib.mkDefault (globalTurbo.enable or false);
-                    soci = lib.mkDefault (globalTurbo.soci or false);
-                    sociSpanSize = lib.mkDefault (globalTurbo.sociSpanSize or 4194304);
-                    layerCache = lib.mkDefault (globalTurbo.layerCache or true);
-                  };
-                  # Turbo's cross-machine layer cache benefits massively from
-                  # deduplicated layers — without optimizeLayers, the cache sees
-                  # a single monolithic layer that changes on every rebuild.
-                  config.optimizeLayers = lib.mkDefault (globalTurbo.enable or false);
-                };
-            in
             types.submoduleWith {
-              modules = modules ++ [
-                turboDefaults
-                ./_bridge.nix
-              ];
+              modules = modules;
               specialArgs = {
                 inherit system pkgs;
                 globalConfig = cfg;

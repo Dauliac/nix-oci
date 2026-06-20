@@ -32,19 +32,15 @@
             mkScript,
             # Binary name prefix (e.g. "trivy" → "trivy-${containerId}")
             scriptPrefix,
-            # Whether the wrapped function needs globalConfig
-            needsGlobalConfig ? false,
           }:
           {
             type = lib.types.functionTo lib.types.attrs;
             description = "Create flake app for ${description}";
             inherit file;
-            fn =
-              args:
-              {
-                type = "app";
-                program = "${mkScript args}/bin/${scriptPrefix}-${args.containerId}";
-              };
+            fn = args: {
+              type = "app";
+              program = "${mkScript args}/bin/${scriptPrefix}-${args.containerId}";
+            };
           };
       };
     };

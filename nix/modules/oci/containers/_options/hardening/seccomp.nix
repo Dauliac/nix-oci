@@ -7,10 +7,7 @@
 #
 # This is complementary to Landlock (which operates at VFS level
 # and can restrict *which files/ports* are accessible).
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 {
   options.hardening.seccomp = lib.mkOption {
     type = lib.types.submodule {

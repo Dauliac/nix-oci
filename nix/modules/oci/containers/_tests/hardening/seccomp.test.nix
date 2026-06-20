@@ -66,6 +66,27 @@
             };
           };
         };
+
+        runtime-mount-blocked = {
+          given = "a hardened container with seccomp and dropped capabilities";
+          "when" = "a process tries to mount a tmpfs";
+          "then" = "the mount is blocked (requires CAP_SYS_ADMIN, dropped by hardening)";
+          level = "runtime";
+          target = "oci";
+          container = {
+            package = pkgs.busybox;
+            isRoot = true;
+            hardening.enable = true;
+            entrypoint = [ "${pkgs.busybox}/bin/busybox" ];
+          };
+          testDependencies = [ pkgs.busybox ];
+          assertions.fails = [
+            {
+              command = "${pkgs.busybox}/bin/busybox";
+              args = "mount -t tmpfs none /mnt";
+            }
+          ];
+        };
       };
     };
 }

@@ -34,4 +34,15 @@ See also:
 The deploy module creates systemd services (`oci-load-<name>.service`)
 and wires into `virtualisation.oci-containers` when `autoStart` is true.
 
+## SOCI snapshotter (`services.soci-snapshotter.*`)
+
+The standalone soci-snapshotter module is automatically included when
+you import `nix-oci`. It provides the `services.soci-snapshotter`
+option namespace for configuring the SOCI v2 lazy-pulling daemon.
+
+Auto-enabled when `oci.snapshotter.soci.enable = true` or when any
+container has `performance.turbo.soci = true` with `backend = "docker"`.
+
+See [Turbo push backend: standalone soci-snapshotter module](../performance/turbo-push-backend.html#standalone-soci-snapshotter-module) for usage and architecture.
+
 <!-- OPTIONS:deploy -->

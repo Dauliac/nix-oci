@@ -38,7 +38,13 @@ ociLib: {
       in
       ociLib.mkContainerProbe {
         name = "${toolId}-${containerId}";
-        inherit oci needsShell args failPatterns warnPatterns;
+        inherit
+          oci
+          needsShell
+          args
+          failPatterns
+          warnPatterns
+          ;
         probe = probePath perSystemConfig;
       };
   };
@@ -58,7 +64,12 @@ ociLib: {
           ociLib.mkContainerProbe {
             name = "${toolId}-${containerId}";
             oci = perSystemConfig.internal.OCIs.${containerId};
-            inherit needsShell args failPatterns warnPatterns;
+            inherit
+              needsShell
+              args
+              failPatterns
+              warnPatterns
+              ;
             probe = probePath perSystemConfig;
           }
         }/bin/${toolId}-${containerId}";

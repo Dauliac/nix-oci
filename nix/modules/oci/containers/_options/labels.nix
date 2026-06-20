@@ -1,8 +1,5 @@
 # Shared: OCI image labels/metadata.
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   example = {
     "org.opencontainers.image.title" = "my-app";

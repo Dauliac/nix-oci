@@ -1,8 +1,5 @@
 # Shared: performance tuning master switch.
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 {
   options.performance.enable = lib.mkOption {
     type = lib.types.bool;

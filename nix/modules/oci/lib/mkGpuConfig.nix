@@ -66,12 +66,8 @@
 
             cudaLibPath = lib.makeLibraryPath selectedLibs;
             compatPrefix =
-              if (cfg.forwardCompat or false) && cudaCompatPkg != null then
-                "${cudaCompatPkg}/lib"
-              else
-                null;
-            ldLibraryPath =
-              if compatPrefix != null then "${compatPrefix}:${cudaLibPath}" else cudaLibPath;
+              if (cfg.forwardCompat or false) && cudaCompatPkg != null then "${cudaCompatPkg}/lib" else null;
+            ldLibraryPath = if compatPrefix != null then "${compatPrefix}:${cudaLibPath}" else cudaLibPath;
           in
           {
             envVars = lib.optionals (cfg.enable or false) (
@@ -84,8 +80,7 @@
             );
 
             extraDeps = lib.optionals (cfg.enable or false) (
-              selectedLibs
-              ++ lib.optional ((cfg.forwardCompat or false) && cudaCompatPkg != null) cudaCompatPkg
+              selectedLibs ++ lib.optional ((cfg.forwardCompat or false) && cudaCompatPkg != null) cudaCompatPkg
             );
 
             cudaVersion = detectedCudaVersion;

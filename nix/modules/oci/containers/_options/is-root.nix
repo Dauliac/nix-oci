@@ -1,8 +1,5 @@
 # Shared: whether the container runs as root.
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 {
   options.isRoot = lib.mkOption {
     type = lib.types.bool;

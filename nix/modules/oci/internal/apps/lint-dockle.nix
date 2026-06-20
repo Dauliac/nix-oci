@@ -34,7 +34,6 @@ in
               containerId: oci:
               ociLib.mkAppLintDockle {
                 perSystemConfig = config.oci;
-                globalConfig = cfg.oci;
                 inherit containerId;
               }
             ) config.oci.internal.lintDockleOCIs;

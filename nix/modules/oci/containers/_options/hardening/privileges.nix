@@ -1,8 +1,5 @@
 # Shared: no-new-privileges flag.
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 {
   options.hardening.noNewPrivileges = lib.mkOption {
     type = lib.types.bool;

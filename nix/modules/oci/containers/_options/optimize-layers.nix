@@ -7,10 +7,7 @@
 # References:
 #   - https://grahamc.com/blog/nix-and-layered-docker-images
 #   - https://blog.eigenvalue.net/2023-nix2container-everything-once/
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   example = true;
 in

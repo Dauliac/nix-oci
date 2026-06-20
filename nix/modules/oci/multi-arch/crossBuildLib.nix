@@ -1,9 +1,5 @@
 # Cross-build multi-arch OCI library functions
-{
-  lib,
-  config,
-  ...
-}:
+{ lib, ... }:
 let
   inherit (lib) types;
   # archData replaced by config.lib.oci inside perSystem
@@ -30,7 +26,6 @@ in
             {
               perSystemConfig,
               containerId,
-              globalConfig,
               crossPackage,
               crossDependencies ? [ ],
               arch,

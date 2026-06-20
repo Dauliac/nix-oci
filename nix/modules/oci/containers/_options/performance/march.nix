@@ -6,10 +6,7 @@
 #
 # For single-arch containers, this is all you need.
 # For multi-arch, override per-arch via archConfigs.
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   example = "x86-64-v3";
 in

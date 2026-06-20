@@ -7,10 +7,7 @@
 #   - OCI Image Spec v1.1 (zstd support)
 #   - https://aws.amazon.com/blogs/containers/reducing-aws-fargate-startup-times-with-zstd-compressed-container-images/
 #   - https://github.com/schlarpc/nix2container-turbo (eStargz support)
-{
-  lib,
-  ...
-}:
+{ lib, ... }:
 let
   example = "zstd";
 in

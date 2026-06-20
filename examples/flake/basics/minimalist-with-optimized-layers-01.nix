@@ -1,3 +1,7 @@
+# Example: enable layer optimization.
+#
+# Optimizes OCI layer composition for better caching and smaller
+# incremental pulls.
 { ... }:
 {
   config = {
@@ -5,12 +9,7 @@
       { pkgs, ... }:
       {
         config.oci.containers = {
-          minimalistWithOptimizedLayers = {
-            package = pkgs.kubectl;
-            dependencies = [
-              pkgs.bash
-              pkgs.kubectl-cnpg
-            ];
+          example-hello = {
             optimizeLayers = true;
           };
         };

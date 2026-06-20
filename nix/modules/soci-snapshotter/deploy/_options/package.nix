@@ -3,7 +3,11 @@
 # Defaults to static binaries fetched from GitHub releases.
 # Override with the flake-parts `oci.packages.soci-snapshotter`
 # or a custom build if needed.
-{ lib, pkgs, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
 {
   options.services.soci-snapshotter.package = lib.mkOption {
     type = lib.types.package;

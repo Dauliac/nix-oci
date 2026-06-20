@@ -1,12 +1,10 @@
 {
-  config,
   lib,
   self,
   flake-parts-lib,
   ...
 }:
 let
-  cfg = config;
   inherit (lib) mkOption types attrsets;
 in
 {
@@ -28,7 +26,6 @@ in
                   containerId: containerConfig:
                   ociLib.mkOCIPulledManifestLock {
                     perSystemConfig = config.oci;
-                    globalConfig = cfg.oci;
                     inherit containerId;
                   }
                 )
@@ -43,7 +40,6 @@ in
             default = ociLib.mkOCIPulledManifestLockUpdateScript {
               inherit self;
               perSystemConfig = config.oci;
-              globalConfig = cfg.oci;
             };
           };
         };
