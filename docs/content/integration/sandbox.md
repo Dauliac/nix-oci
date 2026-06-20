@@ -85,7 +85,7 @@ exploration, even in minimal containers that only ship a single binary.
 
 ## Home-manager integration
 
-When a container uses `homeConfig`, the sandbox automatically picks up
+When a container uses `homeManager`, the sandbox automatically picks up
 home-manager's dotfiles: bash configuration, starship prompt, git
 identity, and anything else managed by home-manager. nix-oci injects
 container-friendly defaults so the sandbox experience is pleasant out

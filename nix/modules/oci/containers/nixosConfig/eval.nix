@@ -81,7 +81,7 @@ in
           };
 
           # Write the smart containerUser back to the flake-parts user option.
-          # This ensures all image builders (mkSimpleOCI, mkNixOCI)
+          # This ensures all image builders (mkOCIImage)
           # read the same user that the NixOS eval used for /etc/passwd.
           # Priority 50 (mkDefault) so explicit user = "foo" still wins.
           config.user = lib.mkDefault result.containerUser;

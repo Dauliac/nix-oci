@@ -3,7 +3,7 @@
 # Returns a layer-def attrset (not a built layer) suitable for use with
 # foldImageLayers. Contains the dependency buildEnv with popularity-based
 # splitting (maxLayers) for optimal registry caching.
-# Shared by mkSimpleOCI, mkNixOCI, and mkImageLayers.
+# Shared by mkOCIImage and mkImageLayers.
 { lib, ... }:
 let
   pure = import ../../../lib/oci.nix { inherit lib; };

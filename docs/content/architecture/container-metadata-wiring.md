@@ -585,7 +585,7 @@ modules wire `--sdnotify=healthy` into the runner service:
 | Stage | Transformation | File |
 |---|---|---|
 | User/adapter input | `healthcheck.command = [...]` | `_options/healthcheck.nix` or service adapter |
-| OCI image | `config.Healthcheck.Test = ["CMD"] ++ command` | `image.nix`, `mkSimpleOCI.nix`, `mkNixOCI.nix` |
+| OCI image | `config.Healthcheck.Test = ["CMD"] ++ command` | `image.nix`, `mkOCIImage.nix` |
 | NixOS runner | `--sdnotify=healthy` + `Type=notify` | `nixos/run-services.nix` |
 | HM runner | Quadlet `Notify=healthy` + `Type=notify` | `home-manager/run-services.nix` |
 
@@ -636,7 +636,7 @@ the systemd `KillSignal` from the NixOS service config.
 |---|---|---|
 | Service adapter | `oci.container.stopSignal = "SIGQUIT"` | `service-adapters/nginx.nix` etc. |
 | systemd fallback | `serviceConfig.KillSignal` | `entrypoint.nix` (`extractServiceData`) |
-| OCI image | `config.StopSignal = "SIGQUIT"` | `image.nix`, `mkSimpleOCI.nix`, `mkNixOCI.nix` |
+| OCI image | `config.StopSignal = "SIGQUIT"` | `image.nix`, `mkOCIImage.nix` |
 
 ## WorkingDir
 
@@ -681,7 +681,7 @@ uses the runtime default. Set it explicitly when needed.
 |---|---|---|
 | NixOS auto-derive | systemd → dataDir → home | `entrypoint.nix` (`_output.workingDir`) |
 | Explicit option | `workingDir = "/app"` | `_options/working-dir.nix` |
-| OCI image | `config.WorkingDir = "/var/lib/postgresql"` | `image.nix`, `mkSimpleOCI.nix`, `mkNixOCI.nix` |
+| OCI image | `config.WorkingDir = "/var/lib/postgresql"` | `image.nix`, `mkOCIImage.nix` |
 
 ## Declared volumes
 
@@ -746,4 +746,4 @@ nix-oci merges explicit `declaredVolumes` with auto-derived ones.
 |---|---|---|
 | NixOS auto-derive | systemd dirs → path list | `entrypoint.nix` (`_output.declaredVolumes`) |
 | Explicit option | `declaredVolumes = ["/data"]` | `_options/declared-volumes.nix` |
-| OCI image | `config.Volumes = { "/var/lib/postgresql" = {}; }` | `image.nix`, `mkSimpleOCI.nix`, `mkNixOCI.nix` |
+| OCI image | `config.Volumes = { "/var/lib/postgresql" = {}; }` | `image.nix`, `mkOCIImage.nix` |

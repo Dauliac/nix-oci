@@ -376,13 +376,13 @@ oci.containers.my-app.nixosConfig.modules = [
 ];
 ```
 
-The inner NixOS module produces:
-- `_output.performance.envVars`: `LD_PRELOAD` and
-  `GLIBC_TUNABLES` strings added to the OCI manifest `Env`.
-- `_output.performance.extraDeps`: allocator packages added to the
-  image's dependency closure.
-- `_output.performance.labels`: performance labels merged into the
-  image config.
+The inner NixOS module uses central routing to inject performance config:
+- **`environment.variables`**: sets `LD_PRELOAD`, `GLIBC_TUNABLES`,
+  `MALLOC_CONF`, etc. — collected into the OCI manifest `Env`.
+- **`oci.container.extraPackages`**: allocator packages added to the
+  image's root filesystem.
+- **`oci.container.generatedLabels`**: performance labels merged into
+  the OCI image config.
 
 ## Further reading
 

@@ -28,24 +28,22 @@ NixOS configuration**; nix-oci handles the rest:
 
 ```nix
 oci.containers.my-nginx = {
-  # Container-level options (set HERE, not inside modules)
+  # Container-level options
   isRoot = false;
   dependencies = [ pkgs.curl ];
+  mainService = "nginx";
 
-  nixosConfig = {
-    mainService = "nginx";
-    modules = [
-      # Inside modules: write standard NixOS configuration
-      ({ pkgs, ... }: {
-        services.nginx = {
-          enable = true;
-          virtualHosts.localhost.locations."/".return = "200 'Hello!'";
-        };
-        # Any NixOS option works: environment.systemPackages, users, etc.
-        environment.systemPackages = [ pkgs.curl ];
-      })
-    ];
-  };
+  nixosConfig.modules = [
+    # Inside modules: write standard NixOS configuration
+    ({ pkgs, ... }: {
+      services.nginx = {
+        enable = true;
+        virtualHosts.localhost.locations."/".return = "200 'Hello!'";
+      };
+      # Any NixOS option works: environment.systemPackages, users, etc.
+      environment.systemPackages = [ pkgs.curl ];
+    })
+  ];
 };
 ```
 

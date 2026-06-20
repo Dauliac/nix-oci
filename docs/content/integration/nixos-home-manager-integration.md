@@ -78,14 +78,14 @@ for the full list of auto-derived fields.
 
 ## How the NixOS evaluation works
 
-When you use `nixosConfig.modules` or `nixosConfig.mainService` on a container, nix-oci
+When you use `nixosConfig.modules` or `mainService` on a container, nix-oci
 performs a full NixOS module evaluation in a minimal context:
 
-1. **Imports** `_nixos/oci/` modules: entrypoint extraction,
+1. **Imports** `_nixos-oci/` modules: entrypoint extraction,
    healthcheck, hardening, performance, root filesystem assembly
-2. **Passes** container-level options (`package`, `dependencies`,
-   `hardening`, `performance`) into the NixOS eval
-3. **Merges** your `nixosConfig.modules` and `homeConfig.modules`
+2. **Forwards** container options via central routing (`environment.variables`,
+   `extraPackages`, `generatedLabels`, `includedEtcFiles`)
+3. **Merges** your `nixosConfig.modules` and `homeManager.modules`
 4. **Extracts** the evaluated config: systemd units, `/etc` files,
    environment variables, users, and home-manager dotfiles
 5. **Assembles** a `buildEnv` root filesystem from the results
@@ -113,7 +113,7 @@ dotfiles are **reproducible build artifacts**, not runtime state.
 
 ### Container-friendly defaults
 
-When you set [`homeConfig.homeManagerFlake`](../reference/flake-parts-options.html),
+When you set [`homeManager.flake`](../reference/flake-parts-options.html),
 nix-oci injects sensible defaults (all `lib.mkDefault`, freely overridable):
 
 - **Bash** with history configuration and common aliases
@@ -147,7 +147,7 @@ the dotfiles as regular files, ready to use at container start.
 
 nix-oci does **not** bundle home-manager as a dependency. Consumers
 provide it via their flake inputs and pass it through
-`homeConfig.homeManagerFlake`:
+`homeManager.flake`:
 
 ```nix
 {
@@ -163,8 +163,8 @@ provide it via their flake inputs and pass it through
       perSystem = { pkgs, ... }: {
         oci.containers.my-app = {
           package = pkgs.curl;
-          homeConfig = {
-            homeManagerFlake = home-manager;
+          homeManager = {
+            flake = home-manager;
             modules = [
               ({ ... }: {
                 programs.starship.settings.character.success_symbol = "[>](cyan)";

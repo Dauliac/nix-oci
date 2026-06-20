@@ -282,15 +282,14 @@ flowchart TD
     mkAppLayer --> mkImageLayers
     mkImageLayers --> foldImageLayers
 
-    mkSimpleOCI["mkSimpleOCI"] -.->|"delegates to"| mkImageLayers
-    mkNixOCI["mkNixOCI"] -.->|"delegates to"| mkImageLayers
+    mkOCIImage["mkOCIImage"] -.->|"delegates to"| mkImageLayers
 
     style mkImageLayers fill:#a6da95,stroke:#40a02b,color:#000
     style foldImageLayers fill:#89b4fa,stroke:#1e66f5,color:#000
 ```
 
 `mkImageLayers` is the single entry point that defines the ordering
-heuristic. Both `mkSimpleOCI` and `mkNixOCI` delegate to it. Flavour
+heuristic. `mkOCIImage` (the unified build function) delegates to it. Flavour
 images go through the same pipeline as regular containers; each
 flavour is a full container evaluated independently.
 

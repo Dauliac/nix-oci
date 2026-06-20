@@ -154,15 +154,15 @@ perSystem = { pkgs, ... }: {
 
 ## Step 7: Add Home Manager configuration (optional)
 
-Use `homeConfig.modules` to configure dotfiles, shell, git, and editors
+Use `homeManager.modules` to configure dotfiles, shell, git, and editors
 inside a container via Home Manager:
 
 ```nix
 perSystem = { ... }: {
   oci.containers.dev-env = {
     package = pkgs.neovim;
-    homeConfig = {
-      homeManagerFlake = inputs.home-manager;
+    homeManager = {
+      flake = inputs.home-manager;
       modules = [
         ({ ... }: {
           programs.git = {

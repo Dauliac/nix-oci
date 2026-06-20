@@ -18,7 +18,7 @@ setup required.
 ```nix
 # The user writes this:
 oci.containers.db = {
-  nixosConfig.mainService = "postgresql";
+  mainService = "postgresql";
   nixosConfig.modules = [{ services.postgresql.enable = true; }];
 };
 

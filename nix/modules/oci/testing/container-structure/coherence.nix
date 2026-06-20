@@ -37,7 +37,7 @@ in
             oci = perSystemConfig.containers.${containerId};
             out = oci.nixosConfig.eval.oci.container._output;
 
-            # Same entrypoint resolution as mkSimpleOCI.nix:99
+            # Same entrypoint resolution as mkOCIImage
             finalEntrypoint = if out.entrypoint != [ ] then out.entrypoint else oci.entrypoint;
 
             # Parse "host:container" port mappings to container ports

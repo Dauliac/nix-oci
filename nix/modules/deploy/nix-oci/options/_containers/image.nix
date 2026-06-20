@@ -3,7 +3,7 @@
 # Dual-path build:
 #   1. When nixosConfig.eval is present: uses the full NixOS eval output
 #      (rootFilesystem, entrypoint, healthcheck, envVars, labels, etc.)
-#      — same pipeline as flake-parts mkSimpleOCI.
+#      — same pipeline as flake-parts mkOCIImage.
 #   2. When nixosConfig.eval is null (bare package mode): uses ociLib.mkRoot
 #      for backward compatibility.
 {
@@ -82,7 +82,7 @@ let
 
   ociConfig =
     if useNixosEval then
-      # Rich path: same as mkSimpleOCI
+      # Rich path: same as mkOCIImage
       {
         entrypoint = if out.entrypoint != [ ] then out.entrypoint else config.entrypoint;
         User = if config.isRoot then "root" else config.user;
@@ -172,7 +172,7 @@ let
   copyToRoot = if useNixosEval then evalCopyToRoot else [ legacyRoot ];
 
   # hwcaps layers from container-level performance.hwcaps sugar
-  # (same logic as mkSimpleOCI on the flake-parts side).
+  # (same logic as mkOCIImage on the flake-parts side).
   hwcapsCfg = config.performance.hwcaps or { enable = false; };
   hwcapsLayers = lib.optionals (hwcapsCfg.enable or false) (
     map (
