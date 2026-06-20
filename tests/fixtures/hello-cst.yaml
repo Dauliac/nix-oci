@@ -1,0 +1,19 @@
+schemaVersion: 2.0.0
+fileExistenceTests:
+  - name: "/tmp directory exists"
+    path: "/tmp"
+    shouldExist: true
+  - name: "passwd file exists"
+    path: "/etc/passwd"
+    shouldExist: true
+  - name: "group file exists"
+    path: "/etc/group"
+    shouldExist: true
+  - name: "SSL CA bundle exists"
+    path: "/etc/ssl/certs/ca-bundle.crt"
+    shouldExist: true
+fileContentTests:
+  - name: "nobody user in passwd"
+    path: "/etc/passwd"
+    expectedContents:
+      - "nobody"

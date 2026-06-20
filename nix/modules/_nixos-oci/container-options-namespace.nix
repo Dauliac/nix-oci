@@ -21,6 +21,9 @@ let
     "${optionsDir}/dependencies.nix"
     "${optionsDir}/user.nix"
     "${optionsDir}/is-root.nix"
+    "${optionsDir}/uid.nix"
+    "${optionsDir}/gid.nix"
+    "${optionsDir}/main-service.nix"
     # initializeNixDatabase is Tier 2 (build-time only, not forwarded to NixOS eval)
     # installNix stays in _nixos-oci/nix-support/options.nix (NixOS-only)
 

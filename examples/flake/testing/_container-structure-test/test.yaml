@@ -1,0 +1,65 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: USER
+      value: kubectl
+fileExistenceTests:
+  # FHS directories
+  - name: "/tmp directory exists"
+    path: "/tmp"
+    shouldExist: true
+  - name: "/var/tmp directory exists"
+    path: "/var/tmp"
+    shouldExist: true
+  - name: "/bin directory exists"
+    path: "/bin"
+    shouldExist: true
+  # Shadow and identity files
+  - name: "passwd file exists"
+    path: "/etc/passwd"
+    shouldExist: true
+  - name: "group file exists"
+    path: "/etc/group"
+    shouldExist: true
+  - name: "shadow file exists"
+    path: "/etc/shadow"
+    shouldExist: true
+  - name: "gshadow file exists"
+    path: "/etc/gshadow"
+    shouldExist: true
+  # TLS
+  - name: "SSL CA bundle exists"
+    path: "/etc/ssl/certs/ca-bundle.crt"
+    shouldExist: true
+  # Negative test
+  - name: "Check db directory absence"
+    path: "/app/db"
+    shouldExist: false
+  # Main binary
+  - name: "kubectl binary exists and is executable"
+    path: "/bin/kubectl"
+    shouldExist: true
+    isExecutableBy: "any"
+fileContentTests:
+  - name: "kubectl user in passwd"
+    path: "/etc/passwd"
+    expectedContents:
+      - "kubectl:x:4000:4000"
+  - name: "root user in passwd"
+    path: "/etc/passwd"
+    expectedContents:
+      - "root:x:0:0"
+  - name: "kubectl group in group file"
+    path: "/etc/group"
+    expectedContents:
+      - "kubectl:x:"
+  - name: "kubectl shadow entry is locked"
+    path: "/etc/shadow"
+    expectedContents:
+      - "kubectl:!"
+commandTests:
+  - name: "version"
+    command: "kubectl"
+    args:
+      - "version"
+      - "--client"

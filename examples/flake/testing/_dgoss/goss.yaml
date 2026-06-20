@@ -1,0 +1,10 @@
+file:
+  /etc/passwd:
+    exists: true
+    filetype: symlink
+command:
+  kubectl version --client:
+    exit-status: 0
+    stdout:
+      - "Client Version"
+    timeout: 10000

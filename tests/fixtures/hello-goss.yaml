@@ -1,0 +1,10 @@
+file:
+  /etc/passwd:
+    exists: true
+    filetype: symlink
+command:
+  hello:
+    exit-status: 0
+    stdout:
+      - "Hello, world!"
+    timeout: 10000

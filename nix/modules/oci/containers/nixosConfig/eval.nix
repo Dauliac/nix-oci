@@ -65,9 +65,9 @@ in
             containerName = config._containerName;
             containerConfig = config;
             nixosModules = nixosCfg.modules;
-            mainService = nixosCfg.mainService or null;
-            homeManagerFlake = homeCfg.homeManagerFlake or null;
-            homeModules = homeCfg.modules or [ ];
+            mainService = config.mainService or nixosCfg.mainService or null;
+            homeManagerFlake = config.homeManager.flake or homeCfg.homeManagerFlake or null;
+            homeModules = (config.homeManager.modules or []) ++ (homeCfg.modules or []);
             fromImageEnabled = hasFromImage;
           };
         in

@@ -1,21 +1,11 @@
 # NixOS-only entrypoint options: service adapter integration.
 #
-# Shared options (entrypoint, stopSignal, workingDir, declaredVolumes)
+# Shared options (entrypoint, stopSignal, workingDir, declaredVolumes, mainService)
 # come from _options/ via container-options-namespace.nix.
 # These NixOS-only options are set by service adapters during NixOS eval.
 { lib, ... }:
 {
   options.oci.container = {
-    mainService = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      description = ''
-        Logical NixOS service name to extract entrypoint from.
-        For most services this matches the systemd unit name directly.
-        For multi-instance services (e.g. redis), the service adapter
-        resolves this to the actual systemd unit name automatically.
-      '';
-    };
     resolvedSystemdServiceName = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
