@@ -72,7 +72,7 @@ activates the performance subsystem. Each feature is then
 configured independently. See the
 [flake-parts option reference](../reference/flake-parts-options.html)
 for all performance options, or the
-[NixOS container module reference](../reference/nix-oci-container-module-options.html)
+[NixOS container module reference](../reference/flake-parts-options.html)
 for inner `oci.container.performance.*` options.
 
 ## Alternative memory allocators
@@ -362,7 +362,7 @@ oci.containers.my-api = {
 ## NixOS container integration
 
 When using `nixosConfig`, you can set performance options through
-NixOS module composition. See [`oci.container.performance`](../reference/nix-oci-container-module-options.html) in the container module option reference.
+NixOS module composition. See [`oci.container.performance`](../reference/flake-parts-options.html) in the container module option reference.
 
 ```nix
 oci.containers.my-app.nixosConfig.modules = [

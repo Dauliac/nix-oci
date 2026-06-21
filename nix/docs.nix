@@ -300,7 +300,6 @@ in
               sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/nixos-options.md
               sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/home-manager-options.md
               sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/system-manager-options.md
-              sed -i '/<!-- OPTIONS:nixos-container -->/r ${nixosContainerDoc.optionsCommonMark}' $out/reference/nix-oci-container-module-options.md
               sed -i '/<!-- OPTIONS:nix-lib -->/r ${nixLibDoc}/nix-lib.md' $out/reference/nix-lib.md
               sed -i '/<!-- OPTIONS:nix-lib-nixos-oci -->/r ${nixLibDoc}/nix-lib-nixos-oci.md' $out/reference/nix-lib-nixos-oci.md
               sed -i '/<!-- OPTIONS:nix-lib-nixos-deploy -->/r ${nixLibDoc}/nix-lib-nixos-deploy.md' $out/reference/nix-lib-nixos-deploy.md
@@ -440,50 +439,45 @@ in
                 position = 1;
               }
               {
-                path = "reference/nix-oci-container-module-options.md";
-                new_title = "Options: nixos-oci";
-                position = 2;
-              }
-              {
                 path = "reference/nixos-options.md";
                 new_title = "Options: NixOS deploy";
-                position = 3;
+                position = 2;
               }
               {
                 path = "reference/home-manager-options.md";
                 new_title = "Options: Home Manager deploy";
-                position = 4;
+                position = 3;
               }
               {
                 path = "reference/system-manager-options.md";
                 new_title = "Options: system-manager deploy";
-                position = 5;
+                position = 4;
               }
               # -- Reference: nix-lib functions --
               {
                 path = "reference/nix-lib.md";
                 new_title = "nix-lib: flake-parts functions";
-                position = 6;
+                position = 5;
               }
               {
                 path = "reference/nix-lib-nixos-oci.md";
                 new_title = "nix-lib: nixos-oci functions";
-                position = 7;
+                position = 6;
               }
               {
                 path = "reference/nix-lib-nixos-deploy.md";
                 new_title = "nix-lib: NixOS deploy functions";
-                position = 8;
+                position = 7;
               }
               {
                 path = "reference/nix-lib-home-manager-deploy.md";
                 new_title = "nix-lib: Home Manager deploy functions";
-                position = 9;
+                position = 8;
               }
               {
                 path = "reference/nix-lib-system-manager-deploy.md";
                 new_title = "nix-lib: system-manager deploy functions";
-                position = 10;
+                position = 9;
               }
               # -- Test Reference: separate sidebar group (last) --
               {

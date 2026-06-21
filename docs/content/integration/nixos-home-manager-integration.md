@@ -65,7 +65,7 @@ flowchart LR
 A single `services.nginx.enable = true` gives you:
 
 - The correct entrypoint (`nginx` in foreground mode via a
-  [service adapter](../reference/nix-oci-container-module-options.md#service-adapters))
+  [service adapter](../reference/flake-parts-options.md#service-adapters))
 - A healthcheck (probing `stub_status` on localhost)
 - The right stop signal (`SIGQUIT` for graceful shutdown)
 - A non-root user derived from the package name
@@ -225,7 +225,7 @@ that import it: a single source of truth.
 
 ## See also
 
-- [Container module options](../reference/nix-oci-container-module-options.md): full reference for `nixosConfig` and `homeConfig`
+- [Container module options](../reference/flake-parts-options.md): full reference for `nixosConfig` and `homeConfig`
 - [Container sandbox](./sandbox.md): interactive shell leveraging home-manager dotfiles
 - [Automatic metadata derivation](./automatic-metadata.md): healthchecks, stop signals, working directories from NixOS services
 - [flake-parts options](../reference/flake-parts-options.md): build-time container options

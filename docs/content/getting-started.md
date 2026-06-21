@@ -118,7 +118,7 @@ perSystem = { ... }: {
 
 nix-oci evaluates the NixOS modules, extracts the entrypoint, users, and
 filesystem, and builds a minimal OCI image; no Dockerfile needed.
-See [`nixosConfig`](./reference/nix-oci-container-module-options.html) in the container module option reference.
+See [`nixosConfig`](./reference/flake-parts-options.html) in the container module option reference.
 
 ::: {.tip}
 The service adapter for nginx auto-injects a healthcheck endpoint, a stop
@@ -177,7 +177,7 @@ perSystem = { ... }: {
 };
 ```
 
-See [`homeConfig`](./reference/nix-oci-container-module-options.html) in the container module option reference.
+See [`homeConfig`](./reference/flake-parts-options.html) in the container module option reference.
 
 ## Step 8: Enable hardening (optional)
 

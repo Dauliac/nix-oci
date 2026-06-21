@@ -59,7 +59,7 @@ oci.containers.my-nginx = {
 
 That's it. nix-oci evaluates the NixOS modules, extracts the nginx binary
 as the entrypoint, creates a non-root `nginx` user, and builds a minimal image.
-See [`nixosConfig`](../reference/nix-oci-container-module-options.html) in the container module option reference.
+See [`nixosConfig`](../reference/flake-parts-options.html) in the container module option reference.
 
 ## 3. Build and test
 
@@ -179,7 +179,7 @@ extracts the start command and uses it as the container entrypoint.
 See [NixOS options search](https://search.nixos.org/options?query=services.)
 for all available services.
 
-For full option details, see [nix-oci container module options](../reference/nix-oci-container-module-options.html).
+For full option details, see [nix-oci container module options](../reference/flake-parts-options.html).
 
 ## Runnable example
 

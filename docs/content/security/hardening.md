@@ -51,7 +51,7 @@ activates the full hardening stack with sensible defaults.
 Each sub-feature can be individually tuned. See the
 [flake-parts option reference](../reference/flake-parts-options.html)
 for all available hardening options, or the
-[NixOS container module reference](../reference/nix-oci-container-module-options.html)
+[NixOS container module reference](../reference/flake-parts-options.html)
 for the inner `oci.container.hardening.*` options.
 
 ## Seccomp: syscall filtering
