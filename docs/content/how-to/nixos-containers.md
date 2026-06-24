@@ -173,7 +173,7 @@ nix flake check
 
 This runs all enabled tests (CST, dive, dgoss) as Nix checks.
 
-For full option details, see [flake.parts options](../reference/flake-parts-options.html).
+For full option details, see [Options: flake-parts](../reference/flake-parts-options.html).
 
 ## Runnable example
 

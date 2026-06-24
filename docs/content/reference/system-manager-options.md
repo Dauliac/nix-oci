@@ -1,8 +1,8 @@
 +++
-title = "system-manager module options"
+title = "Options: system-manager deploy"
 +++
 
-# system-manager Module Options
+# Options: system-manager deploy
 
 These options are available when you import `inputs.nix-oci.modules.systemManager.nix-oci`
 into your [system-manager](https://system-manager.net) configuration.

@@ -1,8 +1,8 @@
 +++
-title = "NixOS module options"
+title = "Options: NixOS deploy"
 +++
 
-# NixOS Module Options
+# Options: NixOS deploy
 
 These options are available when you import `inputs.nix-oci.modules.nixos.nix-oci`
 into your NixOS configuration.

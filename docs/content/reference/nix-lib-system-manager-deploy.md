@@ -1,7 +1,7 @@
 +++
-title = "Options: system-manager Deploy Functions"
+title = "nix-lib: system-manager deploy functions"
 +++
 
-# Options: system-manager Deploy Functions
+# nix-lib: system-manager deploy functions
 
 <!-- OPTIONS:nix-lib-system-manager-deploy -->

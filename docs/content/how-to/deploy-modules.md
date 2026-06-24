@@ -132,7 +132,7 @@ Ensure you enable Docker on the system:
 virtualisation.docker.enable = true;
 ```
 
-For full option reference, see [NixOS module options](../reference/nixos-options.html).
+For full option reference, see [Options: NixOS deploy](../reference/nixos-options.html).
 
 ## Enable SOCI lazy pulling
 

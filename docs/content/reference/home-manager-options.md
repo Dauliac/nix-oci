@@ -1,8 +1,8 @@
 +++
-title = "Home Manager module options"
+title = "Options: Home Manager deploy"
 +++
 
-# Home Manager Module Options
+# Options: Home Manager deploy
 
 These options are available when you import `inputs.nix-oci.modules.homeManager.nix-oci`
 into your Home Manager configuration.

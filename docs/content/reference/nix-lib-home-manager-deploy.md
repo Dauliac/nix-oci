@@ -1,7 +1,7 @@
 +++
-title = "Options: Home Manager Deploy Functions"
+title = "nix-lib: Home Manager deploy functions"
 +++
 
-# Options: Home Manager Deploy Functions
+# nix-lib: Home Manager deploy functions
 
 <!-- OPTIONS:nix-lib-home-manager-deploy -->

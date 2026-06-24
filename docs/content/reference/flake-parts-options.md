@@ -1,8 +1,8 @@
 +++
-title = "flake.parts options"
+title = "Options: flake-parts"
 +++
 
-# flake.parts Options
+# Options: flake-parts
 
 Build-time options for defining OCI images in your flake.
 

@@ -302,9 +302,9 @@ The key principle: **define container contents once, add deploy-specific
 options (`autoStart`, extra `ports`) at the deploy site.**
 
 For option details, see:
-- [flake.parts options](../reference/flake-parts-options.html)
-- [NixOS module options](../reference/nixos-options.html)
-- [Home Manager module options](../reference/home-manager-options.html)
+- [Options: flake-parts](../reference/flake-parts-options.html)
+- [Options: NixOS deploy](../reference/nixos-options.html)
+- [Options: Home Manager deploy](../reference/home-manager-options.html)
 
 ## Runnable example
 
