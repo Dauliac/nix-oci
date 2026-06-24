@@ -41,16 +41,16 @@
 
             # NixOS module: provides /etc, users, shadow files
             nixosConfig.modules = [
-                (
-                  { pkgs, ... }:
-                  {
-                    environment.systemPackages = with pkgs; [
-                      neovim
-                      yaml-language-server
-                    ];
-                  }
-                )
-              ];
+              (
+                { pkgs, ... }:
+                {
+                  environment.systemPackages = with pkgs; [
+                    neovim
+                    yaml-language-server
+                  ];
+                }
+              )
+            ];
 
             # Home-manager: dotfiles baked into the image
             homeManager = {

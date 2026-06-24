@@ -18,21 +18,21 @@
           nixosRedisPerf = {
             mainService = "redis";
             nixosConfig.modules = [
-                (
-                  { lib, ... }:
-                  {
-                    services.redis.servers.default = {
-                      enable = true;
-                      bind = "0.0.0.0";
-                      port = 6379;
-                      settings = {
-                        maxmemory = "256mb";
-                        maxmemory-policy = "allkeys-lru";
-                      };
+              (
+                { lib, ... }:
+                {
+                  services.redis.servers.default = {
+                    enable = true;
+                    bind = "0.0.0.0";
+                    port = 6379;
+                    settings = {
+                      maxmemory = "256mb";
+                      maxmemory-policy = "allkeys-lru";
                     };
-                  }
-                )
-              ];
+                  };
+                }
+              )
+            ];
             isRoot = true;
             ports = [ "6379:6379" ];
             performance = {

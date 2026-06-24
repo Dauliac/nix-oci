@@ -247,7 +247,12 @@ in
                 nixpkgs.hostPlatform = lib.mkDefault pkgs.system;
                 oci.container = {
                   # Identity (cycle-safe)
-                  inherit (containerConfig) package dependencies uid gid;
+                  inherit (containerConfig)
+                    package
+                    dependencies
+                    uid
+                    gid
+                    ;
                   user = nixosEvalUser;
                   isRoot = containerIsRoot;
                   inherit mainService fromImageEnabled;

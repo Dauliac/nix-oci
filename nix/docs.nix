@@ -301,7 +301,6 @@ in
               sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/home-manager-options.md
               sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/system-manager-options.md
               sed -i '/<!-- OPTIONS:nix-lib -->/r ${nixLibDoc}/nix-lib.md' $out/reference/nix-lib.md
-              sed -i '/<!-- OPTIONS:nix-lib-nixos-oci -->/r ${nixLibDoc}/nix-lib-nixos-oci.md' $out/reference/nix-lib-nixos-oci.md
               sed -i '/<!-- OPTIONS:nix-lib-nixos-deploy -->/r ${nixLibDoc}/nix-lib-nixos-deploy.md' $out/reference/nix-lib-nixos-deploy.md
               sed -i '/<!-- OPTIONS:nix-lib-home-manager-deploy -->/r ${nixLibDoc}/nix-lib-home-manager-deploy.md' $out/reference/nix-lib-home-manager-deploy.md
               sed -i '/<!-- OPTIONS:nix-lib-system-manager-deploy -->/r ${nixLibDoc}/nix-lib-system-manager-deploy.md' $out/reference/nix-lib-system-manager-deploy.md
@@ -460,24 +459,19 @@ in
                 position = 5;
               }
               {
-                path = "reference/nix-lib-nixos-oci.md";
-                new_title = "nix-lib: nixos-oci functions";
-                position = 6;
-              }
-              {
                 path = "reference/nix-lib-nixos-deploy.md";
                 new_title = "nix-lib: NixOS deploy functions";
-                position = 7;
+                position = 6;
               }
               {
                 path = "reference/nix-lib-home-manager-deploy.md";
                 new_title = "nix-lib: Home Manager deploy functions";
-                position = 8;
+                position = 7;
               }
               {
                 path = "reference/nix-lib-system-manager-deploy.md";
                 new_title = "nix-lib: system-manager deploy functions";
-                position = 9;
+                position = 8;
               }
               # -- Test Reference: separate sidebar group (last) --
               {
@@ -547,20 +541,6 @@ in
                 - [Source: `nix/modules/oci/lib/`](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci/lib) -- image builders, layers, labels, security, ports, architecture
                 - [Source: `nix/modules/oci/security/`](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci/security) -- CVE, SBOM, signing, compliance, credentials leak, linting
                 - [Source: `nix/modules/oci/testing/`](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci/testing) -- CST, dgoss, dive, container probes
-
-                ---
-              '';
-            };
-            nix-lib-nixos-oci = {
-              showIndex = false;
-              showTitle = false;
-              headingLevel = 2;
-              metadata = containerLibsMeta;
-              header = ''
-                Functions declared in the `nixos-oci` module tree (`flake.modules.nixos-oci`).
-
-                Available at `config.lib.oci.container.*` inside the NixOS container evaluation
-                when `nixosConfig` is used.
 
                 ---
               '';

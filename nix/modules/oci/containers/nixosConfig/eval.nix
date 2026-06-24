@@ -67,7 +67,7 @@ in
             nixosModules = nixosCfg.modules;
             mainService = config.mainService or nixosCfg.mainService or null;
             homeManagerFlake = config.homeManager.flake or homeCfg.homeManagerFlake or null;
-            homeModules = (config.homeManager.modules or []) ++ (homeCfg.modules or []);
+            homeModules = (config.homeManager.modules or [ ]) ++ (homeCfg.modules or [ ]);
             fromImageEnabled = hasFromImage;
           };
         in

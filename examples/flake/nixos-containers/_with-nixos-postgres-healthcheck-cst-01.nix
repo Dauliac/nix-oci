@@ -13,24 +13,24 @@
           nixosPostgresHealthcheck = {
             mainService = "postgresql";
             nixosConfig.modules = [
-                (
-                  { pkgs, ... }:
-                  {
-                    services.postgresql = {
-                      enable = true;
-                      package = pkgs.postgresql_16;
-                      enableTCPIP = true;
-                      settings = {
-                        listen_addresses = "*";
-                      };
-                      authentication = ''
-                        local all all trust
-                        host  all all 0.0.0.0/0 md5
-                      '';
+              (
+                { pkgs, ... }:
+                {
+                  services.postgresql = {
+                    enable = true;
+                    package = pkgs.postgresql_16;
+                    enableTCPIP = true;
+                    settings = {
+                      listen_addresses = "*";
                     };
-                  }
-                )
-              ];
+                    authentication = ''
+                      local all all trust
+                      host  all all 0.0.0.0/0 md5
+                    '';
+                  };
+                }
+              )
+            ];
             isRoot = true;
             test.containerStructureTest = {
               enabled = true;

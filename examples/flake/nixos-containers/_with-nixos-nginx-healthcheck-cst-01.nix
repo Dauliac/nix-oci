@@ -14,30 +14,30 @@
           nixosNginxHealthcheck = {
             mainService = "nginx";
             nixosConfig.modules = [
-                (
-                  { ... }:
-                  {
-                    services.nginx = {
-                      enable = true;
-                      virtualHosts."localhost" = {
-                        root = "/var/www";
-                        locations."/" = {
-                          extraConfig = ''
-                            return 200 "ok";
-                            default_type text/plain;
-                          '';
-                        };
-                        locations."/health" = {
-                          extraConfig = ''
-                            return 200 '{"status":"healthy"}';
-                            default_type application/json;
-                          '';
-                        };
+              (
+                { ... }:
+                {
+                  services.nginx = {
+                    enable = true;
+                    virtualHosts."localhost" = {
+                      root = "/var/www";
+                      locations."/" = {
+                        extraConfig = ''
+                          return 200 "ok";
+                          default_type text/plain;
+                        '';
+                      };
+                      locations."/health" = {
+                        extraConfig = ''
+                          return 200 '{"status":"healthy"}';
+                          default_type application/json;
+                        '';
                       };
                     };
-                  }
-                )
-              ];
+                  };
+                }
+              )
+            ];
             isRoot = true;
             test.containerStructureTest = {
               enabled = true;

@@ -13,27 +13,27 @@
           nixosNginxSyspackages = {
             mainService = "nginx";
             nixosConfig.modules = [
-                (
-                  { pkgs, ... }:
-                  {
-                    services.nginx = {
-                      enable = true;
-                      virtualHosts."localhost" = {
-                        root = "/var/www";
-                        locations."/".extraConfig = ''
-                          return 200 "ok";
-                          default_type text/plain;
-                        '';
-                      };
+              (
+                { pkgs, ... }:
+                {
+                  services.nginx = {
+                    enable = true;
+                    virtualHosts."localhost" = {
+                      root = "/var/www";
+                      locations."/".extraConfig = ''
+                        return 200 "ok";
+                        default_type text/plain;
+                      '';
                     };
-                    environment.systemPackages = with pkgs; [
-                      curl
-                      jq
-                      htop
-                    ];
-                  }
-                )
-              ];
+                  };
+                  environment.systemPackages = with pkgs; [
+                    curl
+                    jq
+                    htop
+                  ];
+                }
+              )
+            ];
             isRoot = true;
             test.containerStructureTest = {
               enabled = true;

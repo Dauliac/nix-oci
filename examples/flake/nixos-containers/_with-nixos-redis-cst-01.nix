@@ -17,17 +17,17 @@
           nixosRedisCst = {
             mainService = "redis-default";
             nixosConfig.modules = [
-                (
-                  { ... }:
-                  {
-                    services.redis.servers.default = {
-                      enable = true;
-                      bind = "0.0.0.0";
-                      port = 6379;
-                    };
-                  }
-                )
-              ];
+              (
+                { ... }:
+                {
+                  services.redis.servers.default = {
+                    enable = true;
+                    bind = "0.0.0.0";
+                    port = 6379;
+                  };
+                }
+              )
+            ];
             package = pkgs.redis;
             test.containerStructureTest = {
               enabled = true;

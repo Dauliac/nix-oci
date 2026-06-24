@@ -88,9 +88,7 @@ let
         User = if config.isRoot then "root" else config.user;
         Env = out.envVars;
         Labels =
-          generatedLabels
-          // (nixosEval.oci.container.generatedLabels or { })
-          // (config.labels or { });
+          generatedLabels // (nixosEval.oci.container.generatedLabels or { }) // (config.labels or { });
       }
       // lib.optionalAttrs (config.ports != [ ]) {
         ExposedPorts = ociLib.mkExposedPorts config.ports;

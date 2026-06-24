@@ -29,24 +29,24 @@
             ];
 
             nixosConfig.modules = [ ];
-            };
+          };
 
-            homeManager = {
-              flake = inputs.home-manager;
-              # The internal defaults already provide bash + starship.
-              # Override or extend here:
-              modules = [
-                (
-                  { ... }:
-                  {
-                    programs.git = {
-                      enable = true;
-                      userName = "dev";
-                      userEmail = "dev@container";
-                    };
-                  }
-                )
-              ];
+          homeManager = {
+            flake = inputs.home-manager;
+            # The internal defaults already provide bash + starship.
+            # Override or extend here:
+            modules = [
+              (
+                { ... }:
+                {
+                  programs.git = {
+                    enable = true;
+                    userName = "dev";
+                    userEmail = "dev@container";
+                  };
+                }
+              )
+            ];
           };
         };
       };

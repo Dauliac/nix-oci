@@ -15,22 +15,22 @@
           nixosNginxCst = {
             mainService = "nginx";
             nixosConfig.modules = [
-                (
-                  { ... }:
-                  {
-                    services.nginx = {
-                      enable = true;
-                      virtualHosts."localhost" = {
-                        root = "/var/www";
-                        locations."/".extraConfig = ''
-                          return 200 "Hello from nix-oci CST!";
-                          default_type text/plain;
-                        '';
-                      };
+              (
+                { ... }:
+                {
+                  services.nginx = {
+                    enable = true;
+                    virtualHosts."localhost" = {
+                      root = "/var/www";
+                      locations."/".extraConfig = ''
+                        return 200 "Hello from nix-oci CST!";
+                        default_type text/plain;
+                      '';
                     };
-                  }
-                )
-              ];
+                  };
+                }
+              )
+            ];
             # nginx needs root to bind port 80 and manage worker processes
             isRoot = true;
             test.containerStructureTest = {

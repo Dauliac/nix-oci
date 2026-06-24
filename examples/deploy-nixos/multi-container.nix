@@ -41,14 +41,14 @@ in
       redis = {
         mainService = "redis";
         nixosConfig.modules = [
-            {
-              services.redis.servers.default = {
-                enable = true;
-                bind = "0.0.0.0";
-                port = 6379;
-              };
-            }
-          ];
+          {
+            services.redis.servers.default = {
+              enable = true;
+              bind = "0.0.0.0";
+              port = 6379;
+            };
+          }
+        ];
         autoStart = true;
         ports = [ "6379:6379" ];
         labels = {

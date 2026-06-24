@@ -11,29 +11,29 @@
         config.oci.containers = {
           nixosDnsmasqCst = {
             mainService = "dnsmasq";
-            nixosConfig.modules = [
-                (
-                  { pkgs, ... }:
-                  {
-                    services.dnsmasq = {
-                      enable = true;
-                      settings = {
-                        listen-address = "0.0.0.0";
-                        port = 5353;
-                        no-resolv = true;
-                        server = [
-                          "8.8.8.8"
-                          "1.1.1.1"
-                        ];
-                    };
-                    environment.systemPackages = with pkgs; [
-                      dig
-                    ];
-                  }
-                )
-              ];
-            };
             isRoot = true;
+            nixosConfig.modules = [
+              (
+                { pkgs, ... }:
+                {
+                  services.dnsmasq = {
+                    enable = true;
+                    settings = {
+                      listen-address = "0.0.0.0";
+                      port = 5353;
+                      no-resolv = true;
+                      server = [
+                        "8.8.8.8"
+                        "1.1.1.1"
+                      ];
+                    };
+                  };
+                  environment.systemPackages = with pkgs; [
+                    dig
+                  ];
+                }
+              )
+            ];
             test.containerStructureTest = {
               enabled = true;
               configs = [

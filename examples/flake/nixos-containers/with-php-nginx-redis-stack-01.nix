@@ -95,36 +95,36 @@
           "${containerName "nginx"}" = {
             mainService = "nginx";
             nixosConfig.modules = [
-                (
-                  { ... }:
-                  {
-                    services.nginx = {
-                      enable = true;
-                      virtualHosts."localhost" = {
-                        listen = [
-                          {
-                            addr = "0.0.0.0";
-                            port = httpPort;
-                          }
-                        ];
+              (
+                { ... }:
+                {
+                  services.nginx = {
+                    enable = true;
+                    virtualHosts."localhost" = {
+                      listen = [
+                        {
+                          addr = "0.0.0.0";
+                          port = httpPort;
+                        }
+                      ];
+                      root = documentRoot;
+
+                      # Static files -- served directly by nginx
+                      locations."/".tryFiles = "$uri $uri/ /index.php$is_args$args";
+
+                      # PHP files -- forwarded to FPM container
+                      locations."~ \\.php$".extraConfig = nginxFastcgiConfig;
+
+                      # Health endpoint for external probes
+                      # (adapter also injects stub_status for internal health)
+                      locations."/health.json" = {
                         root = documentRoot;
-
-                        # Static files -- served directly by nginx
-                        locations."/".tryFiles = "$uri $uri/ /index.php$is_args$args";
-
-                        # PHP files -- forwarded to FPM container
-                        locations."~ \\.php$".extraConfig = nginxFastcgiConfig;
-
-                        # Health endpoint for external probes
-                        # (adapter also injects stub_status for internal health)
-                        locations."/health.json" = {
-                          root = documentRoot;
-                        };
                       };
                     };
-                  }
-                )
-              ];
+                  };
+                }
+              )
+            ];
             isRoot = true;
             ports = [ "${toString httpPort}:${toString httpPort}" ];
             dependencies = [
@@ -142,47 +142,47 @@
           "${containerName "php"}" = {
             mainService = "phpfpm-${project}";
             nixosConfig.modules = [
-                (
-                  { pkgs, ... }:
-                  {
-                    services.phpfpm.pools.${project} = {
-                      user = "app";
-                      group = "app";
-                      settings = {
-                        "listen" = "0.0.0.0:${toString phpFpmPort}";
-                        "pm" = "dynamic";
-                        "pm.max_children" = 10;
-                        "pm.start_servers" = 2;
-                        "pm.min_spare_servers" = 1;
-                        "pm.max_spare_servers" = 4;
-                        "pm.max_requests" = 500;
-                      };
-                      phpEnv = {
-                        REDIS_HOST = containerName "redis";
-                        REDIS_PORT = toString redisPort;
-                        APP_NAME = project;
-                      };
-                      phpPackage = pkgs.php.withExtensions (
-                        {
-                          enabled,
-                          all,
-                        }:
-                        enabled
-                        ++ [
-                          all.redis
-                          all.opcache
-                        ]
-                      );
+              (
+                { pkgs, ... }:
+                {
+                  services.phpfpm.pools.${project} = {
+                    user = "app";
+                    group = "app";
+                    settings = {
+                      "listen" = "0.0.0.0:${toString phpFpmPort}";
+                      "pm" = "dynamic";
+                      "pm.max_children" = 10;
+                      "pm.start_servers" = 2;
+                      "pm.min_spare_servers" = 1;
+                      "pm.max_spare_servers" = 4;
+                      "pm.max_requests" = 500;
                     };
+                    phpEnv = {
+                      REDIS_HOST = containerName "redis";
+                      REDIS_PORT = toString redisPort;
+                      APP_NAME = project;
+                    };
+                    phpPackage = pkgs.php.withExtensions (
+                      {
+                        enabled,
+                        all,
+                      }:
+                      enabled
+                      ++ [
+                        all.redis
+                        all.opcache
+                      ]
+                    );
+                  };
 
-                    users.users.app = {
-                      isSystemUser = true;
-                      group = "app";
-                    };
-                    users.groups.app = { };
-                  }
-                )
-              ];
+                  users.users.app = {
+                    isSystemUser = true;
+                    group = "app";
+                  };
+                  users.groups.app = { };
+                }
+              )
+            ];
             package = pkgs.php;
             ports = [ "${toString phpFpmPort}:${toString phpFpmPort}" ];
             dependencies = [ phpApp ];
@@ -199,22 +199,22 @@
           "${containerName "redis"}" = {
             mainService = "redis-${project}";
             nixosConfig.modules = [
-                (
-                  { lib, ... }:
-                  {
-                    services.redis.servers.${project} = {
-                      enable = true;
-                      bind = "0.0.0.0";
-                      port = redisPort;
-                      settings = {
-                        maxmemory = "64mb";
-                        maxmemory-policy = "allkeys-lru";
-                        save = lib.mkForce "";
-                      };
+              (
+                { lib, ... }:
+                {
+                  services.redis.servers.${project} = {
+                    enable = true;
+                    bind = "0.0.0.0";
+                    port = redisPort;
+                    settings = {
+                      maxmemory = "64mb";
+                      maxmemory-policy = "allkeys-lru";
+                      save = lib.mkForce "";
                     };
-                  }
-                )
-              ];
+                  };
+                }
+              )
+            ];
             package = pkgs.redis;
             ports = [ "${toString redisPort}:${toString redisPort}" ];
             labels = commonLabels // {

@@ -27,19 +27,19 @@
           oci.containers.my-nginx = {
             mainService = "nginx";
             nixosConfig.modules = [
-                (
-                  { pkgs, ... }:
-                  {
-                    services.nginx = {
-                      enable = true;
-                      virtualHosts.localhost = {
-                        locations."/".return = "200 'Hello from nix-oci!'";
-                      };
+              (
+                { pkgs, ... }:
+                {
+                  services.nginx = {
+                    enable = true;
+                    virtualHosts.localhost = {
+                      locations."/".return = "200 'Hello from nix-oci!'";
                     };
-                    environment.systemPackages = [ pkgs.curl ];
-                  }
-                )
-              ];
+                  };
+                  environment.systemPackages = [ pkgs.curl ];
+                }
+              )
+            ];
           };
         };
     };

@@ -13,22 +13,22 @@
           nixosNginxNonroot = {
             mainService = "nginx";
             nixosConfig.modules = [
-                (
-                  { ... }:
-                  {
-                    services.nginx = {
-                      enable = true;
-                      virtualHosts."localhost" = {
-                        root = "/var/www";
-                        locations."/".extraConfig = ''
-                          return 200 "Hello from non-root nginx!";
-                          default_type text/plain;
-                        '';
-                      };
+              (
+                { ... }:
+                {
+                  services.nginx = {
+                    enable = true;
+                    virtualHosts."localhost" = {
+                      root = "/var/www";
+                      locations."/".extraConfig = ''
+                        return 200 "Hello from non-root nginx!";
+                        default_type text/plain;
+                      '';
                     };
-                  }
-                )
-              ];
+                  };
+                }
+              )
+            ];
             isRoot = false;
             test.containerStructureTest = {
               enabled = true;

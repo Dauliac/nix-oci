@@ -13,22 +13,22 @@
           nginx-nixos = {
             mainService = "nginx";
             nixosConfig.modules = [
-                (
-                  { ... }:
-                  {
-                    services.nginx = {
-                      enable = true;
-                      virtualHosts."localhost" = {
-                        root = "/var/www";
-                        locations."/".extraConfig = ''
-                          return 200 "Hello from nix-oci + NixOS modules!";
-                          default_type text/plain;
-                        '';
-                      };
+              (
+                { ... }:
+                {
+                  services.nginx = {
+                    enable = true;
+                    virtualHosts."localhost" = {
+                      root = "/var/www";
+                      locations."/".extraConfig = ''
+                        return 200 "Hello from nix-oci + NixOS modules!";
+                        default_type text/plain;
+                      '';
                     };
-                  }
-                )
-              ];
+                  };
+                }
+              )
+            ];
           };
         };
       };

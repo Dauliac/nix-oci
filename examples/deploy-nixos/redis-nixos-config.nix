@@ -11,15 +11,15 @@
     containers.redis = {
       mainService = "redis";
       nixosConfig.modules = [
-          {
-            services.redis.servers.default = {
-              enable = true;
-              bind = "0.0.0.0";
-              port = 6379;
-              settings.protected-mode = "no";
-            };
-          }
-        ];
+        {
+          services.redis.servers.default = {
+            enable = true;
+            bind = "0.0.0.0";
+            port = 6379;
+            settings.protected-mode = "no";
+          };
+        }
+      ];
       autoStart = true;
       ports = [ "6379:6379" ];
     };
