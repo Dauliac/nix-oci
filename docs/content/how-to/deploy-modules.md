@@ -164,7 +164,7 @@ With this configuration:
 2. containerd pulls lazily via soci-snapshotter (FUSE mount)
 3. Containers start before the full image is extracted
 
-See [Turbo push backend](../performance/turbo-push-backend.html) for
+See [`performance.turbo.*`](../reference/flake-parts-options.html) in the option reference for
 details on SOCI, eStargz, and layer caching options.
 
 ## Runnable example

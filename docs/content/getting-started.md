@@ -220,8 +220,7 @@ perSystem = { ... }: {
 };
 ```
 
-See [Performance integrations](./performance/performance-integrations.html)
-and [`performance.*`](./reference/flake-parts-options.html) in the option reference for details.
+See [`performance.*`](./reference/flake-parts-options.html) in the option reference for details.
 
 ## Step 10: Health-aware deployment (optional)
 
@@ -304,7 +303,7 @@ and [`cve.*`, `lint.*`, `policy.*`](./reference/flake-parts-options.html) in the
 - [Container Modules API](./how-to/container-modules-api.html): deep dive into `nixosConfig.modules`
 - [Deploy Modules](./how-to/deploy-modules.html): NixOS and Home Manager deployment
 - [Hardening](./security/hardening.html): seccomp, Landlock, capabilities
-- [Performance](./performance/performance-integrations.html): allocators, glibc tunables, march
+- [Options Reference](./reference/flake-parts-options.html): `performance.*` allocators, glibc tunables, march
 - [Automatic metadata](./architecture/automatic-metadata.html): healthchecks, stop signals, volumes
 - [Automatic labeling](./architecture/automatic-labeling.html): OCI annotations, K8s PSS, security hints
 - [Security scanning](./security/index.html): CVE, SBOM, signing, Conftest

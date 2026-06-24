@@ -122,12 +122,15 @@ in
 
       # Pick one small flake container to test the registry push pipeline.
       # "example-hello" is the smallest (just pkgs.hello).
+      flakeOCINames = lib.attrNames flakeOCIs;
       registryTestName =
         if builtins.hasAttr "example-hello" flakeOCIs then
           "example-hello"
+        else if flakeOCINames != [ ] then
+          lib.head (lib.sort (a: b: a < b) flakeOCINames)
         else
-          lib.head (lib.sort (a: b: a < b) (lib.attrNames flakeOCIs));
-      registryTestOCI = flakeOCIs.${registryTestName} or null;
+          null;
+      registryTestOCI = if registryTestName != null then flakeOCIs.${registryTestName} or null else null;
 
       hasAnyContainers = bddContainers != { } || hasFlakeContainers;
 
@@ -146,7 +149,7 @@ in
         }
       ) (lib.attrNames testableSpecs);
 
-      registryLowerName = lib.toLower registryTestName;
+      registryLowerName = if registryTestName != null then lib.toLower registryTestName else "";
 
       testSuiteFile = pkgs.writeText "test_bdd_vm.py" ''
         import docker

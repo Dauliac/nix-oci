@@ -43,6 +43,6 @@ option namespace for configuring the SOCI v2 lazy-pulling daemon.
 Auto-enabled when `oci.snapshotter.soci.enable = true` or when any
 container has `performance.turbo.soci = true` with `backend = "docker"`.
 
-See [Turbo push backend: standalone soci-snapshotter module](../performance/turbo-push-backend.html#standalone-soci-snapshotter-module) for usage and architecture.
+See the `services.soci-snapshotter` options below for usage and configuration.
 
 <!-- OPTIONS:deploy -->
