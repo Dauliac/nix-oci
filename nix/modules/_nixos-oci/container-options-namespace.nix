@@ -45,12 +45,11 @@ let
     # Home-manager
     (optionsDir + "/home-manager.nix")
 
-    # Hardening (all except landlock which stays NixOS-only)
+    # Hardening
     (optionsDir + "/hardening/enable.nix")
     (optionsDir + "/hardening/dns.nix")
     (optionsDir + "/hardening/tls.nix")
     (optionsDir + "/hardening/seccomp.nix")
-    # landlock stays in _nixos-oci/hardening/landlock.nix (NixOS-only, no _options/ counterpart)
     (optionsDir + "/hardening/apparmor.nix")
     (optionsDir + "/hardening/capabilities.nix")
     (optionsDir + "/hardening/rootfs.nix")

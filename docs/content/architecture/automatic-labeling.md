@@ -81,7 +81,6 @@ security posture:
 | `hardening.capabilities-drop` | `"ALL"` |
 | `hardening.capabilities-add` | `"NET_BIND_SERVICE"` |
 | `hardening.seccomp-profile` | `"strict"` / `"moderate"` / `"web-server"` |
-| `hardening.landlock-enabled` | `"true"` |
 | `hardening.dns-disabled` | `"true"` |
 | `hardening.tls-trust-store-removed` | `"true"` |
 

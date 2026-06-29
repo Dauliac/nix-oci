@@ -1,8 +1,8 @@
 # Shared: AppArmor MAC (Mandatory Access Control) profile.
 #
 # AppArmor is a Linux Security Module (LSM) that provides pathname-based
-# access control. Unlike seccomp (syscall filtering) and Landlock
-# (VFS/inode-level), AppArmor operates on pathnames and can restrict:
+# access control. Unlike seccomp (syscall filtering), AppArmor
+# operates on pathnames and can restrict:
 #
 #   - File access (read/write/execute per path)
 #   - Network access (TCP/UDP bind/connect)
@@ -11,7 +11,7 @@
 #   - User namespace creation (deny userns_create — blocks LPE class)
 #
 # Enforcement order at runtime:
-#   seccomp (BPF) → capabilities (kernel) → AppArmor (LSM) → Landlock (LSM)
+#   seccomp (BPF) → capabilities (kernel) → AppArmor (LSM)
 #
 # AppArmor profiles are loaded on the HOST, not inside the container.
 # The deploy module generates --security-opt apparmor=<profile-name>.

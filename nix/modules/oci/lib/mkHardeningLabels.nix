@@ -50,7 +50,6 @@ in
                   enable = true;
                   profile = "strict";
                 };
-                landlock.enable = false;
               };
             };
             assertions = [
@@ -79,7 +78,6 @@ in
                   add = [ ];
                 };
                 seccomp.enable = false;
-                landlock.enable = false;
               };
             };
             expected = { };

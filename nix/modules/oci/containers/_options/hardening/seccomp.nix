@@ -5,8 +5,8 @@
 # integer syscall arguments (e.g. clone flags, ioctl commands,
 # socket address families).
 #
-# This is complementary to Landlock (which operates at VFS level
-# and can restrict *which files/ports* are accessible).
+# This is complementary to AppArmor (which operates at pathname level
+# and can restrict actions like mount, ptrace, and userns creation).
 { lib, ... }:
 {
   options.hardening.seccomp = lib.mkOption {

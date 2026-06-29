@@ -15,34 +15,11 @@ let
     (config.services.postgresql.enable or false) || ((config.services.redis.servers or { }) != { });
 
   hasGpu = config.oci.container.gpu.enable or false;
-
-  # Detect bound ports from known services for Landlock defaults.
-  detectedTcpBind =
-    let
-      nginxPorts =
-        if config.services.nginx.enable or false then
-          let
-            defaultPort = config.services.nginx.defaultHTTPListenPort or 80;
-          in
-          [ defaultPort ]
-        else
-          [ ];
-    in
-    nginxPorts;
 in
 {
   config = lib.mkMerge [
     {
       assertions = lib.optionals cfg.enable [
-        {
-          assertion = !(cfg.disableDns && cfg.landlock.enable && cfg.landlock.allowedTcpConnect != [ ]);
-          message = ''
-            nix-oci: `hardening.disableDns = true` but Landlock allows TCP connect to
-            ${lib.concatMapStringsSep ", " toString cfg.landlock.allowedTcpConnect}.
-            DNS is disabled (nsswitch hosts: files only), so connections to hostnames
-            will fail even if Landlock permits the port. Use IP addresses instead.
-          '';
-        }
         {
           assertion =
             !(cfg.seccomp.enable && cfg.seccomp.customProfileJson != null && cfg.seccomp.profile != "moderate");
@@ -85,9 +62,6 @@ in
         else
           "strict"
       );
-
-      # Auto-populate Landlock TCP bind ports from detected services.
-      oci.container.hardening.landlock.allowedTcpBind = lib.mkDefault detectedTcpBind;
 
       # Override nsswitch to files-only when DNS is disabled.
       environment.etc."nsswitch.conf".text = lib.mkIf cfg.disableDns (

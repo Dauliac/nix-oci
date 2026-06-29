@@ -236,7 +236,7 @@ Every option declaration lives in its own file, with the file path mirroring the
 
 - Use **kebab-case** for filenames: `glibc-tunables-preset.nix`, not `glibcTunablesPreset.nix`
 - Match the **last segment** of the option path: `oci.container.hardening.disableDns` → `disable-dns.nix`
-- Submodules get a single file named after the submodule: `seccomp.nix`, `landlock.nix`
+- Submodules get a single file named after the submodule: `seccomp.nix`, `apparmor.nix`
 - Subdirectories mirror namespace nesting: `cve/trivy/ignore/root-path.nix`
 
 ## Code style

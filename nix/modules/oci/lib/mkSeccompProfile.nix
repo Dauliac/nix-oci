@@ -6,8 +6,8 @@
 #   - web-server: SCMP_ACT_ERRNO default, allowlist strict + network + threading
 #
 # Seccomp operates at the syscall boundary via BPF -- it controls *which
-# operations* a process can invoke, complementary to Landlock (which
-# controls *which resources* are accessible).
+# operations* a process can invoke, complementary to AppArmor (which
+# controls *which actions* are permitted).
 { lib, ... }:
 let
   pure = import ../../../lib/oci.nix { inherit lib; };

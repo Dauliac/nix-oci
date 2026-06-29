@@ -241,9 +241,6 @@ let
         // lib.optionalAttrs hardening.seccomp.enable {
           "${ns}.hardening.seccomp-profile" = hardening.seccomp.profile;
         }
-        // lib.optionalAttrs (hardening.landlock.enable or false) {
-          "${ns}.hardening.landlock-enabled" = "true";
-        }
       );
 
     mkGpuLabels =
@@ -458,9 +455,6 @@ let
           }
           // lib.optionalAttrs (hardening.seccomp.enable or false) {
             "${ns}.hardening.seccomp-profile" = hardening.seccomp.profile or "moderate";
-          }
-          // lib.optionalAttrs (hardening.landlock.enable or false) {
-            "${ns}.hardening.landlock-enabled" = "true";
           }
           // lib.optionalAttrs (hardening.disableDns or false) {
             "${ns}.hardening.dns-disabled" = "true";

@@ -188,7 +188,7 @@ flowchart TD
         direction TB
         OCI_STD["OCI standard annotations<br/>org.opencontainers.image.*<br/>(title, version, description,<br/>licenses, base.name, url, authors)"]
         BUILD["Build info<br/>…nix-oci.build.*<br/>(system, optimized-layers,<br/>layer-strategy, reproducible)"]
-        HARD["Hardening hints<br/>…nix-oci.hardening.*<br/>(enabled, capabilities, seccomp,<br/>landlock, read-only-rootfs)"]
+        HARD["Hardening hints<br/>…nix-oci.hardening.*<br/>(enabled, capabilities, seccomp,<br/>apparmor, read-only-rootfs)"]
         K8S["K8s hints<br/>…nix-oci.kubernetes.*<br/>(PSS level, run-as-user/group,<br/>fs-group, seccomp-profile-type)"]
         NET["Network hints<br/>…nix-oci.network.*<br/>(tcp-ports, udp-ports)"]
         NIX["Nix identity<br/>…nix-oci.nix.*<br/>(pname, version,<br/>main-program, dependency-count)"]

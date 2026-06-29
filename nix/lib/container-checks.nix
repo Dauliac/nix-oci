@@ -23,7 +23,6 @@ let
       ./container-checks/entrypoint.nix
       ./container-checks/ports.nix
       ./container-checks/seccomp.nix
-      ./container-checks/landlock.nix
       ./container-checks/healthcheck.nix
       ./container-checks/rootfs.nix
       ./container-checks/capabilities.nix

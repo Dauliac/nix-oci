@@ -1,7 +1,7 @@
 # Cross-backend security coherence checks.
 #
 # Detects incoherent compositions between security backends:
-#   seccomp ↔ capabilities ↔ Landlock ↔ AppArmor ↔ DNS/TLS ↔ service detection
+#   seccomp ↔ capabilities ↔ AppArmor ↔ DNS/TLS ↔ service detection
 #
 # Assertions = hard build failure (definite runtime breakage).
 # Warnings   = soft trace (suspicious but possibly intentional).
@@ -22,11 +22,9 @@ let
 
   inherit (lib)
     elem
-    any
     concatStringsSep
     concatMapStringsSep
     optional
-    optionals
     ;
 
   # -- Seccomp profile capability knowledge --
@@ -42,28 +40,11 @@ let
       "gpu-compute"
       "moderate"
     ];
-  profileHasThreading =
-    p:
-    elem p [
-      "web-server"
-      "database"
-      "gpu-compute"
-      "moderate"
-    ];
-  profileHasFsWrite =
-    p:
-    elem p [
-      "web-server"
-      "database"
-      "gpu-compute"
-      "moderate"
-    ];
 
   # All non-moderate allowlist profiles include argument-level filters that
   # block socket(AF_PACKET) and socket(AF_NETLINK), and clone(CLONE_NEW*).
   # "moderate" blocks these via dangerousSyscalls denylist + arg filters.
   profileBlocksRawSocket = _p: true; # all profiles block AF_PACKET/AF_NETLINK
-  profileBlocksNamespaceCreation = _p: true; # all profiles filter clone CLONE_NEW*
 
   # Dangerous syscalls explicitly blocked by "moderate" denylist AND omitted
   # from all allowlist profiles. These are always blocked regardless of profile.
@@ -182,7 +163,7 @@ let
     && profileBlocksRawSocket cfg.seccomp.profile;
 
   # Port < 1024 without NET_BIND_SERVICE
-  privilegedPorts = lib.filter (p: p < 1024) (cfg.landlock.allowedTcpBind ++ allDetectedPorts);
+  privilegedPorts = lib.filter (p: p < 1024) allDetectedPorts;
 
   hasPrivilegedPortWithoutCap =
     privilegedPorts != [ ]
@@ -195,28 +176,8 @@ in
     #  ASSERTIONS — hard build failure
     # =====================================================================
     assertions =
-      # -- P1: Landlock TCP rules dead if seccomp blocks network syscalls --
-      optional
-        (
-          cfg.seccomp.enable
-          && cfg.seccomp.customProfileJson == null
-          && cfg.landlock.enable
-          && !(profileHasNetwork cfg.seccomp.profile)
-          && (cfg.landlock.allowedTcpBind != [ ] || cfg.landlock.allowedTcpConnect != [ ])
-        )
-        {
-          assertion = false;
-          message = ''
-            nix-oci coherence: Landlock allows TCP ports
-            (bind: ${toString cfg.landlock.allowedTcpBind}, connect: ${toString cfg.landlock.allowedTcpConnect})
-            but seccomp profile "${cfg.seccomp.profile}" blocks ALL network syscalls.
-            Landlock TCP rules have NO EFFECT — seccomp intercepts first.
-            Fix: use a network-capable profile (web-server, database, moderate)
-            or remove the Landlock TCP rules.
-          '';
-        }
       # -- P2: NET_RAW capability dead under seccomp arg filters --
-      ++ optional hasNetRawPhantom {
+      optional hasNetRawPhantom {
         assertion = false;
         message = ''
           nix-oci coherence: capabilities.add includes NET_RAW but seccomp
@@ -247,27 +208,6 @@ in
           or use a custom seccomp profile.
         '';
       }
-      # -- P4: Landlock write paths dead if seccomp blocks fsWrite syscalls --
-      ++
-        optional
-          (
-            cfg.seccomp.enable
-            && cfg.seccomp.customProfileJson == null
-            && cfg.landlock.enable
-            && !(profileHasFsWrite cfg.seccomp.profile)
-            && cfg.landlock.allowedWritePaths != [ ]
-          )
-          {
-            assertion = false;
-            message = ''
-              nix-oci coherence: Landlock allows write to
-              ${concatStringsSep ", " cfg.landlock.allowedWritePaths}
-              but seccomp profile "${cfg.seccomp.profile}" blocks filesystem
-              write syscalls (fchmod, ftruncate, rename, unlink, mkdir, ...).
-              The Landlock write rules have NO EFFECT.
-              Fix: use a write-capable profile (web-server, database, moderate).
-            '';
-          }
       # -- C1: Privileged ports without NET_BIND_SERVICE --
       ++ optional hasPrivilegedPortWithoutCap {
         assertion = false;
@@ -275,26 +215,21 @@ in
           nix-oci coherence: ports < 1024 are configured
           (${concatMapStringsSep ", " toString privilegedPorts})
           but capabilities drop ALL without adding NET_BIND_SERVICE.
-          The kernel will reject bind() on these ports regardless of
-          Landlock/seccomp allowing it.
+          The kernel will reject bind() on these ports.
           Fix: add "NET_BIND_SERVICE" to hardening.capabilities.add.
         '';
       }
       # -- C2: Custom seccomp JSON makes cross-checks opaque --
       ++
         optional
-          (
-            cfg.seccomp.enable
-            && cfg.seccomp.customProfileJson != null
-            && (cfg.landlock.enable || cfg.capabilities.add != [ ])
-          )
+          (cfg.seccomp.enable && cfg.seccomp.customProfileJson != null && cfg.capabilities.add != [ ])
           {
             assertion = false;
             message = ''
               nix-oci coherence: seccomp.customProfileJson overrides ALL computed
-              seccomp rules. Cross-backend coherence with Landlock and capabilities
+              seccomp rules. Cross-backend coherence with capabilities
               CANNOT be verified — the custom profile may silently contradict them.
-              Fix: remove Landlock/capability overrides when using custom seccomp
+              Fix: remove capability overrides when using custom seccomp
               JSON (you take full responsibility for coherence), or remove the
               custom JSON to use built-in profiles.
             '';
@@ -337,20 +272,6 @@ in
               WILL crash at startup.
               Fix: use "database" profile, or remove the explicit profile override
               (auto-detection would have chosen "database").
-            '';
-          }
-      # -- S3: TLS trust store removed but Landlock allows HTTPS connect --
-      ++
-        optional
-          (cfg.noTlsTrustStore && cfg.landlock.enable && any (p: p == 443) cfg.landlock.allowedTcpConnect)
-          {
-            assertion = false;
-            message = ''
-              nix-oci coherence: TLS trust store is removed but Landlock allows
-              TCP connect to port 443 (HTTPS). TLS handshakes will fail without
-              CA certificates, making the Landlock rule misleading.
-              Fix: keep the trust store (noTlsTrustStore = false), or remove
-              port 443 from landlock.allowedTcpConnect.
             '';
           }
       # -- S4: noNewPrivileges disabled with otherwise strict hardening --
@@ -440,25 +361,8 @@ in
     #  WARNINGS — soft trace, build succeeds
     # =====================================================================
     warnings =
-      # -- D1: Landlock rules set but landlock.enable = false --
-      optional
-        (
-          !cfg.landlock.enable
-          && (
-            cfg.landlock.allowedTcpBind != [ ]
-            || cfg.landlock.allowedTcpConnect != [ ]
-            || cfg.landlock.allowedWritePaths != [ ]
-            || cfg.landlock.allowedReadPaths != [ ]
-            || cfg.landlock.allowedExecutePaths != [ ]
-          )
-        )
-        ''
-          nix-oci coherence: Landlock rules are configured but
-          landlock.enable = false. All Landlock rules have NO EFFECT.
-          Fix: set landlock.enable = true, or remove the rules.
-        ''
       # -- D2: Capabilities add without drop --
-      ++ optional (cfg.capabilities.add != [ ] && cfg.capabilities.drop == [ ]) ''
+      optional (cfg.capabilities.add != [ ] && cfg.capabilities.drop == [ ]) ''
         nix-oci coherence: capabilities.add = [${concatStringsSep " " cfg.capabilities.add}]
         but capabilities.drop is empty (default container caps remain).
         Adding capabilities on top of defaults is unusual — you may want
@@ -491,27 +395,11 @@ in
         on the container filesystem.
         Consider: readOnlyRootfs = true (default) with explicit writable mounts.
       ''
-      # -- G1: Ports exposed without port-level restriction --
-      ++ optional (allDetectedPorts != [ ] && !cfg.landlock.enable) ''
-        nix-oci coherence: container exposes ports
-        ${concatMapStringsSep ", " toString allDetectedPorts}
-        but Landlock is not enabled for port-level network restriction.
-        Seccomp allows all network syscalls in this profile.
-        Consider: landlock.enable = true for TCP port allowlisting.
-      ''
-      # -- G2: No filesystem restriction beyond read-only rootfs --
-      ++ optional (cfg.readOnlyRootfs && !cfg.landlock.enable) ''
-        nix-oci coherence: rootfs is read-only but no fine-grained filesystem
-        restriction (Landlock) is active. Tmpfs mounts and volumes are fully
-        writable without path-level control.
-        Consider: landlock.enable = true for path-level allowlisting.
-      ''
       # -- G3: All enforcement backends weak or disabled --
       ++
         optional
           (
             (!cfg.seccomp.enable || cfg.seccomp.mode == "audit")
-            && !cfg.landlock.enable
             && (!cfg.apparmor.enable || cfg.apparmor.mode == "complain")
             && cfg.capabilities.drop == [ ]
           )

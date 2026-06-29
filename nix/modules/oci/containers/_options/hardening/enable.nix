@@ -12,7 +12,7 @@
 
       Three independent kernel primitives are available:
       - **Seccomp** -- syscall filtering (BPF at the syscall boundary)
-      - **Landlock** -- object-level access control (LSM hooks at VFS level)
+      - **AppArmor** -- mandatory access control (LSM pathname-based)
       - **Capabilities + flags** -- privilege restriction at runtime
 
       For containers using `nixosConfig`, these options are forwarded

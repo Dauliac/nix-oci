@@ -68,7 +68,7 @@ flowchart TD
   — non-root user, distroless images, capability-dropped containers
 
 - [Hardening](hardening.html)
-  — seccomp, Landlock, AppArmor, capability controls, read-only rootfs
+  — seccomp, AppArmor, capability controls, read-only rootfs
 
 - [Vulnerability scanning, SBOM & compliance](vulnerability-scanning.html)
   — CVE scanning (Trivy, Grype, Vulnix), SBOM generation (Syft),
@@ -115,7 +115,7 @@ nix-oci closes this gap:
 - [Security defaults](security-defaults.html): non-root, distroless, reproducibility
 - [Policy composition and coherence testing](policy-coherence-testing.html): three-layer validation model
 - [Automatic OCI labels](../architecture/automatic-labeling.html): labels encoding security posture
-- [Hardening](hardening.html): seccomp, Landlock, capability controls
+- [Hardening](hardening.html): seccomp, AppArmor, capability controls
 - [Sigstore](https://www.sigstore.dev/): keyless signing infrastructure
 - [CycloneDX](https://cyclonedx.org/): SBOM standard
 - [CIS Docker Benchmark](https://www.cisecurity.org/benchmark/docker): container security baseline

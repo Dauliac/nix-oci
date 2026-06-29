@@ -72,7 +72,6 @@ Keyless
 keyless
 ko
 Kyverno
-Landlock
 linPEAS
 linpeas
 lapack

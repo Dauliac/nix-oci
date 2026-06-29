@@ -53,10 +53,10 @@ See [`oci.containers.<name>`](./reference/flake-parts-options.html) in the flake
 # Build the OCI image
 nix build .#oci-hello
 
-# Load it into Docker or Podman
-nix run .#oci-copyToPodman-hello
-# or
-nix run .#oci-copyToDockerDaemon-hello
+# Load it into Podman
+nix run .#oci-hello.copyToPodman
+# or load it into Docker
+nix run .#oci-hello.copyToDockerDaemon
 ```
 
 ## Step 3: Run it
@@ -177,11 +177,11 @@ perSystem = { ... }: {
 };
 ```
 
-See [`homeConfig`](./reference/flake-parts-options.html) in the container module option reference.
+See [`homeManager`](./reference/flake-parts-options.html) in the container module option reference.
 
 ## Step 8: Enable hardening (optional)
 
-Enable seccomp, Landlock, capability dropping, and more.
+Enable seccomp, AppArmor, capability dropping, and more.
 Seccomp profiles provide argument-level filtering
 (namespace/socket/ioctl restrictions), `io_uring` blocking, and an audit
 mode for profile discovery:
@@ -302,7 +302,7 @@ and [`cve.*`, `lint.*`, `policy.*`](./reference/flake-parts-options.html) in the
 
 - [Container Modules API](./how-to/container-modules-api.html): deep dive into `nixosConfig.modules`
 - [Deploy Modules](./how-to/deploy-modules.html): NixOS and Home Manager deployment
-- [Hardening](./security/hardening.html): seccomp, Landlock, capabilities
+- [Hardening](./security/hardening.html): seccomp, AppArmor, capabilities
 - [Options Reference](./reference/flake-parts-options.html): `performance.*` allocators, glibc tunables, march
 - [Automatic metadata](./architecture/automatic-metadata.html): healthchecks, stop signals, volumes
 - [Automatic labeling](./architecture/automatic-labeling.html): OCI annotations, K8s PSS, security hints

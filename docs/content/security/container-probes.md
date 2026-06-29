@@ -155,6 +155,6 @@ bind-mounting, report generation, and failure detection.
 ## Further reading
 
 - [CVE scanning, SBOM & integrity](./cve-sbom-integrity.html): static image analysis tools
-- [Hardening](./hardening.html): seccomp, Landlock, capabilities
+- [Hardening](./hardening.html): seccomp, AppArmor, capabilities
 - [Security defaults](./security-defaults.html): non-root, distroless defaults
 - [Options reference](../reference/flake-parts-options.html): all probe options

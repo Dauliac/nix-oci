@@ -453,31 +453,6 @@ in
           null;
     };
 
-    landlockPolicy = lib.mkOption {
-      type = lib.types.nullOr lib.types.package;
-      internal = true;
-      readOnly = true;
-      description = "Generated Landlock policy JSON, or null.";
-      default =
-        if cfg.enable && cfg.landlock.enable then
-          pkgs.writeText "landlock.json" (
-            builtins.toJSON {
-              version = 1;
-              fs = {
-                read = cfg.landlock.allowedReadPaths;
-                write = cfg.landlock.allowedWritePaths;
-                execute = cfg.landlock.allowedExecutePaths;
-              };
-              net = {
-                connectTcp = cfg.landlock.allowedTcpConnect;
-                bindTcp = cfg.landlock.allowedTcpBind;
-              };
-            }
-          )
-        else
-          null;
-    };
-
     apparmorProfile = lib.mkOption {
       type = lib.types.nullOr lib.types.package;
       internal = true;
@@ -528,7 +503,8 @@ in
               "/run/** rw,"
             ]
             # Allow network (TCP/UDP) — fine-grained port control is
-            # handled by Landlock, AppArmor provides the coarse allow.
+            # AppArmor provides the coarse allow; fine-grained port control
+            # is handled by seccomp argument filters where applicable.
             ++ [
               "network tcp,"
               "network udp,"

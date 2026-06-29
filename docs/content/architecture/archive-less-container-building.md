@@ -141,6 +141,65 @@ This makes pushes dramatically faster:
 
 *(Benchmarks from the [nix2container README](https://github.com/nlewo/nix2container).)*
 
+### Cross-machine acceleration with nix2container-turbo
+
+Vanilla nix2container has a subtle limitation: although it skips *uploading*
+layers that already exist in the registry, it must still **re-compress every
+layer locally** on each machine to compute the digest used for the check.
+For large images, this compression step dominates push time — and the work
+is repeated on every CI runner, developer machine, or deployment host that
+pushes the same image.
+
+[nix2container-turbo](https://github.com/schlarpc/nix2container-turbo)
+eliminates this redundancy. It is a patched Skopeo that stores
+**layer mappings** (Nix store path hash → compressed digest) as
+[OCI referrer manifests](https://github.com/opencontainers/distribution-spec/blob/main/spec.md#listing-referrers)
+directly in the registry. When any machine pushes the same image:
+
+1. Skopeo queries the referrer manifests for each layer's source hash.
+2. If a mapping exists, the layer is already in the registry with a known
+   digest — **no local compression, no upload**.
+3. Only truly new layers are compressed and pushed.
+
+```mermaid
+flowchart LR
+    JSON["Manifest (~2 KB)"] --> SKOPEO["Turbo Skopeo"]
+    SKOPEO -->|"referrer lookup"| REG["Registry"]
+    REG -->|"mapping exists"| SKIP["Skip (no compression)"]
+    REG -->|"no mapping"| COMPRESS["Compress + push + store mapping"]
+    COMPRESS --> REG
+```
+
+This makes repushes **sub-second regardless of image size**, because even
+the local compression step is eliminated. The improvement is most dramatic
+in CI environments where multiple runners push overlapping images.
+
+#### SOCI v2: lazy pulling
+
+nix2container-turbo can also generate
+[SOCI v2](https://github.com/awslabs/soci-snapshotter) (Seekable OCI)
+indexes inline during push. SOCI indexes enable **lazy pulling**: the
+container runtime starts the container before the full image is downloaded,
+fetching layer data on demand as the process accesses files.
+
+This reduces cold-start times for large images significantly — AWS reports
+~53 s → ~20 s for a 1 GB image on Fargate with soci-snapshotter.
+
+nix-oci exposes both features declaratively:
+
+```nix
+{
+  oci.turbo = {
+    enable = true;       # Use turbo-patched skopeo for all pushes
+    soci = true;         # Generate SOCI v2 indexes
+    layerCache = true;   # Cross-machine layer cache (default when turbo is on)
+  };
+}
+```
+
+Per-container overrides are available via
+`oci.containers.<name>.performance.turbo.*`.
+
 ### Loading into Docker / Podman
 
 The same principle applies when loading images locally. nix2container
@@ -149,12 +208,13 @@ stream layers into the local runtime without creating intermediate files.
 
 ## Comparison with other Nix container tools
 
-| Tool | Archive in store | Incremental push | Layer optimization |
-|---|---|---|---|
-| `dockerTools.buildImage` | Yes (full OCI tar) | No | No |
-| `dockerTools.buildLayeredImage` | Yes (layer tars) | No | Popularity-based |
-| `dockerTools.streamLayeredImage` | No (streamed) | No (recomputes all) | Popularity-based |
-| **nix2container** | **No (JSON only)** | **Yes (digest check)** | **Popularity-based** |
+| Tool | Archive in store | Incremental push | Cross-machine cache | Lazy pull | Layer optimization |
+|---|---|---|---|---|---|
+| `dockerTools.buildImage` | Yes (full OCI tar) | No | No | No | No |
+| `dockerTools.buildLayeredImage` | Yes (layer tars) | No | No | No | Popularity-based |
+| `dockerTools.streamLayeredImage` | No (streamed) | No (recomputes all) | No | No | Popularity-based |
+| **nix2container** | **No (JSON only)** | **Yes (digest check)** | No (re-compresses locally) | No | **Popularity-based** |
+| **nix2container-turbo** | **No (JSON only)** | **Yes (referrer lookup)** | **Yes (OCI Referrers)** | **Yes (SOCI v2)** | **Popularity-based** |
 
 ### Outside the Nix ecosystem
 
@@ -287,7 +347,7 @@ nix2container) are omitted here; they appear in Table 1.
 | Capability dropping | 🔧 Manual | 🔧 Manual | 🔧 Manual | 🔧 Manual | ✅ **Least-privilege** | ❌ | ❌ | ❌ |
 | Read-only rootfs | 🔧 Manual | 🔧 Manual | 🔧 Manual | 🔧 Manual | ✅ **Built-in** | ❌ | ❌ | ❌ |
 | Privilege escalation prevention | 🔧 Manual | 🔧 Manual | 🔧 Manual | 🔧 Manual | ✅ **Built-in** | ❌ | ❌ | ❌ |
-| Landlock LSM | ❌ | ❌ | ❌ | ❌ | ✅ **Built-in** | ❌ | ❌ | ❌ |
+| AppArmor MAC | ❌ | ❌ | ❌ | ❌ | ✅ **Built-in** | ❌ | ❌ | ❌ |
 
 </div>
 
@@ -321,14 +381,20 @@ and test, in a single declarative module.
 
 ## Why it matters for nix-oci
 
-Because nix-oci uses nix2container as its backend:
+Because nix-oci uses nix2container (and optionally nix2container-turbo)
+as its backend:
 
 - **Minimal store usage**: building dozens of container variants does not
   bloat your Nix store with duplicate tarballs.
 - **Fast iteration**: rebuilding after a code change only recomputes the JSON
   manifest; pushing only transfers the changed layer.
 - **Efficient CI**: CI runners benefit from smaller caches and shorter push
-  times, since unchanged layers are never re-uploaded.
+  times, since unchanged layers are never re-uploaded. With turbo enabled,
+  even the local compression step is skipped thanks to cross-machine layer
+  caching — repushes become sub-second regardless of image size.
+- **Fast cold starts**: with turbo's SOCI v2 indexes, container runtimes
+  can start containers before the full image is downloaded, cutting cold-start
+  times significantly for large images.
 - **Reproducibility**: the JSON manifest is a pure Nix derivation, so the
   image is bit-for-bit reproducible across machines.
 
@@ -337,6 +403,9 @@ Because nix-oci uses nix2container as its backend:
 ### nix2container and Nix
 
 - [nix2container](https://github.com/nlewo/nix2container): the backend powering nix-oci
+- [nix2container-turbo](https://github.com/schlarpc/nix2container-turbo): patched Skopeo with cross-machine layer caching and SOCI v2 support
+- [SOCI snapshotter](https://github.com/awslabs/soci-snapshotter): lazy pulling for containerd and AWS Fargate
+- [OCI Referrers API](https://github.com/opencontainers/distribution-spec/blob/main/spec.md#listing-referrers): the distribution-spec mechanism turbo uses for layer cache storage
 - [Building container images with Nix](https://lewo.abesis.fr/posts/nix-build-container-image/): foundational ideas behind the archive-less approach
 - [Nix & Docker: Layer explicitly without duplicate packages](https://blog.eigenvalue.net/2023-nix2container-everything-once/): avoiding duplicate store paths in explicit layers
 - [Nixery: Improved Layering Design](https://tazj.in/blog/nixery-layers): popularity-based layering for on-demand registry images

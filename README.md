@@ -33,7 +33,7 @@ flowchart TD
     DEPLOY -->|"NixOS server"| D1["modules.nixos.nix-oci"]
     DEPLOY -->|"User desktop"| D2["modules.homeManager.nix-oci"]
     DEPLOY -->|"Any Linux distro"| D3["modules.systemManager.nix-oci"]
-    DEPLOY -->|"CI / Registry"| D4["nix run .#oci-copyToRegistry-hello"]
+    DEPLOY -->|"CI / Registry"| D4["nix run .#oci-hello.copyToRegistry"]
 ```
 
 ## What you get for free
@@ -51,9 +51,9 @@ flowchart LR
 
     subgraph ONE_LINE ["One line to enable"]
         direction TB
-        SEC["Seccomp + Landlock<br/><i>hardening.enable = true</i>"]
+        SEC["Seccomp + AppArmor<br/><i>hardening.enable = true</i>"]
         PERF["Allocator + march<br/><i>performance.enable = true</i>"]
-        HM["Dotfiles in containers<br/><i>homeConfig.modules = [...]</i>"]
+        HM["Dotfiles in containers<br/><i>homeManager.modules = [...]</i>"]
     end
 
     subgraph SCANNING ["Built-in scanning"]
@@ -72,11 +72,11 @@ flowchart LR
 - **10 service adapters**: nginx, httpd, caddy, postgresql, redis, bind, dnsmasq, postfix, vsftpd, php-fpm; each auto-injects healthcheck endpoints, stop signals, and foreground mode
 - **Automatic metadata**: healthchecks, stop signals, working directories and volume declarations auto-derived from NixOS service configuration
 - **fromImage base images**: build on top of external OCI images (e.g. Docker Hub); identity files (`/etc/passwd`, `/etc/group`) pre-extracted at lock time, no IFD
-- **Home Manager in containers**: use `homeConfig.modules` to configure dotfiles, shell, git, and editors inside containers via Home Manager
+- **Home Manager in containers**: use `homeManager.modules` to configure dotfiles, shell, git, and editors inside containers via Home Manager
 - **Health-aware systemd services**: containers with healthchecks get `sdnotify` integration so dependent services wait until the container is healthy (`READY=1`)
 - **Optimized layer sharing**: [popularity-based store-path layering](https://grahamc.com/blog/nix-and-layered-docker-images) so images sharing common dependencies share registry layers, reducing push and pull times
 - **Multi-arch cross-compilation**: build `aarch64` images on `x86_64` without emulation
-- **Hardening**: seccomp syscall filtering with argument-level filtering (namespace, socket, ioctl restrictions), io_uring blocking, memfd_create blocking, audit mode for profile discovery, Landlock LSM filesystem and network access control, capability dropping, read-only rootfs, no-new-privileges, DNS/TLS restrictions
+- **Hardening**: seccomp syscall filtering with argument-level filtering (namespace, socket, ioctl restrictions), io_uring blocking, memfd_create blocking, audit mode for profile discovery, AppArmor MAC (deny mount, ptrace, user namespace creation), capability dropping, read-only rootfs, no-new-privileges, DNS/TLS restrictions
 - **Build-time assertions**: validates port/privilege coherence (e.g. privileged ports require root or capabilities) and hardening configuration consistency
 - **Performance**: alternative memory allocators (mimalloc, tcmalloc) via `LD_PRELOAD`, glibc tunables, CPU-targeted builds (`-march`), glibc-hwcaps multi-level library optimization, zstd layer compression
 - **Security scanning**: CVE scanning (Trivy, Grype, Vulnix), SBOM generation (Syft), credentials leak detection, image signing (cosign), CIS compliance checking, image linting (Dockle)
