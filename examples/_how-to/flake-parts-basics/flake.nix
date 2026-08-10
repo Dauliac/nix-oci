@@ -1,7 +1,7 @@
 # How-to: Build and run with flake-parts
 #
 # Test: nix build .#oci-hello
-#       nix run .#oci-hello.copyToPodman
+#       nix run .#oci-load-podman-hello
 #       podman run --rm localhost/hello:latest
 {
   inputs = {

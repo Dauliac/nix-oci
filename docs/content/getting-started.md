@@ -54,9 +54,11 @@ See [`oci.containers.<name>`](./reference/flake-parts-options.html) in the flake
 nix build .#oci-hello
 
 # Load it into Podman
-nix run .#oci-hello.copyToPodman
+nix run .#oci-load-podman-hello
 # or load it into Docker
-nix run .#oci-hello.copyToDockerDaemon
+nix run .#oci-load-docker-hello
+# or push to a registry
+nix run .#oci-push-hello
 ```
 
 ## Step 3: Run it

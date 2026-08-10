@@ -33,7 +33,7 @@ flowchart TD
     DEPLOY -->|"NixOS server"| D1["modules.nixos.nix-oci"]
     DEPLOY -->|"User desktop"| D2["modules.homeManager.nix-oci"]
     DEPLOY -->|"Any Linux distro"| D3["modules.systemManager.nix-oci"]
-    DEPLOY -->|"CI / Registry"| D4["nix run .#oci-hello.copyToRegistry"]
+    DEPLOY -->|"CI / Registry"| D4["nix run .#oci-push-hello"]
 ```
 
 ## What you get for free
