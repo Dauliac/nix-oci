@@ -72,13 +72,10 @@
           { inputs, ... }:
           {
             imports = [
-              # Load the full OCI module system (same as consumers would)
+              # Load the full OCI module system (same as consumers would).
+              # Examples and BDD test infrastructure live in ./tests to keep
+              # the root flake output clean (see tests/flake.nix).
               (import ./nix/flake-module.nix inputs)
-              # Test infrastructure (BDD collector, VM builder, probes)
-              (import ./nix/test-flake-module.nix inputs)
-              # Import flake-parts examples (auto-discovered via import-tree).
-              # Uses default excludes (no base-images, multi-arch, home-manager, probes).
-              (import ./nix/examples.nix { })
               # Treefmt formatter and check
               ./nix/treefmt.nix
             ];
@@ -88,31 +85,9 @@
               {
                 config,
                 pkgs,
-                lib,
                 ...
               }:
               {
-                # Enable turbo push backend for all containers
-                oci.turbo.enable = true;
-                # Lock files live at <project-root>/oci/
-                oci.fromImageManifestRootPath = ./oci + "/";
-
-                # Single e2e gate — aggregates all BDD test derivations.
-                # Individual BDD checks are internal (test.oci._bdd*Check),
-                # only e2e is exposed as a top-level check.
-                checks.e2e =
-                  let
-                    bddVm = config.test.oci._bddVmCheck;
-                    bddApps = config.test.oci._bddAppsCheck;
-                    links =
-                      lib.optional (bddVm != null) "ln -s ${bddVm} $out/bdd-vm"
-                      ++ lib.optional (bddApps != null) "ln -s ${bddApps} $out/bdd-apps";
-                  in
-                  pkgs.runCommand "e2e" { } ''
-                    mkdir -p $out
-                    ${lib.concatStringsSep "\n" links}
-                  '';
-
                 devShells.default = pkgs.mkShell {
                   packages =
                     with pkgs;

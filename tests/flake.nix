@@ -88,7 +88,12 @@
       oci.enabled = true;
 
       perSystem =
-        { pkgs, ... }:
+        {
+          config,
+          pkgs,
+          lib,
+          ...
+        }:
         {
           devShells.default = pkgs.mkShell { };
 
@@ -98,6 +103,17 @@
 
           # Lock files live at <project-root>/oci/, not tests/oci/
           oci.fromImageManifestRootPath = ../oci + "/";
+
+          # Expose BDD checks — internal options set by test-flake-module,
+          # wired here so `nix flake check ./tests` and
+          # `nix build ./tests#checks.<system>.bdd-vm` resolve.
+          checks =
+            lib.optionalAttrs (config.test.oci._bddVmCheck != null) {
+              bdd-vm = config.test.oci._bddVmCheck;
+            }
+            // lib.optionalAttrs (config.test.oci._bddAppsCheck != null) {
+              bdd-apps = config.test.oci._bddAppsCheck;
+            };
         };
     };
 }
