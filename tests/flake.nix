@@ -7,6 +7,9 @@
 # Container coverage:
 #   - Build pipeline:  examples/flake/* (auto-discovered)
 #   - Deploy pipeline: examples/deploy-nixos/* (imported into VM NixOS config)
+#   - How-to docs:     examples/_how-to/*/module.nix (imported explicitly
+#                      below — proves the `nix run` commands in the how-to
+#                      docs resolve against a real flake output)
 #   - BDD specs:       _tests/*.test.nix (auto-discovered by test-collector)
 #
 # Adding a new example to examples/flake/ automatically adds it to tests.
@@ -57,6 +60,27 @@
             "/minimalist-with-linpeas"
           ];
         })
+
+        # How-to example modules — same definitions the standalone
+        # examples/_how-to/*/flake.nix files consume, imported here so a
+        # change that breaks a documented `nix run .#oci-...` command
+        # (e.g. a pipeline refactor that renames the app) fails
+        # `nix flake check ./tests` instead of silently rotting in docs.
+        # See issue #7 for the drift class this guards against.
+        #
+        # NixOS-side deploy modules
+        # (examples/_how-to/{share-containers/nixos-server.nix,deploy-nixos/nixos-module.nix})
+        # are NOT wired in here yet: `nix-oci.modules.nixos.nix-oci`
+        # references `nixosMods.soci-snapshotter`, which is registered by
+        # `nix/flake-module.nix` but not by `nix/module.nix`, so a pure
+        # `nixpkgs.lib.nixosSystem { modules = [ nix-oci.modules.nixos.nix-oci ]; }`
+        # currently fails with `attribute 'soci-snapshotter' missing`.
+        # That preexisting drift affects any consumer using the NixOS
+        # module without also importing the flake-parts module and needs
+        # its own fix — tracked separately from this docs cleanup.
+        ../examples/_how-to/flake-parts-basics/module.nix
+        ../examples/_how-to/build-from-nixos-service/module.nix
+        ../examples/_how-to/share-containers/module.nix
       ];
 
       _module.args.import-tree = nix-oci.inputs.import-tree;

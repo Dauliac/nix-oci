@@ -1,7 +1,7 @@
 # How-to: Share containers between flake-parts and NixOS deploy
 #
-# Test: nix build .#oci-my-app                          (flake-parts build)
-#       nix build .#nixosConfigurations.server.config.system.build.toplevel  (NixOS deploy)
+# Test: nix build .#oci-my-app                                              (flake-parts build)
+#       nix build .#nixosConfigurations.server.config.system.build.toplevel (NixOS deploy)
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
@@ -16,39 +16,21 @@
       ...
     }:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
-      imports = [ nix-oci.modules.flake.nix-oci ];
+      imports = [
+        nix-oci.modules.flake.nix-oci
+        # Container definition lives in ./module.nix so the repo's `tests/`
+        # BDD suite can import the same module and verify the flake outputs.
+        ./module.nix
+      ];
       systems = [ "x86_64-linux" ];
       oci.enabled = true;
 
-      # Build-time: define the container for CI
-      perSystem =
-        { pkgs, ... }:
-        {
-          oci.containers.my-app = import ./container.nix { inherit pkgs; };
-        };
-
-      # Deploy-time: re-use the same container on NixOS
       flake.nixosConfigurations.server = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         specialArgs = { inherit nix-oci; };
         modules = [
           nix-oci.modules.nixos.nix-oci
-          (
-            { pkgs, ... }:
-            {
-              boot.isContainer = true;
-              system.stateVersion = "25.11";
-
-              oci = {
-                enable = true;
-                backend = "podman";
-                # Same definition, plus deploy-specific options
-                containers.my-app = (import ./container.nix { inherit pkgs; }) // {
-                  autoStart = true;
-                };
-              };
-            }
-          )
+          ./nixos-server.nix
         ];
       };
     };
