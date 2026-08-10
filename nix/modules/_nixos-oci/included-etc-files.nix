@@ -12,7 +12,7 @@
     # Leave the option's default empty so contributions from every module
     # (including this file's own config below) concatenate. A non-empty
     # `default = [ ... ]` here is silently dropped as soon as any other
-    # module sets the option — that is what nixos-25.11's `listOf` merge
+    # module sets the option  -  that is what nixos-25.11's `listOf` merge
     # does, and it caused the hardening module's `[ "ssl" ]` addition to
     # blow away every other exclusion.
     default = [ ];
@@ -25,31 +25,31 @@
   };
 
   config.oci.container.excludedEtcFiles = [
-    # NixOS identity — useless/wrong in containers
+    # NixOS identity  -  useless/wrong in containers
     "os-release"
     "machine-id"
     "hostname"
-    # systemd — no systemd PID 1 in containers
+    # systemd  -  no systemd PID 1 in containers
     "systemd"
     "tmpfiles.d"
     "udev"
     # Runtime bind-mounted by container runtimes
     "resolv.conf"
     "hosts"
-    # Login/PAM — no login sessions in containers
+    # Login/PAM  -  no login sessions in containers
     "pam.d"
     "login.defs"
     "security"
     "securetty"
-    # Fonts — no GUI in containers
+    # Fonts  -  no GUI in containers
     "fonts"
-    # Shells/profile — containers use explicit entrypoints
+    # Shells/profile  -  containers use explicit entrypoints
     "shells"
     "profile"
     "bashrc"
     "inputrc"
     "skel"
-    # NixOS-specific — not useful in containers
+    # NixOS-specific  -  not useful in containers
     "nixos"
     "nix/registry.json"
     "static"
