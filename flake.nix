@@ -72,22 +72,49 @@
           { inputs, ... }:
           {
             imports = [
-              # Load the full OCI module system (same as consumers would).
-              # Examples and BDD test infrastructure live in ./tests to keep
-              # the root flake output clean (see tests/flake.nix).
+              # Full OCI library (same as consumers would import).
               (import ./nix/flake-module.nix inputs)
-              # Treefmt formatter and check
+              # BDD test infrastructure (collector, VM builder, probes).
+              (import ./nix/test-flake-module.nix inputs)
+              # Example containers (auto-discovered via import-tree).
+              # We import them here so `xi check` from root runs the full
+              # BDD suite in one command, but `oci.enableFlakeOutputs = false`
+              # keeps the ~160 per-container apps/packages/checks out of
+              # `nix flake show`.
+              (import ./nix/examples.nix { })
+              # Treefmt formatter and check.
               ./nix/treefmt.nix
             ];
             oci.enabled = true;
+            # Suppress auto-emission of oci.flake.{apps,packages,checks} so
+            # the root flake output stays clean. BDD checks are still wired
+            # manually in perSystem below.
+            oci.enableFlakeOutputs = false;
             debug = true;
             perSystem =
               {
                 config,
                 pkgs,
+                lib,
                 ...
               }:
               {
+                # Enable turbo push backend for all containers.
+                oci.turbo.enable = true;
+                # Lock files live at <project-root>/oci/.
+                oci.fromImageManifestRootPath = ./oci + "/";
+
+                # Expose the aggregated BDD checks. `xi check` from root
+                # builds these, running every runtime/deploy BDD spec in a
+                # single VM plus the flake-level app-build test.
+                checks =
+                  lib.optionalAttrs (config.test.oci._bddVmCheck != null) {
+                    bdd-vm = config.test.oci._bddVmCheck;
+                  }
+                  // lib.optionalAttrs (config.test.oci._bddAppsCheck != null) {
+                    bdd-apps = config.test.oci._bddAppsCheck;
+                  };
+
                 devShells.default = pkgs.mkShell {
                   packages =
                     with pkgs;

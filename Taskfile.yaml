@@ -22,11 +22,10 @@ tasks:
       - task: test:check
       - task: test:e2e
   test:check:
-    desc: Run all hermetic nix flake checks (via nom). Root = library, ./tests = BDD.
+    desc: Run all hermetic nix flake checks (via nom). Includes BDD via checks.bdd-{vm,apps}.
     deps: ['test:fmt']
     cmds:
       - nix flake check -L 2>&1 | nom
-      - nix flake check ./tests -L 2>&1 | nom
   test:unit:
     desc: Run nix-lib unit tests (nix-unit)
     cmds:
