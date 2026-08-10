@@ -1,3 +1,13 @@
+# Example: Container from writeShellApplication
+#
+# Demonstrates using pkgs.writeShellApplication to create an inline shell
+# script with runtime dependencies as the container's entrypoint.
+#
+# Options used:
+#   - oci.containers.<name>.package (writeShellApplication derivation)
+#
+# Usage:
+#   nix build .#oci-write-shell-application
 { ... }:
 {
   config = {

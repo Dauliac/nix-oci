@@ -1,4 +1,7 @@
-# OCI checks intermediate output
+# OCI checks intermediate output.
+#
+# Pipeline-generated gate checks come from oci.pipeline.checks.
+# Each container gets one gate check that forces all pure+vm stamps.
 {
   lib,
   flake-parts-lib,
@@ -15,13 +18,7 @@ in
         type = types.attrsOf types.package;
         description = "OCI-related checks that can be exposed as flake outputs.";
         readOnly = true;
-        default =
-          config.oci.internal.prefixedDiveChecks
-          // config.oci.internal.prefixedDgossChecks
-          // config.oci.internal.prefixedPolicyConftestChecks
-          // config.oci.internal.prefixedLintDockleChecks
-          // config.oci.internal.prefixedCredentialsLeakTrivyChecks
-          // config.oci.internal.prefixedSBOMSyftChecks;
+        default = config.oci.pipeline.checks;
       };
     }
   );

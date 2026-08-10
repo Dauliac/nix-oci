@@ -1,4 +1,4 @@
-# Performance outputs: allocator injection, glibc tunables, compiler flags.
+# Performance outputs: allocator injection, glibc tunables, startup optimisation.
 #
 # Uses NixOS-native routing:
 #   - environment.variables for env vars (LD_PRELOAD, MALLOC_CONF, GLIBC_TUNABLES, etc.)
@@ -103,14 +103,6 @@ let
     "abort_conf" = "true";
   };
 
-  # Compiler flags
-  comp = cfg.compiler;
-  compilerFlags =
-    lib.optional (comp.optimizeLevel != "O2") "-${comp.optimizeLevel}"
-    ++ lib.optional (comp.lto == "thin") "-flto=thin"
-    ++ lib.optional (comp.lto == "full") "-flto"
-    ++ lib.optional comp.noSemanticInterposition "-fno-semantic-interposition";
-
   # Label namespace
   ns = "io.github.dauliac.nix-oci";
 in
@@ -140,9 +132,6 @@ in
       }
       // lib.optionalAttrs (cfg.startup.stackSize != null) {
         STACK_SIZE = cfg.startup.stackSize;
-      }
-      // lib.optionalAttrs (compilerFlags != [ ]) {
-        NIX_CFLAGS_COMPILE = lib.concatStringsSep " " compilerFlags;
       };
 
     # -- Extra packages (unified routing) --
@@ -170,15 +159,6 @@ in
     }
     // lib.optionalAttrs (cfg.glibcTunablesPreset != null) {
       "${ns}.performance.glibc-tunables-preset" = cfg.glibcTunablesPreset;
-    }
-    // lib.optionalAttrs (cfg.compiler.lto != null) {
-      "${ns}.performance.compiler.lto" = cfg.compiler.lto;
-    }
-    // lib.optionalAttrs (cfg.compiler.optimizeLevel != "O2") {
-      "${ns}.performance.compiler.optimize-level" = cfg.compiler.optimizeLevel;
-    }
-    // lib.optionalAttrs cfg.compiler.noSemanticInterposition {
-      "${ns}.performance.compiler.no-semantic-interposition" = "true";
     }
     // lib.optionalAttrs (cfg.hugePages.thpMode != null) {
       "${ns}.performance.huge-pages.thp-mode" = cfg.hugePages.thpMode;

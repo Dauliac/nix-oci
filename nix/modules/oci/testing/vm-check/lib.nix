@@ -47,14 +47,22 @@ in
 
           # Lightweight: VFS storage (no overlayfs kernel module needed),
           # cgroupfs manager (no systemd cgroup driver overhead).
-          environment.etc."containers/storage.conf".text = ''
+          environment.etc."containers/storage.conf".text = lib.mkForce ''
             [storage]
             driver = "vfs"
           '';
 
-          environment.etc."containers/policy.json".text = builtins.toJSON {
-            default = [ { type = "insecureAcceptAnything"; } ];
-          };
+          # Skip event logging — saves journald overhead per podman operation.
+          environment.etc."containers/containers.conf".text = lib.mkForce ''
+            [engine]
+            events_logger = "none"
+          '';
+
+          environment.etc."containers/policy.json".text = lib.mkForce (
+            builtins.toJSON {
+              default = [ { type = "insecureAcceptAnything"; } ];
+            }
+          );
 
           # Minimal system — no docs, no extra services.
           documentation.enable = false;
@@ -103,7 +111,7 @@ in
               diskSize ? 4096,
             }:
             let
-              testHelpers = import ../../../../tests/lib.nix { inherit pkgs lib; };
+              testHelpers = import ../../../../../tests/lib.nix { inherit pkgs lib; };
 
               # Write the test script to a file so we can copy it into the VM
               testScriptFile = pkgs.writeShellScript "vm-check-test-${name}" ''
@@ -149,8 +157,6 @@ in
                 };
 
               testScript = ''
-                import subprocess
-
                 machine.wait_for_unit("multi-user.target")
                 machine.wait_for_unit("podman.socket")
 

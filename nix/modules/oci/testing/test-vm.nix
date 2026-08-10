@@ -20,7 +20,8 @@ let
     lib.concatMapAttrs (
       group: scenarios:
       lib.concatMapAttrs (
-        name: spec: if spec.level != "eval" then { "${group}--${name}" = spec; } else { }
+        name: spec:
+        if spec.level == "runtime" || spec.level == "deploy" then { "${group}--${name}" = spec; } else { }
       ) scenarios
     ) allSpecs;
 in
@@ -66,6 +67,13 @@ in
         default = false;
         internal = true;
         description = "Whether SOCI snapshotter verification is enabled in the test VM.";
+      };
+
+      options.test.oci._bddVmCheck = lib.mkOption {
+        type = lib.types.nullOr lib.types.package;
+        default = null;
+        internal = true;
+        description = "BDD VM test derivation (set by test-vm.nix, consumed by e2e gate).";
       };
     }
   );
@@ -177,8 +185,8 @@ in
       flakeOCIsList = lib.attrValues flakeOCIs;
     in
     {
-      checks = lib.optionalAttrs (canBuildTest && hasAnyContainers) {
-        bdd-vm = testHelpers.mkVMTest {
+      # Internal: derivation stored here, exposed via checks.e2e in the consuming flake.
+      test.oci._bddVmCheck = lib.mkIf (canBuildTest && hasAnyContainers) (testHelpers.mkVMTest {
           name = "nix-oci-bdd-vm";
 
           # Ensure all flake example images build before the VM runs.
@@ -289,7 +297,6 @@ in
                   "pytest test_bdd_vm.py -v --tb=short 2>&1"
               )
             '';
-        };
-      };
+        });
     };
 }

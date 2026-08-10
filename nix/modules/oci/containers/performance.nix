@@ -17,11 +17,9 @@
             ./_options/performance/glibc-tunables.nix
             ./_options/performance/glibc-tunables-preset.nix
             ./_options/performance/compression.nix
-            ./_options/performance/march.nix
             ./_options/performance/hwcaps.nix
             ./_options/performance/huge-pages.nix
             ./_options/performance/startup.nix
-            ./_options/performance/compiler.nix
           ];
         };
     };

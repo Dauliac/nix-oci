@@ -14,31 +14,68 @@ covers gaps that any single mechanism leaves open.
 A built-in [coherence checker](#coherence-cross-checks) catches
 contradictions between backends at build time.
 
+## Build-time vs runtime enforcement
+
+nix-oci hardening options fall into two categories:
+
+| Category | When it takes effect | How it works |
+|---|---|---|
+| **Build-time** (image content) | `nix build` | Modifies files inside the image layers. Enforcement is immediate — no runtime flag needed. |
+| **Runtime** (container engine) | `podman run` / `docker run` | nix-oci **generates** security artifacts (JSON profiles, OCI labels) at build time, but the container engine **enforces** them via flags like `--security-opt`, `--cap-drop`, `--read-only`. |
+
+### Build-time options (modify the image)
+
+- **Non-root user with `/bin/nologin`** — all `/etc/passwd` entries use a read-only nologin shell, all `/etc/shadow` passwords are locked
+- [`hardening.disableDns`](#disable-dns) — rewrites `/etc/nsswitch.conf` to remove DNS
+- [`hardening.noTlsTrustStore`](#remove-tls-trust-store) — replaces the CA bundle with an empty file
+- **Hardening labels** — embedded as OCI annotations in the image manifest
+
+### Runtime options (require container engine support)
+
+- [`hardening.seccomp.*`](#seccomp-syscall-filtering) — generates a seccomp JSON profile, applied via `--security-opt seccomp=<path>`
+- [`hardening.apparmor.*`](#apparmor-mandatory-access-control) — generates an AppArmor profile, loaded via `--security-opt apparmor=<name>`
+- [`hardening.capabilities.*`](#capabilities-privilege-partitioning) — translated to `--cap-drop` / `--cap-add` flags
+- [`hardening.readOnlyRootfs`](#read-only-root-filesystem) — translated to `--read-only`
+- [`hardening.noNewPrivileges`](#no-new-privileges) — translated to `--security-opt=no-new-privileges`
+
+> **Important:** Runtime options have no effect if the deploy tooling does not
+> pass the generated flags. nix-oci's deploy modules (NixOS, system-manager)
+> handle this automatically. If you use a custom deploy pipeline, you must
+> read the generated artifacts and OCI labels yourself.
+
 ## The three primitives
 
 ```mermaid
 flowchart TD
-    subgraph "Kernel security layers"
+    subgraph "nix build (build-time)"
+        direction TB
+        GEN["nix-oci generates<br/>seccomp JSON, AppArmor profile,<br/>OCI labels, image content"]
+    end
+
+    subgraph "container run (runtime)"
         direction TB
         NS["Namespaces<br/>what you can <b>see</b>"]
         SEC["Seccomp (BPF)<br/>which <b>operations</b> you can invoke"]
         AA["AppArmor (LSM)<br/>which <b>actions</b> are permitted"]
         CAP["Capabilities<br/>which <b>privileges</b> you hold"]
     end
+
+    GEN -->|"artifacts + flags"| NS
     APP["Container process"] --> NS --> SEC --> AA --> CAP --> KERNEL["Kernel"]
 
+    style GEN fill:#a6e3a1,stroke:#40a02b,color:#000
     style NS fill:#89b4fa,stroke:#1e66f5,color:#000
     style SEC fill:#f38ba8,stroke:#d20f39,color:#000
     style AA fill:#cba6f7,stroke:#8839ef,color:#000
     style CAP fill:#f9e2ae,stroke:#e6a800,color:#000
 ```
 
-| Primitive | Kernel layer | Controls | Limitations |
-|---|---|---|---|
-| **Namespaces** | Process visibility | What processes/files/networks are visible | Container runtime handles this |
-| **Seccomp** | Syscall boundary (BPF) | Which syscalls a process can invoke | Cannot inspect pointer arguments (TOCTOU) |
-| **AppArmor** | Pathname-level (LSM) | Which actions are permitted (mount, ptrace, userns) | Requires host kernel support + profile loading |
-| **Capabilities** | Privilege checks | Which root sub-privileges the process holds | Coarse-grained per capability |
+| Primitive | Kernel layer | Controls | Limitations | nix-oci role |
+|---|---|---|---|---|
+| **Namespaces** | Process visibility | What processes/files/networks are visible | Container runtime handles this | None — managed by the runtime |
+| **Seccomp** | Syscall boundary (BPF) | Which syscalls a process can invoke | Cannot inspect pointer arguments (TOCTOU) | **Generates** JSON profile at build; **enforced** at runtime via `--security-opt seccomp=` |
+| **AppArmor** | Pathname-level (LSM) | Which actions are permitted (mount, ptrace, userns) | Requires host kernel support + profile loading | **Generates** profile at build; **enforced** at runtime via `--security-opt apparmor=` |
+| **Capabilities** | Privilege checks | Which root sub-privileges the process holds | Coarse-grained per capability | **Records** in OCI labels at build; **enforced** at runtime via `--cap-drop`/`--cap-add` |
 
 ## Enabling hardening
 
@@ -57,7 +94,7 @@ for all available hardening options, or the
 [NixOS container module reference](../reference/nixos-options.html)
 for the inner `oci.container.hardening.*` options.
 
-## Seccomp: syscall filtering
+## Seccomp: syscall filtering <small>runtime</small>
 
 Seccomp uses BPF programs to filter syscalls at the kernel boundary.
 
@@ -179,7 +216,7 @@ With seccomp enabled, nix-oci produces a JSON file at
 format. Deploy modules pass it via
 `--security-opt seccomp=<path>`.
 
-## AppArmor: mandatory access control
+## AppArmor: mandatory access control <small>runtime</small>
 
 AppArmor is a Linux Security Module (LSM) that uses **pathname-based**
 mandatory access control. Unlike seccomp (which filters syscall
@@ -273,7 +310,7 @@ These are **complementary**, not competing:
 Use seccomp to block dangerous syscall *categories*. Use AppArmor to
 deny high-level *actions* (mount, ptrace, user namespaces).
 
-## Capabilities: privilege partitioning
+## Capabilities: privilege partitioning <small>runtime</small>
 
 Linux capabilities split root's monolithic privilege into ~40
 distinct units. nix-oci defaults to dropping all capabilities via
@@ -305,7 +342,7 @@ Deploy modules translate these to `--cap-drop ALL --cap-add NET_BIND_SERVICE`.
 | `SETUID` / `SETGID` | Change process UID/GID | Privilege-dropping daemons |
 | `DAC_OVERRIDE` | Bypass file permission checks | Rarely needed |
 
-## Read-only root filesystem
+## Read-only root filesystem <small>runtime</small>
 
 [`hardening.readOnlyRootfs`](../reference/flake-parts-options.html):
 
@@ -324,7 +361,7 @@ Applications that need writable storage should use declared volumes
 (automatically derived from systemd `StateDirectory`,
 `RuntimeDirectory`, etc.) or explicit `tmpfs` mounts.
 
-## No-new-privileges
+## No-new-privileges <small>runtime</small>
 
 [`hardening.noNewPrivileges`](../reference/flake-parts-options.html):
 
@@ -342,7 +379,31 @@ via:
 
 Deploy modules translate to `--security-opt=no-new-privileges`.
 
-## DNS and TLS restrictions
+## Non-root user with nologin shell <small>build-time</small>
+
+nix-oci containers run as a non-root user by default (`isRoot = false`,
+UID 4000). The user entry in `/etc/passwd` uses `/bin/nologin` as the
+login shell — a read-only script baked into the image that prints
+"This account is not available." and exits immediately.
+
+This prevents interactive login via `su`, `ssh`, or any other mechanism
+that spawns a user shell, even if such tools were present in the image.
+
+```
+# /etc/passwd (generated)
+root:x:0:0::/root:/bin/nologin
+myapp:x:4000:4000::/home/myapp:/bin/nologin
+
+# /etc/shadow (generated, all accounts locked)
+root:!:::::::
+myapp:!:::::::
+```
+
+Combined with `noNewPrivileges` and the absence of `su`/`sudo` in
+distroless Nix images, this eliminates user-switching as an attack
+vector.
+
+## DNS and TLS restrictions <small>build-time</small>
 
 ### Disable DNS
 
@@ -371,7 +432,7 @@ Replaces `/etc/ssl/certs/ca-bundle.crt` with an empty file,
 preventing all outgoing HTTPS connections. This is a "nuclear option"
 for containers that should never initiate external TLS connections.
 
-## Coherence cross-checks
+## Coherence cross-checks <small>build-time</small>
 
 When multiple hardening backends are enabled, contradictions between
 them can create dead rules (a rule that can never fire) or phantom
@@ -404,7 +465,7 @@ detects these at **build time**.
 | **D6** | AppArmor host prerequisite not met |
 | **G3** | All enforcement backends weak or disabled |
 
-## Hardening labels
+## Hardening labels <small>build-time</small>
 
 With hardening enabled, nix-oci embeds the security posture as
 OCI labels:

@@ -3,7 +3,7 @@
 # Central collector for container environment variables and /etc files.
 # Uses NixOS-native routing:
 #   - Reads env vars from config.environment.variables (set by perf/gpu/nix modules)
-#   - Reads /etc files from oci.container.includedEtcFiles (set by modules that declare etc)
+#   - Includes all /etc files from environment.etc minus excludedEtcFiles denylist
 #   - Still reads user-provided oci.container.environment for explicit vars
 {
   config,
@@ -27,16 +27,18 @@ in
     type = lib.types.listOf lib.types.package;
     internal = true;
     readOnly = true;
-    description = "Extracted /etc file derivations from includedEtcFiles.";
+    description = "Extracted /etc file derivations (all environment.etc minus denylist).";
     default =
       let
         etc = config.environment.etc;
         # Runtime-overridden paths (resolv.conf, hostname, hosts) are excluded
         # because container runtimes always bind-mount them at startup.
         runtimeOverridden = config.oci.container.runtimeOverriddenEtcNames;
-        wantedNames = builtins.filter (
-          n: etc ? ${n} && !builtins.elem n runtimeOverridden
-        ) config.oci.container.includedEtcFiles;
+        excluded = config.oci.container.excludedEtcFiles ++ runtimeOverridden;
+        # Prefix match: "systemd" excludes "systemd", "systemd/system", etc.
+        isExcluded =
+          name: builtins.any (prefix: name == prefix || lib.hasPrefix "${prefix}/" name) excluded;
+        wantedNames = builtins.filter (n: !isExcluded n) (builtins.attrNames etc);
       in
       map (name: config.oci.lib.mkEtcDerivation name etc.${name}) wantedNames;
   };
@@ -137,12 +139,6 @@ in
       rpc:       files
     '';
 
-    # Register default /etc files for inclusion
-    oci.container.includedEtcFiles = [
-      "nsswitch.conf"
-    ]
-    ++ lib.optionals (!(config.oci.container.hardening.noTlsTrustStore or false)) [
-      "ssl/certs/ca-bundle.crt"
-    ];
+    # No longer needed — denylist approach includes all /etc by default
   };
 }

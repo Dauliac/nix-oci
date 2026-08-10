@@ -17,8 +17,19 @@ in
       let
         users = config.users.users;
         groups = config.users.groups;
+        # Read-only nologin shell: prevents interactive login for all users.
+        nologin = pkgs.runCommand "bin-nologin" { } ''
+                    mkdir -p $out/bin
+                    cat > $out/bin/nologin <<'NOLOGIN'
+          #!/bin/sh
+          echo "This account is not available."
+          exit 1
+          NOLOGIN
+                    chmod 0555 $out/bin/nologin
+        '';
       in
       [
+        nologin
         (pkgs.writeTextDir "etc/passwd" (
           lib.concatStringsSep "\n" (
             lib.mapAttrsToList config.oci.lib.mkShadowEntry (lib.filterAttrs (_: u: u.uid != null) users)

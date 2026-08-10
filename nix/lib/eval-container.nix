@@ -160,6 +160,11 @@ in
         if mainService == null then containerConfig.user or containerUser else containerUser;
 
       # Build home-manager NixOS modules when a HM flake is provided.
+      #
+      # NOTE: home-manager must match your nixpkgs branch.
+      # Use release-25.05 with nixos-25.11, or master with nixos-unstable.
+      # home-manager master imports lib/services/lib.nix which only exists
+      # in nixos-unstable.
       homeManagerModules =
         if homeManagerFlake != null then
           let

@@ -33,9 +33,6 @@
             // lib.optionalAttrs (cfg.hwcaps.enable or false) {
               "${ns}.performance.hwcaps-levels" = lib.concatStringsSep "," (cfg.hwcaps.levels or [ ]);
             }
-            // lib.optionalAttrs ((cfg.march or null) != null) {
-              "${ns}.performance.march" = cfg.march;
-            }
             // lib.optionalAttrs (cfg.turbo.enable or false) {
               "${ns}.performance.turbo" = "true";
             }
@@ -55,7 +52,6 @@
                 glibcTunables = { };
                 compression = "gzip";
                 hwcaps.enable = false;
-                march = null;
                 turbo = {
                   enable = false;
                   soci = false;
@@ -82,7 +78,6 @@
                 glibcTunables = { };
                 compression = "gzip";
                 hwcaps.enable = false;
-                march = null;
                 turbo = {
                   enable = false;
                   soci = false;
@@ -100,7 +95,6 @@
                 glibcTunables = { };
                 compression = "gzip";
                 hwcaps.enable = false;
-                march = null;
                 turbo = {
                   enable = true;
                   soci = true;
@@ -131,7 +125,6 @@
                 glibcTunables = { };
                 compression = "zstd";
                 hwcaps.enable = false;
-                march = null;
                 turbo = {
                   enable = false;
                   soci = false;

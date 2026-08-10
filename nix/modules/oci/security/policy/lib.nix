@@ -56,7 +56,7 @@ import ../../../../lib/mkLibModule.nix (
                 ${namespaceFlags} \
                 --no-color \
                 --output json \
-                > "$CIMERA_REPORT_DIR/gl-policy-conftest-report.json" || true
+                > "$NIX_OCI_REPORT_DIR/gl-policy-conftest-report.json" || true
             '';
             reportName = "gl-policy-conftest-report.json";
           };

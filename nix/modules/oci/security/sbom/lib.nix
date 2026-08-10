@@ -35,7 +35,7 @@ import ../../../../lib/mkLibModule.nix (
           reportBlock = ociLib.mkReportBlock {
             reportCommand = ''
               ${syftBin} ${configFlag} archive.tar \
-                --output cyclonedx-json="$CIMERA_REPORT_DIR/gl-sbom-report.cdx.json"
+                --output cyclonedx-json="$NIX_OCI_REPORT_DIR/gl-sbom-report.cdx.json"
             '';
             reportName = "gl-sbom-report.cdx.json";
           };

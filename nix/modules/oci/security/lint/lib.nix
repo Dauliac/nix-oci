@@ -46,7 +46,7 @@ import ../../../../lib/mkLibModule.nix (
               ${dockleBin} ${commonFlags} \
                 --exit-code 0 \
                 --format json \
-                --output "$CIMERA_REPORT_DIR/gl-lint-dockle-report.json"
+                --output "$NIX_OCI_REPORT_DIR/gl-lint-dockle-report.json"
             '';
             reportName = "gl-lint-dockle-report.json";
           };

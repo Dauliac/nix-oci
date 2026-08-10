@@ -1,7 +1,7 @@
 # How-to: Build containers from NixOS services
 #
 # Test: nix build .#oci-my-nginx
-#       nix run .#oci-copyToPodman-my-nginx
+#       nix run .#oci-my-nginx.copyToPodman
 #       podman run --rm -p 8080:80 localhost/my-nginx:latest
 #       curl http://localhost:8080
 {

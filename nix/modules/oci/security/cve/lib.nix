@@ -23,7 +23,7 @@ import ../../../../lib/mkLibModule.nix (
           oci = perSystemConfig.internal.OCIs.${containerId};
           containerConfig = perSystemConfig.containers.${containerId}.cve.trivy;
           ignoreFileFlag =
-            if containerConfig.ignore.fileEnabled then "--ignorefile ${containerConfig.ignore.path}" else "";
+            if containerConfig.ignore.fileEnabled then "--ignorefile ${containerConfig.ignore.rootPath}" else "";
           extraIgnoreFile = pkgs.writeText "extra-ignore.ignore" ''
             ${lib.concatMapStrings (ignore: "${ignore}\n") containerConfig.ignore.extra}
           '';
@@ -44,7 +44,7 @@ import ../../../../lib/mkLibModule.nix (
               ${trivyBin} image ${commonFlags} \
                 --exit-code 0 \
                 --format json \
-                --output "$CIMERA_REPORT_DIR/gl-container-scanning-report.json"
+                --output "$NIX_OCI_REPORT_DIR/gl-container-scanning-report.json"
             '';
             reportName = "gl-container-scanning-report.json";
           };
@@ -83,7 +83,7 @@ import ../../../../lib/mkLibModule.nix (
           oci = perSystemConfig.internal.OCIs.${containerId};
           containerConfig = perSystemConfig.containers.${containerId}.cve.grype;
           configFlag =
-            if containerConfig.config.enabled then "--config ${containerConfig.config.path}" else "";
+            if containerConfig.config.enabled then "--config ${containerConfig.config.rootPath}" else "";
           grypeBin = "${perSystemConfig.packages.grype}/bin/grype";
         in
         ociLib.mkArchiveScanScript {
@@ -97,7 +97,7 @@ import ../../../../lib/mkLibModule.nix (
             reportCommand = ''
               ${grypeBin} ${configFlag} archive.tar \
                 --output json \
-                --file "$CIMERA_REPORT_DIR/gl-dependency-scanning-report.json"
+                --file "$NIX_OCI_REPORT_DIR/gl-dependency-scanning-report.json"
             '';
             reportName = "gl-dependency-scanning-report.json";
           };
@@ -136,7 +136,7 @@ import ../../../../lib/mkLibModule.nix (
           oci = perSystemConfig.internal.OCIs.${containerId};
           containerConfig = perSystemConfig.containers.${containerId}.cve.vulnix;
           whitelistFlag =
-            if containerConfig.whitelist.enabled then "--whitelist ${containerConfig.whitelist.path}" else "";
+            if containerConfig.whitelist.enabled then "--whitelist ${containerConfig.whitelist.rootPath}" else "";
           vulnixBin = "${perSystemConfig.packages.vulnix}/bin/vulnix";
         in
         ociLib.mkArchiveScanScript {
@@ -151,7 +151,7 @@ import ../../../../lib/mkLibModule.nix (
           reportBlock = ociLib.mkReportBlock {
             reportCommand = ''
               ${vulnixBin} ${whitelistFlag} --json ${oci} \
-                > "$CIMERA_REPORT_DIR/gl-vulnix-cve-report.json" || true
+                > "$NIX_OCI_REPORT_DIR/gl-vulnix-cve-report.json" || true
             '';
             reportName = "gl-vulnix-cve-report.json";
           };

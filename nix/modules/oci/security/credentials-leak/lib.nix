@@ -33,7 +33,7 @@ import ../../../../lib/mkLibModule.nix (
             reportCommand = ''
               ${trivyBin} fs --scanners secret archive.tar \
                 --format json \
-                --output "$CIMERA_REPORT_DIR/gl-secret-detection-report.json"
+                --output "$NIX_OCI_REPORT_DIR/gl-secret-detection-report.json"
             '';
             reportName = "gl-secret-detection-report.json";
           };

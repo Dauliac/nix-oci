@@ -217,13 +217,13 @@ in
                 DIGEST="$(skopeo inspect --raw "docker://$PRIMARY_REF" 2>/dev/null | sha256sum | cut -d' ' -f1)"
                 DIGEST="sha256:$DIGEST"
                 echo "==> Pushed: $PRIMARY_REF (digest: $DIGEST)"
-                echo "CIMERA_OCI_PUSHED_TAG ref=$PRIMARY_REF digest=$DIGEST tag=${primaryTag} primary=true"
+                echo "NIX_OCI_PUSHED_TAG ref=$PRIMARY_REF digest=$DIGEST tag=${primaryTag} primary=true"
                 ${lib.concatMapStrings (tag: ''
                   echo "==> Tagging additional: ${tag}"
                   regctl image copy "$PRIMARY_REF" "$BASE_NAME:${tag}"
-                  echo "CIMERA_OCI_PUSHED_TAG ref=$BASE_NAME:${tag} digest=$DIGEST tag=${tag} primary=false"
+                  echo "NIX_OCI_PUSHED_TAG ref=$BASE_NAME:${tag} digest=$DIGEST tag=${tag} primary=false"
                 '') additionalTags}
-                echo "CIMERA_OCI_PUSHED ref=$PRIMARY_REF digest=$DIGEST tags=${lib.concatStringsSep "," (lib.attrNames containerConfig.tagConfigs)}"
+                echo "NIX_OCI_PUSHED ref=$PRIMARY_REF digest=$DIGEST tags=${lib.concatStringsSep "," (lib.attrNames containerConfig.tagConfigs)}"
               '';
             };
         };

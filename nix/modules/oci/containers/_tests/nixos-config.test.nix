@@ -81,6 +81,7 @@
             path = "/health";
             contains = "nix-oci-nginx-ok";
           };
+          exampleFile = ../../../../../../examples/flake/nixos-containers/with-nixos-nginx-01.nix;
         };
 
         # TODO: PostgreSQL deploy test needs writable volume for initdb.

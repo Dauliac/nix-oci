@@ -61,7 +61,7 @@ in
               args ? "",
               # If true, inject busybox as /bin/sh for script execution
               needsShell ? false,
-              # Report file name (written under CIMERA_REPORT_DIR)
+              # Report file name (written under NIX_OCI_REPORT_DIR)
               reportName ? "${name}-report.txt",
               # Grep patterns that cause a hard failure (exit 1).
               # Each entry: { pattern = "regex"; message = "human text"; }
@@ -116,10 +116,10 @@ in
 
                 echo "$OUTPUT"
 
-                # Write report when CIMERA_REPORT_DIR is set
-                if [ -n "''${CIMERA_REPORT_DIR:-}" ]; then
-                  mkdir -p "$CIMERA_REPORT_DIR"
-                  echo "$OUTPUT" > "$CIMERA_REPORT_DIR/${reportName}"
+                # Write report when NIX_OCI_REPORT_DIR is set
+                if [ -n "''${NIX_OCI_REPORT_DIR:-}" ]; then
+                  mkdir -p "$NIX_OCI_REPORT_DIR"
+                  echo "$OUTPUT" > "$NIX_OCI_REPORT_DIR/${reportName}"
                 fi
 
                 ISSUES=0

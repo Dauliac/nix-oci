@@ -30,3 +30,11 @@ traditional container tooling. These pages explain why.
 - [Automatic metadata](automatic-metadata.html)
   — healthchecks, stop signals, volumes, working directory
   derived from systemd services
+
+- [Performance tuning](performance.html)
+  — memory allocators, glibc tunables, layer compression,
+  and lazy-pull support
+
+- [Validation-gated delivery](validation-gated-delivery.html)
+  — how probes and checks are prerequisites to build and push,
+  OCI-compliant transports, extensible step registry

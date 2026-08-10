@@ -55,11 +55,10 @@ let
     (optionsDir + "/hardening/rootfs.nix")
     (optionsDir + "/hardening/privileges.nix")
 
-    # Performance (Tier 1 only — NOT compression, march, hwcaps, turbo)
+    # Performance (Tier 1 only — NOT compression, hwcaps, turbo)
     (optionsDir + "/performance/enable.nix")
     (optionsDir + "/performance/allocator.nix")
     (optionsDir + "/performance/allocator-config.nix")
-    (optionsDir + "/performance/compiler.nix")
     (optionsDir + "/performance/glibc-tunables.nix")
     (optionsDir + "/performance/glibc-tunables-preset.nix")
     (optionsDir + "/performance/huge-pages.nix")

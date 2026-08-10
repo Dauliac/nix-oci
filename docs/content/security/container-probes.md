@@ -100,7 +100,7 @@ Each probe:
 1. Loads the image into podman via `copyToDockerDaemon`.
 2. Runs the container with the tool bind-mounted read-only.
 3. Prints the output to stdout.
-4. Writes a report to `$CIMERA_REPORT_DIR` when set (CI integration).
+4. Writes a report to `$NIX_OCI_REPORT_DIR` when set (CI integration).
 5. Exits non-zero if critical issues are found.
 
 ### Failure conditions

@@ -3,7 +3,7 @@
 # Most security tools (trivy, grype, dockle, syft, conftest) follow the same pattern:
 #   1. Create transient archive from OCI image
 #   2. Run tool against archive.tar
-#   3. Optionally write report under CIMERA_REPORT_DIR
+#   3. Optionally write report under NIX_OCI_REPORT_DIR
 #
 # This factory captures the boilerplate; each tool only provides its unique parts.
 { ... }:
@@ -39,7 +39,7 @@
             scanCommand,
             # Extra shell setup before scanCommand (e.g. ignore file generation)
             extraSetup ? "",
-            # Shell block for CIMERA_REPORT_DIR output (use ociLib.mkReportBlock or raw shell)
+            # Shell block for NIX_OCI_REPORT_DIR output (use ociLib.mkReportBlock or raw shell)
             reportBlock ? "",
             # Whether to set up DOCKER_CONFIG (most tools need this, vulnix doesn't)
             needsDockerConfig ? true,

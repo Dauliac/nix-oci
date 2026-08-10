@@ -106,7 +106,6 @@ let
   # These are always included in the perArch submodule type, making them
   # visible to nixosOptionsDoc.
   archOptionModules = [
-    ../_archOptions/performance/march.nix
     ../_archOptions/performance/hwcaps.nix
   ];
 
@@ -310,7 +309,7 @@ in
 
           # Always seed archConfigs with at least the host system.
           # When multiArch.systems is non-empty, those systems are used instead.
-          # This ensures per-arch options (performance.march, etc.) are always
+          # This ensures per-arch options (performance.hwcaps, etc.) are always
           # accessible, even in single-arch mode.
           config.archConfigs = lib.genAttrs (
             if config.multiArch.systems != [ ] then config.multiArch.systems else [ system ]

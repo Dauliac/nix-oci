@@ -130,7 +130,8 @@
     # /usr/share/{applications,icons,fonts} from host -- not relevant
     targets.genericLinux.enable = lib.mkDefault false;
     # fontconfig: pulls freetype/fontconfig -- only useful for GUI containers
-    fonts.fontconfig.enable = lib.mkDefault false;
+    # mkOverride 999: beats mkDefault (1000) from HM common.nix
+    fonts.fontconfig.enable = lib.mkOverride 999 false;
     # Suppress home-manager news during eval
     news.display = lib.mkDefault "silent";
   };

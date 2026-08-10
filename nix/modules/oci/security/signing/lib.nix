@@ -116,7 +116,7 @@ import ../../../../lib/mkLibModule.nix (
           echo "[${appName}] signing $SIGN_REF"
           COSIGN_YES=1 $COSIGN sign ${keyArgs} ${annotationArgs} "$SIGN_REF" >&2
 
-          echo "CIMERA_OCI_SIGNED ref=$SIGN_REF"
+          echo "NIX_OCI_SIGNED ref=$SIGN_REF"
 
           ${verifyBlock}
         '';

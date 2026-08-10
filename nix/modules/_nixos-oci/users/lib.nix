@@ -26,7 +26,7 @@ in
         let
           gid = toString (config.users.groups.${u.group}.gid or 0);
         in
-        "${name}:x:${toString u.uid}:${gid}::${u.home}:";
+        "${name}:x:${toString u.uid}:${gid}::${u.home}:/bin/nologin";
     };
   };
 }

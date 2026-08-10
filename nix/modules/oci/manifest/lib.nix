@@ -36,10 +36,9 @@ in
             }:
             let
               oci = perSystemConfig.containers.${containerId};
-              manifestLockPath = flakeLib.mkOCIPulledManifestLockPath {
-                inherit (perSystemConfig) fromImageManifestRootPath;
-                inherit (oci) fromImage;
-              };
+              # Each container gets its own subdirectory: <rootPath>/<containerId>/
+              containerDir = perSystemConfig.fromImageManifestRootPath + "/${containerId}";
+              manifestLockPath = containerDir + "/manifest-lock.json";
               fromImage' = (builtins.removeAttrs oci.fromImage [ "enabled" ]) // {
                 imageManifest = manifestLockPath;
               };
@@ -49,7 +48,11 @@ in
 
         mkOCIPulledManifestLockUpdateScript = {
           type = types.functionTo types.package;
-          description = "Build script to update pulled OCI manifest locks";
+          description = ''
+            Build a go-task wrapper that pulls all fromImage manifests in parallel.
+            Each container gets its own task; go-task runs them concurrently
+            with prefixed output.
+          '';
           file = "nix/modules/oci/manifest/lib.nix";
           fn =
             {
@@ -58,106 +61,123 @@ in
               ...
             }:
             let
-              manifestRootPath = flakeLib.mkOCIPulledManifestLockRelativeRootPath {
-                inherit (perSystemConfig) fromImageManifestRootPath;
-                inherit self;
-              };
-              update = lib.concatStringsSep "\n" (
-                lib.mapAttrsToList (
-                  containerId: container:
-                  let
-                    oci = perSystemConfig.containers.${containerId};
-                    inherit (oci) fromImage;
-                    manifestPath = flakeLib.mkOCIPulledManifestLockRelativePath {
-                      inherit self;
-                      manifestLockPath = flakeLib.mkOCIPulledManifestLockPath {
-                        inherit (perSystemConfig) fromImageManifestRootPath;
-                        inherit fromImage;
-                      };
-                    };
-                    passwdPath = flakeLib.mkOCIPulledManifestLockRelativePath {
-                      inherit self;
-                      manifestLockPath = flakeLib.mkOCIPulledBasePasswdPath {
-                        inherit (perSystemConfig) fromImageManifestRootPath;
-                        inherit fromImage;
-                      };
-                    };
-                    groupPath = flakeLib.mkOCIPulledManifestLockRelativePath {
-                      inherit self;
-                      manifestLockPath = flakeLib.mkOCIPulledBaseGroupPath {
-                        inherit (perSystemConfig) fromImageManifestRootPath;
-                        inherit fromImage;
-                      };
-                    };
-                    manifest = ociLib.mkOCIPulledManifestLock {
-                      inherit perSystemConfig containerId;
-                    };
-                  in
-                  ''
-                    declare -g manifest
+              # Generate one pull script per container
+              # Files go to $MANIFEST_DIR/<containerId>/{manifest-lock.json,base-passwd,base-group}
+              mkPullScript =
+                containerId:
+                let
+                  oci = perSystemConfig.containers.${containerId};
+                  inherit (oci) fromImage;
+                  manifest = ociLib.mkOCIPulledManifestLock {
+                    inherit perSystemConfig containerId;
+                  };
+                in
+                pkgs.writeShellApplication {
+                  name = "pull-manifest-${containerId}";
+                  runtimeInputs = [
+                    pkgs.skopeo
+                    pkgs.jq
+                  ];
+                  excludeShellChecks = [ "SC2034" ];
+                  text = ''
+                    : "''${MANIFEST_DIR:=./oci}"
+                    dir="$MANIFEST_DIR/${containerId}"
+                    mkdir -p "$dir"
+                    mf="$dir/manifest-lock.json"
+                    pw="$dir/base-passwd"
+                    gr="$dir/base-group"
+
                     manifest=$(${manifest.getManifest}/bin/get-manifest)
-                    if [ -f "${manifestPath}" ]; then
-                      currentContent=$(cat "${manifestPath}")
-                      newContent=$(echo "$manifest")
-                      if [ "$currentContent" != "$newContent" ]; then
-                        printf "Updating lock manifest for ${containerId}::${fromImage.imageName}:${fromImage.imageTag} in ${manifestPath} ...\n"
-                        echo "$manifest" > "${manifestPath}"
+                    if [ -f "$mf" ]; then
+                      currentContent=$(cat "$mf")
+                      if [ "$currentContent" != "$manifest" ]; then
+                        echo "Updating ${fromImage.imageName}:${fromImage.imageTag}"
+                        echo "$manifest" > "$mf"
+                      else
+                        echo "Up to date: ${fromImage.imageName}:${fromImage.imageTag}"
                       fi
                     else
-                      printf "Generating lock manifest for ${containerId}::${fromImage.imageName}:${fromImage.imageTag} in ${manifestPath} ...\n"
-                      echo "$manifest" > "${manifestPath}"
+                      echo "Generating ${fromImage.imageName}:${fromImage.imageTag}"
+                      echo "$manifest" > "$mf"
                     fi
 
                     # Extract /etc/passwd and /etc/group from the base image layers.
-                    # These are used at eval time to merge base image users into the
-                    # NixOS-generated /etc/passwd (no IFD required).
-                    # Wrapped in a subshell so trap and temporary variables are scoped
-                    # per container and do not leak across iterations.
-                    (
-                      printf "Extracting base image identity files for ${containerId}::${fromImage.imageName}:${fromImage.imageTag} ...\n"
-                      _nix_oci_tmpdir="$(mktemp -d)"
-                      trap 'rm -rf "$_nix_oci_tmpdir"' EXIT
+                    echo "Extracting identity files for ${fromImage.imageName}:${fromImage.imageTag}"
+                    tmpdir="$(mktemp -d)"
+                    trap 'rm -rf "$tmpdir"' EXIT
 
-                      ${pkgs.skopeo}/bin/skopeo copy --override-os linux \
-                        "docker://${fromImage.imageName}:${fromImage.imageTag}" \
-                        "oci:$_nix_oci_tmpdir/image:${fromImage.imageTag}" >/dev/null
+                    skopeo copy --override-os linux \
+                      "docker://${fromImage.imageName}:${fromImage.imageTag}" \
+                      "oci:$tmpdir/image:${fromImage.imageTag}" >/dev/null
 
-                      mkdir -p "$_nix_oci_tmpdir/extract/etc"
-                      for _digest in $(${pkgs.jq}/bin/jq -r '.layers[].digest' "${manifestPath}"); do
-                        _hash="''${_digest#sha256:}"
-                        _blob="$_nix_oci_tmpdir/image/blobs/sha256/$_hash"
-                        if [ -f "$_blob" ]; then
-                          tar -xzf "$_blob" -C "$_nix_oci_tmpdir/extract" --no-same-owner \
-                            etc/passwd etc/group ./etc/passwd ./etc/group 2>/dev/null \
-                          || tar -xf "$_blob" -C "$_nix_oci_tmpdir/extract" --no-same-owner \
-                            etc/passwd etc/group ./etc/passwd ./etc/group 2>/dev/null \
-                          || true
-                        fi
-                      done
-
-                      if [ -f "$_nix_oci_tmpdir/extract/etc/passwd" ]; then
-                        cp "$_nix_oci_tmpdir/extract/etc/passwd" "${passwdPath}"
-                      else
-                        touch "${passwdPath}"
+                    mkdir -p "$tmpdir/extract/etc"
+                    for digest in $(jq -r '.layers[].digest' "$mf"); do
+                      hash="''${digest#sha256:}"
+                      blob="$tmpdir/image/blobs/sha256/$hash"
+                      if [ -f "$blob" ]; then
+                        tar -xzf "$blob" -C "$tmpdir/extract" --no-same-owner \
+                          etc/passwd etc/group ./etc/passwd ./etc/group 2>/dev/null \
+                        || tar -xf "$blob" -C "$tmpdir/extract" --no-same-owner \
+                          etc/passwd etc/group ./etc/passwd ./etc/group 2>/dev/null \
+                        || true
                       fi
-                      if [ -f "$_nix_oci_tmpdir/extract/etc/group" ]; then
-                        cp "$_nix_oci_tmpdir/extract/etc/group" "${groupPath}"
-                      else
-                        touch "${groupPath}"
-                      fi
-                    )
-                  ''
-                ) perSystemConfig.internal.pulledOCIs
-              );
+                    done
+
+                    if [ -f "$tmpdir/extract/etc/passwd" ]; then
+                      cp "$tmpdir/extract/etc/passwd" "$pw"
+                    else
+                      touch "$pw"
+                    fi
+                    if [ -f "$tmpdir/extract/etc/group" ]; then
+                      cp "$tmpdir/extract/etc/group" "$gr"
+                    else
+                      touch "$gr"
+                    fi
+                  '';
+                };
+
+              # Iterate over fromImage-enabled containers directly.
+              # Do NOT use perSystemConfig.internal.pulledOCIs — that evaluates
+              # mkOCIPulledManifestLock which requires the lock file to exist.
+              fromImageContainers = lib.filterAttrs (_: c: c.fromImage.enabled) perSystemConfig.containers;
+
+              pullScripts = lib.mapAttrs (containerId: _: mkPullScript containerId) fromImageContainers;
+
+              # Generate Taskfile JSON with one task per container
+              taskfile = {
+                version = "3";
+                output = "prefixed";
+                run = "once";
+                set = [
+                  "errexit"
+                  "nounset"
+                  "pipefail"
+                ];
+                tasks =
+                  (lib.mapAttrs (containerId: script: {
+                    desc = "Pull manifest for ${containerId}";
+                    label = "pull:${containerId}";
+                    cmds = [ (lib.getExe script) ];
+                  }) pullScripts)
+                  // {
+                    default = {
+                      desc = "Pull all fromImage manifests in parallel";
+                      deps = lib.attrNames pullScripts;
+                    };
+                  };
+              };
+
+              taskfileJson = pkgs.writeText "oci-update-manifests-taskfile.json" (builtins.toJSON taskfile);
             in
-            pkgs.writeShellScriptBin "update-pulled-oci-manifests-locks" ''
-              set -o errexit
-              set -o pipefail
-              set -o nounset
-
-              mkdir -p "${manifestRootPath}"
-              ${update}
-            '';
+            pkgs.writeShellApplication {
+              name = "oci-update-manifests";
+              runtimeInputs = [ pkgs.go-task ];
+              text = ''
+                export MANIFEST_DIR="''${MANIFEST_DIR:-${perSystemConfig.fromImageManifestDir}}"
+                mkdir -p "$MANIFEST_DIR"
+                exec task --taskfile="${taskfileJson}" --dir="$PWD" "$@"
+              '';
+            };
         };
       };
     };

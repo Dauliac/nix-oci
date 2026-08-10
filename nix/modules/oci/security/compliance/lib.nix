@@ -36,7 +36,7 @@ import ../../../../lib/mkLibModule.nix (
               ${trivyBin} image ${commonFlags} \
                 --exit-code 0 \
                 --format json \
-                --output "$CIMERA_REPORT_DIR/gl-compliance-report.json"
+                --output "$NIX_OCI_REPORT_DIR/gl-compliance-report.json"
             '';
             reportName = "gl-compliance-report.json";
           };

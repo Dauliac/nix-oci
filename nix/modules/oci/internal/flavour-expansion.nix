@@ -89,7 +89,7 @@ in
                 # Parent inheritance
                 (mkParentInheritance parentConfig flavourName)
               ]
-              ++ flavourModules;
+              ++ [ flavourModules ];
             specialArgs = {
               inherit system pkgs;
               globalConfig = cfg;

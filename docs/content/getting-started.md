@@ -204,8 +204,7 @@ See [Hardening](./security/hardening.html),
 
 ## Step 9: Enable performance optimizations (optional)
 
-Swap in alternative memory allocators, tune glibc, or target a specific
-CPU architecture:
+Swap in alternative memory allocators or tune glibc at runtime:
 
 ```nix
 perSystem = { ... }: {
@@ -213,14 +212,15 @@ perSystem = { ... }: {
     package = pkgs.my-app;
     performance = {
       enable = true;
-      allocator = "mimalloc";
-      march = "x86-64-v3";
+      allocator = "jemalloc";
+      compression = "zstd";
     };
   };
 };
 ```
 
-See [`performance.*`](./reference/flake-parts-options.html) in the option reference for details.
+See [`performance.*`](./reference/flake-parts-options.html) in the option reference
+and [Performance tuning](./architecture/performance.html) for details.
 
 ## Step 10: Health-aware deployment (optional)
 
@@ -303,7 +303,7 @@ and [`cve.*`, `lint.*`, `policy.*`](./reference/flake-parts-options.html) in the
 - [Container Modules API](./how-to/container-modules-api.html): deep dive into `nixosConfig.modules`
 - [Deploy Modules](./how-to/deploy-modules.html): NixOS and Home Manager deployment
 - [Hardening](./security/hardening.html): seccomp, AppArmor, capabilities
-- [Options Reference](./reference/flake-parts-options.html): `performance.*` allocators, glibc tunables, march
+- [Options Reference](./reference/flake-parts-options.html): `performance.*` allocators, glibc tunables, compression
 - [Automatic metadata](./architecture/automatic-metadata.html): healthchecks, stop signals, volumes
 - [Automatic labeling](./architecture/automatic-labeling.html): OCI annotations, K8s PSS, security hints
 - [Security scanning](./security/index.html): CVE, SBOM, signing, Conftest

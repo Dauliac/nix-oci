@@ -1,0 +1,26 @@
+# Local-only workflow for testing docs build with act.
+# Not triggered on GitHub (no push/PR triggers).
+# Usage: act -j build -W .github/workflows/act-test-docs.yml --container-options "--network host"
+name: "Act: Test Docs Build"
+on:
+  workflow_dispatch: {}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+        with:
+          nix_path: nixpkgs=channel:nixos-25.11
+      - name: Build documentation
+        run: nix build .#legacyPackages.x86_64-linux.docs --print-build-logs
+      - name: Verify output
+        run: |
+          ls -la result/
+          test -f result/index.html
+          test -f result/reference/flake-parts-options.html
+          test -d result/security
+          test -d result/architecture
+          echo "Docs build verified successfully!"

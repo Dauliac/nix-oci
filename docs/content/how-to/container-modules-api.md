@@ -68,7 +68,7 @@ See [`nixosConfig`](../reference/flake-parts-options.html) in the container modu
 nix build .#oci-my-nginx
 
 # Load it into Podman
-nix run .#oci-copyToPodman-my-nginx
+nix run .#oci-my-nginx.copyToPodman
 
 # Run it
 podman run --rm -p 8080:80 localhost/my-nginx:latest
@@ -156,20 +156,19 @@ nix run .#oci-container-structure-test-my-nginx
 
 ## 7. Push to a registry
 
-See [`registry`](../reference/flake-parts-options.html) and [`push`](../reference/flake-parts-options.html) in the option reference.
+See [`registry`](../reference/flake-parts-options.html) in the option reference.
 
 ```nix
 oci.containers.my-nginx = {
   registry = "ghcr.io/myorg";
   tag = "v1.0";
-  push = true;
   # ...
 };
 ```
 
 ```bash
-# Push the image
-nix run .#oci-push-my-nginx-v1.0
+# Push the image (nix2container passthru)
+nix run .#oci-my-nginx.copyToRegistry
 ```
 
 ## What NixOS services work?

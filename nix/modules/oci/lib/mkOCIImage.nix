@@ -6,7 +6,7 @@
 #   - environment.variables → _output.envVars
 #   - oci.container.extraPackages → _output.rootFilesystem
 #   - oci.container.generatedLabels → Labels
-#   - oci.container.includedEtcFiles → _output.etcFiles
+#   - environment.etc (minus excludedEtcFiles denylist) → _output.etcFiles
 { lib, ... }:
 {
   config.perSystem =

@@ -78,10 +78,13 @@ in
         ''
       );
 
-      # -- Unified routing: extraPackages for hardening config files --
+      # -- TLS trust store removal --
+      # When noTlsTrustStore: replace the real cert with a dummy AND exclude
+      # the real one from the /etc denylist to prevent buildEnv conflicts.
       oci.container.extraPackages = lib.optionals cfg.noTlsTrustStore [
         (pkgs.writeTextDir "etc/ssl/certs/ca-bundle.crt" "# TLS trust store removed by nix-oci hardening\n")
       ];
+      oci.container.excludedEtcFiles = lib.mkIf cfg.noTlsTrustStore [ "ssl" ];
 
       # -- Unified routing: generatedLabels for hardening hints --
       oci.container.generatedLabels = {

@@ -33,7 +33,7 @@ in
                 out = nixosEval.oci.container._output;
               in
               ociLib.mkSandboxScript {
-                name = containerId;
+                name = "${containerId}-${containerConfig.tag}";
                 rootFilesystem = out.rootFilesystem;
                 entrypoint = if out.entrypoint != [ ] then out.entrypoint else containerConfig.entrypoint;
                 environment = containerConfig.environment;

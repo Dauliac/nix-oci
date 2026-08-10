@@ -11,11 +11,11 @@
 # network transfer from 3× to 1×.
 #
 # Env contract (same as mkPushApp):
-#   CIMERA_OCI_REGISTRY  → override configured registry
+#   NIX_OCI_REGISTRY  → override configured registry
 #   CI_REGISTRY_IMAGE    → GitLab-style registry prefix override
 #   OCI_DIR              → if set, push to local ocidir:// instead
 # Output contract:
-#   "CIMERA_OCI_PUSHED_TAG ref=<full-ref> digest=<digest> tag=<tag> primary=<bool>"
+#   "NIX_OCI_PUSHED_TAG ref=<full-ref> digest=<digest> tag=<tag> primary=<bool>"
 #   emitted on stdout for each tag -- downstream consumers grep for this.
 { lib, ... }:
 {
@@ -83,7 +83,7 @@
                 "''${DEST_PREFIX}${tag}" 2>/dev/null || echo "")"
               if [ -n "$LOCAL_DIGEST" ] && [ "$EXTRA_REMOTE" = "$LOCAL_DIGEST" ]; then
                 echo "[${appName}] tag ${tag} already correct (digest=$LOCAL_DIGEST) -- skipping"
-                echo "CIMERA_OCI_PUSHED_TAG ref=''${BASE_REF}:${tag} digest=$LOCAL_DIGEST tag=${tag} primary=false"
+                echo "NIX_OCI_PUSHED_TAG ref=''${BASE_REF}:${tag} digest=$LOCAL_DIGEST tag=${tag} primary=false"
               else
                 echo "[${appName}] tagging ${containerId}: ${primaryTag} -> ${tag} (registry-side copy)"
                 skopeo copy --retry-times 3 \
@@ -91,7 +91,7 @@
                 EXTRA_DIGEST="$(skopeo inspect --format '{{.Digest}}' \
                   "''${DEST_PREFIX}${tag}" 2>/dev/null || echo 'unknown')"
                 echo "[${appName}] tagged ''${BASE_REF}:${tag}@$EXTRA_DIGEST"
-                echo "CIMERA_OCI_PUSHED_TAG ref=''${BASE_REF}:${tag} digest=$EXTRA_DIGEST tag=${tag} primary=false"
+                echo "NIX_OCI_PUSHED_TAG ref=''${BASE_REF}:${tag} digest=$EXTRA_DIGEST tag=${tag} primary=false"
               fi
             '';
           in
@@ -104,8 +104,9 @@
             runtimeInputs = [
               skopeoPackage
             ];
+            excludeShellChecks = [ "SC2034" ];
             text = ''
-              REGISTRY="''${CIMERA_OCI_REGISTRY:-''${CI_REGISTRY_IMAGE:-${registryFallback}}}"
+              REGISTRY="''${NIX_OCI_REGISTRY:-''${CI_REGISTRY_IMAGE:-${registryFallback}}}"
 
               if [ -n "''${OCI_DIR:-}" ]; then
                 mkdir -p "$OCI_DIR"
@@ -117,7 +118,7 @@
                 PRIMARY_DEST="docker://$BASE_REF:${primaryTag}"
                 DEST_PREFIX="docker://$BASE_REF:"
               else
-                echo "[${appName}] ERROR: no registry configured. Set CIMERA_OCI_REGISTRY or CI_REGISTRY_IMAGE, or set OCI_DIR for a local push." >&2
+                echo "[${appName}] ERROR: no registry configured. Set NIX_OCI_REGISTRY or CI_REGISTRY_IMAGE, or set OCI_DIR for a local push." >&2
                 exit 1
               fi
 
@@ -129,7 +130,7 @@
               if [ -n "$LOCAL_DIGEST" ] && [ "$LOCAL_DIGEST" = "$PRIMARY_REMOTE" ]; then
                 echo "[${appName}] primary tag ${primaryTag} unchanged (digest=$LOCAL_DIGEST) -- skipping blob upload"
                 DIGEST="$LOCAL_DIGEST"
-                echo "CIMERA_OCI_PUSHED_TAG ref=$BASE_REF:${primaryTag} digest=$DIGEST tag=${primaryTag} primary=true"
+                echo "NIX_OCI_PUSHED_TAG ref=$BASE_REF:${primaryTag} digest=$DIGEST tag=${primaryTag} primary=true"
               else
                 echo "[${appName}] pushing ${containerId}: ${primaryTag} -> $BASE_REF:${primaryTag}"
                 skopeo copy --retry-times 3 ${compressFlag} ${sociFlags} \
@@ -137,7 +138,7 @@
                 DIGEST="$(skopeo inspect --format '{{.Digest}}' \
                   "$PRIMARY_DEST" 2>/dev/null || echo 'unknown')"
                 echo "[${appName}] pushed $BASE_REF:${primaryTag}@$DIGEST"
-                echo "CIMERA_OCI_PUSHED_TAG ref=$BASE_REF:${primaryTag} digest=$DIGEST tag=${primaryTag} primary=true"
+                echo "NIX_OCI_PUSHED_TAG ref=$BASE_REF:${primaryTag} digest=$DIGEST tag=${primaryTag} primary=true"
               fi
 
               # Step 2: Create additional tags via registry-side copy (skip if already correct).

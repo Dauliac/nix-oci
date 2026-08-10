@@ -64,13 +64,13 @@ in
                   # Run with text output for console feedback
                   $CST test --image "$IMAGE" --output text ${configFlags}
 
-                  # Generate JUnit report when CIMERA_REPORT_DIR is set
-                  # (injected by the cimera task wrapper for all tasks)
-                  if [ -n "''${CIMERA_REPORT_DIR:-}" ]; then
-                    mkdir -p "$CIMERA_REPORT_DIR"
+                  # Generate JUnit report when NIX_OCI_REPORT_DIR is set
+                  # (injected by the nix-oci task wrapper for all tasks)
+                  if [ -n "''${NIX_OCI_REPORT_DIR:-}" ]; then
+                    mkdir -p "$NIX_OCI_REPORT_DIR"
                     $CST test --image "$IMAGE" --output junit ${configFlags} \
-                      > "$CIMERA_REPORT_DIR/junit.xml" 2>/dev/null
-                    echo "JUnit report saved to $CIMERA_REPORT_DIR/junit.xml"
+                      > "$NIX_OCI_REPORT_DIR/junit.xml" 2>/dev/null
+                    echo "JUnit report saved to $NIX_OCI_REPORT_DIR/junit.xml"
                   fi
                 }
 

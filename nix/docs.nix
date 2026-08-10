@@ -1,6 +1,6 @@
 # Documentation build module (docs partition only)
 #
-# Builds an NDG site with:
+# Builds an mdBook site with:
 # - Module options (flake-parts, deploy/NixOS/HM/system-manager, NixOS container)
 # - Markdown content pages
 # - Examples from the examples/ directory
@@ -24,7 +24,6 @@ in
         ...
       }:
       let
-        ndg = inputs.ndg.packages.${system}.ndg;
         import-tree = inputs.import-tree;
 
         # --- Flake-parts options (oci.*) ---
@@ -258,77 +257,95 @@ in
         # We use it specifically for the testing reference page.
         testNixLibDoc = testFlakePartsEval.config.allSystems.${system}.nix-lib.docs.package or nixLibDoc;
 
-        # Diataxis layout with NDG group_by_dir:
-        #   Root (flat): index.md (overview), getting-started.md (tutorial)
-        #   ▼ How-to:    task-oriented guides
-        #   ▼ Reference: markdown templates with <!-- OPTIONS:* --> markers replaced by generated content
-        #   ▼ Examples:   all examples with [category] prefix
+        # Strip NDG/TOML frontmatter (+++ blocks) from markdown files.
+        # mdBook doesn't use frontmatter — titles come from SUMMARY.md.
+        stripFrontmatter = ''
+          strip_toml_frontmatter() {
+            local f="$1"
+            if head -1 "$f" | grep -q '^+++$'; then
+              local end=$(tail -n +2 "$f" | grep -n '^+++$' | head -1 | cut -d: -f1)
+              if [ -n "$end" ]; then
+                tail -n +$((end + 2)) "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+              fi
+            fi
+          }
+        '';
+
+        # Diataxis layout for mdBook:
+        #   Root: index.md (overview), getting-started.md (tutorial)
+        #   How-to, Architecture, Security, Examples, Reference, Test Reference
         docsInputDir =
-          pkgs.runCommand "ndg-input"
+          pkgs.runCommand "mdbook-input"
             {
               nativeBuildInputs = [ pkgs.gnused ];
             }
             ''
-              mkdir -p $out/{security,performance,architecture,integration,how-to,reference,test-reference,examples}
+              ${stripFrontmatter}
 
-              # Root pages (flat, top of sidebar)
-              # README.md and CONTRIBUTING.md are the source of truth, copied here for NDG
-              cp ${../README.md} $out/index.md
-              cp ${../CONTRIBUTING.md} $out/contributing.md
-              cp ${../docs/content}/getting-started.md $out/
+              mkdir -p $out/src/{security,architecture,how-to,reference,test-reference,examples}
+
+              # Root pages
+              cp ${../README.md} $out/src/index.md
+              cp ${../CONTRIBUTING.md} $out/src/contributing.md
+              cp ${../docs/content}/getting-started.md $out/src/
+              strip_toml_frontmatter $out/src/getting-started.md
 
               # --- How-to guides ---
               for f in ${../docs/content}/how-to/*.md; do
-                cp "$f" $out/how-to/
+                cp "$f" $out/src/how-to/
+              done
+              for f in $out/src/how-to/*.md; do
+                strip_toml_frontmatter "$f"
               done
 
-              # --- Thematic explanation pages (each dir = sidebar group) ---
-              cp -r ${../docs/content}/security/. $out/security/
-              cp -r ${../docs/content}/performance/. $out/performance/
-              cp -r ${../docs/content}/architecture/. $out/architecture/
-              cp -r ${../docs/content}/integration/. $out/integration/
+              # --- Thematic explanation pages ---
+              cp -r ${../docs/content}/security/. $out/src/security/
+              cp -r ${../docs/content}/architecture/. $out/src/architecture/
+              chmod -R u+w $out/src/security $out/src/architecture
+              for f in $(find $out/src/security $out/src/architecture -name '*.md'); do
+                strip_toml_frontmatter "$f"
+              done
 
               # --- Reference: copy templates and inject generated options at markers ---
               for f in ${../docs/content}/reference/*.md; do
-                cp "$f" $out/reference/
+                cp "$f" $out/src/reference/
               done
-              chmod -R u+w $out/reference
+              chmod -R u+w $out/src/reference
+              for f in $out/src/reference/*.md; do
+                strip_toml_frontmatter "$f"
+              done
 
-              sed -i '/<!-- OPTIONS:toplevel -->/r ${topLevelDoc.optionsCommonMark}' $out/reference/flake-parts-options.md
-              sed -i '/<!-- OPTIONS:persystem -->/r ${perSystemDoc.optionsCommonMark}' $out/reference/flake-parts-options.md
-              sed -i '/<!-- OPTIONS:container -->/r ${containerDoc.optionsCommonMark}' $out/reference/flake-parts-options.md
-              sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/nixos-options.md
-              sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/home-manager-options.md
-              sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/reference/system-manager-options.md
-              sed -i '/<!-- OPTIONS:nix-lib -->/r ${nixLibDoc}/nix-lib.md' $out/reference/nix-lib.md
-              sed -i '/<!-- OPTIONS:nix-lib-nixos-deploy -->/r ${nixLibDoc}/nix-lib-nixos-deploy.md' $out/reference/nix-lib-nixos-deploy.md
-              sed -i '/<!-- OPTIONS:nix-lib-home-manager-deploy -->/r ${nixLibDoc}/nix-lib-home-manager-deploy.md' $out/reference/nix-lib-home-manager-deploy.md
-              sed -i '/<!-- OPTIONS:nix-lib-system-manager-deploy -->/r ${nixLibDoc}/nix-lib-system-manager-deploy.md' $out/reference/nix-lib-system-manager-deploy.md
+              sed -i '/<!-- OPTIONS:toplevel -->/r ${topLevelDoc.optionsCommonMark}' $out/src/reference/flake-parts-options.md
+              sed -i '/<!-- OPTIONS:persystem -->/r ${perSystemDoc.optionsCommonMark}' $out/src/reference/flake-parts-options.md
+              sed -i '/<!-- OPTIONS:container -->/r ${containerDoc.optionsCommonMark}' $out/src/reference/flake-parts-options.md
+              sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/src/reference/nixos-options.md
+              sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/src/reference/home-manager-options.md
+              sed -i '/<!-- OPTIONS:deploy -->/r ${deployDoc.optionsCommonMark}' $out/src/reference/system-manager-options.md
+              sed -i '/<!-- OPTIONS:nix-lib -->/r ${nixLibDoc}/nix-lib.md' $out/src/reference/nix-lib.md
+              sed -i '/<!-- OPTIONS:nix-lib-nixos-deploy -->/r ${nixLibDoc}/nix-lib-nixos-deploy.md' $out/src/reference/nix-lib-nixos-deploy.md
+              sed -i '/<!-- OPTIONS:nix-lib-home-manager-deploy -->/r ${nixLibDoc}/nix-lib-home-manager-deploy.md' $out/src/reference/nix-lib-home-manager-deploy.md
+              sed -i '/<!-- OPTIONS:nix-lib-system-manager-deploy -->/r ${nixLibDoc}/nix-lib-system-manager-deploy.md' $out/src/reference/nix-lib-system-manager-deploy.md
 
-              # --- Test reference pages (separate sidebar group) ---
+              # --- Test reference pages ---
               for f in ${../docs/content}/test-reference/*.md; do
-                cp "$f" $out/test-reference/
+                cp "$f" $out/src/test-reference/
               done
-              chmod -R u+w $out/test-reference
+              chmod -R u+w $out/src/test-reference
+              for f in $out/src/test-reference/*.md; do
+                strip_toml_frontmatter "$f"
+              done
 
-              sed -i '/<!-- OPTIONS:testing-flake-parts -->/r ${testFlakePartsDoc.optionsCommonMark}' $out/test-reference/testing-flake-parts-options.md
-              sed -i '/<!-- OPTIONS:nix-lib-testing -->/r ${testNixLibDoc}/docs.md' $out/test-reference/nix-lib-testing.md
+              sed -i '/<!-- OPTIONS:testing-flake-parts -->/r ${testFlakePartsDoc.optionsCommonMark}' $out/src/test-reference/testing-flake-parts-options.md
+              sed -i '/<!-- OPTIONS:nix-lib-testing -->/r ${testNixLibDoc}/docs.md' $out/src/test-reference/nix-lib-testing.md
 
               # --- Examples: generate pages with subdir-based sections ---
-              # gen_examples_page <title> <dest> <dir>...
-              # Subdirectories become ## headings, files become ### headings.
               gen_examples_page() {
                 local title="$1" dest="$2"
                 shift 2
                 {
-                  echo "+++"
-                  echo "title = \"$title\""
-                  echo "+++"
-                  echo ""
                   echo "# $title"
                   echo ""
                   for dir in "$@"; do
-                    # Root-level .nix files (no subdir heading)
                     for f in $(find "$dir" -maxdepth 1 -name '*.nix' -type f | sort); do
                       name="$(basename "$f" .nix)"
                       echo "## $name"
@@ -338,7 +355,6 @@ in
                       echo '```'
                       echo ""
                     done
-                    # Subdirectories as sections
                     for sub in $(find "$dir" -mindepth 1 -maxdepth 1 -type d | sort); do
                       subname="$(basename "$sub")"
                       pretty="$(echo "$subname" | sed 's/-/ /g')"
@@ -358,151 +374,245 @@ in
                 } > "$dest"
               }
 
-              # Flake: all flake-parts examples with subdir sections
-              gen_examples_page "Flake examples" "$out/examples/flake.md" \
+              gen_examples_page "Flake examples" "$out/src/examples/flake.md" \
                 "${../examples}/flake"
-
-              # Deploy
-              gen_examples_page "NixOS deploy" "$out/examples/deploy-nixos.md" \
+              gen_examples_page "NixOS deploy" "$out/src/examples/deploy-nixos.md" \
                 "${../examples}/deploy-nixos"
-              gen_examples_page "Home Manager deploy" "$out/examples/deploy-home-manager.md" \
+              gen_examples_page "Home Manager deploy" "$out/src/examples/deploy-home-manager.md" \
                 "${../examples}/deploy-home-manager"
-              gen_examples_page "system-manager deploy" "$out/examples/deploy-system-manager.md" \
+              gen_examples_page "system-manager deploy" "$out/src/examples/deploy-system-manager.md" \
                 "${../examples}/deploy-system-manager"
+
+              # --- SUMMARY.md (mdBook sidebar) ---
+              cat > $out/src/SUMMARY.md << 'SUMMARY'
+              # Summary
+
+              [nix-oci](index.md)
+              [Contributing](contributing.md)
+
+              ---
+
+              # Getting Started
+
+              - [Getting Started](getting-started.md)
+
+              ---
+
+              # How-to
+
+              - [Container Modules API](how-to/container-modules-api.md)
+              - [NixOS Containers](how-to/nixos-containers.md)
+              - [Share Containers Across Modules](how-to/share-containers-across-modules.md)
+              - [Deploy Modules](how-to/deploy-modules.md)
+
+              ---
+
+              # Architecture
+
+              - [Overview](architecture/index.md)
+              - [Archive-less Container Building](architecture/archive-less-container-building.md)
+              - [Automatic Labeling](architecture/automatic-labeling.md)
+              - [Automatic Metadata](architecture/automatic-metadata.md)
+              - [Container Metadata Wiring](architecture/container-metadata-wiring.md)
+              - [Design Choices](architecture/design-choices.md)
+              - [OCI Standards Compliance](architecture/oci-standards-compliance.md)
+              - [Performance](architecture/performance.md)
+              - [Validation-Gated Delivery](architecture/validation-gated-delivery.md)
+
+              ---
+
+              # Security
+
+              - [Overview](security/index.md)
+              - [Container Probes](security/container-probes.md)
+              - [Hardening](security/hardening.md)
+              - [Image Signing](security/image-signing.md)
+              - [Policy Coherence Testing](security/policy-coherence-testing.md)
+              - [Policy Integrity Testing](security/policy-integrity-testing.md)
+              - [Security Defaults](security/security-defaults.md)
+              - [Vulnerability Scanning](security/vulnerability-scanning.md)
+
+              ---
+
+              # Examples
+
+              - [Flake examples](examples/flake.md)
+              - [NixOS deploy](examples/deploy-nixos.md)
+              - [Home Manager deploy](examples/deploy-home-manager.md)
+              - [system-manager deploy](examples/deploy-system-manager.md)
+
+              ---
+
+              # Reference
+
+              - [Options: flake-parts](reference/flake-parts-options.md)
+              - [Options: NixOS deploy](reference/nixos-options.md)
+              - [Options: Home Manager deploy](reference/home-manager-options.md)
+              - [Options: system-manager deploy](reference/system-manager-options.md)
+              - [nix-lib: flake-parts functions](reference/nix-lib.md)
+              - [nix-lib: NixOS deploy functions](reference/nix-lib-nixos-deploy.md)
+              - [nix-lib: Home Manager deploy functions](reference/nix-lib-home-manager-deploy.md)
+              - [nix-lib: system-manager deploy functions](reference/nix-lib-system-manager-deploy.md)
+
+              ---
+
+              # Test Reference
+
+              - [Options: flake-parts testing](test-reference/testing-flake-parts-options.md)
+              - [nix-lib: testing functions](test-reference/nix-lib-testing.md)
+              SUMMARY
+
+              # Remove leading whitespace from SUMMARY.md (heredoc indentation)
+              sed -i 's/^              //' $out/src/SUMMARY.md
+
+              # --- book.toml ---
+              cat > $out/book.toml << 'TOML'
+              [book]
+              title = "nix-oci"
+              description = "Build, harden and deploy OCI containers entirely from Nix"
+              authors = ["Dauliac"]
+              language = "en"
+              src = "src"
+
+              [build]
+              build-dir = "book"
+
+              [output.html]
+              default-theme = "light"
+              preferred-dark-theme = "coal"
+              git-repository-url = "https://github.com/Dauliac/nix-oci"
+              additional-css = ["theme/custom.css"]
+              additional-js = ["theme/mermaid.min.js", "theme/mermaid-init.js"]
+              no-section-label = true
+
+              [output.html.search]
+              enable = true
+              TOML
+              sed -i 's/^              //' $out/book.toml
+
+              # --- Theme: custom CSS (Catppuccin) ---
+              mkdir -p $out/theme
+              cat > $out/theme/custom.css << 'CSS'
+              @font-face {
+                font-family: "Frames Part One";
+                src: url("assets/FramesPartOne-Bold.woff2") format("woff2");
+                font-weight: 700;
+                font-display: swap;
+              }
+
+              :root {
+                --sidebar-width: 280px;
+              }
+
+              /* Catppuccin Latte (light) overrides */
+              .light, .rust {
+                --bg: #eff1f5;
+                --fg: #4c4f69;
+                --sidebar-bg: #e6e9ef;
+                --sidebar-fg: #4c4f69;
+                --sidebar-active: #df8e1d;
+                --links: #df8e1d;
+                --inline-code-color: #4c4f69;
+                --theme-popup-bg: #e6e9ef;
+                --theme-popup-border: #ccd0da;
+                --quote-bg: #e6e9ef;
+                --quote-border: #df8e1d;
+                --table-border-color: #ccd0da;
+                --table-header-bg: #e6e9ef;
+                --searchbar-border-color: #ccd0da;
+                --searchbar-bg: #eff1f5;
+                --searchbar-fg: #4c4f69;
+              }
+
+              /* Catppuccin Mocha (dark) overrides */
+              .coal, .navy, .ayu {
+                --bg: #1e1e2e;
+                --fg: #cdd6f4;
+                --sidebar-bg: #181825;
+                --sidebar-fg: #cdd6f4;
+                --sidebar-active: #f9e2af;
+                --links: #f9e2af;
+                --inline-code-color: #cdd6f4;
+                --theme-popup-bg: #181825;
+                --theme-popup-border: #313244;
+                --quote-bg: #313244;
+                --quote-border: #f9e2af;
+                --table-border-color: #45475a;
+                --table-header-bg: #313244;
+                --searchbar-border-color: #313244;
+                --searchbar-bg: #1e1e2e;
+                --searchbar-fg: #cdd6f4;
+              }
+
+              body {
+                font-family: "Iosevka", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+              }
+
+              code, pre, .hljs {
+                font-family: "Iosevka", monospace;
+              }
+
+              h1:first-of-type {
+                font-family: "Frames Part One", monospace;
+                font-weight: 700;
+                letter-spacing: -0.02em;
+              }
+
+              .sidebar .sidebar-scrollbox a.active {
+                font-weight: 700;
+              }
+              CSS
+
+              # --- Mermaid support ---
+              cat > $out/theme/mermaid-init.js << 'MERMJS'
+              document.addEventListener("DOMContentLoaded", function() {
+                if (typeof mermaid !== "undefined") {
+                  mermaid.initialize({
+                    startOnLoad: false,
+                    theme: "base",
+                    themeVariables: {
+                      primaryColor: "#fff8e1",
+                      primaryTextColor: "#333",
+                      primaryBorderColor: "#e0a800",
+                      lineColor: "#d4a017",
+                      fontFamily: "'Iosevka', monospace",
+                      fontSize: "16px"
+                    }
+                  });
+                  document.querySelectorAll("code.language-mermaid").forEach(function(el) {
+                    var pre = el.parentElement;
+                    pre.classList.add("mermaid");
+                    pre.textContent = el.textContent;
+                  });
+                  mermaid.run();
+                }
+              });
+              MERMJS
+
+              # Copy assets into src so mdBook can serve them
+              mkdir -p $out/src/assets
+              cp -r ${../docs/assets}/. $out/src/assets/
             '';
 
-        # --- NDG site build (using CLI directly) ---
-        ndgConfig = pkgs.writers.writeTOML "ndg.toml" {
-          title = "nix-oci";
-          input_dir = "${docsInputDir}";
-          output_dir = placeholder "out";
-          search.enable = true;
-          highlight_code = true;
-          meta_tags = {
-            description = "Build, harden and deploy OCI containers entirely from Nix — including directly from NixOS service definitions";
-            keywords = "nix,oci,container,docker,podman,nixos,flake-parts,nix2container,hardening,seccomp";
-            author = "Dauliac";
-          };
-          opengraph = {
-            "og:title" = "nix-oci — Nix-native OCI containers";
-            "og:description" =
-              "Build, harden and deploy OCI containers entirely from Nix. Write services.nginx.enable = true, get a production-ready container.";
-            "og:type" = "website";
-            "og:url" = "https://dauliac.github.io/nix-oci/";
-          };
-          sidebar = {
-            ordering = "custom";
-            group_by_dir = true;
-            matches = [
-              {
-                path = "getting-started.md";
-                new_title = "Getting Started";
-                position = 1;
-              }
-              {
-                path = "how-to";
-                position = 2;
-              }
-              {
-                path = "architecture";
-                new_title = "Architecture";
-                position = 3;
-              }
-              {
-                path = "security";
-                new_title = "Security";
-                position = 4;
-              }
-              {
-                path = "performance";
-                new_title = "Performance";
-                position = 5;
-              }
-              {
-                path = "integration";
-                new_title = "Integration";
-                position = 6;
-              }
-              {
-                path = "examples";
-                position = 7;
-              }
-              {
-                path = "reference";
-                position = 8;
-              }
-              # -- Reference: module options --
-              {
-                path = "reference/flake-parts-options.md";
-                new_title = "Options: flake-parts";
-                position = 1;
-              }
-              {
-                path = "reference/nixos-options.md";
-                new_title = "Options: NixOS deploy";
-                position = 2;
-              }
-              {
-                path = "reference/home-manager-options.md";
-                new_title = "Options: Home Manager deploy";
-                position = 3;
-              }
-              {
-                path = "reference/system-manager-options.md";
-                new_title = "Options: system-manager deploy";
-                position = 4;
-              }
-              # -- Reference: nix-lib functions --
-              {
-                path = "reference/nix-lib.md";
-                new_title = "nix-lib: flake-parts functions";
-                position = 5;
-              }
-              {
-                path = "reference/nix-lib-nixos-deploy.md";
-                new_title = "nix-lib: NixOS deploy functions";
-                position = 6;
-              }
-              {
-                path = "reference/nix-lib-home-manager-deploy.md";
-                new_title = "nix-lib: Home Manager deploy functions";
-                position = 7;
-              }
-              {
-                path = "reference/nix-lib-system-manager-deploy.md";
-                new_title = "nix-lib: system-manager deploy functions";
-                position = 8;
-              }
-              # -- Test Reference: separate sidebar group (last) --
-              {
-                path = "test-reference";
-                new_title = "Test Reference";
-                position = 9;
-              }
-              {
-                path = "test-reference/testing-flake-parts-options.md";
-                new_title = "Options: flake-parts testing";
-                position = 1;
-              }
-              {
-                path = "test-reference/nix-lib-testing.md";
-                new_title = "nix-lib: testing functions";
-                position = 2;
-              }
-            ];
-          };
-        };
-
+        # --- mdBook site build ---
         docs =
           pkgs.runCommandLocal "nix-oci-docs"
             {
-              nativeBuildInputs = [ ndg ];
+              nativeBuildInputs = [ pkgs.mdbook ];
             }
             ''
-              ndg --config-file "${ndgConfig}" --verbose html \
-                --template-dir ${../docs/templates} \
-                --jobs $NIX_BUILD_CORES --output-dir "$out"
-              cp -r ${../docs/assets}/. "$out/assets/"
+              cp -r ${docsInputDir}/. build/
+              chmod -R u+w build/
+
+              # Fetch mermaid.min.js for offline use
+              cp ${pkgs.fetchurl {
+                url = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js";
+                hash = "sha256-pDvBr9RG+cTMZqxd1F0C6NZeJvxTROwO94f4jW3bb54=";
+              }} build/theme/mermaid.min.js
+
+              cd build
+              mdbook build
+              mv book $out
             '';
       in
       {

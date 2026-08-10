@@ -189,11 +189,14 @@ let
           --proc /proc \
           --dev /dev \
           --unshare-pid \
+          --unshare-uts \
+          --hostname "${name}" \
           --die-with-parent \
           --clearenv \
           ${envFlags} \
           --setenv HOME "${homeDir}" \
           --setenv USER "${user}" \
+          --setenv HOSTNAME "${name}" \
           --setenv TERM "''${TERM:-xterm}" \
           ${userFlags} \
           ${workDirFlag} \
@@ -1031,8 +1034,8 @@ let
       in
       pkgs.runCommand "etc-${safeName}" { } ''
         mkdir -p $out/etc/$(dirname "${name}")
-        cp -L ${entry.source} $out/etc/${name}
-        ${if isSymlink then "" else "chmod ${mode} $out/etc/${name}"}
+        cp -rL ${entry.source} $out/etc/${name}
+        ${if isSymlink then "" else "chmod -R ${mode} $out/etc/${name}"}
       '';
   };
 in

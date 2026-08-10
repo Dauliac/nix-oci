@@ -363,7 +363,7 @@ This table compares **runtime tuning and testing** capabilities.
 |---|---|---|---|---|---|---|---|---|
 | **Performance** | | | | | | | | |
 | Allocator selection | 🔧 Manual | 🔧 Manual | 🔧 Manual | 🔧 Manual | ✅ **jemalloc, mimalloc, …** | ❌ | ❌ | ❌ |
-| Compiler optimization (march, LTO) | 🔧 Manual | 🔧 Manual | 🔧 Manual | 🔧 Manual | ✅ **Built-in** | ❌ | ❌ | ❌ |
+| Runtime allocator injection | 🔧 Manual | 🔧 Manual | 🔧 Manual | 🔧 Manual | ✅ **Built-in** | ❌ | ❌ | ❌ |
 | GPU / CUDA support | 🔧 Manual | 🔧 Manual | 🔧 Manual | 🔧 Manual | ✅ **Built-in** | ❌ | ❌ | ❌ |
 | Health checks | 🔧 Manual | 🔧 Manual | 🔧 Manual | 🔧 Manual | ✅ **Auto-detected** | ❌ | ❌ | 🟡 Partial |
 | Huge pages, glibc tunables | 🔧 Manual | 🔧 Manual | 🔧 Manual | 🔧 Manual | ✅ **Built-in** | ❌ | ❌ | ❌ |

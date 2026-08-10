@@ -49,6 +49,11 @@
 
               documentation.enable = false;
 
+              # ── Boot speed: initrd ────────────────────────────────
+              # lz4 decompresses ~4x faster than zstd; saves ~0.5-1s on initrd load.
+              boot.initrd.compressor = "lz4";
+              boot.initrd.compressorArgs = [ "-l" ];
+
               # ── Boot speed: kernel ──────────────────────────────────
               # Test instrumentation forces loglevel=7; override to 4 (warnings).
               boot.consoleLogLevel = lib.mkForce 4;
@@ -74,6 +79,17 @@
               # ── Boot speed: systemd / services ──────────────────────
               # Disable audit daemon (saves ~0.5s of audit init + journald overhead).
               security.audit.enable = false;
+
+              # Disable services not needed in ephemeral test VMs.
+              systemd.services.systemd-journal-flush.enable = false;
+              systemd.services.systemd-update-utmp.enable = false;
+              services.nscd.enable = false;
+              system.nssModules = lib.mkForce [ ];
+              # Nix daemon is useless inside test VMs — we never build inside them.
+              nix.enable = false;
+
+              # No swap overhead in test VMs.
+              boot.kernel.sysctl."vm.swappiness" = 0;
 
               # Don't block boot waiting for DHCP lease — the test network
               # (eth1) uses static IPs from the test driver, and eth0's

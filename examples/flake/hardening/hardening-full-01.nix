@@ -15,7 +15,7 @@
         config.oci.containers = {
           example-hardened = {
             package = pkgs.busybox;
-            isRoot = true;
+            isRoot = false;
             hardening = {
               enable = true;
               seccomp = {

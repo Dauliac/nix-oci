@@ -2,17 +2,17 @@
 # specific tag of a built OCI image to the configured registry.
 #
 # Why per-tag: a push is the natural unit of parallelism. Emitting
-# one derivation per tag lets consumers (cimera, other flakes)
+# one derivation per tag lets consumers (nix-oci, other flakes)
 # schedule pushes as independent Nix builds -- the executor fans them
 # out automatically, failures are isolated per-tag, and retries
 # become idempotent per-tag rather than all-or-nothing.
 #
 # Env contract (matches mkPushTempOCIApp / mkMergeMultiArchApp):
-#   CIMERA_OCI_REGISTRY  → override configured registry
+#   NIX_OCI_REGISTRY  → override configured registry
 #   CI_REGISTRY_IMAGE    → GitLab-style registry prefix override
 #   OCI_DIR              → if set, push to local ocidir:// instead
 # Output contract:
-#   "CIMERA_OCI_PUSHED_TAG ref=<full-ref> digest=<digest> tag=<tag> primary=<bool>"
+#   "NIX_OCI_PUSHED_TAG ref=<full-ref> digest=<digest> tag=<tag> primary=<bool>"
 # fired on stdout -- downstream consumers grep for this marker.
 { lib, ... }:
 {
@@ -78,7 +78,7 @@
               skopeoPackage
             ];
             text = ''
-              REGISTRY="''${CIMERA_OCI_REGISTRY:-''${CI_REGISTRY_IMAGE:-${registryFallback}}}"
+              REGISTRY="''${NIX_OCI_REGISTRY:-''${CI_REGISTRY_IMAGE:-${registryFallback}}}"
 
               if [ -n "''${OCI_DIR:-}" ]; then
                 mkdir -p "$OCI_DIR"
@@ -88,7 +88,7 @@
                 REF="$REGISTRY/${containerConfig.name}:${tag}"
                 DEST="docker://$REF"
               else
-                echo "[${appName}] ERROR: no registry configured. Set CIMERA_OCI_REGISTRY or CI_REGISTRY_IMAGE, or set OCI_DIR for a local push." >&2
+                echo "[${appName}] ERROR: no registry configured. Set NIX_OCI_REGISTRY or CI_REGISTRY_IMAGE, or set OCI_DIR for a local push." >&2
                 exit 1
               fi
 
@@ -99,7 +99,7 @@
 
               if [ -n "$LOCAL_DIGEST" ] && [ "$LOCAL_DIGEST" = "$REMOTE_DIGEST" ]; then
                 echo "[${appName}] image unchanged (digest=$LOCAL_DIGEST) -- skipping push"
-                echo "CIMERA_OCI_PUSHED_TAG ref=$REF digest=$LOCAL_DIGEST tag=${tag} primary=${primaryLiteral}"
+                echo "NIX_OCI_PUSHED_TAG ref=$REF digest=$LOCAL_DIGEST tag=${tag} primary=${primaryLiteral}"
               else
                 echo "[${appName}] pushing ${containerId} -> $REF"
 
@@ -109,7 +109,7 @@
                 DIGEST="$(skopeo inspect --format '{{.Digest}}' "$DEST" 2>/dev/null || echo 'unknown')"
 
                 echo "[${appName}] pushed $REF@$DIGEST"
-                echo "CIMERA_OCI_PUSHED_TAG ref=$REF digest=$DIGEST tag=${tag} primary=${primaryLiteral}"
+                echo "NIX_OCI_PUSHED_TAG ref=$REF digest=$DIGEST tag=${tag} primary=${primaryLiteral}"
               fi
             '';
           };

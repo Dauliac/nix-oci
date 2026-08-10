@@ -21,7 +21,7 @@
     get-flake.url = "github:ursi/get-flake";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     flake-parts.url = "github:hercules-ci/flake-parts";
-    home-manager.url = "github:nix-community/home-manager";
+    home-manager.url = "github:nix-community/home-manager/release-25.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
   };
 
@@ -47,8 +47,16 @@
         nix-oci.modules.flake.nix-oci-test
 
         # Import ALL flake-parts examples (auto-discovered via import-tree).
-        # This is the same module used by the main flake for example validation.
-        ../nix/examples.nix
+        # Home-manager examples included (test flake has the input).
+        (import ../nix/examples.nix {
+          excludes = [
+            "/multi-arch/"
+            "/minimalist-with-amicontained"
+            "/minimalist-with-cdk"
+            "/minimalist-with-deepce"
+            "/minimalist-with-linpeas"
+          ];
+        })
       ];
 
       _module.args.import-tree = nix-oci.inputs.import-tree;
@@ -63,6 +71,9 @@
           # Use nix2container-turbo for all pushes — enables cross-machine
           # layer caching via OCI Referrers API and optimized layers.
           oci.turbo.enable = true;
+
+          # Lock files live at <project-root>/oci/, not tests/oci/
+          oci.fromImageManifestRootPath = ../oci + "/";
         };
     };
 }

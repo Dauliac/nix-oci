@@ -9,7 +9,7 @@
 #   config.perSystem = { ... }: {
 #     oci.perArchitecture = [
 #       ({ name, containerConfig, ... }: {
-#         options.performance.march = mkOption { ... };
+#         options.myArchOption = lib.mkOption { type = lib.types.str; };
 #       })
 #     ];
 #   };

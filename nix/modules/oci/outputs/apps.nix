@@ -1,4 +1,12 @@
-# OCI apps intermediate output
+# OCI apps intermediate output.
+#
+# 4 apps per container:
+#   oci-sandbox-<name>       — bubblewrap shell in the container
+#   oci-push-<name>          — push to registry (gated)
+#   oci-load-docker-<name>   — load into Docker (gated)
+#   oci-load-podman-<name>   — load into Podman (gated)
+#
+# Plus multi-arch helpers when enabled.
 {
   lib,
   flake-parts-lib,
@@ -20,7 +28,7 @@ in
         type = types.attrsOf types.attrs;
         description = "OCI-related apps that can be exposed as flake outputs.";
         readOnly = true;
-        defaultText = lib.literalMD "Apps for security scanning, SBOM generation, validation, and multi-arch builds, derived from [`oci.containers`](#opt-perSystem.oci.containers).";
+        defaultText = lib.literalMD "Per-container `sandbox`, `push`, `load-docker`, `load-podman` apps.";
         default =
           let
             hasExternalDependencies = any (containerConfig: containerConfig.fromImage.enabled) (
@@ -29,34 +37,18 @@ in
             updateManifestApp =
               if hasExternalDependencies then
                 {
-                  oci-updatePulledManifestsLocks = {
+                  oci-update-manifests = {
                     type = "app";
-                    program = config.oci.internal.updatepulledOCIsManifestLocks;
+                    program = lib.getExe config.oci.internal.updatepulledOCIsManifestLocks;
                   };
                 }
               else
                 { };
           in
           updateManifestApp
-          // config.oci.internal.prefixedCVEGrypeApps
-          // config.oci.internal.prefixedCVETrivyApps
-          // config.oci.internal.prefixedCVEVulnixApps
-          // config.oci.internal.prefixedContainerStructureTestApps
-          // config.oci.internal.prefixedCredentialsLeakTrivyApps
-          // config.oci.internal.prefixedDgossApps
-          // config.oci.internal.prefixedAmicontainedApps
-          // config.oci.internal.prefixedDeepceApps
-          // config.oci.internal.prefixedLinpeasApps
-          // config.oci.internal.prefixedCdkApps
-          // config.oci.internal.prefixedSBOMSyftApps
-          // config.oci.internal.prefixedSigningCosignApps
-          // config.oci.internal.prefixedLintDockleApps
-          // config.oci.internal.prefixedPolicyConftestApps
-          // config.oci.internal.prefixedLicenseConftestApps
-          // config.oci.internal.prefixedComplianceTrivyApps
+          // config.oci.pipeline.apps
           // config.oci.internal.prefixedPushTmpOCIApps
-          // config.oci.internal.prefixedMergeMultiArchApps
-          // config.oci.internal.prefixedSandboxApps;
+          // config.oci.internal.prefixedMergeMultiArchApps;
       };
     }
   );

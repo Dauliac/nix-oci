@@ -53,13 +53,13 @@ import ../../../../lib/mkLibModule.nix (
           reportBlock = ociLib.mkReportBlock {
             reportCommand = ''
               # Also save the SBOM for traceability
-              cp "$WORK/sbom.cdx.json" "$CIMERA_REPORT_DIR/gl-sbom-license-input.cdx.json"
+              cp "$WORK/sbom.cdx.json" "$NIX_OCI_REPORT_DIR/gl-sbom-license-input.cdx.json"
               ${conftestBin} test "$WORK/sbom.cdx.json" \
                 --policy ${effectivePolicyDir} \
                 ${namespaceFlags} \
                 --no-color \
                 --output json \
-                > "$CIMERA_REPORT_DIR/gl-license-conftest-report.json" || true
+                > "$NIX_OCI_REPORT_DIR/gl-license-conftest-report.json" || true
             '';
             reportName = "gl-license-conftest-report.json";
           };

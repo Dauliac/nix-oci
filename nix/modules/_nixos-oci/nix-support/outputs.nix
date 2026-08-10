@@ -107,7 +107,6 @@ in
       '')
     ];
 
-    # Register nix.conf for container inclusion
-    oci.container.includedEtcFiles = [ "nix/nix.conf" ];
+    # No longer needed — denylist approach includes all /etc by default
   };
 }

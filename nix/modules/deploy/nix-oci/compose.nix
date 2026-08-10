@@ -7,10 +7,11 @@
 {
   config,
   inputs,
+  lib,
   ...
 }:
 let
-  import-tree = inputs.import-tree;
+  discoverModules = import ../../../lib/discoverModules.nix { inherit lib; };
   nixosMods = config.flake.modules.nixos;
   hmMods = config.flake.modules.homeManager;
   smMods = config.flake.modules.systemManager;
@@ -19,7 +20,9 @@ in
   # Export the NixOS container eval module tree.
   # Internal path uses _ prefix (excluded from flake-parts import-tree),
   # but exported as a public module for consumers and nix-lib collection.
-  flake.modules.nixos-oci = import-tree ../../../_nixos-oci;
+  flake.modules.nixos-oci = {
+    imports = discoverModules ../../../_nixos-oci;
+  };
 
   flake.modules.nixos.nix-oci =
     { pkgs, ... }:
