@@ -90,6 +90,9 @@
             # the root flake output stays clean. BDD checks are still wired
             # manually in perSystem below.
             oci.enableFlakeOutputs = false;
+            # Expose nix-lib's auto-generated `flake.tests` output at root
+            # only (extenders and the BDD `./tests` flake keep it hidden).
+            oci.flake.exposeUnitTests = true;
             debug = true;
             perSystem =
               {
