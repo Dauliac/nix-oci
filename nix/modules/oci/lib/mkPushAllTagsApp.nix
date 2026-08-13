@@ -17,13 +17,12 @@
 # Output contract:
 #   "NIX_OCI_PUSHED_TAG ref=<full-ref> digest=<digest> tag=<tag> primary=<bool>"
 #   emitted on stdout for each tag -- downstream consumers grep for this.
-{ lib, ... }:
+{ ... }:
 {
   config.perSystem =
     {
       pkgs,
       lib,
-      config,
       ...
     }:
     {
@@ -50,12 +49,6 @@
             additionalTags = lib.filter (t: t != primaryTag) tagNames;
 
             ociOutput = perSystemConfig.internal.OCIs.${containerId};
-
-            baseName =
-              if containerConfig.registry != null && containerConfig.registry != "" then
-                "${containerConfig.registry}/${containerConfig.name}"
-              else
-                containerConfig.name;
 
             appName = "push-all-${containerId}";
 
