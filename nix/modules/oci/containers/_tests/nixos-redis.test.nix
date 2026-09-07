@@ -20,6 +20,12 @@
           target = "oci";
           container = {
             package = pkgs.redis;
+            # Expose the container's redis port to the VM host so the
+            # `docker run redis-cli -h 127.0.0.1 PING` assertion (which
+            # runs *outside* the container, on the VM host) can reach
+            # it. Without this the container listens on 6379 internally
+            # but nothing is published.
+            ports = [ "6379:6379" ];
             nixosConfig = {
               mainService = "redis-default";
               modules = [
