@@ -43,11 +43,28 @@
           let
             containerConfig = perSystemConfig.containers.${containerId};
             tagConfigs = containerConfig.tagConfigs;
-            tagNames = lib.attrNames tagConfigs;
+            allTagNames = lib.attrNames tagConfigs;
 
-            primaryTag = lib.findFirst (t: tagConfigs.${t}.primary) (builtins.head tagNames) tagNames;
+            # Only tags with `push = true` are candidates. Keeps attrNames
+            # ordering so a pushable declared primary retains precedence.
+            pushableTags = lib.filter (t: tagConfigs.${t}.push) allTagNames;
+            hasNothingToPush = pushableTags == [ ];
 
-            additionalTags = lib.filter (t: t != primaryTag) tagNames;
+            declaredPrimary = lib.findFirst (t: tagConfigs.${t}.primary) null allTagNames;
+
+            # Promote the declared primary when pushable; otherwise fall
+            # back to the first pushable tag (registry side copy needs a
+            # real push as its source). Guarded so `lib.head` never runs
+            # on an empty list.
+            primaryTag =
+              if hasNothingToPush then
+                ""
+              else if declaredPrimary != null && tagConfigs.${declaredPrimary}.push then
+                declaredPrimary
+              else
+                lib.head pushableTags;
+
+            additionalTags = lib.filter (t: t != primaryTag) pushableTags;
 
             ociOutput = perSystemConfig.internal.OCIs.${containerId};
 
@@ -106,6 +123,10 @@
             ];
             excludeShellChecks = [ "SC2034" ];
             text = ''
+              ${lib.optionalString hasNothingToPush ''
+                echo "[${appName}] all tags have push=false for ${containerId}; nothing to push."
+                exit 0
+              ''}
               REGISTRY="''${NIX_OCI_REGISTRY:-''${CI_REGISTRY_IMAGE:-${registryFallback}}}"
 
               if [ -n "''${OCI_DIR:-}" ]; then
