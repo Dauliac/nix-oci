@@ -17,13 +17,12 @@
 # Output contract:
 #   "NIX_OCI_PUSHED_TAG ref=<full-ref> digest=<digest> tag=<tag> primary=<bool>"
 #   emitted on stdout for each tag -- downstream consumers grep for this.
-{ lib, ... }:
+{ ... }:
 {
   config.perSystem =
     {
       pkgs,
       lib,
-      config,
       ...
     }:
     {
@@ -67,12 +66,6 @@
             additionalTags = lib.filter (t: t != primaryTag) pushableTags;
 
             ociOutput = perSystemConfig.internal.OCIs.${containerId};
-
-            baseName =
-              if containerConfig.registry != null && containerConfig.registry != "" then
-                "${containerConfig.registry}/${containerConfig.name}"
-              else
-                containerConfig.name;
 
             appName = "push-all-${containerId}";
 
@@ -122,53 +115,55 @@
               skopeoPackage
             ];
             excludeShellChecks = [ "SC2034" ];
-            text = ''
-              ${lib.optionalString hasNothingToPush ''
-                echo "[${appName}] all tags have push=false for ${containerId}; nothing to push."
-                exit 0
-              ''}
-              REGISTRY="''${NIX_OCI_REGISTRY:-''${CI_REGISTRY_IMAGE:-${registryFallback}}}"
-
-              if [ -n "''${OCI_DIR:-}" ]; then
-                mkdir -p "$OCI_DIR"
-                BASE_REF="$OCI_DIR"
-                PRIMARY_DEST="oci:$OCI_DIR:${primaryTag}"
-                DEST_PREFIX="oci:$OCI_DIR:"
-              elif [ -n "$REGISTRY" ]; then
-                BASE_REF="$REGISTRY/${containerConfig.name}"
-                PRIMARY_DEST="docker://$BASE_REF:${primaryTag}"
-                DEST_PREFIX="docker://$BASE_REF:"
+            text =
+              if hasNothingToPush then
+                ''
+                  echo "[${appName}] all tags have push=false for ${containerId}; nothing to push."
+                ''
               else
-                echo "[${appName}] ERROR: no registry configured. Set NIX_OCI_REGISTRY or CI_REGISTRY_IMAGE, or set OCI_DIR for a local push." >&2
-                exit 1
-              fi
+                ''
+                  REGISTRY="''${NIX_OCI_REGISTRY:-''${CI_REGISTRY_IMAGE:-${registryFallback}}}"
 
-              # Digest-based skip: compare local image digest with remote primary tag.
-              LOCAL_DIGEST="$(skopeo inspect --format '{{.Digest}}' "nix:${ociOutput}" 2>/dev/null || echo "")"
-              PRIMARY_REMOTE="$(skopeo inspect --format '{{.Digest}}' "$PRIMARY_DEST" 2>/dev/null || echo "")"
+                  if [ -n "''${OCI_DIR:-}" ]; then
+                    mkdir -p "$OCI_DIR"
+                    BASE_REF="$OCI_DIR"
+                    PRIMARY_DEST="oci:$OCI_DIR:${primaryTag}"
+                    DEST_PREFIX="oci:$OCI_DIR:"
+                  elif [ -n "$REGISTRY" ]; then
+                    BASE_REF="$REGISTRY/${containerConfig.name}"
+                    PRIMARY_DEST="docker://$BASE_REF:${primaryTag}"
+                    DEST_PREFIX="docker://$BASE_REF:"
+                  else
+                    echo "[${appName}] ERROR: no registry configured. Set NIX_OCI_REGISTRY or CI_REGISTRY_IMAGE, or set OCI_DIR for a local push." >&2
+                    exit 1
+                  fi
 
-              # Step 1: Push primary tag (skip if remote already has the same digest).
-              if [ -n "$LOCAL_DIGEST" ] && [ "$LOCAL_DIGEST" = "$PRIMARY_REMOTE" ]; then
-                echo "[${appName}] primary tag ${primaryTag} unchanged (digest=$LOCAL_DIGEST) -- skipping blob upload"
-                DIGEST="$LOCAL_DIGEST"
-                echo "NIX_OCI_PUSHED_TAG ref=$BASE_REF:${primaryTag} digest=$DIGEST tag=${primaryTag} primary=true"
-              else
-                echo "[${appName}] pushing ${containerId}: ${primaryTag} -> $BASE_REF:${primaryTag}"
-                skopeo copy --retry-times 3 ${compressFlag} ${sociFlags} \
-                  "nix:${ociOutput}" "$PRIMARY_DEST" >&2
-                DIGEST="$(skopeo inspect --format '{{.Digest}}' \
-                  "$PRIMARY_DEST" 2>/dev/null || echo 'unknown')"
-                echo "[${appName}] pushed $BASE_REF:${primaryTag}@$DIGEST"
-                echo "NIX_OCI_PUSHED_TAG ref=$BASE_REF:${primaryTag} digest=$DIGEST tag=${primaryTag} primary=true"
-              fi
+                  # Digest-based skip: compare local image digest with remote primary tag.
+                  LOCAL_DIGEST="$(skopeo inspect --format '{{.Digest}}' "nix:${ociOutput}" 2>/dev/null || echo "")"
+                  PRIMARY_REMOTE="$(skopeo inspect --format '{{.Digest}}' "$PRIMARY_DEST" 2>/dev/null || echo "")"
 
-              # Step 2: Create additional tags via registry-side copy (skip if already correct).
-              ${lib.concatMapStrings mkAdditionalTagScript additionalTags}
+                  # Step 1: Push primary tag (skip if remote already has the same digest).
+                  if [ -n "$LOCAL_DIGEST" ] && [ "$LOCAL_DIGEST" = "$PRIMARY_REMOTE" ]; then
+                    echo "[${appName}] primary tag ${primaryTag} unchanged (digest=$LOCAL_DIGEST) -- skipping blob upload"
+                    DIGEST="$LOCAL_DIGEST"
+                    echo "NIX_OCI_PUSHED_TAG ref=$BASE_REF:${primaryTag} digest=$DIGEST tag=${primaryTag} primary=true"
+                  else
+                    echo "[${appName}] pushing ${containerId}: ${primaryTag} -> $BASE_REF:${primaryTag}"
+                    skopeo copy --retry-times 3 ${compressFlag} ${sociFlags} \
+                      "nix:${ociOutput}" "$PRIMARY_DEST" >&2
+                    DIGEST="$(skopeo inspect --format '{{.Digest}}' \
+                      "$PRIMARY_DEST" 2>/dev/null || echo 'unknown')"
+                    echo "[${appName}] pushed $BASE_REF:${primaryTag}@$DIGEST"
+                    echo "NIX_OCI_PUSHED_TAG ref=$BASE_REF:${primaryTag} digest=$DIGEST tag=${primaryTag} primary=true"
+                  fi
 
-              echo "[${appName}] all ${
-                toString (1 + lib.length additionalTags)
-              } tag(s) processed for ${containerId}"
-            '';
+                  # Step 2: Create additional tags via registry-side copy (skip if already correct).
+                  ${lib.concatMapStrings mkAdditionalTagScript additionalTags}
+
+                  echo "[${appName}] all ${
+                    toString (1 + lib.length additionalTags)
+                  } tag(s) processed for ${containerId}"
+                '';
           };
       };
     };
