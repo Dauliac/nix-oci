@@ -37,7 +37,13 @@
               virtualisation = {
                 cores = 8;
                 memorySize = 4096;
-                diskSize = 8192;
+                # The app-tests VM loads ~20 example images sequentially,
+                # each writing 400-800 MB to /var/lib/containers/storage
+                # (podman) and /var/lib/docker (docker). 8 GB fills up
+                # mid-run and later loads die with:
+                #   error: no space left on device
+                # 32 GB gives headroom for the cumulative image set.
+                diskSize = 32768;
                 # Disable graphical output — headless tests don't need a GPU.
                 graphics = false;
                 # Increase 9p max packet size: default 16384 → 131072.
