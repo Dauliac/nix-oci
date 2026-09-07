@@ -59,10 +59,15 @@ in
 
   config = lib.mkIf cfg.installNix {
     # Nix build users -- NixOS users module generates /etc/passwd entries
+    #
+    # The `nobody` user reuses the NixOS-default `nogroup` (gid 65534)
+    # instead of adding a redundant `nobody` group at the same gid.
+    # Two groups sharing gid 65534 make Dockle DKL-LI-0002 fail and can
+    # confuse `id`/`getent group` inside the container.
     users.users = {
       nobody = {
         isSystemUser = true;
-        group = lib.mkForce "nobody";
+        group = lib.mkForce "nogroup";
         uid = lib.mkForce 65534;
         home = "/var/empty";
       };
@@ -86,7 +91,6 @@ in
     );
 
     users.groups = {
-      nobody.gid = 65534;
       nixbld.gid = 30000;
     };
 
