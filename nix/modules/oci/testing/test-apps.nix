@@ -47,9 +47,7 @@ in
       # The BDD VM's `test_registry_push_pipeline` already exercises
       # the push path end-to-end via the wired-up test-vm helper, so
       # dropping push apps from this iterator does not lose coverage.
-      allApps = lib.filterAttrs (n: _: !(lib.hasPrefix "oci-push-" n)) (
-        config.oci.flake.apps or { }
-      );
+      allApps = lib.filterAttrs (n: _: !(lib.hasPrefix "oci-push-" n)) (config.oci.flake.apps or { });
       hasApps = allApps != { };
 
       containerNames = lib.attrNames (config.oci.containers or { });
