@@ -21,6 +21,13 @@
       lib.recursiveUpdate
         {
           inherit name testScript;
+          # NixOS test default is 1h. The app-tests VM sequentially
+          # loads and probes ~20 example images (nginx, php, redis,
+          # postgres, ...); each load writes hundreds of MB and takes
+          # 1-3 minutes on a shared GHA runner. 1h is not enough. Give
+          # the whole test-driver a 3h budget so we bound genuinely
+          # wedged runs without killing legitimate ones mid-sequence.
+          globalTimeout = 3 * 3600;
           nodes = lib.mapAttrs (
             _: nodeCfg:
             {
