@@ -36,6 +36,13 @@
                       enable = true;
                       bind = "0.0.0.0";
                       port = 6379;
+                      # Non-default `bind` triggers redis protected
+                      # mode. The probe container reaches redis via
+                      # podman's NATed port publish, so the source
+                      # IP redis sees is *not* 127.0.0.1 -- protected
+                      # mode then answers DENIED instead of PONG.
+                      # Disable it: this is a hermetic test VM.
+                      settings.protected-mode = "no";
                     };
                   }
                 )
