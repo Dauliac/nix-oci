@@ -40,8 +40,16 @@ in
       testHelpers = import ../../../../tests/lib.nix { inherit pkgs lib; };
       canBuildTest = nixosModule != null && nixosTestModule != null && pkgs.stdenv.isLinux;
 
-      # Use ALL apps from the flake (generated from oci.containers)
-      allApps = config.oci.flake.apps or { };
+      # Use flake apps, but skip `oci-push-*`: they push to a remote
+      # registry (skopeo docker://...), and the in-VM docker-registry
+      # serves plain HTTP -- skopeo defaults to HTTPS and aborts with:
+      #   http: server gave HTTP response to HTTPS client
+      # The BDD VM's `test_registry_push_pipeline` already exercises
+      # the push path end-to-end via the wired-up test-vm helper, so
+      # dropping push apps from this iterator does not lose coverage.
+      allApps = lib.filterAttrs (n: _: !(lib.hasPrefix "oci-push-" n)) (
+        config.oci.flake.apps or { }
+      );
       hasApps = allApps != { };
 
       containerNames = lib.attrNames (config.oci.containers or { });
