@@ -23,7 +23,10 @@ import ../../../../lib/mkLibModule.nix (
           oci = perSystemConfig.internal.OCIs.${containerId};
           containerConfig = perSystemConfig.containers.${containerId}.cve.trivy;
           ignoreFileFlag =
-            if containerConfig.ignore.fileEnabled then "--ignorefile ${containerConfig.ignore.rootPath}" else "";
+            if containerConfig.ignore.fileEnabled then
+              "--ignorefile ${containerConfig.ignore.rootPath}"
+            else
+              "";
           extraIgnoreFile = pkgs.writeText "extra-ignore.ignore" ''
             ${lib.concatMapStrings (ignore: "${ignore}\n") containerConfig.ignore.extra}
           '';
@@ -136,7 +139,10 @@ import ../../../../lib/mkLibModule.nix (
           oci = perSystemConfig.internal.OCIs.${containerId};
           containerConfig = perSystemConfig.containers.${containerId}.cve.vulnix;
           whitelistFlag =
-            if containerConfig.whitelist.enabled then "--whitelist ${containerConfig.whitelist.rootPath}" else "";
+            if containerConfig.whitelist.enabled then
+              "--whitelist ${containerConfig.whitelist.rootPath}"
+            else
+              "";
           vulnixBin = "${perSystemConfig.packages.vulnix}/bin/vulnix";
         in
         ociLib.mkArchiveScanScript {

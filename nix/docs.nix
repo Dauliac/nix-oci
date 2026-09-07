@@ -605,10 +605,12 @@ in
               chmod -R u+w build/
 
               # Fetch mermaid.min.js for offline use
-              cp ${pkgs.fetchurl {
-                url = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js";
-                hash = "sha256-pDvBr9RG+cTMZqxd1F0C6NZeJvxTROwO94f4jW3bb54=";
-              }} build/theme/mermaid.min.js
+              cp ${
+                pkgs.fetchurl {
+                  url = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js";
+                  hash = "sha256-pDvBr9RG+cTMZqxd1F0C6NZeJvxTROwO94f4jW3bb54=";
+                }
+              } build/theme/mermaid.min.js
 
               cd build
               mdbook build

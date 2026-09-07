@@ -49,40 +49,42 @@ in
     in
     {
       # Internal: derivation stored here, exposed via checks.e2e in the consuming flake.
-      test.oci._bddAppsCheck = lib.mkIf (canBuildTest && hasApps && hasContainers) (testHelpers.mkVMTest {
-        name = "nix-oci-app-tests";
+      test.oci._bddAppsCheck = lib.mkIf (canBuildTest && hasApps && hasContainers) (
+        testHelpers.mkVMTest {
+          name = "nix-oci-app-tests";
 
-        nodes.machine =
-          { ... }:
-          {
-            imports = [
-              nixosModule
-              nixosTestModule
-            ];
+          nodes.machine =
+            { ... }:
+            {
+              imports = [
+                nixosModule
+                nixosTestModule
+              ];
 
-            testing = {
-              enable = true;
-              appScripts = allApps;
+              testing = {
+                enable = true;
+                appScripts = allApps;
+              };
+
+              # Apps are self-contained (skopeo loads images directly).
+              # Only enable podman backend — no oci.containers needed.
+              oci = {
+                enable = true;
+                backend = "podman";
+              };
             };
 
-            # Apps are self-contained (skopeo loads images directly).
-            # Only enable podman backend — no oci.containers needed.
-            oci = {
-              enable = true;
-              backend = "podman";
-            };
-          };
+          testScript = ''
+            machine.wait_for_unit("multi-user.target")
+            machine.wait_for_unit("podman.socket")
 
-        testScript = ''
-          machine.wait_for_unit("multi-user.target")
-          machine.wait_for_unit("podman.socket")
-
-          # Run each app as systemd oneshot
-          ${lib.concatMapStringsSep "\n" (name: ''
-            with subtest("${name}"):
-                machine.succeed("systemctl start nix-oci-app-${name}.service")
-          '') (lib.attrNames allApps)}
-        '';
-      });
+            # Run each app as systemd oneshot
+            ${lib.concatMapStringsSep "\n" (name: ''
+              with subtest("${name}"):
+                  machine.succeed("systemctl start nix-oci-app-${name}.service")
+            '') (lib.attrNames allApps)}
+          '';
+        }
+      );
     };
 }
