@@ -9,8 +9,14 @@
           given = "a NixOS container with Redis listening on port 6379";
           "when" = "the container is deployed and PING is sent";
           "then" = "Redis responds with PONG";
-          level = "runtime";
-          mode = "oneshot";
+          # Redis is a long-running server, so the container must be
+          # deployed as a daemon. `mode = "oneshot"` forces the podman
+          # systemd unit to `Type = oneshot`, which waits for the
+          # ExecStart to return -- podman never returns while redis is
+          # running, so the service never reaches "active" and
+          # `multi-user.target` never fires.
+          level = "deploy";
+          mode = "daemon";
           target = "oci";
           container = {
             package = pkgs.redis;
