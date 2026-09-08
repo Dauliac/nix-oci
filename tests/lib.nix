@@ -21,6 +21,13 @@
       lib.recursiveUpdate
         {
           inherit name testScript;
+          # NixOS test default is 1h. The app-tests VM sequentially
+          # loads and probes ~20 example images (nginx, php, redis,
+          # postgres, ...); each load writes hundreds of MB and takes
+          # 1-3 minutes on a shared GHA runner. 1h is not enough. Give
+          # the whole test-driver a 3h budget so we bound genuinely
+          # wedged runs without killing legitimate ones mid-sequence.
+          globalTimeout = 3 * 3600;
           nodes = lib.mapAttrs (
             _: nodeCfg:
             {
@@ -37,7 +44,13 @@
               virtualisation = {
                 cores = 8;
                 memorySize = 4096;
-                diskSize = 8192;
+                # The app-tests VM loads ~20 example images sequentially,
+                # each writing 400-800 MB to /var/lib/containers/storage
+                # (podman) and /var/lib/docker (docker). 8 GB fills up
+                # mid-run and later loads die with:
+                #   error: no space left on device
+                # 32 GB gives headroom for the cumulative image set.
+                diskSize = 32768;
                 # Disable graphical output — headless tests don't need a GPU.
                 graphics = false;
                 # Increase 9p max packet size: default 16384 → 131072.

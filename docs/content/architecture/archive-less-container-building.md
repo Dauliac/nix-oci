@@ -202,9 +202,10 @@ Per-container overrides are available via
 
 ### Loading into Docker / Podman
 
-The same principle applies when loading images locally. nix2container
-generates `copyToDockerDaemon` and `copyToPodman` scripts that use Skopeo to
-stream layers into the local runtime without creating intermediate files.
+The same principle applies when loading images locally. nix-oci wraps
+nix2container's Skopeo-based streaming as the `oci-load-docker-<name>` and
+`oci-load-podman-<name>` flake apps, which stream layers into the local
+runtime without creating intermediate files.
 
 ## Comparison with other Nix container tools
 

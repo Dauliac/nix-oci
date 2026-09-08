@@ -1021,6 +1021,13 @@ let
       '';
 
     # Create a derivation from a NixOS environment.etc entry.
+    #
+    # Some NixOS modules (e.g. systemd-tmpfiles) set `source` to a string
+    # ending in `/*` so the shell splices the source directory's *contents*
+    # into `/etc/<name>/`. `cp -rL SRC/* TARGET` requires TARGET to already
+    # exist as a directory. Detect the glob at eval time and pre-create the
+    # target dir when it applies — the non-glob path still copies a single
+    # file or directory in place.
     mkEtcDerivation =
       {
         name,
@@ -1031,12 +1038,23 @@ let
         safeName = builtins.replaceStrings [ "/" ] [ "-" ] name;
         mode = entry.mode or "0644";
         isSymlink = mode == "symlink" || mode == "direct-symlink";
+        isGlobSource = builtins.match ".*/\\*$" (toString entry.source) != null;
+        chmodLine = if isSymlink then "" else "chmod -R ${mode} $out/etc/${name}";
       in
-      pkgs.runCommand "etc-${safeName}" { } ''
-        mkdir -p $out/etc/$(dirname "${name}")
-        cp -rL ${entry.source} $out/etc/${name}
-        ${if isSymlink then "" else "chmod -R ${mode} $out/etc/${name}"}
-      '';
+      pkgs.runCommand "etc-${safeName}" { } (
+        if isGlobSource then
+          ''
+            mkdir -p $out/etc/${name}
+            cp -rL ${entry.source} $out/etc/${name}/
+            ${chmodLine}
+          ''
+        else
+          ''
+            mkdir -p $out/etc/$(dirname "${name}")
+            cp -rL ${entry.source} $out/etc/${name}
+            ${chmodLine}
+          ''
+      );
   };
 in
 self

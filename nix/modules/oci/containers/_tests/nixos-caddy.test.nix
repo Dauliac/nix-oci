@@ -23,7 +23,11 @@
                   {
                     services.caddy = {
                       enable = true;
-                      virtualHosts."localhost:8080".extraConfig = ''
+                      # `:8080` matches any Host header on port 8080 --
+                      # the test client hits the mapped host port 8081,
+                      # so its Host header is `localhost:8081`, which
+                      # `virtualHosts."localhost:8080"` refuses with 400.
+                      virtualHosts.":8080".extraConfig = ''
                         respond "nix-oci-caddy-ok"
                       '';
                     };

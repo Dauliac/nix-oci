@@ -68,7 +68,7 @@ See [`nixosConfig`](../reference/flake-parts-options.html) in the container modu
 nix build .#oci-my-nginx
 
 # Load it into Podman
-nix run .#oci-my-nginx.copyToPodman
+nix run .#oci-load-podman-my-nginx
 
 # Run it
 podman run --rm -p 8080:80 localhost/my-nginx:latest
@@ -167,8 +167,8 @@ oci.containers.my-nginx = {
 ```
 
 ```bash
-# Push the image (nix2container passthru)
-nix run .#oci-my-nginx.copyToRegistry
+# Push the image (runs the full validation-gated pipeline)
+nix run .#oci-push-my-nginx
 ```
 
 ## What NixOS services work?

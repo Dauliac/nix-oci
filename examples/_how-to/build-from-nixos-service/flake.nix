@@ -1,7 +1,7 @@
 # How-to: Build containers from NixOS services
 #
 # Test: nix build .#oci-my-nginx
-#       nix run .#oci-my-nginx.copyToPodman
+#       nix run .#oci-load-podman-my-nginx
 #       podman run --rm -p 8080:80 localhost/my-nginx:latest
 #       curl http://localhost:8080
 {
@@ -14,33 +14,17 @@
   outputs =
     inputs:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
-      imports = [ inputs.nix-oci.modules.flake.nix-oci ];
+      imports = [
+        inputs.nix-oci.modules.flake.nix-oci
+        # Container definition lives in ./module.nix so the repo's `tests/`
+        # BDD suite can import the same module and prove this example still
+        # produces the flake outputs referenced from the how-to docs.
+        ./module.nix
+      ];
       systems = [
         "x86_64-linux"
         "aarch64-linux"
       ];
       oci.enabled = true;
-
-      perSystem =
-        { ... }:
-        {
-          oci.containers.my-nginx = {
-            mainService = "nginx";
-            nixosConfig.modules = [
-              (
-                { pkgs, ... }:
-                {
-                  services.nginx = {
-                    enable = true;
-                    virtualHosts.localhost = {
-                      locations."/".return = "200 'Hello from nix-oci!'";
-                    };
-                  };
-                  environment.systemPackages = [ pkgs.curl ];
-                }
-              )
-            ];
-          };
-        };
     };
 }

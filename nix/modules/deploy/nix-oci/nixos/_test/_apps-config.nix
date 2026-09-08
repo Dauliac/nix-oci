@@ -27,8 +27,24 @@ in
           Type = "oneshot";
           RemainAfterExit = true;
           ExecStart = app.program;
-          Environment = "DOCKER_HOST=unix:///run/podman/podman.sock";
-          TimeoutStartSec = "5min";
+          # The test VM ships an in-cluster docker-registry on
+          # localhost:5000; point NIX_OCI_REGISTRY at it so
+          # `nix-oci-app-oci-push-*` services actually push to
+          # something. Without it they abort with:
+          #   ERROR: no registry configured. Set NIX_OCI_REGISTRY
+          #   or CI_REGISTRY_IMAGE, or set OCI_DIR for a local push.
+          Environment = [
+            "DOCKER_HOST=unix:///run/podman/podman.sock"
+            "NIX_OCI_REGISTRY=localhost:5000"
+          ];
+          # Loading a hardened example image via podman/docker inside the
+          # VM writes several hundred MB of blobs before the service is
+          # marked started. On a GitHub Actions runner this crosses the
+          # 5-minute mark, so systemd terminates the load mid-write and
+          # podman fails with "failed to write temporary file:
+          # unexpected EOF". 15min gives the load room without stalling
+          # a broken test forever.
+          TimeoutStartSec = "15min";
         };
       }
     ) appScripts;

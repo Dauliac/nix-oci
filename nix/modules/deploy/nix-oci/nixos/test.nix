@@ -21,6 +21,8 @@
           ./_test/_cosign-config.nix
           ./_test/_apps-config.nix
           ./_test/_soci-snapshotter-config.nix
+          ./_test/_fontconfig-disable.nix
+          ./_test/_initrd-compressor.nix
         ];
     };
 }

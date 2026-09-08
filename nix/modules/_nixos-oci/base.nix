@@ -19,5 +19,11 @@
     documentation.nixos.enable = lib.mkDefault false;
     environment.defaultPackages = lib.mkForce [ ];
     system.stateVersion = lib.mkDefault "25.05";
+
+    # Headless container images never render text - skip fontconfig entirely.
+    # Also works around the upstream `etc-fonts` builder bug: nixpkgs ships
+    # `fontconfig-etc/2.11/fonts.conf` as a dangling symlink to /etc/fonts,
+    # and NixOS's `cp -rL` dereferences it, aborting the build.
+    fonts.fontconfig.enable = lib.mkDefault false;
   };
 }

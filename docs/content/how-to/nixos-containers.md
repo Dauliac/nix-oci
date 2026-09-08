@@ -24,10 +24,10 @@ The output is a nix2container image in the Nix store (not a tarball).
 
 ```bash
 # Load into Podman
-nix run .#oci-<name>.copyToPodman
+nix run .#oci-load-podman-<name>
 
 # Load into Docker
-nix run .#oci-<name>.copyToDockerDaemon
+nix run .#oci-load-docker-<name>
 
 # Then run it
 podman run --rm localhost/<name>:latest
@@ -35,11 +35,11 @@ podman run --rm localhost/<name>:latest
 
 ## Push to a registry
 
-Use the nix2container passthru to push to a registry:
+The push app runs the full validation-gated pipeline (pre-push CVE scans →
+push → post-push signing) before publishing:
 
 ```bash
-# Push to a registry (nix2container passthru)
-nix run .#oci-<name>.copyToRegistry
+nix run .#oci-push-<name>
 ```
 
 ## Run security scans

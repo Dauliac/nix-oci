@@ -186,7 +186,8 @@ in
     in
     {
       # Internal: derivation stored here, exposed via checks.e2e in the consuming flake.
-      test.oci._bddVmCheck = lib.mkIf (canBuildTest && hasAnyContainers) (testHelpers.mkVMTest {
+      test.oci._bddVmCheck = lib.mkIf (canBuildTest && hasAnyContainers) (
+        testHelpers.mkVMTest {
           name = "nix-oci-bdd-vm";
 
           # Ensure all flake example images build before the VM runs.
@@ -297,6 +298,7 @@ in
                   "pytest test_bdd_vm.py -v --tb=short 2>&1"
               )
             '';
-        });
+        }
+      );
     };
 }

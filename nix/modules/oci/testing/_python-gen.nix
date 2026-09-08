@@ -60,10 +60,16 @@ let
     in
     ''
       # succeeds: ${entry.command} ${entry.args}
+      # network_mode="host" so `127.0.0.1` in this ephemeral probe
+      # container reaches the VM host's port map, i.e. the deployed
+      # container's published ports. Without this, `redis-cli -h
+      # 127.0.0.1 PING` (and every other localhost check) hits the
+      # probe's own loopback, where nothing is listening.
       result = client.containers.run(
           ${pyStr "${containerName}:latest"},
           entrypoint=${pyStr entry.command},
           ${argsLine}
+          network_mode="host",
           remove=True,
       )
       ${stdoutCheck}

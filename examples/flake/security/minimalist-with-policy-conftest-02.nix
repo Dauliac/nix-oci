@@ -14,6 +14,9 @@
         config.oci.containers = {
           minimalistWithCustomPolicy = {
             package = pkgs.hello;
+            # `./conftest/labels.rego` requires a `team` label — set it here
+            # so the example demonstrates a *passing* policy check.
+            labels."team" = "platform";
             policy.conftest = {
               enabled = true;
               policyDir = ./conftest;
