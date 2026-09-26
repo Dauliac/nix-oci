@@ -429,4 +429,4 @@ as its backend:
 
 ### nix-oci
 
-- [Optimized layer sharing](./optimize-layers.md): how nix-oci uses popularity-based layering on top of nix2container
+- [Design choices](./design-choices.md): the two-level layering heuristic (`nix2container.layeringStrategy = "fine-grained" | "minimal"`) and the rest of the out-of-the-box defaults.

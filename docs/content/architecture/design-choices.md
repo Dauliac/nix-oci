@@ -13,13 +13,13 @@ produce images that are **secure**, **minimal**, **reproducible**, and
 
 Each topic has its own detailed page:
 
-- [Security defaults](./security-defaults.md): non-root by default, distroless by construction, security tooling, bit-for-bit reproducibility
+- [Security defaults](../security/security-defaults.html): non-root by default, distroless by construction, security tooling, bit-for-bit reproducibility
 - [Automatic OCI labels](./automatic-labeling.md): OCI standard annotations, build metadata, hardening hints, Kubernetes SecurityContext/PSS, network ports, Nix identity, nixpkgs security
 - [Automatic metadata derivation](./automatic-metadata.md): healthchecks, stop signals, working directories, volume declarations from NixOS services
-- [Multi-architecture images](./multi-arch-images.md): CI-parallel native builds or single-machine cross-compilation for multi-arch OCI manifests
+- **Multi-architecture images** (dedicated page planned): CI-parallel native builds or single-machine cross-compilation for multi-arch OCI manifests. See [`multiArch`](../reference/flake-parts-options.html) in the option reference until then.
 - [OCI standards compliance](./oci-standards-compliance.md): layer changesets, media types, file attributes, image configuration, and how nix-oci aligns with the OCI image specification
-- [NixOS and home-manager in containers](./nixos-home-manager-integration.md): why NixOS module evaluation and home-manager dotfiles produce declarative, introspectable, comfortable containers
-- [Container sandbox](./sandbox.md): rootless, isolated shell into any container's filesystem using bubblewrap
+- **NixOS and home-manager in containers** (dedicated page planned): why NixOS module evaluation and home-manager dotfiles produce declarative, introspectable, comfortable containers. See [`nixosConfig`](../reference/flake-parts-options.html) and [`homeConfig`](../reference/flake-parts-options.html) in the option reference until then.
+- **Container sandbox** (dedicated page planned): rootless, isolated shell into any container's filesystem using bubblewrap. Wired as the `oci-sandbox-<name>` flake app.
 
 The rest of this page covers the remaining design choices that don't
 warrant a full page.
@@ -120,8 +120,8 @@ Two strategies control sub-splitting granularity:
 | `"fine-grained"` ([default](../reference/flake-parts-options.html)) | Up to 80 | ~124 | Registries with many overlapping images |
 | `"minimal"` | 1 | 2-3 | Few images, predictable caching |
 
-See [Optimized layer sharing](./optimize-layers.md) for the full
-explanation.
+See [Archive-less container building](./archive-less-container-building.html)
+for the full explanation of nix-oci's layering strategy.
 
 ## Environment variable dual-write
 
@@ -196,10 +196,8 @@ for default values in each context.
 
 ## Further reading
 
-- [Security defaults](./security-defaults.md): non-root, distroless, hardening, reproducibility
+- [Security defaults](../security/security-defaults.html): non-root, distroless, hardening, reproducibility
 - [Automatic OCI labels](./automatic-labeling.md): OCI annotations, K8s PSS, Kyverno integration
 - [Automatic metadata derivation](./automatic-metadata.md): healthcheck, stopSignal, workingDir, volumes
-- [Archive-less container building](./archive-less-container-building.md): how nix2container avoids tar archives
-- [Optimized layer sharing](./optimize-layers.md): the two-level layering heuristic
+- [Archive-less container building](./archive-less-container-building.md): how nix2container avoids tar archives, and the two-level layering heuristic
 - [Container metadata wiring](./container-metadata-wiring.md): how options flow to OCI config, services, and firewall
-- [Multi-architecture images](./multi-arch-images.md): CI-parallel or cross-build multi-arch workflows

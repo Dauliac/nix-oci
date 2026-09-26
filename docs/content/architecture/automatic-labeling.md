@@ -247,7 +247,7 @@ See [`labels`](../reference/flake-parts-options.html) and [`autoLabels`](../refe
 ## Further reading
 
 - [Container metadata wiring](./container-metadata-wiring.md): how labels flow into OCI config
-- [Security defaults](./security-defaults.md): non-root, distroless, hardening
+- [Security defaults](../security/security-defaults.html): non-root, distroless, hardening
 - [OCI Image Spec: Annotations](https://specs.opencontainers.org/image-spec/annotations/)
 - [Kyverno: Require Image Source](https://kyverno.io/policies/other/require-image-source/require-image-source/)
 - [Kyverno: ImageValidatingPolicy](https://kyverno.io/docs/policy-types/image-validating-policy/)

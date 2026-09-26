@@ -136,7 +136,7 @@ nix2container automatically excludes store paths already present in
 earlier layers. The result is zero duplicated store paths across the
 entire image.
 
-See [Optimized layer sharing](./optimize-layers.md) for the full
+See [Design choices](./design-choices.md#layering-strategy) for the full
 layering heuristic.
 
 ## Layer count limits
