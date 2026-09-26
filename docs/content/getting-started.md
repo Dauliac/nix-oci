@@ -215,6 +215,8 @@ perSystem = { ... }: {
     performance = {
       enable = true;
       allocator = "jemalloc";
+      # `compression` accepts "gzip", "zstd", or "gzip:estargz"
+      # (the last one produces an eStargz-compatible image for lazy pulling).
       compression = "zstd";
     };
   };
@@ -284,13 +286,24 @@ perSystem = { ... }: {
 };
 ```
 
-Run them as flake apps:
+Enabled tools run as part of the validation-gated build pipeline. The
+gate composes every enabled step (CVE scan, lint, policy, SBOM, ...)
+into a single derivation; if any step fails, `nix build .#oci-my-app`
+fails.
 
 ```bash
-nix run .#oci-cve-trivy-my-app
-nix run .#oci-lint-dockle-my-app
-nix run .#oci-policy-conftest-my-app
+# Runs every enabled scanner in the pipeline; the build fails on any
+# scanner failure.
+nix build .#oci-my-app
+
+# Inspect the report artifacts.
+ls result/report/
 ```
+
+The per-tool scripts are also available under the built package's
+`bin/` (for example `result/bin/cve-trivy`), and the full step
+registry lives at
+[`nix/modules/oci/pipeline/step-registrations.nix`](https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/pipeline/step-registrations.nix).
 
 Conftest ships built-in policies that check for root users, leaked
 secrets in env vars, missing OCI labels, and missing entrypoints.
