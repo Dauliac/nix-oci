@@ -36,7 +36,7 @@ in
                   perSystemConfig = config.oci;
                   inherit containerId tagConfig;
                 }
-              ) containerConfig.tagConfigs
+              ) (lib.filterAttrs (_: tc: tc.push) containerConfig.tagConfigs)
             ) config.oci.containers;
           };
           prefixedPushApps = mkOption {
@@ -79,7 +79,7 @@ in
                     containerId = syntheticId;
                     inherit tagConfig;
                   }
-                ) syntheticConfig.tagConfigs
+                ) (lib.filterAttrs (_: tc: tc.push) syntheticConfig.tagConfigs)
               ) flavourContainers;
           };
           prefixedFlavourPushApps = mkOption {

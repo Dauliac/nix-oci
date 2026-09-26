@@ -356,13 +356,17 @@ in
             );
 
             pushApps = lib.optionalAttrs outputs.push (
-              attrsets.mapAttrs' (
-                containerId: _:
-                attrsets.nameValuePair "oci-push-${containerId}" {
-                  type = "app";
-                  program = "${mkPackageFor containerId}/bin/push";
-                }
-              ) config.oci.containers
+              attrsets.mapAttrs'
+                (
+                  containerId: _:
+                  attrsets.nameValuePair "oci-push-${containerId}" {
+                    type = "app";
+                    program = "${mkPackageFor containerId}/bin/push";
+                  }
+                )
+                (
+                  lib.filterAttrs (_: cc: lib.any (tc: tc.push) (lib.attrValues cc.tagConfigs)) config.oci.containers
+                )
             );
 
             loadDockerApps = lib.optionalAttrs outputs.loadDocker (
