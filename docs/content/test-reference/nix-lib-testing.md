@@ -32,7 +32,7 @@ Includes:
 }
 ```
 
-Source: [`nix/modules/oci/_testing/`](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci/_testing)
+Source: [`nix/modules/oci/testing/`](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci/testing)
 
 ---
 

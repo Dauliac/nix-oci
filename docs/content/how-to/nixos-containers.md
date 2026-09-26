@@ -140,14 +140,14 @@ Enable cross-compilation to build images for multiple architectures:
 ```nix
 oci.containers.my-app = {
   package = pkgs.hello;
-  multiArch = {
-    enabled = true;
-    systems = [ "x86_64-linux" "aarch64-linux" ];
-  };
+  multiArch.systems = [ "x86_64-linux" "aarch64-linux" ];
 };
 ```
 
-See [`multiArch`](../reference/flake-parts-options.html) in the flake-parts option reference.
+`multiArch.enabled` is computed automatically from `multiArch.systems`
+(non-empty list turns it on); it is read-only and cannot be set directly.
+See [`multiArch`](../reference/flake-parts-options.html) in the flake-parts
+option reference.
 
 ```bash
 # Build the multi-arch manifest

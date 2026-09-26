@@ -31,7 +31,7 @@ See [`nixosConfig`](../reference/flake-parts-options.md) in the container module
 
 ### How it works
 
-Service adapters in `_nixos/oci/service-adapters/` introspect the
+Service adapters in `nix/modules/_nixos-oci/service-adapters/` introspect the
 actual NixOS module configuration to build a healthcheck tailored to
 the service. For HTTP servers, adapters **inject native health endpoints**
 into the service configuration when the user hasn't defined one.
