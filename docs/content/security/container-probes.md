@@ -5,7 +5,7 @@ description = "How nix-oci injects security tools into containers at test time w
 
 # Container probes
 
-nix-oci includes five security probes that run **inside** a container
+nix-oci includes four security probes that run **inside** a container
 to validate its security posture. Unlike scanners that inspect the
 image archive (Trivy, Grype, Conftest), probes exercise the actual
 runtime environment: capabilities, seccomp profiles, escape vectors,
