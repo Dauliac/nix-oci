@@ -709,12 +709,20 @@ in
         githubActions = {
           enable = true;
 
-          # CI: run all checks on PRs and main pushes
+          # CI: run all checks on PRs and main pushes.
+          # Docs-only PRs skip the VM/BDD suite via pathsIgnore. Main pushes
+          # always run the full check so protected-branch history stays green.
           workflows.ci = {
             name = "CI";
 
             on = {
-              pullRequest = { };
+              pullRequest = {
+                pathsIgnore = [
+                  "**/*.md"
+                  ".claude/**"
+                  "docs/**"
+                ];
+              };
               push.branches = [ "main" ];
             };
 
