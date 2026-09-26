@@ -1,0 +1,93 @@
+# Design  -  fix-documentation-drift
+
+## Context
+
+Full audit rationale + evidence is in `.claude/docs-audit/REPORT.md`. Per-section raw findings are in `.claude/docs-audit/{architecture,how-to,reference,security,test-reference,getting-started}.md`. Each finding cites `path:line` in code as ground truth.
+
+## Goals
+
+1. **Every code example in `docs/content/` evaluates**. `nix flake check` on each snippet, or at minimum a mental walk-through against real option definitions.
+2. **Every doc citation resolves**. Cross-doc links point to existing pages; source-tree paths match `nix/modules/` layout.
+3. **Docs describe the current pipeline**. No stale references to pre-refactor `oci-cve-*`, `oci-lint-*`, `oci-policy-*` apps, `CIMERA_*` env vars, `oci.internal.policyRunners`, or `internal/apps/`. (Security section already passes this  -  it's the reference point.)
+4. **The reference build is drift-resistant**. `nix/docs.nix` imports live modules instead of duplicating their schema.
+
+## Non-goals
+
+- Writing the five missing `architecture/*.md` pages. Deferred: separate change.
+- Rewriting the reference section  -  it's auto-generated and clean.
+- Adding new features (`test.containerStructureTest.configs`, per-tool scanner apps). Where the doc promises features the code lacks, this change deletes the doc side; adding the code side is a follow-up bead.
+
+## Approach
+
+Grouped by failure mode rather than by file  -  each group has one owner in `tasks.md`.
+
+### 1. Pipeline-refactor stragglers
+
+Ground truth: `nix/modules/oci/outputs/apps.nix:3-7`, `nix/modules/oci/outputs/enable-load-podman.nix`, `enable-load-docker.nix`, `nix/modules/oci/pipeline/compose.nix:378-386`, `nix/modules/oci/pipeline/step-registrations.nix`.
+
+- getting-started Step 2 → `nix run .#oci-load-podman-<name>` / `oci-load-docker-<name>`.
+- getting-started Step 11 → describe build-time gate execution + `NIX_OCI_REPORT_DIR`. If per-tool ergonomics are needed, file a follow-up bead to expose them as pipeline apps.
+- how-to CVE examples → nest under `oci.containers.<name>`, with a one-line callout that the shared-defaults path is `oci.perContainer`.
+
+### 2. Wrong source-tree paths (mechanical)
+
+Ground truth: real dir names. Fixable with a single `sed` per file plus a manual re-read.
+
+- `architecture/automatic-metadata.md:34`  -  `_nixos/oci/service-adapters/` → `nix/modules/_nixos-oci/service-adapters/`.
+- `test-reference/{nix-lib-testing.md:35, testing-flake-parts-options.md:48}`  -  `_testing/` → `testing/`.
+
+### 3. `readOnly` computed options in examples
+
+Ground truth: `nix/modules/oci/containers/multiArch/systems.nix:48-52`.
+
+- Remove `multiArch.enabled = true` from every snippet. Only set `systems`.
+- One-time audit pass: grep all `.md` under `docs/content/` for any option written as `<name>.enabled = ...` where `<name>` is a computed submodule attribute; flag any others.
+
+### 4. Broken cross-references (5 pages)
+
+Ground truth: filesystem listing of `docs/content/architecture/`.
+
+Options per link:
+- **Delete link + inline description** if the description is a paragraph or less.
+- **Redirect link** if the content lives under `security/` (e.g. `security-defaults`) or elsewhere.
+- **Stub with "planned"** annotation if we intend to write the page but not in this change.
+
+Explicit picks:
+- `security-defaults.md` in `architecture/` → redirect to `docs/content/security/security-defaults.md`.
+- `optimize-layers.md`, `multi-arch-images.md`, `nixos-home-manager-integration.md`, `sandbox.md` → stubs with a "planned" note (or delete the link  -  decide per-link in the task).
+
+### 5. Test-reference re-write
+
+Ground truth: `nix/modules/deploy/nix-oci/nixos/_test/` (`enable.nix`, `registry/*.nix`, `extra-packages.nix`, `cosign/local-keys.nix`, `db/{trivy,grype}-path.nix`, `turbo/force-enable.nix`, `_apps-config.nix`).
+
+- Replace "no user-facing options" with an enumeration (auto-discovered under `testing.*`).
+- Replace "no `testing.enable` flag" with "importing the test module auto-enables it; set `testing.enable = false` to opt out".
+- Add an `assertions.*` field to the example spec.
+
+### 6. Reference-build resilience
+
+Ground truth: `nix/docs.nix:135-174` (inline duplication) vs. `nix/modules/deploy/nix-oci/options/{enable,backend,containers}.nix` (real definitions).
+
+- Replace the inline attrset with `import`s of the real modules, evaluated through the same `nixosOptionsDoc` pipeline.
+- Verify the docs build (`nix build .#legacyPackages.<system>.docs`) produces identical output pre-/post- change (byte-diff acceptable modulo store paths).
+
+### 7. Minor cleanup
+
+- security/container-probes.md  -  "five" vs table of four. Either add `dgoss` row or change to "four".
+- getting-started `performance.compression`  -  mention full enum: `"gzip"`, `"zstd"`, `"gzip:estargz"`.
+- architecture/container-metadata-wiring.md  -  normalize half-paths to absolute-from-repo-root.
+
+## Risks
+
+- **Silent CI reliance on the wrong app names**: if any tooling in `flake.nix` / examples still calls `oci-cve-trivy-<n>` etc., correcting the doc won't fix them. Mitigation: grep repo for stale app names as part of task 1.
+- **Refactor of `nix/docs.nix` changes generated output**: worth verifying docs build byte-for-byte identical (modulo `/nix/store/…` hashes) after the import-based rewrite.
+- **Missing-page decision**: if we choose "stub", stubs risk becoming permanent placeholders. Attach a follow-up bead to schedule content writing.
+
+## Verification
+
+- `nix build .#legacyPackages.<system>.docs` succeeds after the change.
+- `grep -rn '_testing/\|_nixos/oci' docs/content/` returns empty.
+- `grep -rn 'copyToPodman\|copyToDockerDaemon' docs/` returns empty.
+- `grep -rn 'multiArch.enabled\s*=\s*true' docs/` returns empty.
+- Every `docs/content/architecture/*.md` cross-ref resolves to an existing file (or is inlined).
+- One reviewer walks the getting-started guide end-to-end on a clean checkout.

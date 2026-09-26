@@ -1,0 +1,36 @@
+# Fix documentation drift
+
+## Why
+
+A parallel audit of `docs/content/` (6 agents, one per section) uncovered **7 critical**, **9 major**, and **11 minor** findings across 32 files. See `.claude/docs-audit/REPORT.md` for the aggregated report and `.claude/docs-audit/<section>.md` for the raw per-section findings.
+
+The drift is not uniform. Three concentrated failure modes account for every critical finding:
+
+1. **Pipeline-refactor stragglers**  -  a few doc pages still describe the pre-refactor `.#oci-cve-*` / `.#oci-lint-*` / `.#oci-policy-*` flake apps. Those apps no longer exist; the current pipeline exposes only `sandbox` / `push` / `load-podman` / `load-docker` per container, plus scanner scripts embedded in `bin/`.
+2. **Wrong source-tree paths**  -  `_nixos/oci/service-adapters` (should be `nix/modules/_nixos-oci/service-adapters`) and `nix/modules/oci/_testing/` (should be `nix/modules/oci/testing/`). Both look like the residue of a mechanical rename that didn't sweep docs.
+3. **Snippets that set `readOnly` computed options**  -  `multiArch.enabled` is `readOnly = true` at `nix/modules/oci/containers/multiArch/systems.nix:48-52`, but two how-to examples show `multiArch = { enabled = true; systems = [...]; }`. Evaluating those examples raises an error.
+
+A user hitting any critical fails at first contact: Step 2 of `getting-started.md` doesn't produce a runnable command, and every how-to snippet with `multiArch.enabled = true` errors out on eval.
+
+The reference section (`docs/content/reference/*.md`) is intentionally empty  -  pages are auto-generated at build via `nix/docs.nix`. It is out of scope here.
+
+## What Changes
+
+- **docs/content/getting-started.md**  -  replace copyToPodman/copyToDockerDaemon commands with the current `oci-load-podman-*` / `oci-load-docker-*` apps; rewrite Step 11 to describe scanner execution under the current pipeline (either expose per-tool apps or point at `nix build` + `NIX_OCI_REPORT_DIR`); normalize import-path style to match `templates/default/flake.nix`.
+- **docs/content/how-to/container-modules-api.md**  -  remove `multiArch.enabled = true`; either declare `test.containerStructureTest.{configs,coherence}` as real options or rewrite the CST section to reflect the current interface; nest all `oci.cve.*`-style examples under `oci.containers.<name>`.
+- **docs/content/how-to/share-containers-across-modules.md**  -  remove the same `multiArch.enabled = true` mistake; add a note distinguishing the `oci.containers.<name> = {…}` and `config.oci.containers.<name> = {…}` patterns.
+- **docs/content/how-to/deploy-modules.md**  -  add a per-container CVE-scan snippet mirroring the flake-parts guide.
+- **docs/content/architecture/automatic-metadata.md:34**  -  correct service-adapters path to `nix/modules/_nixos-oci/service-adapters/`.
+- **docs/content/architecture/{index,design-choices,archive-less-container-building,automatic-labeling}.md**  -  resolve five broken cross-refs to non-existent pages: either write the missing pages (`security-defaults`, `multi-arch-images`, `nixos-home-manager-integration`, `sandbox`, `optimize-layers`) or delete the links and inline the descriptions.
+- **docs/content/architecture/container-metadata-wiring.md**  -  standardize path references to absolute-from-repo-root.
+- **docs/content/test-reference/{nix-lib-testing,testing-flake-parts-options}.md**  -  replace `nix/modules/oci/_testing/` with `nix/modules/oci/testing/`; rewrite the "no user-facing options" paragraph to describe the auto-discovered `testing.*` options under `nix/modules/deploy/nix-oci/nixos/_test/`; correct the "no `testing.enable` flag" claim.
+- **docs/content/security/container-probes.md:8**  -  reconcile "five probes" prose with the four-row probes table (either add `dgoss` or say "four").
+- **nix/docs.nix:135-174**  -  replace the inline duplicated deploy options with `import`s of the real modules under `nix/modules/deploy/nix-oci/options/`, so schema drift can't accrue silently. (This is a support fix  -  not itself a doc file, but the fix protects the reference-doc build.)
+
+Every fix carries a code-path citation to the ground truth. Where a doc currently promises a feature the code doesn't implement (`test.containerStructureTest.configs`, `oci-cve-trivy-*` apps), the change picks one side: either wire it up in code, or scale the doc back.
+
+## Impact
+
+- **Affected specs**: none. This change is a documentation drift fix; the docs describe existing code correctly rather than declare new behavior. No `openspec/specs/` deltas.
+- **Affected code (support-only)**: `nix/docs.nix`  -  refactor `nix/docs.nix:135-174` to import real deploy modules instead of duplicating their option schema inline. This is a resilience fix; no user-facing behavior change.
+- **Follow-ups (out of scope)**: writing the five missing `architecture/*.md` pages is deferred to a separate change  -  it's a content project, not a drift fix. Decision on `test.containerStructureTest.{configs,coherence}` (declare them as options vs. remove the doc) requires product-level input; captured as a task with `blocking:human`.
