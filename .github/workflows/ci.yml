@@ -12,6 +12,17 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@main
       - name: Cache Nix store
         uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Run unit tests
+        run: |
+          set -euo pipefail
+          failures=$(nix eval .#tests --json --apply \
+            'ts: builtins.filter (n: (ts.${n}).expected != (ts.${n}).expr) (builtins.attrNames ts)')
+          if [ "$failures" != "[]" ]; then
+            echo "Failing unit tests:"
+            echo "$failures"
+            exit 1
+          fi
+          echo "All unit tests pass."
       - name: Check flake
         run: nix flake check --print-build-logs
 name: CI

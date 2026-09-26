@@ -739,6 +739,23 @@ in
                   uses = "DeterminateSystems/magic-nix-cache-action@main";
                 }
                 {
+                  # Pure-eval nix-lib unit tests exposed under `flake.tests`.
+                  # These are `{ expected, expr }` records; `nix flake check`
+                  # does not exercise them, so we compare them here directly.
+                  name = "Run unit tests";
+                  run = ''
+                    set -euo pipefail
+                    failures=$(nix eval .#tests --json --apply \
+                      'ts: builtins.filter (n: (ts.''${n}).expected != (ts.''${n}).expr) (builtins.attrNames ts)')
+                    if [ "$failures" != "[]" ]; then
+                      echo "Failing unit tests:"
+                      echo "$failures"
+                      exit 1
+                    fi
+                    echo "All unit tests pass."
+                  '';
+                }
+                {
                   name = "Check flake";
                   run = "nix flake check --print-build-logs";
                 }
