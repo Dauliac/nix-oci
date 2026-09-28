@@ -27,7 +27,11 @@ jobs:
         run: nix flake check --print-build-logs
 name: CI
 "on":
-  pull_request: {}
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - .claude/**
+      - docs/**
   push:
     branches:
       - main
