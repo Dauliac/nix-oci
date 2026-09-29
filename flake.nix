@@ -120,6 +120,34 @@
                     bdd-apps = config.test.oci._bddAppsCheck;
                   };
 
+                # Opt-in multi-arch aggregate (design D8): NOT wired into
+                # `checks.<sys>.*` because `nix flake check` unconditionally
+                # builds every attr there, and cross-compile / emulated /
+                # merge paths require a remote builder, QEMU binfmt, or a
+                # live registry. Exposed under `packages.<sys>.multi-arch`
+                # so it is buildable via `nix build .#multi-arch` (or the
+                # explicit `nix build .#packages.<sys>.multi-arch`) but
+                # never traversed by `nix flake check`. Task 8.5 wires a
+                # workflow_dispatch job to build this on demand.
+                packages.multi-arch =
+                  let
+                    layouts = lib.attrValues (config.oci.internal.multiArchOCILayouts or { });
+                    mergeApps = lib.attrValues (config.oci.internal.mergeMultiArchApps or { });
+                    parts = layouts ++ mergeApps;
+                  in
+                  pkgs.runCommand "nix-oci-multi-arch-aggregate"
+                    {
+                      # Force realisation of every multi-arch layout + merge
+                      # app so a single `nix build .#multi-arch` covers all
+                      # multi-arch build paths declared in the flake.
+                      buildInputs = parts;
+                    }
+                    ''
+                      mkdir -p "$out"
+                      echo "multi-arch aggregate: ${toString (builtins.length parts)} derivation(s)" > "$out/report.txt"
+                      ${lib.concatMapStringsSep "\n" (p: ''echo "${p}" >> "$out/report.txt"'') parts}
+                    '';
+
                 devShells.default = pkgs.mkShell {
                   packages =
                     with pkgs;
