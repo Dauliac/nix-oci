@@ -68,6 +68,148 @@ let
       };
     };
   };
+
+  # Subtype for syscall-blocked (seccomp / capability) probes.
+  syscallBlockedType = types.submodule {
+    options = {
+      probe = mkOption {
+        type = types.str;
+        description = ''
+          Binary or script inside the container that attempts the syscall.
+          Must exit nonzero (typically EPERM) when the syscall is blocked.
+        '';
+      };
+      args = mkOption {
+        type = types.str;
+        default = "";
+        description = "Arguments passed to the probe.";
+      };
+      syscall = mkOption {
+        type = types.str;
+        description = ''
+          Name of the blocked syscall (documentation only, rendered in the
+          failure message so operators know which surface failed).
+        '';
+      };
+      expectedErrno = mkOption {
+        type = types.nullOr types.str;
+        default = "EPERM";
+        description = ''
+          Expected errno string if the probe emits one on stderr. Checked
+          only when the probe writes recognisable "errno = FOO" text.
+          Set to null to skip the errno check.
+        '';
+      };
+    };
+  };
+
+  # Subtype for filesystem-write-blocked (read-only-rootfs / apparmor) checks.
+  fsWriteBlockedType = types.submodule {
+    options = {
+      path = mkOption {
+        type = types.str;
+        description = "Path inside the container that must NOT be writable.";
+      };
+      expectedErrno = mkOption {
+        type = types.nullOr types.str;
+        default = "EROFS";
+        description = ''
+          Expected errno for the write failure (EROFS for read-only rootfs,
+          EACCES for AppArmor deny, etc). Set to null to accept any nonzero.
+        '';
+      };
+    };
+  };
+
+  # Subtype for DNS-resolution-fails check.
+  dnsResolutionFailsType = types.submodule {
+    options = {
+      hostname = mkOption {
+        type = types.str;
+        default = "example.com";
+        description = "Hostname whose resolution must fail.";
+      };
+    };
+  };
+
+  # Subtype for TLS-handshake-fails check.
+  tlsHandshakeFailsType = types.submodule {
+    options = {
+      url = mkOption {
+        type = types.str;
+        default = "https://example.com";
+        description = "HTTPS URL whose TLS handshake must fail.";
+      };
+    };
+  };
+
+  # Subtype for SOCI zTOC-present check on a pushed image.
+  sociZtocPresentType = types.submodule {
+    options = {
+      registry = mkOption {
+        type = types.str;
+        default = "localhost:5000";
+        description = "Registry host:port hosting the image.";
+      };
+      repository = mkOption {
+        type = types.str;
+        description = "Repository (name) of the pushed image.";
+      };
+      tag = mkOption {
+        type = types.str;
+        default = "latest";
+        description = "Image tag under which the SOCI-indexed image was pushed.";
+      };
+      spanSize = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = ''
+          If set, assert the generated zTOC honours this SOCI span size
+          (e.g. `"1MiB"`). Compared against the span-size field decoded
+          by the `soci` CLI.
+        '';
+      };
+    };
+  };
+
+  # Subtype for reproducibility: manifest digest match across two builds.
+  manifestDigestMatchesType = types.submodule {
+    options = {
+      firstPath = mkOption {
+        type = types.str;
+        description = ''
+          Store path (or file path inside the VM) of the manifest JSON
+          from the first build.
+        '';
+      };
+      secondPath = mkOption {
+        type = types.str;
+        description = ''
+          Store path (or file path inside the VM) of the manifest JSON
+          from the second build. Must have the same digest as
+          `firstPath` for the assertion to pass.
+        '';
+      };
+    };
+  };
+
+  # Subtype for firewall-port-open (host-visible listen port) check.
+  firewallPortOpenType = types.submodule {
+    options = {
+      port = mkOption {
+        type = types.port;
+        description = "TCP port that MUST be accepted on the host input chain.";
+      };
+      protocol = mkOption {
+        type = types.enum [
+          "tcp"
+          "udp"
+        ];
+        default = "tcp";
+        description = "Protocol of the firewall rule to inspect.";
+      };
+    };
+  };
 in
 types.submodule {
   options = {
@@ -184,6 +326,19 @@ types.submodule {
       '';
     };
 
+    stateDirectories = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      description = ''
+        Container paths that require writable state at runtime (needed by
+        stateful services like PostgreSQL, BIND, httpd caches). The VM
+        harness backs each entry with a per-spec tmpfs on the host and
+        bind-mounts it into the container.
+
+        Example: `[ "/var/lib/postgresql" "/run/postgresql" ]`.
+      '';
+    };
+
     assertions = mkOption {
       type = types.submodule {
         options = {
@@ -297,6 +452,97 @@ types.submodule {
               Checked via `systemctl show <service> --property=<keys>`.
 
               Example: `{ Type = "notify"; NotifyAccess = "all"; }`
+            '';
+          };
+
+          # ── Hardening / runtime blocked-behaviour assertions ─────
+
+          syscallBlocked = mkOption {
+            type = types.listOf syscallBlockedType;
+            default = [ ];
+            description = ''
+              Assert that a specific syscall is blocked (typically by
+              seccomp or a dropped capability). A probe binary attempts
+              the syscall and must exit nonzero; failure message names
+              the syscall for operator clarity.
+            '';
+          };
+
+          fsWriteBlocked = mkOption {
+            type = types.listOf fsWriteBlockedType;
+            default = [ ];
+            description = ''
+              Assert that a filesystem write to `path` fails inside the
+              running container (used for read-only-rootfs and AppArmor
+              deny scenarios). Optionally checks the errno.
+            '';
+          };
+
+          dnsResolutionFails = mkOption {
+            type = types.listOf dnsResolutionFailsType;
+            default = [ ];
+            description = ''
+              Assert that `getaddrinfo(hostname)` from inside the
+              running container fails. Used to verify
+              `hardening.disableDns = true`.
+            '';
+          };
+
+          tlsHandshakeFails = mkOption {
+            type = types.listOf tlsHandshakeFailsType;
+            default = [ ];
+            description = ''
+              Assert that a TLS handshake to `url` fails inside the
+              running container. Used to verify
+              `hardening.noTlsTrustStore = true`.
+            '';
+          };
+
+          # ── Performance / env visibility assertions ──────────────
+
+          envVarSet = mkOption {
+            type = types.attrsOf types.str;
+            default = { };
+            description = ''
+              Assert an environment variable is present in the
+              container's built image OCI `Config.Env` (checked via
+              `podman image inspect`). Complements `processEnv` which
+              reads /proc/1/environ at runtime.
+
+              Example: `{ GLIBC_TUNABLES = "glibc.malloc.trim_threshold=131072"; }`
+            '';
+          };
+
+          # ── SOCI / manifest / firewall structural assertions ─────
+
+          sociZtocPresent = mkOption {
+            type = types.nullOr sociZtocPresentType;
+            default = null;
+            description = ''
+              Assert the given repository:tag in a local registry has
+              a SOCI zTOC referrer manifest attached (uses ORAS or
+              curl on the referrers API). Optionally verifies the
+              zTOC span size.
+            '';
+          };
+
+          manifestDigestMatches = mkOption {
+            type = types.nullOr manifestDigestMatchesType;
+            default = null;
+            description = ''
+              Assert two manifest JSON files (typically the outputs of
+              two independent `nix build` invocations) share the same
+              SHA-256 digest. Used for the reproducibility check.
+            '';
+          };
+
+          firewallPortOpen = mkOption {
+            type = types.listOf firewallPortOpenType;
+            default = [ ];
+            description = ''
+              Assert `nft list ruleset` (or `iptables -S`) contains an
+              accept rule for the given port and protocol. Used to
+              verify the ports triple-write reaches the NixOS firewall.
             '';
           };
 
