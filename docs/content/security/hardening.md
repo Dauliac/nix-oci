@@ -96,6 +96,8 @@ for the inner `oci.container.hardening.*` options.
 
 ## Seccomp: syscall filtering <small>runtime</small>
 
+> **Verified by** [`_tests/hardening/seccomp.test.nix`](../../../nix/modules/oci/containers/_tests/hardening/seccomp.test.nix), a blocked syscall (`mount`, `unshare`) from inside a running container exits with `EPERM` under strict, moderate, and custom-syscall profiles.
+
 Seccomp uses BPF programs to filter syscalls at the kernel boundary.
 
 ### Enforcement mode
@@ -218,6 +220,8 @@ format. Deploy modules pass it via
 
 ## AppArmor: mandatory access control <small>runtime</small>
 
+> **Verified by** [`_tests/hardening/apparmor.test.nix`](../../../nix/modules/oci/containers/_tests/hardening/apparmor.test.nix), a `/proc/sys/*` write is denied with `EACCES` when the moderate profile is applied and succeeds without it. Skips cleanly on hosts without AppArmor support.
+
 AppArmor is a Linux Security Module (LSM) that uses **pathname-based**
 mandatory access control. Unlike seccomp (which filters syscall
 numbers), AppArmor enforces high-level action policies: can this
@@ -312,6 +316,8 @@ deny high-level *actions* (mount, ptrace, user namespaces).
 
 ## Capabilities: privilege partitioning <small>runtime</small>
 
+> **Verified by** [`_tests/hardening/capabilities.test.nix`](../../../nix/modules/oci/containers/_tests/hardening/capabilities.test.nix), the `CapEff` bitmask in `/proc/1/status` matches the declared config for both drop-`ALL` default and add-`NET_BIND_SERVICE`.
+
 Linux capabilities split root's monolithic privilege into ~40
 distinct units. nix-oci defaults to dropping all capabilities via
 [`hardening.capabilities`](../reference/flake-parts-options.html):
@@ -344,6 +350,8 @@ Deploy modules translate these to `--cap-drop ALL --cap-add NET_BIND_SERVICE`.
 
 ## Read-only root filesystem <small>runtime</small>
 
+> **Verified by** [`_tests/hardening/rootfs.test.nix`](../../../nix/modules/oci/containers/_tests/hardening/rootfs.test.nix), `touch /new-file` from inside the container fails with `EROFS` when `readOnlyRootfs = true`.
+
 [`hardening.readOnlyRootfs`](../reference/flake-parts-options.html):
 
 ```nix
@@ -362,6 +370,8 @@ Applications that need writable storage should use declared volumes
 `RuntimeDirectory`, etc.) or explicit `tmpfs` mounts.
 
 ## No-new-privileges <small>runtime</small>
+
+> **Verified by** [`_tests/hardening/privileges.test.nix`](../../../nix/modules/oci/containers/_tests/hardening/privileges.test.nix), a setuid binary invoked inside the container reports the caller's UID (4000), not 0, when `noNewPrivileges = true`.
 
 [`hardening.noNewPrivileges`](../reference/flake-parts-options.html):
 
@@ -407,6 +417,8 @@ vector.
 
 ### Disable DNS
 
+> **Verified by** [`_tests/hardening/dns.test.nix`](../../../nix/modules/oci/containers/_tests/hardening/dns.test.nix), a `getaddrinfo` probe inside the container exits nonzero when `disableDns = true` and succeeds when it's false.
+
 [`hardening.disableDns`](../reference/flake-parts-options.html):
 
 ```nix
@@ -421,6 +433,8 @@ container runtimes always bind-mount it at startup. To fully restrict
 DNS at runtime, use `--dns=127.0.0.1` or network policies.
 
 ### Remove TLS trust store
+
+> **Verified by** [`_tests/hardening/tls.test.nix`](../../../nix/modules/oci/containers/_tests/hardening/tls.test.nix), `curl https://www.google.com` inside the container reports a certificate-verification failure when `noTlsTrustStore = true`.
 
 [`hardening.noTlsTrustStore`](../reference/flake-parts-options.html):
 

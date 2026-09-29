@@ -57,4 +57,27 @@ The test module provides:
 
 Source: [`nix/modules/oci/testing/`](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/oci/testing)
 
+## BDD assertion vocabulary
+
+Test specs contributed under `test.oci.perContainer.<option>` use the typed
+assertion vocabulary declared in [`_option-test-spec.nix`](https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/testing/_option-test-spec.nix).
+The generic vocabulary covers image inspection, oneshot commands, HTTP checks,
+and process/systemd probes.
+
+The behavioral coverage tier adds eight typed helpers under `assertions.*`:
+
+| Helper | Purpose |
+|---|---|
+| [`syscallBlocked`](./nix-lib-testing.html#syscallblocked) | A syscall from inside the container fails with a specific errno. |
+| [`fsWriteBlocked`](./nix-lib-testing.html#fswriteblocked) | A path write fails with a specific errno (default `EROFS`). |
+| [`dnsResolutionFails`](./nix-lib-testing.html#dnsresolutionfails) | `getaddrinfo` fails for a given hostname. |
+| [`tlsHandshakeFails`](./nix-lib-testing.html#tlshandshakefails) | HTTPS to a URL fails with a cert-verification error. |
+| [`envVarSet`](./nix-lib-testing.html#envvarset) | An env var in `/proc/1/environ` matches an exact value or regex. |
+| [`sociZtocPresent`](./nix-lib-testing.html#soci-ztoc-present) | A SOCI v2 zTOC referrer manifest exists for a pushed image. |
+| [`manifestDigestMatches`](./nix-lib-testing.html#manifestdigestmatches) | Two builds of a container produce identical manifest digests. |
+| [`firewallPortOpen`](./nix-lib-testing.html#firewallportopen) | The NixOS firewall accepts a declared port on TCP or UDP. |
+
+See the [nix-lib testing reference](./nix-lib-testing.html#bdd-assertion-helpers)
+for inputs and a minimal example of each helper.
+
 <!-- OPTIONS:testing-flake-parts -->

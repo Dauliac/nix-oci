@@ -55,12 +55,14 @@ tooling.
 
 ## Available probes
 
-| Probe | Type | What it detects | Option |
-|---|---|---|---|
-| [amicontained](https://github.com/genuinetools/amicontained) | Static binary | Runtime, capabilities, seccomp, namespaces, AppArmor | `test.amicontained.enabled` |
-| [CDK](https://github.com/cdk-team/CDK) | Static binary | Escape vectors, service accounts, sensitive files, devices | `test.cdk.enabled` |
-| [DEEPCE](https://github.com/stealthcopter/deepce) | Shell script | Docker socket, privileged mode, dangerous mounts, CVEs | `test.deepce.enabled` |
-| [linPEAS](https://github.com/peass-ng/PEASS-ng) | Shell script | SUID/SGID, writable paths, capabilities, kernel exploits | `test.linpeas.enabled` |
+| Probe | Type | What it detects | Option | Verified by |
+|---|---|---|---|---|
+| [amicontained](https://github.com/genuinetools/amicontained) | Static binary | Runtime, capabilities, seccomp, namespaces, AppArmor | `test.amicontained.enabled` | [`testing/amicontained/lib.nix`](../../../nix/modules/oci/testing/amicontained/lib.nix) |
+| [CDK](https://github.com/cdk-team/CDK) | Static binary | Escape vectors, service accounts, sensitive files, devices | `test.cdk.enabled` | [`testing/cdk/lib.nix`](../../../nix/modules/oci/testing/cdk/lib.nix) |
+| [DEEPCE](https://github.com/stealthcopter/deepce) | Shell script | Docker socket, privileged mode, dangerous mounts, CVEs | `test.deepce.enabled` | [`testing/deepce/lib.nix`](../../../nix/modules/oci/testing/deepce/lib.nix) |
+| [linPEAS](https://github.com/peass-ng/PEASS-ng) | Shell script | SUID/SGID, writable paths, capabilities, kernel exploits | `test.linpeas.enabled` | [`testing/linpeas/lib.nix`](../../../nix/modules/oci/testing/linpeas/lib.nix) |
+
+> **Note:** the "Verified by" column links to each probe's `mkCheck*` and `mkScript*` builders. A future end-to-end BDD scenario at `_tests/runtime/probes-e2e.test.nix` (planned in [`runtime-behavioral-test-coverage`](https://github.com/Dauliac/nix-oci/tree/main/openspec/changes/runtime-behavioral-test-coverage), task 4.4) will boot the loaded container in a VM, run the probe against it, and assert the tool's signature banner appears.
 
 ## Usage
 

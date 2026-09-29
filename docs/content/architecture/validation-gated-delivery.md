@@ -228,6 +228,40 @@ Each step declares:
 | `mkScript` | `{ containerId, perSystemConfig } → package` | Runtime script |
 | `timeout` | `int` | Seconds |
 
+## Tool coverage matrix
+
+Each of the built-in pipeline tools has a behavior test planned in
+[`runtime-behavioral-test-coverage`](https://github.com/Dauliac/nix-oci/tree/main/openspec/changes/runtime-behavioral-test-coverage)
+(section 5, one file per tool under `_tests/pipeline/`). Until those specs
+land, the "Verified by" column links to each tool's existing builder or
+`lib.nix` implementation:
+
+| Tool | Registered in | Verified by (builder) |
+|---|---|---|
+| conftest | [`pipeline/step-registrations.nix`](../../../nix/modules/oci/pipeline/step-registrations.nix) | [`security/policy/lib.nix`](../../../nix/modules/oci/security/policy/lib.nix) |
+| dockle | [`pipeline/step-registrations.nix`](../../../nix/modules/oci/pipeline/step-registrations.nix) | [`security/lint/lib.nix`](../../../nix/modules/oci/security/lint/lib.nix) |
+| dive | [`pipeline/step-registrations.nix`](../../../nix/modules/oci/pipeline/step-registrations.nix) | [`testing/dive/lib.nix`](../../../nix/modules/oci/testing/dive/lib.nix) |
+| syft (SBOM) | [`pipeline/step-registrations.nix`](../../../nix/modules/oci/pipeline/step-registrations.nix) | [`security/sbom/lib.nix`](../../../nix/modules/oci/security/sbom/lib.nix) |
+| trivy (secret) | [`pipeline/step-registrations.nix`](../../../nix/modules/oci/pipeline/step-registrations.nix) | [`security/credentials-leak/lib.nix`](../../../nix/modules/oci/security/credentials-leak/lib.nix) |
+| license-conftest | [`pipeline/step-registrations.nix`](../../../nix/modules/oci/pipeline/step-registrations.nix) | [`security/license/lib.nix`](../../../nix/modules/oci/security/license/lib.nix) |
+| amicontained | [`pipeline/step-registrations.nix`](../../../nix/modules/oci/pipeline/step-registrations.nix) | [`testing/amicontained/lib.nix`](../../../nix/modules/oci/testing/amicontained/lib.nix) |
+| cdk | [`pipeline/step-registrations.nix`](../../../nix/modules/oci/pipeline/step-registrations.nix) | [`testing/cdk/lib.nix`](../../../nix/modules/oci/testing/cdk/lib.nix) |
+| deepce | [`pipeline/step-registrations.nix`](../../../nix/modules/oci/pipeline/step-registrations.nix) | [`testing/deepce/lib.nix`](../../../nix/modules/oci/testing/deepce/lib.nix) |
+| linpeas | [`pipeline/step-registrations.nix`](../../../nix/modules/oci/pipeline/step-registrations.nix) | [`testing/linpeas/lib.nix`](../../../nix/modules/oci/testing/linpeas/lib.nix) |
+| container-structure-test | [`pipeline/step-registrations.nix`](../../../nix/modules/oci/pipeline/step-registrations.nix) | [`testing/container-structure/lib.nix`](../../../nix/modules/oci/testing/container-structure/lib.nix) |
+| dgoss | [`pipeline/step-registrations.nix`](../../../nix/modules/oci/pipeline/step-registrations.nix) | [`testing/dgoss/lib.nix`](../../../nix/modules/oci/testing/dgoss/lib.nix) |
+| trivy (CVE) | [`pipeline/step-registrations.nix`](../../../nix/modules/oci/pipeline/step-registrations.nix) | [`security/cve/lib.nix`](../../../nix/modules/oci/security/cve/lib.nix) |
+| grype (CVE) | [`pipeline/step-registrations.nix`](../../../nix/modules/oci/pipeline/step-registrations.nix) | [`security/cve/lib.nix`](../../../nix/modules/oci/security/cve/lib.nix) |
+| vulnix (CVE) | [`pipeline/step-registrations.nix`](../../../nix/modules/oci/pipeline/step-registrations.nix) | [`security/cve/lib.nix`](../../../nix/modules/oci/security/cve/lib.nix) |
+| trivy (compliance) | [`pipeline/step-registrations.nix`](../../../nix/modules/oci/pipeline/step-registrations.nix) | [`security/compliance/lib.nix`](../../../nix/modules/oci/security/compliance/lib.nix) |
+| cosign (sign) | [`pipeline/step-registrations.nix`](../../../nix/modules/oci/pipeline/step-registrations.nix) | [`security/signing/lib.nix`](../../../nix/modules/oci/security/signing/lib.nix) |
+
+Pipeline machinery (step registry, backend routing, gate assembly, apps
+generation) is defined in [`pipeline/compose.nix`](../../../nix/modules/oci/pipeline/compose.nix)
+and [`pipeline/step-registry.nix`](../../../nix/modules/oci/pipeline/step-registry.nix);
+task 5.14 will add `_tests/pipeline/machinery.test.nix` covering the four
+`defaultBackend` combinations with a synthetic step (per design D5).
+
 ## What's pure vs. what needs network
 
 Not all tools are equal. The build-time gate only includes tools that
