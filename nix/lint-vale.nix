@@ -35,19 +35,20 @@
       };
     in
     {
-      checks.lint-vale = pkgs.runCommand "lint-vale"
-        {
-          nativeBuildInputs = [ pkgs.vale ];
-        }
-        ''
-          cp -r ${lintSrc}/. ./src
-          chmod -R +w ./src
-          cd ./src
-          # Point StylesPath at the hermetic tree (packs + vocab).
-          sed -i "s|^StylesPath =.*|StylesPath = ${stylesWithConfig}|" .vale.ini
-          vale --no-exit --config=.vale.ini --output=line . || true
-          vale --config=.vale.ini --minAlertLevel=error .
-          touch $out
-        '';
+      checks.lint-vale =
+        pkgs.runCommand "lint-vale"
+          {
+            nativeBuildInputs = [ pkgs.vale ];
+          }
+          ''
+            cp -r ${lintSrc}/. ./src
+            chmod -R +w ./src
+            cd ./src
+            # Point StylesPath at the hermetic tree (packs + vocab).
+            sed -i "s|^StylesPath =.*|StylesPath = ${stylesWithConfig}|" .vale.ini
+            vale --no-exit --config=.vale.ini --output=line . || true
+            vale --config=.vale.ini --minAlertLevel=error .
+            touch $out
+          '';
     };
 }
