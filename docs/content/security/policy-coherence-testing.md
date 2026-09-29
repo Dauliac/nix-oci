@@ -39,16 +39,16 @@ flowchart TB
     style ARTIFACT fill:#f38ba8,stroke:#d20f39,color:#000
 ```
 
-**Layer 1 — Auto-generated coherence checks** validate that the built
+**Layer 1. Auto-generated coherence checks** validate that the built
 OCI artifact matches what the Nix module config declared. These are
 *derived* from the config, not written by hand.
 
-**Layer 2 — Built-in best practices** are static Rego rules that
+**Layer 2. Built-in best practices** are static Rego rules that
 enforce universal security hygiene (no root, no secrets in environment
 variables, entrypoint must exist). These ship with nix-oci and apply to
 every container by default.
 
-**Layer 3 — User/org policies** are rules specific to your
+**Layer 3. User/org policies** are rules specific to your
 organisation: required labels, naming conventions, allowed ports, team
 ownership. These are supplied via `extraPolicyDirs` or custom CST
 configs and compose *on top of* the built-in policies.
@@ -56,7 +56,7 @@ configs and compose *on top of* the built-in policies.
 ## Why Nix is the meta-definition
 
 Most container policy engines (OPA/Gatekeeper, Kyverno, Conftest) exist
-because Dockerfiles are imperative and error-prone — you *need* a
+because Dockerfiles are imperative and error-prone, you *need* a
 post-hoc policy gate because the build process does not guarantee
 anything about the output.
 
@@ -78,7 +78,7 @@ synchronisation, no drift.
 CUE, Nickel, and Rego were considered as intermediate meta-languages.
 The conclusion: **Nix module config is already the meta-definition**.
 Each validation backend (Conftest, CST, dgoss) gets its own generator
-function — a Nix function that reads the container config and produces
+function, a Nix function that reads the container config and produces
 backend-specific output. No new language or dependency is needed.
 
 ## Coherence checking in practice
@@ -106,11 +106,11 @@ the coherence metadata checks.
 
 Coherence checks are defence-in-depth. They catch:
 
-- **nix2container bugs** — a layer composition issue silently drops a
+- **nix2container bugs**, a layer composition issue silently drops a
   label or changes the entrypoint.
-- **fromImage overrides** — a base image sets `USER root` and
+- **fromImage overrides**, a base image sets `USER root` and
   overrides your non-root configuration.
-- **NixOS eval surprises** — a service activation changes the
+- **NixOS eval surprises**, a service activation changes the
   environment variables or working directory.
 
 ### What coherence does not replace
@@ -118,9 +118,9 @@ Coherence checks are defence-in-depth. They catch:
 Coherence validates *the artifact matches the intent*. It does not
 replace:
 
-- **Organisational policies** (Layer 3) — "all images must have a
+- **Organisational policies** (Layer 3), "all images must have a
   `team` label" is a constraint *on* the config, not derived from it.
-- **Security scanning** — CVE scanning, SBOM generation, and
+- **Security scanning**. CVE scanning, SBOM generation, and
   credentials leak detection operate on the image contents, not the
   config metadata.
 
@@ -143,11 +143,11 @@ oci.policy.conftest = {
 Both the built-in rules (no root, secrets check, entrypoint, labels)
 and your custom rules run together. If an extra directory contains a
 file with the same name as a built-in (e.g., `oci.rego`), the extra
-directory's version takes precedence — allowing selective override of
+directory's version takes precedence, allowing selective override of
 specific built-in rules.
 
 When `extraPolicyDirs` is empty (the default), no merge derivation is
-created — `policyDir` is used directly with zero overhead.
+created, `policyDir` is used directly with zero overhead.
 
 ## Design decisions
 
@@ -163,7 +163,7 @@ The reasons:
 1. Auto-generated labels are already validated by the option test
    system (`_tests.assertions.imageConfig`).
 2. Including them would tightly couple coherence tests to the internal
-   label generation logic — any change to auto-label format would
+   label generation logic, any change to auto-label format would
    break all coherence tests.
 3. It avoids needing `globalConfig` in the CST code path, keeping the
    interface simple.
@@ -185,10 +185,10 @@ Three layers give each concern a clear owner:
 
 ## Further reading
 
-- [Supply-chain security](security/index.html)
-  — detailed coverage of each security tool integration
-- [Security defaults](security-defaults.html)
-  — why nix-oci defaults to non-root, distroless containers
-- [flake-parts option reference](../reference/flake-parts-options.html)
-  — all `oci.policy.conftest.*` and `oci.test.containerStructureTest.*`
+- [Supply-chain security](security/index.html):
+  detailed coverage of each security tool integration
+- [Security defaults](security-defaults.html):
+  why nix-oci defaults to non-root, distroless containers
+- [flake-parts option reference](../reference/flake-parts-options.html):
+  all `oci.policy.conftest.*` and `oci.test.containerStructureTest.*`
   options

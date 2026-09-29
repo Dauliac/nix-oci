@@ -1,17 +1,17 @@
 +++
 title = "Validation-gated delivery"
-description = "How nix-oci enforces that every image is validated before it can be loaded or published — probes, checks, and signing as prerequisites, never afterthoughts"
+description = "How nix-oci enforces that every image is validated before it can be loaded or published, probes, checks, and signing as prerequisites, never afterthoughts"
 +++
 
 # Validation-gated delivery
 
 nix-oci enforces a simple rule: **no image leaves your machine without
-passing validation.** Probes and checks are not optional post-hoc steps —
+passing validation.** Probes and checks are not optional post-hoc steps,
 they are prerequisites wired into the build and delivery pipeline.
 
 - You cannot **build** the image package without pure checks passing (build-time gate)
 - You cannot **push** or **load** the image without the gate passing first
-- All validation is expressed as Nix derivations — hermetic, cached, parallel
+- All validation is expressed as Nix derivations, hermetic, cached, parallel
 
 ## Flake outputs per container
 
@@ -37,13 +37,13 @@ flowchart LR
 
 | Output | Purpose |
 |---|---|
-| `packages.oci-myapp` | Gated OCI image — building it forces all checks to pass |
+| `packages.oci-myapp` | Gated OCI image, building it forces all checks to pass |
 | `apps.oci-sandbox-myapp` | Run the container filesystem in a bubblewrap sandbox |
 | `apps.oci-push-myapp` | Push to registry via `skopeo copy nix: → docker://` (streams, no archive) |
 | `apps.oci-load-docker-myapp` | Load into Docker via `skopeo copy nix: → docker-daemon:` |
 | `apps.oci-load-podman-myapp` | Load into Podman via `skopeo copy nix: → containers-storage:` |
 
-Every app references the gate — Nix will build all checks before
+Every app references the gate. Nix will build all checks before
 the app script can execute.
 
 ## Full pipeline
@@ -163,7 +163,7 @@ oci.pipeline.defaultBackend = "vm";
 
 ## Step registry (extensibility)
 
-Tools register themselves into `oci.pipeline.steps` — the pipeline
+Tools register themselves into `oci.pipeline.steps`, the pipeline
 composer reads what is registered. This is dependency inversion via
 the NixOS module system:
 
@@ -231,21 +231,21 @@ Each step declares:
 ## What is pure vs. what needs network
 
 Not all tools are equal. The build-time gate only includes tools that
-are truly **offline** — no database downloads, no network access:
+are truly **offline**, no database downloads, no network access:
 
 | Tool | Pure? | Why |
 |---|---|---|
 | conftest | Yes | Runs OPA/Rego policies (Nix store paths) against image JSON |
 | dockle | Yes | Lints with built-in rules |
 | dive | Yes | Analyzes layer efficiency from tar |
-| syft | Yes | Generates SBOM from file patterns — no vuln DB |
+| syft | Yes | Generates SBOM from file patterns, no vuln DB |
 | trivy (secret scan) | Yes | Built-in regex patterns for credentials |
 | trivy (CVE) | No | Needs vulnerability database download |
 | grype (CVE) | No | Needs vulnerability database download |
 | trivy (compliance) | No | Scans from registry |
 | cosign | No | Needs registry digest |
 
-CVE scanners and signing are `phase = "post-push"` — they run outside
+CVE scanners and signing are `phase = "post-push"`, they run outside
 the Nix sandbox, after the image is in a registry.
 
 ## Nothing stored beyond what Nix already has
@@ -276,7 +276,7 @@ All pipeline env vars use the `NIX_OCI_*` prefix:
 
 - [OCI Image Format Specification](https://github.com/opencontainers/image-spec)
 - [OCI Distribution Specification](https://github.com/opencontainers/distribution-spec)
-- [Archive-less container building](archive-less-container-building.html)
-  — how nix2container avoids tar archives
-- [OCI standards compliance](oci-standards-compliance.html)
-  — layers, media types, image configuration
+- [Archive-less container building](archive-less-container-building.html):
+  how nix2container avoids tar archives
+- [OCI standards compliance](oci-standards-compliance.html):
+  layers, media types, image configuration

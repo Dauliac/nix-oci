@@ -8,7 +8,7 @@ description = "How nix-oci optimises container runtime performance with memory a
 nix-oci exposes a set of per-container options under
 [`performance.*`](../reference/flake-parts-options.html) that let you
 trade generality for speed without leaving the Nix module system.
-All tuning is **opt-in** — set `performance.enable = true` to activate
+All tuning is **opt-in**, set `performance.enable = true` to activate
 the subsystem, then pick the knobs you need.
 
 ```nix
@@ -24,7 +24,7 @@ oci.containers.my-app = {
 ## What belongs here vs at the package level
 
 nix-oci performance options are **runtime environment** and **image
-transport** concerns — things that affect how the container *runs* or
+transport** concerns, things that affect how the container *runs* or
 how the image is *delivered*, not how the application binary is
 *compiled*.
 
@@ -38,10 +38,10 @@ how the image is *delivered*, not how the application binary is
 | Push acceleration | Image transport | `performance.turbo.enable = true` |
 
 **Compilation flags** like `-march`, LTO, and `-O3` change how the
-binary is *built* — they belong at the **package level**, not in the
+binary is *built*, they belong at the **package level**, not in the
 container module. The container is just a delivery vehicle (a filesystem
 snapshot with JSON metadata). Whether you put an optimised binary in a
-container, on a NixOS system, or run it directly does not matter — the
+container, on a NixOS system, or run it directly does not matter, the
 optimisation is in the derivation.
 
 To optimise the compilation of your packages, use Nix-native mechanisms:
@@ -84,7 +84,7 @@ oci.containers.my-app = {
 
 The default glibc `malloc` is a solid general-purpose allocator, but
 specialised allocators can yield significant wins for specific workload
-profiles. nix-oci injects them via `LD_PRELOAD` at runtime — the
+profiles. nix-oci injects them via `LD_PRELOAD` at runtime, the
 application binary is unchanged.
 
 | Allocator | Best for | Injected via |
@@ -150,9 +150,9 @@ itself alongside an injected allocator), nix-oci exposes two options:
 
 | Preset | Arena max | Trim threshold | mmap threshold | tcache count | mxfast |
 |---|---|---|---|---|---|
-| `"memory-constrained"` | 2 | 32768 | 65536 | 3 | — |
-| `"high-throughput"` | 8 | — | — | 15 | 256 |
-| `"balanced"` | 4 | 131072 | 131072 | 7 | — |
+| `"memory-constrained"` | 2 | 32768 | 65536 | 3 |, |
+| `"high-throughput"` | 8 |, |, | 15 | 256 |
+| `"balanced"` | 4 | 131072 | 131072 | 7 |, |
 
 ### Explicit tunables
 

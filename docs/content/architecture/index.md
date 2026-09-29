@@ -11,30 +11,30 @@ traditional container tooling. These pages explain why.
 
 ## Topics
 
-- [Design choices](design-choices.html)
-  — why Nix for containers, module system as policy engine,
+- [Design choices](design-choices.html):
+  why Nix for containers, module system as policy engine,
   one-file-per-option pattern
 
-- [OCI standards compliance](oci-standards-compliance.html)
-  — how nix-oci adheres to the OCI image and distribution specs
+- [OCI standards compliance](oci-standards-compliance.html):
+  how nix-oci adheres to the OCI image and distribution specs
 
-- [Archive-less container building](archive-less-container-building.html)
-  — how nix2container avoids tar archives entirely
+- [Archive-less container building](archive-less-container-building.html):
+  how nix2container avoids tar archives entirely
 
-- [Container metadata wiring](container-metadata-wiring.html)
-  — how NixOS service definitions flow into OCI image config
+- [Container metadata wiring](container-metadata-wiring.html):
+  how NixOS service definitions flow into OCI image config
 
-- [Automatic labeling](automatic-labeling.html)
-  — auto-generated OCI annotations, K8s PSS hints, build metadata
+- [Automatic labeling](automatic-labeling.html):
+  auto-generated OCI annotations, K8s PSS hints, build metadata
 
-- [Automatic metadata](automatic-metadata.html)
-  — healthchecks, stop signals, volumes, working directory
+- [Automatic metadata](automatic-metadata.html):
+  healthchecks, stop signals, volumes, working directory
   derived from systemd services
 
-- [Performance tuning](performance.html)
-  — memory allocators, glibc tunables, layer compression,
+- [Performance tuning](performance.html):
+  memory allocators, glibc tunables, layer compression,
   and lazy-pull support
 
-- [Validation-gated delivery](validation-gated-delivery.html)
-  — how probes and checks are prerequisites to build and push,
+- [Validation-gated delivery](validation-gated-delivery.html):
+  how probes and checks are prerequisites to build and push,
   OCI-compliant transports, extensible step registry

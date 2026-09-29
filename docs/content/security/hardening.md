@@ -20,23 +20,23 @@ nix-oci hardening options fall into two categories:
 
 | Category | When it takes effect | How it works |
 |---|---|---|
-| **Build-time** (image content) | `nix build` | Modifies files inside the image layers. Enforcement is immediate — no runtime flag needed. |
+| **Build-time** (image content) | `nix build` | Modifies files inside the image layers. Enforcement is immediate, no runtime flag needed. |
 | **Runtime** (container engine) | `podman run` / `docker run` | nix-oci **generates** security artifacts (JSON profiles, OCI labels) at build time, but the container engine **enforces** them via flags like `--security-opt`, `--cap-drop`, `--read-only`. |
 
 ### Build-time options (modify the image)
 
-- **Non-root user with `/bin/nologin`** — all `/etc/passwd` entries use a read-only nologin shell, all `/etc/shadow` passwords are locked
-- [`hardening.disableDns`](#disable-dns) — rewrites `/etc/nsswitch.conf` to remove DNS
-- [`hardening.noTlsTrustStore`](#remove-tls-trust-store) — replaces the CA bundle with an empty file
-- **Hardening labels** — embedded as OCI annotations in the image manifest
+- **Non-root user with `/bin/nologin`**, all `/etc/passwd` entries use a read-only nologin shell, all `/etc/shadow` passwords are locked
+- [`hardening.disableDns`](#disable-dns), rewrites `/etc/nsswitch.conf` to remove DNS
+- [`hardening.noTlsTrustStore`](#remove-tls-trust-store), replaces the CA bundle with an empty file
+- **Hardening labels**, embedded as OCI annotations in the image manifest
 
 ### Runtime options (require container engine support)
 
-- [`hardening.seccomp.*`](#seccomp-syscall-filtering) — generates a seccomp JSON profile, applied via `--security-opt seccomp=<path>`
-- [`hardening.apparmor.*`](#apparmor-mandatory-access-control) — generates an AppArmor profile, loaded via `--security-opt apparmor=<name>`
-- [`hardening.capabilities.*`](#capabilities-privilege-partitioning) — translated to `--cap-drop` / `--cap-add` flags
-- [`hardening.readOnlyRootfs`](#read-only-root-filesystem) — translated to `--read-only`
-- [`hardening.noNewPrivileges`](#no-new-privileges) — translated to `--security-opt=no-new-privileges`
+- [`hardening.seccomp.*`](#seccomp-syscall-filtering), generates a seccomp JSON profile, applied via `--security-opt seccomp=<path>`
+- [`hardening.apparmor.*`](#apparmor-mandatory-access-control), generates an AppArmor profile, loaded via `--security-opt apparmor=<name>`
+- [`hardening.capabilities.*`](#capabilities-privilege-partitioning), translated to `--cap-drop` / `--cap-add` flags
+- [`hardening.readOnlyRootfs`](#read-only-root-filesystem), translated to `--read-only`
+- [`hardening.noNewPrivileges`](#no-new-privileges), translated to `--security-opt=no-new-privileges`
 
 > **Important:** Runtime options have no effect if the deploy tooling does not
 > pass the generated flags. nix-oci's deploy modules (NixOS, system-manager)
@@ -72,7 +72,7 @@ flowchart TD
 
 | Primitive | Kernel layer | Controls | Limitations | nix-oci role |
 |---|---|---|---|---|
-| **Namespaces** | Process visibility | What processes/files/networks are visible | Container runtime handles this | None — managed by the runtime |
+| **Namespaces** | Process visibility | What processes/files/networks are visible | Container runtime handles this | None, managed by the runtime |
 | **Seccomp** | Syscall boundary (BPF) | Which syscalls a process can invoke | Cannot inspect pointer arguments (TOCTOU) | **Generates** JSON profile at build; **enforced** at runtime via `--security-opt seccomp=` |
 | **AppArmor** | Pathname-level (LSM) | Which actions are permitted (mount, ptrace, userns) | Requires host kernel support + profile loading | **Generates** profile at build; **enforced** at runtime via `--security-opt apparmor=` |
 | **Capabilities** | Privilege checks | Which root sub-privileges the process holds | Coarse-grained per capability | **Records** in OCI labels at build; **enforced** at runtime via `--cap-drop`/`--cap-add` |
@@ -383,7 +383,7 @@ Deploy modules translate to `--security-opt=no-new-privileges`.
 
 nix-oci containers run as a non-root user by default (`isRoot = false`,
 UID 4000). The user entry in `/etc/passwd` uses `/bin/nologin` as the
-login shell — a read-only script baked into the image that prints
+login shell, a read-only script baked into the image that prints
 "This account is not available." and exits immediately.
 
 This prevents interactive login via `su`, `ssh`, or any other mechanism

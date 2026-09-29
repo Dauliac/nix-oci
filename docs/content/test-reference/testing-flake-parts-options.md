@@ -24,12 +24,12 @@ generation, and overlay storage. Override any of these via standard NixOS
 options (e.g., `services.dockerRegistry.port = 5001`).
 
 The test module provides:
-- **BDD test collector** — discovers `.test.nix` files and collects test specs
-- **VM test builder** — generates NixOS VM tests from BDD specs
-- **Container probes** — amicontained, CDK, DEEPCE, linPEAS
-- **Testing tools** — dive, dgoss, CST, podman sandbox
-- **Policy runners** — infrastructure for build-time policy gates
-- **Test apps** — `nix run .#app-<tool>-<container>`
+- **BDD test collector**, discovers `.test.nix` files and collects test specs
+- **VM test builder**, generates NixOS VM tests from BDD specs
+- **Container probes**, amicontained, CDK, DEEPCE, linPEAS
+- **Testing tools**, dive, dgoss, CST, podman sandbox
+- **Policy runners**, infrastructure for build-time policy gates
+- **Test apps**, `nix run .#app-<tool>-<container>`
 
 ```nix
 {

@@ -6,14 +6,14 @@ title = "nix-lib: testing functions"
 
 These functions are available as `config.lib.oci.*` (per-system) after importing
 the `nix-oci-test` flake module. They are **only loaded when the test module is
-imported** — consumers who only import `nix-oci` will not see these functions.
+imported**, consumers who only import `nix-oci` will not see these functions.
 
 Includes:
-- **Container probes** — `mkContainerProbe`, `mkHermeticContainerProbe`
-- **Testing tools** — `mkCheckDive`, `mkScriptDgoss`, `mkCheckDgoss`
-- **Container structure tests** — `mkScriptContainerStructureTest`, `mkCoherenceCst`
-- **Security probes** — `mkScriptAmicontained`, `mkScriptCdk`, `mkScriptDeepce`, `mkScriptLinpeas`
-- **Sandbox** — `mkPodmanSandboxCheck`
+- **Container probes**, `mkContainerProbe`, `mkHermeticContainerProbe`
+- **Testing tools**, `mkCheckDive`, `mkScriptDgoss`, `mkCheckDgoss`
+- **Container structure tests**, `mkScriptContainerStructureTest`, `mkCoherenceCst`
+- **Security probes**, `mkScriptAmicontained`, `mkScriptCdk`, `mkScriptDeepce`, `mkScriptLinpeas`
+- **Sandbox**, `mkPodmanSandboxCheck`
 
 ```nix
 {
