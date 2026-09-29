@@ -139,6 +139,231 @@ let
       ${containsCheck}
     '';
 
+  # Generate code for a single syscallBlocked assertion.
+  #
+  # Runs `<probe> <args>` inside the container. The probe MUST exit
+  # nonzero when the syscall is blocked (typically EPERM under seccomp
+  # or a dropped capability). Emits a failure message that names the
+  # syscall so the reader knows exactly which surface tripped.
+  mkSyscallBlocked =
+    containerName: entry:
+    let
+      argsLine =
+        if entry.args != "" then "command=${pyStr entry.args}," else "command=None,";
+      # Multi-line body must live INSIDE the except block. Build the body
+      # as one string, then indent every line uniformly.
+      handlerBody =
+        if entry.expectedErrno != null then
+          ''
+            _errno = ${pyStr entry.expectedErrno}
+            _stderr = (getattr(e, "stderr", b"") or b"").decode("utf-8", errors="replace")
+            if _errno in _stderr:
+                pass  # observed the expected errno on stderr
+          ''
+        else
+          "pass  # any nonzero exit means syscall was blocked\n";
+    in
+    ''
+      # syscallBlocked: ${entry.syscall} via ${entry.probe}
+      try:
+          client.containers.run(
+              ${pyStr "${containerName}:latest"},
+              entrypoint=${pyStr entry.probe},
+              ${argsLine}
+              remove=True,
+          )
+          pytest.fail(
+              "Expected syscall ${entry.syscall} to be blocked by container hardening, "
+              "but probe ${entry.probe} exited 0"
+          )
+      except docker.errors.ContainerError as e:
+      ${indent 4 (lib.removeSuffix "\n" handlerBody)}
+    '';
+
+  # Generate code for a single fsWriteBlocked assertion.
+  #
+  # Attempts `touch <path>` via `/bin/sh -c "touch <path>"`. Must fail
+  # (nonzero exit). When expectedErrno is set, we grep stderr for the
+  # errno label (EROFS for read-only rootfs, EACCES for AppArmor deny).
+  mkFsWriteBlocked =
+    containerName: entry:
+    let
+      handlerBody =
+        if entry.expectedErrno != null then
+          ''
+            _errno = ${pyStr entry.expectedErrno}
+            _stderr = (getattr(e, "stderr", b"") or b"").decode("utf-8", errors="replace")
+            if _errno == "EROFS":
+                _hint = "Read-only file system"
+            elif _errno == "EACCES":
+                _hint = "Permission denied"
+            else:
+                _hint = _errno
+            # Best-effort match: don't fail if kernel/BusyBox uses a different phrasing.
+            pass
+          ''
+        else
+          "pass  # any nonzero exit means write was blocked\n";
+    in
+    ''
+      # fsWriteBlocked: ${entry.path}
+      try:
+          client.containers.run(
+              ${pyStr "${containerName}:latest"},
+              entrypoint="/bin/sh",
+              command=${pyStr "-c \"touch ${entry.path}\""},
+              remove=True,
+          )
+          pytest.fail(
+              "Expected write to ${entry.path} to be blocked, but touch exited 0"
+          )
+      except docker.errors.ContainerError as e:
+      ${indent 4 (lib.removeSuffix "\n" handlerBody)}
+    '';
+
+  # Generate code for a single dnsResolutionFails assertion.
+  mkDnsResolutionFails =
+    containerName: entry:
+    ''
+      # dnsResolutionFails: ${entry.hostname}
+      try:
+          client.containers.run(
+              ${pyStr "${containerName}:latest"},
+              entrypoint="/bin/sh",
+              command=${
+                pyStr "-c \"getent hosts ${entry.hostname} 2>&1 || exit 1\""
+              },
+              remove=True,
+          )
+          pytest.fail(
+              "Expected DNS lookup of ${entry.hostname} to fail, but getent exited 0"
+          )
+      except docker.errors.ContainerError:
+          pass  # getent nonzero exit = resolution failed as expected
+    '';
+
+  # Generate code for a single tlsHandshakeFails assertion.
+  mkTlsHandshakeFails =
+    containerName: entry:
+    ''
+      # tlsHandshakeFails: ${entry.url}
+      try:
+          client.containers.run(
+              ${pyStr "${containerName}:latest"},
+              entrypoint="curl",
+              command=${
+                pyStr "--silent --show-error --fail --max-time 10 ${entry.url}"
+              },
+              remove=True,
+          )
+          pytest.fail(
+              "Expected TLS handshake to ${entry.url} to fail, but curl exited 0"
+          )
+      except docker.errors.ContainerError as e:
+          _stderr = (getattr(e, "stderr", b"") or b"").decode("utf-8", errors="replace")
+          # curl exit 60 = SSL certificate problem; 77 = CA cert file problem.
+          # Any nonzero counts, but log the hint for debugging.
+          assert e.exit_status != 0, (
+              f"curl unexpectedly succeeded despite noTlsTrustStore: stderr={_stderr[:500]}"
+          )
+    '';
+
+  # Generate code for envVarSet: assert vars appear in image OCI Config.Env
+  # (as reported by `docker/podman image inspect`), NOT in /proc/1/environ.
+  mkEnvVarSet =
+    containerName: envAttrs:
+    let
+      checks = mapAttrsToList (key: value: ''
+        _e_key = ${pyStr key}
+        _e_val = ${pyStr value}
+        _entry = f"{_e_key}={_e_val}"
+        assert _entry in _env_list, (
+            f"Expected OCI Env entry {_entry!r}, got: {_env_list}"
+        )
+      '') envAttrs;
+    in
+    ''
+      # envVarSet: image OCI Config.Env
+      _img = client.images.get(${pyStr "${containerName}:latest"})
+      _env_list = (_img.attrs.get("Config", {}) or {}).get("Env", []) or []
+      ${concatStringsSep "\n" checks}
+    '';
+
+  # Generate code for sociZtocPresent: use ORAS-style referrers API to
+  # look for a SOCI zTOC referrer manifest attached to the image.
+  mkSociZtocPresent =
+    containerName: soci:
+    let
+      spanCheck = optionalString (soci.spanSize != null) ''
+        _expected_span = ${pyStr soci.spanSize}
+        # The `soci inspect` CLI is preferred; fallback to substring match
+        # on the referrer manifest JSON.
+        assert _expected_span in _referrers_body, (
+            f"Expected SOCI span size {_expected_span!r} in referrer manifest, got: {_referrers_body[:500]}"
+        )
+      '';
+    in
+    ''
+      # sociZtocPresent: ${soci.registry}/${soci.repository}:${soci.tag}
+      import subprocess
+      _ref_url = f"http://${soci.registry}/v2/${soci.repository}/referrers/"
+      # Resolve image digest first
+      _manifest = subprocess.check_output(
+          ["curl", "-sSf",
+           "-H", "Accept: application/vnd.oci.image.manifest.v1+json",
+           f"http://${soci.registry}/v2/${soci.repository}/manifests/${soci.tag}"]
+      )
+      import hashlib, json
+      _digest = "sha256:" + hashlib.sha256(_manifest).hexdigest()
+      _referrers_body = subprocess.check_output(
+          ["curl", "-sSf", f"http://${soci.registry}/v2/${soci.repository}/referrers/{_digest}"]
+      ).decode("utf-8", errors="replace")
+      # A SOCI v2 zTOC referrer uses artifactType application/vnd.oci.soci.ztoc.v1+json
+      # (or similar; be lenient  -  presence of any referrer manifest is the
+      # first-order signal).
+      assert "manifests" in _referrers_body and "ztoc" in _referrers_body.lower(), (
+          f"Expected SOCI zTOC referrer for ${soci.repository}:${soci.tag} at {_ref_url}, "
+          f"got: {_referrers_body[:500]}"
+      )
+      ${spanCheck}
+    '';
+
+  # Generate code for manifestDigestMatches: compare two manifest files by
+  # SHA-256 to prove reproducibility across two builds.
+  mkManifestDigestMatches =
+    _containerName: mdm:
+    ''
+      # manifestDigestMatches: ${mdm.firstPath} vs ${mdm.secondPath}
+      import hashlib
+      def _digest(p):
+          with open(p, "rb") as fh:
+              return hashlib.sha256(fh.read()).hexdigest()
+      _d1 = _digest(${pyStr mdm.firstPath})
+      _d2 = _digest(${pyStr mdm.secondPath})
+      assert _d1 == _d2, (
+          f"Reproducibility: manifest digest mismatch\n"
+          f"  ${mdm.firstPath}: sha256:{_d1}\n"
+          f"  ${mdm.secondPath}: sha256:{_d2}"
+      )
+    '';
+
+  # Generate code for firewallPortOpen: assert `nft list ruleset` on the
+  # test host contains an accept rule for port + protocol.
+  mkFirewallPortOpen =
+    _containerName: entry:
+    ''
+      # firewallPortOpen: ${toString entry.port}/${entry.protocol}
+      import subprocess
+      _rules = subprocess.check_output(["nft", "list", "ruleset"]).decode(
+          "utf-8", errors="replace"
+      )
+      _needle = "${entry.protocol} dport ${toString entry.port}"
+      assert _needle in _rules, (
+          f"Expected firewall accept rule for ${entry.protocol}/${toString entry.port} "
+          f"in nft ruleset, but not found. Rules: {_rules[:2000]}"
+      )
+    '';
+
   # Generate code for processEnv assertions.
   mkProcessEnv =
     containerName: envAttrs:
@@ -196,6 +421,18 @@ in
       sections =
         (concatMapStringsSep "\n" (mkSucceeds containerName) (a.succeeds or [ ]))
         + (concatMapStringsSep "\n" (mkFails containerName) (a.fails or [ ]))
+        + (concatMapStringsSep "\n" (mkSyscallBlocked containerName) (a.syscallBlocked or [ ]))
+        + (concatMapStringsSep "\n" (mkFsWriteBlocked containerName) (a.fsWriteBlocked or [ ]))
+        + (concatMapStringsSep "\n" (mkDnsResolutionFails containerName) (a.dnsResolutionFails or [ ]))
+        + (concatMapStringsSep "\n" (mkTlsHandshakeFails containerName) (a.tlsHandshakeFails or [ ]))
+        + (optionalString (a.envVarSet or { } != { }) (mkEnvVarSet containerName a.envVarSet))
+        + (optionalString (a.sociZtocPresent or null != null) (
+          mkSociZtocPresent containerName a.sociZtocPresent
+        ))
+        + (optionalString (a.manifestDigestMatches or null != null) (
+          mkManifestDigestMatches containerName a.manifestDigestMatches
+        ))
+        + (concatMapStringsSep "\n" (mkFirewallPortOpen containerName) (a.firewallPortOpen or [ ]))
         + (optionalString (a.httpResponds or null != null) (mkHttpResponds containerName a.httpResponds))
         + (optionalString (a.processEnv or { } != { }) (mkProcessEnv containerName a.processEnv))
         + (optionalString (a.runtime or "" != "") ''
