@@ -851,6 +851,49 @@ in
             };
           };
 
+          # Lint docs: PR-scoped fast check that runs Vale on any PR
+          # touching prose. ci.yml paths-ignore skips docs-only PRs to
+          # keep the VM/BDD suite off the hot path; this workflow fills
+          # the gap so docs-only PRs still get a Vale gate.
+          workflows.lint-docs = {
+            name = "Lint docs";
+
+            on = {
+              pullRequest = {
+                paths = [
+                  "**/*.md"
+                  ".vale.ini"
+                  ".vale/**"
+                  "nix/lint-vale.nix"
+                  "nix/modules/oci/packages/vale-styles.nix"
+                  ".github/workflows/lint-docs.yml"
+                ];
+              };
+            };
+
+            jobs.vale = {
+              runsOn = "ubuntu-latest";
+              steps = [
+                {
+                  name = "Checkout";
+                  uses = "actions/checkout@v4";
+                }
+                {
+                  name = "Install Nix";
+                  uses = "DeterminateSystems/nix-installer-action@main";
+                }
+                {
+                  name = "Cache Nix store";
+                  uses = "DeterminateSystems/magic-nix-cache-action@main";
+                }
+                {
+                  name = "Lint prose (Vale)";
+                  run = "nix build .#checks.x86_64-linux.lint-vale --print-build-logs";
+                }
+              ];
+            };
+          };
+
           # Docs: build and deploy to GitHub Pages
           workflows.deploy-docs = {
             name = "Deploy Documentation";
@@ -885,6 +928,13 @@ in
                 {
                   name = "Cache Nix store";
                   uses = "DeterminateSystems/magic-nix-cache-action@main";
+                }
+                {
+                  # Gate: block Pages deploy on Vale prose errors so red
+                  # docs never ship. Aggressive profile enforced (see
+                  # .vale.ini + nix/lint-vale.nix).
+                  name = "Lint prose (Vale)";
+                  run = "nix build .#checks.x86_64-linux.lint-vale --print-build-logs";
                 }
                 {
                   name = "Build documentation";

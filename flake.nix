@@ -84,6 +84,8 @@
               (import ./nix/examples.nix { })
               # Treefmt formatter and check.
               ./nix/treefmt.nix
+              # Vale prose lint (aggressive profile).
+              ./nix/lint-vale.nix
             ];
             oci.enabled = true;
             # Suppress auto-emission of oci.flake.{apps,packages,checks} so

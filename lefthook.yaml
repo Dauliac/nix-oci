@@ -33,3 +33,11 @@ pre-commit:
       tags: checks
       run: |
         task test --verbose --output prefixed
+    vale:
+      # Fast Vale-only gate on staged markdown changes. `nix flake check`
+      # above also covers Vale but rebuilds every check; this hook is
+      # scoped to prose only so contributors get fast feedback on doc
+      # edits without running the VM/BDD suite.
+      tags: lint docs
+      glob: "*.md"
+      run: nix build .#checks.x86_64-linux.lint-vale --print-build-logs
