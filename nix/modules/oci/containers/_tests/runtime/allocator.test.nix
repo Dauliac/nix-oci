@@ -11,6 +11,9 @@
     { pkgs, ... }:
     let
       # Same allocator->soName mapping as nix/modules/_nixos-oci/performance/outputs.nix.
+      # snmalloc is declared in that map but not present in the pinned nixpkgs;
+      # its runtime scenario is intentionally skipped here to keep eval green
+      # and will be added once snmalloc is available in the input.
       allocators = {
         jemalloc = {
           package = pkgs.jemalloc;
@@ -23,10 +26,6 @@
         tcmalloc = {
           package = pkgs.gperftools;
           soName = "libtcmalloc.so";
-        };
-        snmalloc = {
-          package = pkgs.snmalloc;
-          soName = "libsnmallocshim.so";
         };
       };
 
@@ -61,7 +60,6 @@
         runtime-jemalloc = mkAllocatorScenario "jemalloc" allocators.jemalloc;
         runtime-mimalloc = mkAllocatorScenario "mimalloc" allocators.mimalloc;
         runtime-tcmalloc = mkAllocatorScenario "tcmalloc" allocators.tcmalloc;
-        runtime-snmalloc = mkAllocatorScenario "snmalloc" allocators.snmalloc;
       };
     };
 }
