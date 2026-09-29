@@ -64,20 +64,20 @@ flowchart LR
 This means:
 - Users must carefully order instructions to maximize cache hits.
 - A single dependency change can cascade through the entire image.
-- The layer graph is **linear**: users cannot express "these two
+- The layer graph is **linear**: users can't express "these two
   things are independent and can cache separately".
 - Build outputs are **non-reproducible**: `apt-get install` at two
   different times can produce different results.
 
 Nix's `dockerTools.streamLayeredImage` partially addresses this by streaming
 the archive instead of writing it to the store, but it still computes every
-layer tarball on each invocation and cannot skip layers already present in a
+layer tarball on each invocation and can't skip layers already present in a
 registry.
 
 ## How nix2container solves it
 
 Instead of a user-defined linear build graph, the dependency graph
-comes from Nix. It is a DAG derived from the package closure, not a
+comes from Nix. It's a DAG derived from the package closure, not a
 sequence of imperative instructions:
 
 ```mermaid
@@ -148,7 +148,7 @@ is repeated on every CI runner, developer machine, or deployment host that
 pushes the same image.
 
 [nix2container-turbo](https://github.com/schlarpc/nix2container-turbo)
-eliminates this redundancy. It is a patched Skopeo that stores
+eliminates this redundancy. It's a patched Skopeo that stores
 **layer mappings** (Nix store path hash → compressed digest) as
 [OCI referrer manifests](https://github.com/opencontainers/distribution-spec/blob/main/spec.md#listing-referrers)
 directly in the registry. When any machine pushes the same image:
@@ -247,7 +247,7 @@ and [Jib 1.0.0 is GA (Google Cloud Blog)](https://cloud.google.com/blog/products
 
 #### Cloud Native Buildpacks
 
-[Cloud Native Buildpacks](https://buildpacks.io/) auto-detect the application
+[Cloud Native Buildpacks](https://buildpacks.io/) autodetect the application
 type and produce images with modular, reusable layers. Unlike Dockerfile
 builds, where a change in one layer invalidates all subsequent layers,
 each buildpack contributes an independent layer that caches based on its own
@@ -261,7 +261,7 @@ and [Dockerfiles vs. Cloud-native Buildpacks (Medium)](https://medium.com/@micha
 #### Nixery
 
 [Nixery](https://nixery.dev/) takes the on-demand concept to its logical
-extreme: it is a container **registry** that builds images at pull time.
+extreme: it's a container **registry** that builds images at pull time.
 A `docker pull nixery.dev/shell/git` request triggers Nix to assemble an
 image containing those packages, using a
 [popularity-based layering algorithm](https://tazj.in/blog/nixery-layers)
@@ -277,7 +277,7 @@ and [One Docker image to rule them all (DERLIN)](https://blog.derlin.ch/nixery-o
 Instead of writing Dockerfiles, users define container builds in Go, Python,
 or TypeScript using a type-safe SDK. Each function call maps to a BuildKit
 operation, giving full control over caching and parallelism. Because Dagger
-runs its own BuildKit engine, it does not require a separate Docker daemon
+runs its own BuildKit engine, it doesn't require a separate Docker daemon
 install, but it still relies on BuildKit internally and produces the
 same layer-tar artifacts. Dagger is a CI/CD pipeline engine that
 happens to build containers, rather than a container-image tool per se.
@@ -292,7 +292,7 @@ Like Dagger, it uses BuildKit under the hood but adds features such as
 `SAVE ARTIFACT`, multi-target graphs, and Earthly Satellites for remote
 build caching. Earthly brings reproducibility closer to Dockerfile users
 by isolating builds in containers, though the resulting images still depend
-on mutable base images and are not bit-for-bit reproducible by default.
+on mutable base images and aren't bit-for-bit reproducible by default.
 
 See [Earthly documentation](https://docs.earthly.dev/).
 
@@ -325,12 +325,12 @@ For a full option list, see the
 Because nix-oci uses nix2container (and optionally nix2container-turbo)
 as its backend:
 
-- Building many container variants does not duplicate their contents
+- Building many container variants doesn't duplicate their contents
   as tarballs in the Nix store.
 - Rebuilding after a code change only recomputes the JSON manifest;
   pushing only transfers the changed layer.
 - With turbo, the local compression step is skipped on machines that
-  did not originally produce the layer, so CI reruns and multi-host
+  didn't originally produce the layer, so CI reruns and multi-host
   pushes avoid redundant work.
 - With turbo's SOCI v2 indexes, runtimes can start containers before
   the full image is downloaded (see the numbers reported by the SOCI

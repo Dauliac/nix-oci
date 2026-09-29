@@ -5,10 +5,10 @@ title = "Testing flake-parts options"
 # Testing Flake-Parts Options
 
 These options are available when you import the `nix-oci-test` flake module
-alongside the main `nix-oci` module. Importing the test module auto-enables
+alongside the main `nix-oci` module. Importing the test module autoenables
 it; set `testing.enable = false` to opt out.
 
-The NixOS test module (`nix-oci-test`) exposes auto-discovered `testing.*`
+The NixOS test module (`nix-oci-test`) exposes autodiscovered `testing.*`
 options under [`nix/modules/deploy/nix-oci/nixos/_test/`](https://github.com/Dauliac/nix-oci/tree/main/nix/modules/deploy/nix-oci/nixos/_test):
 
 - `testing.enable` (`mkEnableOption`)
@@ -21,7 +21,7 @@ options under [`nix/modules/deploy/nix-oci/nixos/_test/`](https://github.com/Dau
 
 The module also configures Podman, a local Docker registry, cosign key
 generation, and overlay storage. Override any of these via standard NixOS
-options (e.g., `services.dockerRegistry.port = 5001`).
+options (for example, `services.dockerRegistry.port = 5001`).
 
 The test module provides:
 - **BDD test collector**, discovers `.test.nix` files and collects test specs

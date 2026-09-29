@@ -110,7 +110,7 @@ See [`oci.containers`](../reference/home-manager-options.html) in the Home Manag
 ## Approach 2: import-tree and dendritic pattern (recommended for larger projects)
 
 For projects with many containers, use [import-tree](https://github.com/denful/import-tree)
-to auto-discover container definitions from a directory. This is the pattern
+to autodiscover container definitions from a directory. This is the pattern
 nix-oci itself uses internally.
 
 ### Directory structure
@@ -163,7 +163,7 @@ Each file in `containers/` is a module that defines one container:
 }
 ```
 
-### Auto-discover in flake-parts
+### Autodiscover in flake-parts
 
 ```nix
 # flake.nix

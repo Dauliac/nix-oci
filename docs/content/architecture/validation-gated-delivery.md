@@ -6,11 +6,11 @@ description = "How nix-oci enforces that every image is validated before it can 
 # Validation-gated delivery
 
 nix-oci enforces a simple rule: **no image leaves your machine without
-passing validation.** Probes and checks are not optional post-hoc steps,
-they are prerequisites wired into the build and delivery pipeline.
+passing validation.** Probes and checks aren't optional post-hoc steps,
+they're prerequisites wired into the build and delivery pipeline.
 
-- You cannot **build** the image package without pure checks passing (build-time gate)
-- You cannot **push** or **load** the image without the gate passing first
+- You can't **build** the image package without pure checks passing (build-time gate)
+- You can't **push** or **load** the image without the gate passing first
 - All validation is expressed as Nix derivations, hermetic, cached, parallel
 
 ## Flake outputs per container
@@ -123,7 +123,7 @@ flowchart LR
 | `nix:` → `docker://` | [Distribution Spec](https://github.com/opencontainers/distribution-spec) push API | `oci-push-*` |
 | `nix:` → `docker-daemon:` | Docker Engine API (local) | `oci-load-docker-*` |
 | `nix:` → `containers-storage:` | containers/storage library | `oci-load-podman-*` |
-| `mkTransientArchive` | [Image Layout](https://github.com/opencontainers/image-spec/blob/main/image-layout.md) (ephemeral) | Pure checks only |
+| [`mkTransientArchive`](../reference/nix-lib.html#mktransientarchive) | [Image Layout](https://github.com/opencontainers/image-spec/blob/main/image-layout.md) (ephemeral) | Pure checks only |
 
 Every arrow streams or creates transient data. No tarball ever lands
 in the Nix store.
@@ -164,7 +164,7 @@ oci.pipeline.defaultBackend = "vm";
 ## Step registry (extensibility)
 
 Tools register themselves into `oci.pipeline.steps`, the pipeline
-composer reads what is registered. This is dependency inversion via
+composer reads what's registered. This is dependency inversion via
 the NixOS module system:
 
 ```mermaid
@@ -228,7 +228,7 @@ Each step declares:
 | `mkScript` | `{ containerId, perSystemConfig } → package` | Runtime script |
 | `timeout` | `int` | Seconds |
 
-## What is pure vs. what needs network
+## What's pure vs. what needs network
 
 Not all tools are equal. The build-time gate only includes tools that
 are truly **offline**, no database downloads, no network access:

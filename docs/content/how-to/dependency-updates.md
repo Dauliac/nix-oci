@@ -3,7 +3,7 @@
 `nix-oci` uses [Renovate](https://docs.renovatebot.com/) to keep its
 flake inputs and GitHub Actions pinned to fresh upstream versions.
 Renovate opens one pull request per input on a weekly schedule and
-auto-merges low-risk bumps once CI is green. A fallback GitHub Actions
+automerges low-risk bumps once CI is green. A fallback GitHub Actions
 workflow keeps the repo updateable if the Renovate app is ever removed.
 
 This page explains how the automation is wired and how to change it.
@@ -14,30 +14,30 @@ This page explains how the automation is wired and how to change it.
    on your fork.
 2. On first run Renovate opens a `Configure Renovate` onboarding PR.
    Merge it - the config lives in [`renovate.json5`](https://github.com/Dauliac/nix-oci/blob/main/renovate.json5)
-   at the repo root and does not need editing during onboarding.
+   at the repo root and doesn't need editing during onboarding.
 3. Renovate will run at the next scheduled window (Sunday, before
    06:00 UTC) or immediately after the onboarding PR merges.
 
 The hosted app is free for public repositories. No self-hosted runner
 is required.
 
-## What auto-merges, what does not
+## What automerges, what doesn't
 
-| Manager           | Update type    | Auto-merge | Notes                                     |
+| Manager           | Update type    | Automerge | Notes                                     |
 | ----------------- | -------------- | ---------- | ----------------------------------------- |
 | Nix flake inputs  | patch, minor   | Yes        | Everything except `nixpkgs`.              |
 | Nix flake inputs  | major          | No         | Manual review; may cross API boundaries.  |
 | `nixpkgs`         | any            | No         | Pinned to `nixos-25.11`; human review.    |
-| GitHub Actions    | patch, minor   | Yes        | Pinned tags only (e.g. `@v4.1.2`).        |
+| GitHub Actions    | patch, minor   | Yes        | Pinned tags only (for example `@v4.1.2`).        |
 | GitHub Actions    | major          | No         | Manual review.                            |
 | GitHub Actions    | `@main` refs   | Skipped    | Refs like `nix-installer-action@main`.    |
 | Security alerts   | any            | No         | Labeled `security`; human triage.         |
 
-Auto-merge only fires when all
+Automerge only fires when all
 [branch-protection required status checks](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches)
-pass. On this repo that is currently `CI / check` (unit tests +
+pass. On this repo that's currently `CI / check` (unit tests +
 `nix flake check`). If `bdd-vm` / `bdd-apps` are added to required
-checks later, auto-merge will wait for them too - no config change
+checks later, automerge will wait for them too - no config change
 needed.
 
 ## Preview a bump locally
@@ -59,7 +59,7 @@ nix flake metadata --json | jq '.locks.nodes | keys'
 
 `.github/workflows/update-flake-lock.yml` runs weekly (Sundays,
 03:00 UTC) and on manual dispatch. It opens a single PR with the full
-updated `flake.lock`. It is **not auto-merged** - review each input
+updated `flake.lock`. It's **not automerged** - review each input
 change before merging.
 
 Trigger it manually:
@@ -91,7 +91,7 @@ is uninstalled. When Renovate is active it overlaps with the monthly
 
 ## Related files
 
-- `renovate.json5` - Renovate rules, per-manager auto-merge policy.
+- `renovate.json5` - Renovate rules, per-manager automerge policy.
 - `nix/docs.nix` - `githubActions.workflows.renovate-config-validator`
   and `workflows.update-flake-lock` definitions.
 - `.github/workflows/renovate-config-validator.yml` - generated

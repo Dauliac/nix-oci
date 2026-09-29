@@ -38,7 +38,7 @@ nix-oci hardening options fall into two categories:
 - [`hardening.readOnlyRootfs`](#read-only-root-filesystem), translated to `--read-only`
 - [`hardening.noNewPrivileges`](#no-new-privileges), translated to `--security-opt=no-new-privileges`
 
-> **Important:** Runtime options have no effect if the deploy tooling does not
+> **Important:** Runtime options have no effect if the deploy tooling doesn't
 > pass the generated flags. nix-oci's deploy modules (NixOS, system-manager)
 > handle this automatically. If you use a custom deploy pipeline, you must
 > read the generated artifacts and OCI labels yourself.
@@ -73,7 +73,7 @@ flowchart TD
 | Primitive | Kernel layer | Controls | Limitations | nix-oci role |
 |---|---|---|---|---|
 | **Namespaces** | Process visibility | What processes/files/networks are visible | Container runtime handles this | None, managed by the runtime |
-| **Seccomp** | Syscall boundary (BPF) | Which syscalls a process can invoke | Cannot inspect pointer arguments (TOCTOU) | **Generates** JSON profile at build; **enforced** at runtime via `--security-opt seccomp=` |
+| **Seccomp** | Syscall boundary (BPF) | Which syscalls a process can invoke | Can't inspect pointer arguments (TOCTOU) | **Generates** JSON profile at build; **enforced** at runtime via `--security-opt seccomp=` |
 | **AppArmor** | Pathname-level (LSM) | Which actions are permitted (mount, ptrace, userns) | Requires host kernel support + profile loading | **Generates** profile at build; **enforced** at runtime via `--security-opt apparmor=` |
 | **Capabilities** | Privilege checks | Which root sub-privileges the process holds | Coarse-grained per capability | **Records** in OCI labels at build; **enforced** at runtime via `--cap-drop`/`--cap-add` |
 
@@ -178,10 +178,10 @@ Web-server base plus CUDA/GPU device access syscalls:
 - Memory: large allocation and pinning syscalls
 - Suitable for CUDA workloads, ML inference, GPU-accelerated services
 
-### Auto-detection
+### Autodetection
 
 When using `nixosConfig`, nix-oci detects known services and
-auto-selects the appropriate
+autoselects the appropriate
 [`seccomp.profile`](../reference/flake-parts-options.html):
 
 - **Web servers** (nginx, httpd) → `"web-server"` profile
@@ -292,7 +292,7 @@ With AppArmor enabled, nix-oci produces a profile at
 ### Host requirements
 
 AppArmor requires kernel support and the `apparmor_parser` tool on
-the host. If the host does not meet these prerequisites, the build
+the host. If the host doesn't meet these prerequisites, the build
 emits a warning (D6).
 
 ### Seccomp vs. AppArmor
@@ -303,8 +303,8 @@ These are **complementary**, not competing:
 |---|---|---|
 | What it filters | Syscall numbers | Actions (mount, ptrace, userns) |
 | Granularity | "no `mount` at all" | "deny mount operations" |
-| Path handling | Cannot inspect paths (TOCTOU) | Pathname-based rules |
-| Network | Cannot filter by port | Network action rules |
+| Path handling | Can't inspect paths (TOCTOU) | Pathname-based rules |
+| Network | Can't filter by port | Network action rules |
 | Privilege needed | None (self-imposed) | Host kernel support required |
 
 Use seccomp to block dangerous syscall *categories*. Use AppArmor to
@@ -384,7 +384,7 @@ Deploy modules translate to `--security-opt=no-new-privileges`.
 nix-oci containers run as a non-root user by default (`isRoot = false`,
 UID 4000). The user entry in `/etc/passwd` uses `/bin/nologin` as the
 login shell, a read-only script baked into the image that prints
-"This account is not available." and exits immediately.
+"This account isn't available." and exits immediately.
 
 This prevents interactive login via `su`, `ssh`, or any other mechanism
 that spawns a user shell, even if such tools were present in the image.
@@ -416,7 +416,7 @@ hardening.disableDns = true;
 This rewrites `/etc/nsswitch.conf` to `hosts: files` only, with no DNS
 backend. Applications using hardcoded IP addresses remain unaffected.
 
-Note: `/etc/resolv.conf` is **not** written into the image because
+Note: the image doesn't contain `/etc/resolv.conf` because
 container runtimes always bind-mount it at startup. To fully restrict
 DNS at runtime, use `--dns=127.0.0.1` or network policies.
 

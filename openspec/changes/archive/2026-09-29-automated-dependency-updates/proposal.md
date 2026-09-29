@@ -19,7 +19,7 @@ notices. Two consequences bite:
    solo project this can be months.
 2. **Rebase debt compounds**: infrequent bulk updates hit multi-input
    version skew, forcing whoever runs the sweep to debug several bumps
-   at once. That is exactly the batch-of-nine scenario dependency bots
+   at once. That's exactly the batch-of-nine scenario dependency bots
    are designed to prevent.
 
 The project is already opinionated about pinning (`nixpkgs` on
@@ -37,18 +37,18 @@ the `githubActions.workflows.*` module - not as a hand-written YAML.
   - **Nix flake inputs** via the `nix` manager: one PR per input,
     grouped `patch` and `minor` bumps only when they share the same
     input, `major` bumps get their own PR with a `major` label and no
-    auto-merge.
+    automerge.
   - **`nixpkgs` pinning discipline**: a `packageRules` entry pins
     `nixpkgs` to the `nixos-25.11` branch. Cross-channel jumps
     (`nixos-25.11 -> nixos-26.05`) are disabled; channel migration is
     a human decision, not a bot decision.
-  - **GitHub Actions**: patch/minor auto-merge for pinned tags
+  - **GitHub Actions**: patch/minor automerge for pinned tags
     (`actions/checkout@v4.1.2 -> v4.1.3`). `@main` refs
     (`nix-installer-action@main`, `magic-nix-cache-action@main`) are
     excluded - they update themselves.
-  - **Auto-merge gate**: only after all required checks pass
+  - **Automerge gate**: only after all required checks pass
     (`CI / check` today; `bdd-vm`, `bdd-apps` once wired) and only for
-    patch/minor. Uses GitHub-native auto-merge (`platformAutomerge`),
+    patch/minor. Uses GitHub-native automerge (`platformAutomerge`),
     no third-party merge queue.
   - **Schedule**: weekly, off-hours (Sunday 03:00 UTC), so bot PRs
     don't collide with active development.
@@ -68,7 +68,7 @@ the `githubActions.workflows.*` module - not as a hand-written YAML.
   path** for scheduled full-lock refreshes independent of the Renovate
   app. Uses `DeterminateSystems/update-flake-lock@main`. Runs weekly
   and on `workflow_dispatch`. Opens a single PR with the entire updated
-  `flake.lock`; **no auto-merge** - this PR exists so channel bumps and
+  `flake.lock`; **no automerge** - this PR exists so channel bumps and
   input-graph shifts get a human review path even if the Renovate app
   is uninstalled. If the Mend app is active, this workflow overlaps
   with `lockFileMaintenance` and can be disabled by setting
@@ -79,7 +79,7 @@ the `githubActions.workflows.*` module - not as a hand-written YAML.
 - **Enable branch protection docs**, not the setting itself: add a
   short section to `docs/content/how-to/` (new file
   `dependency-updates.md`) explaining (a) how to install the Mend
-  Renovate GitHub app on a fork, (b) which PRs auto-merge and which
+  Renovate GitHub app on a fork, (b) which PRs automerge and which
   don't, (c) how to run `nix flake update` locally to preview a bump.
   No new option is added; this is repo hygiene doc.
 
@@ -91,7 +91,7 @@ the `githubActions.workflows.*` module - not as a hand-written YAML.
 
 - **Affected specs**: `dependency-updates` (new capability). See
   `specs/dependency-updates/spec.md` delta - single `## ADDED
-  Requirements` block covering per-input PR granularity, auto-merge
+  Requirements` block covering per-input PR granularity, automerge
   gate, and the config-validator workflow.
 - **Affected code**:
   - `renovate.json5` (new, root).
@@ -109,7 +109,7 @@ the `githubActions.workflows.*` module - not as a hand-written YAML.
 - **Follow-ups (out of scope)**:
   - Wire `bdd-vm` / `bdd-apps` as required status checks once they
     stabilize on `ubuntu-latest` (currently only unit tests + `nix
-    flake check` are required). Renovate auto-merge respects whatever
+    flake check` are required). Renovate automerge respects whatever
     the branch-protection rule requires, so this happens automatically
     when the protection rule updates.
   - Consider a `renovate.json5` `hostRules` entry for Cachix / attic

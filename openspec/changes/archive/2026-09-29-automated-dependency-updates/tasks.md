@@ -2,8 +2,8 @@
 
 ## 1. Preflight: branch protection audit
 
-- [ ] 1.1 Verify what status checks are required on `main` today. Run `gh api repos/Dauliac/nix-oci/branches/main/protection/required_status_checks 2>&1 | jq '.contexts // .checks'`. Record the current list. If empty or missing `CI / check`, auto-merge in later steps is unsafe - block on 1.2.
-- [ ] 1.2 If 1.1 shows no required status check for `CI / check`, decide: (a) enable it now (recommended - one-time config), or (b) ship the Renovate config with `automerge: false` across the board and enable auto-merge in a follow-up. `blocking:human`. Record the decision in a `bd note` on the change bead.
+- [ ] 1.1 Verify what status checks are required on `main` today. Run `gh api repos/Dauliac/nix-oci/branches/main/protection/required_status_checks 2>&1 | jq '.contexts // .checks'`. Record the current list. If empty or missing `CI / check`, automerge in later steps is unsafe - block on 1.2.
+- [ ] 1.2 If 1.1 shows no required status check for `CI / check`, decide: (a) enable it now (recommended - one-time config), or (b) ship the Renovate config with `automerge: false` across the board and enable automerge in a follow-up. `blocking:human`. Record the decision in a `bd note` on the change bead.
 - [ ] 1.3 Confirm the Mend Renovate app is installable on the repo. Visit `https://github.com/apps/renovate` in a browser; verify `Dauliac/nix-oci` is selectable. No install yet - we install after `renovate.json5` merges.
 
 ## 2. Add `renovate.json5`
@@ -27,7 +27,7 @@
 
 ## 5. Documentation
 
-- [ ] 5.1 Write `docs/content/how-to/dependency-updates.md` with the sections listed in `design.md - D5` (Enable / What auto-merges / What does not / Preview locally / Fallback workflow / Turning it off). Backlink to `renovate.json5` and to `nix/docs.nix` where the workflows live. Verify with `test -f docs/content/how-to/dependency-updates.md` and `wc -l` reports `>= 40` lines.
+- [ ] 5.1 Write `docs/content/how-to/dependency-updates.md` with the sections listed in `design.md - D5` (Enable / What automerges / What doesn't / Preview locally / Fallback workflow / Turning it off). Backlink to `renovate.json5` and to `nix/docs.nix` where the workflows live. Verify with `test -f docs/content/how-to/dependency-updates.md` and `wc -l` reports `>= 40` lines.
 - [ ] 5.2 Rebuild docs to confirm no MkDocs / structure errors: `nix build .#legacyPackages.x86_64-linux.docs`. Verify exit code `0`.
 - [ ] 5.3 If the how-to sidebar needs a manual entry (check `docs/mkdocs.yml` or the section index), add `dependency-updates.md` in the correct alphabetical / topical position.
 
@@ -40,13 +40,13 @@
 ## 7. Post-activation verification
 
 - [ ] 7.1 On the first Sunday after activation, review the bot's PR set. Expected: at most one PR per non-nixpkgs input, plus a separate nixpkgs PR (channel-bound). If nixpkgs opens a cross-channel PR, the `allowedVersions` regex in `renovate.json5` is wrong - fix immediately.
-- [ ] 7.2 Verify auto-merge landed at least one green patch/minor PR without human intervention. `gh pr list --state merged --author "app/renovate" --limit 5 --json number,title,mergedBy` should show `mergedBy` == the auto-merge actor for at least one entry.
-- [ ] 7.3 Verify no duplicate GitHub Actions PRs: `gh pr list --search "actions/checkout" --state all --limit 10` shows only Renovate-authored entries; if a Dependabot entry appears, confirm `.github/dependabot.yml` does not exist (`test ! -f .github/dependabot.yml`).
+- [ ] 7.2 Verify automerge landed at least one green patch/minor PR without human intervention. `gh pr list --state merged --author "app/renovate" --limit 5 --json number,title,mergedBy` should show `mergedBy` == the automerge actor for at least one entry.
+- [ ] 7.3 Verify no duplicate GitHub Actions PRs: `gh pr list --search "actions/checkout" --state all --limit 10` shows only Renovate-authored entries; if a Dependabot entry appears, confirm `.github/dependabot.yml` doesn't exist (`test ! -f .github/dependabot.yml`).
 - [ ] 7.4 Verify `update-flake-lock` fallback works: `gh workflow run update-flake-lock.yml` manually, wait for the run, confirm a PR was opened with the expected title/labels. Close the PR without merging (Renovate is the primary path; this was just a smoke test).
 
 ## 8. Wrap-up
 
-- [ ] 8.1 Update `MEMORY.md` with a one-line entry: dependency updates automated via Renovate app (`renovate.json5`) with `update-flake-lock` fallback workflow; nixpkgs pinned to `nixos-25.11`, no auto-merge on nixpkgs / major bumps.
+- [ ] 8.1 Update `MEMORY.md` with a one-line entry: dependency updates automated via Renovate app (`renovate.json5`) with `update-flake-lock` fallback workflow; nixpkgs pinned to `nixos-25.11`, no automerge on nixpkgs / major bumps.
 - [ ] 8.2 File follow-up beads:
   - (a) Migrate `nix-installer-action@main` and `magic-nix-cache-action@main` to pinned tags so Renovate can update them.
   - (b) Add `bdd-vm` and `bdd-apps` to required status checks on `main` once they stabilize.

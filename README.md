@@ -74,15 +74,15 @@ flowchart LR
 - **Build OCI images** declaratively from packages or NixOS modules
 - **Deploy and run** containers on NixOS, Home Manager and system-manager via a unified `oci.*` API
 - **Build containers from NixOS services**: write `services.nginx.enable = true` and get a minimal container image
-- **10 service adapters**: nginx, httpd, caddy, postgresql, redis, bind, dnsmasq, postfix, vsftpd, php-fpm; each auto-injects healthcheck endpoints, stop signals, and foreground mode
-- **Automatic metadata**: healthchecks, stop signals, working directories and volume declarations auto-derived from NixOS service configuration
-- **fromImage base images**: build on top of external OCI images (e.g. Docker Hub); identity files (`/etc/passwd`, `/etc/group`) pre-extracted at lock time, no IFD
+- **10 service adapters**: nginx, httpd, caddy, postgresql, redis, bind, dnsmasq, postfix, vsftpd, php-fpm; each autoinjects healthcheck endpoints, stop signals, and foreground mode
+- **Automatic metadata**: healthchecks, stop signals, working directories and volume declarations autoderived from NixOS service configuration
+- **fromImage base images**: build on top of external OCI images (for example Docker Hub); identity files (`/etc/passwd`, `/etc/group`) pre-extracted at lock time, no IFD
 - **Home Manager in containers**: use `homeManager.modules` to configure dotfiles, shell, git, and editors inside containers via Home Manager
 - **Health-aware systemd services**: containers with healthchecks get `sdnotify` integration so dependent services wait until the container is healthy (`READY=1`)
 - **Optimized layer sharing**: [popularity-based store-path layering](https://grahamc.com/blog/nix-and-layered-docker-images) so images sharing common dependencies share registry layers, reducing push and pull times
 - **Multi-arch cross-compilation**: build `aarch64` images on `x86_64` without emulation
 - **Hardening**: seccomp syscall filtering with argument-level filtering (namespace, socket, ioctl restrictions), io_uring blocking, memfd_create blocking, audit mode for profile discovery, AppArmor MAC (deny mount, ptrace, user namespace creation), capability dropping, read-only rootfs, no-new-privileges, DNS/TLS restrictions
-- **Build-time assertions**: validates port/privilege coherence (e.g. privileged ports require root or capabilities) and hardening configuration consistency
+- **Build-time assertions**: validates port/privilege coherence (for example privileged ports require root or capabilities) and hardening configuration consistency
 - **Performance**: alternative memory allocators (mimalloc, tcmalloc) via `LD_PRELOAD`, glibc tunables, CPU-targeted builds (`-march`), glibc-hwcaps multi-level library optimization, zstd layer compression
 - **Security scanning**: CVE scanning (Trivy, Grype, Vulnix), SBOM generation (Syft), credentials leak detection, image signing (cosign), CIS compliance checking, image linting (Dockle)
 - **Automatic OCI labels**: OCI standard annotations, build metadata, hardening posture, Kubernetes PSS level, network ports, security hints

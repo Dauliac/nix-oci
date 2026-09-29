@@ -37,7 +37,7 @@ Start with a basic flake-parts flake with nix-oci:
 
 ## 2. Define a container from a NixOS service
 
-Pick any NixOS service (e.g. nginx) and wrap it in `nixosConfig.modules`:
+Pick any NixOS service (for example nginx) and wrap it in `nixosConfig.modules`:
 
 ```nix
 oci.containers.my-nginx = {

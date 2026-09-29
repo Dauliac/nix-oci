@@ -33,8 +33,8 @@ the current state:
   change them to full semver, or leave them alone at the major-tag
   level). `DeterminateSystems/nix-installer-action@main` and
   `magic-nix-cache-action@main` are branch refs and inherently
-  auto-update; Renovate cannot pin them without a policy change we
-  are not making here.
+  autoupdate; Renovate can't pin them without a policy change we
+  aren't making here.
 
 - **Rejected alternative - Dependabot**: Dependabot's
   `package-ecosystem` list has `github-actions` and roughly two dozen
@@ -55,7 +55,7 @@ the current state:
 
 - One PR per flake input, so a broken bump can be closed without
   blocking the others.
-- Auto-merge for low-risk bumps (patch/minor of pinned dependencies,
+- Automerge for low-risk bumps (patch/minor of pinned dependencies,
   passing all required checks).
 - Zero drift between authored config and shipped config: the
   Renovate config lives in the repo and is validated on every PR
@@ -72,7 +72,7 @@ the current state:
 - Self-hosted Renovate. The Mend app is free for public repos and
   requires no infrastructure. Self-hosting is a fallback if we ever
   go private.
-- Auto-merge for major bumps. Major = human review.
+- Automerge for major bumps. Major = human review.
 - Vendoring pinning of GitHub Actions to full SHAs (a security
   hardening move we might do later; explicitly out of scope so this
   change stays focused on update automation).
@@ -86,9 +86,9 @@ entry needs to travel with the config; a bare `renovate.json` forces
 that context into a separate doc that will rot. Renovate supports
 JSON5 natively (`renovate-config-validator` accepts both).
 
-### D2. Auto-merge scope
+### D2. Automerge scope
 
-Auto-merge fires **only when all four are true**:
+Automerge fires **only when all four are true**:
 
 1. Update type is `patch` or `minor` (per Renovate's `updateType`).
 2. All required status checks pass. Today: `CI / check`. Enforced
@@ -97,10 +97,10 @@ Auto-merge fires **only when all four are true**:
    per-manager (nix flake inputs, GitHub Actions tags), not
    globally.
 4. `platformAutomerge: true` at the top level, so Renovate uses
-   GitHub's native auto-merge (queues the merge, waits for checks,
+   GitHub's native automerge (queues the merge, waits for checks,
    merges when green) instead of polling and merging itself.
 
-Explicitly excluded from auto-merge: `nixpkgs` (any bump - even
+Explicitly excluded from automerge: `nixpkgs` (any bump - even
 patch within a channel gets a human look because the module system
 is wide-blast-radius), `major` update type across the board, any
 input flagged with `security` (routed to a `security` label for
@@ -233,8 +233,8 @@ Add `docs/content/how-to/dependency-updates.md`. Content skeleton:
 - **Enable**: install the Mend Renovate app on the repo (link to
   `https://github.com/apps/renovate`); Renovate reads
   `renovate.json5` and opens a `Configure Renovate` PR on first run.
-- **What auto-merges**: table of manager x update-type x auto-merge.
-- **What does not**: nixpkgs (any), major (any), security alerts.
+- **What automerges**: table of manager x update-type x automerge.
+- **What doesn't**: nixpkgs (any), major (any), security alerts.
 - **Preview locally**: `nix flake update <input>` for a single input,
   `nix flake update` for the full sweep, `nix flake metadata --json |
   jq '.locks.nodes | keys'` to list managed inputs.
@@ -256,7 +256,7 @@ install -m 644 result/update-flake-lock.yml .github/workflows/
 
 Both files must be committed alongside the Nix source (existing
 convention: `ci.yml`, `deploy-docs.yml` are committed regenerated
-outputs, per `nix/docs.nix:704`). CI does not verify freshness
+outputs, per `nix/docs.nix:704`). CI doesn't verify freshness
 today - a follow-up bead can add a `check-generated-workflows`
 derivation that diffs on-disk vs. regenerated output.
 
@@ -268,13 +268,13 @@ derivation that diffs on-disk vs. regenerated output.
 - **PR fatigue**: six inputs + three action tags + monthly lock
   maintenance = up to ten bot PRs/month at steady state. Mitigated
   by `prConcurrentLimit: 5` and `prHourlyLimit: 2` throttles, and by
-  auto-merge draining the queue on green CI.
-- **Auto-merge on a broken CI**: if branch protection isn't set to
-  require `CI / check`, auto-merge could land a broken PR. Mitigated
+  automerge draining the queue on green CI.
+- **Automerge on a broken CI**: if branch protection isn't set to
+  require `CI / check`, automerge could land a broken PR. Mitigated
   by tasks.md step verifying branch protection state; if unset, the
-  auto-merge rules are toggled off until it is.
+  automerge rules are toggled off until it is.
 - **`renovate.json5` drift**: config validation catches syntax
-  errors; it does not catch semantic mistakes (rule ordering,
+  errors; it doesn't catch semantic mistakes (rule ordering,
   matcher globs). Mitigated by keeping every rule tightly scoped and
   by the rationale-comment convention.
 
@@ -289,7 +289,7 @@ None - greenfield. No pre-existing bot config to reconcile.
   captured as a follow-up bead. Renovate supports it if we decide
   to.
 - **`bdd-vm` / `bdd-apps` as required checks?** Currently only
-  `CI / check` is a required check. Auto-merge will land bumps
+  `CI / check` is a required check. Automerge will land bumps
   green on `CI / check` even if the BDD suite is red locally.
   Decision on adding BDD to required checks is a
   separate branch-protection change; captured as `blocking:human`.

@@ -5,15 +5,15 @@ title = "nix-lib: testing functions"
 # Testing Library Functions
 
 These functions are available as `config.lib.oci.*` (per-system) after importing
-the `nix-oci-test` flake module. They are **only loaded when the test module is
-imported**, consumers who only import `nix-oci` will not see these functions.
+the `nix-oci-test` flake module. They're **only loaded when the test module is
+imported**, consumers who only import `nix-oci` won't see these functions.
 
 Includes:
-- **Container probes**, `mkContainerProbe`, `mkHermeticContainerProbe`
-- **Testing tools**, `mkCheckDive`, `mkScriptDgoss`, `mkCheckDgoss`
-- **Container structure tests**, `mkScriptContainerStructureTest`, `mkCoherenceCst`
-- **Security probes**, `mkScriptAmicontained`, `mkScriptCdk`, `mkScriptDeepce`, `mkScriptLinpeas`
-- **Sandbox**, `mkPodmanSandboxCheck`
+- **Container probes**, [`mkContainerProbe`](#mkcontainerprobe), [`mkHermeticContainerProbe`](#mkhermeticcontainerprobe)
+- **Testing tools**, [`mkCheckDive`](#mkcheckdive), [`mkScriptDgoss`](#mkscriptdgoss), [`mkCheckDgoss`](#mkcheckdgoss)
+- **Container structure tests**, [`mkScriptContainerStructureTest`](#mkscriptcontainerstructuretest), [`mkCoherenceCst`](#mkcoherencecst)
+- **Security probes**, [`mkScriptAmicontained`](#mkscriptamicontained), [`mkScriptCdk`](#mkscriptcdk), [`mkScriptDeepce`](#mkscriptdeepce), [`mkScriptLinpeas`](#mkscriptlinpeas)
+- **VM sandbox**, [`mkVMCheck`](#mkvmcheck)
 
 ```nix
 {
