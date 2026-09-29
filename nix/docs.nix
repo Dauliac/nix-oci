@@ -445,14 +445,16 @@ in
 
               # Reference
 
-              - [Options: flake-parts](reference/flake-parts-options.md)
-              - [Options: NixOS deploy](reference/nixos-options.md)
-              - [Options: Home Manager deploy](reference/home-manager-options.md)
-              - [Options: system-manager deploy](reference/system-manager-options.md)
-              - [nix-lib: flake-parts functions](reference/nix-lib.md)
-              - [nix-lib: NixOS deploy functions](reference/nix-lib-nixos-deploy.md)
-              - [nix-lib: Home Manager deploy functions](reference/nix-lib-home-manager-deploy.md)
-              - [nix-lib: system-manager deploy functions](reference/nix-lib-system-manager-deploy.md)
+              - [Options Reference](reference/options-index.md)
+                - [flake-parts](reference/flake-parts-options.md)
+                - [NixOS deploy](reference/nixos-options.md)
+                - [Home Manager deploy](reference/home-manager-options.md)
+                - [system-manager deploy](reference/system-manager-options.md)
+              - [Functions Reference](reference/functions-index.md)
+                - [flake-parts functions](reference/nix-lib.md)
+                - [NixOS deploy functions](reference/nix-lib-nixos-deploy.md)
+                - [Home Manager deploy functions](reference/nix-lib-home-manager-deploy.md)
+                - [system-manager deploy functions](reference/nix-lib-system-manager-deploy.md)
 
               ---
 
