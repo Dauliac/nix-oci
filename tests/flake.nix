@@ -24,8 +24,16 @@
     get-flake.url = "github:ursi/get-flake";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     flake-parts.url = "github:hercules-ci/flake-parts";
+    # Home-manager release-25.05 imports helpers from
+    # nixpkgs `lib/services/lib.nix` that were moved/removed in the
+    # nixos-25.11 tree, so having HM follow the top-level nixpkgs
+    # breaks HM evaluation with "file 'lib/services/lib.nix' not
+    # found". Give HM its own matching nixpkgs (nixos-25.05) so the
+    # two agree on every module API HM touches. See design D7 of
+    # openspec change runtime-behavioral-test-coverage.
     home-manager.url = "github:nix-community/home-manager/release-25.05";
-    home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    nixpkgs-home-manager.url = "github:NixOS/nixpkgs/nixos-25.05";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs-home-manager";
   };
 
   outputs =
@@ -52,12 +60,15 @@
         # Import ALL flake-parts examples (auto-discovered via import-tree).
         # Home-manager examples included (test flake has the input).
         (import ../nix/examples.nix {
+          # Container-probe examples (amicontained / CDK / DEEPCE / linPEAS)
+          # were historically excluded because their probes cannot run in
+          # a pure `nix build` sandbox. Now that test-apps.nix synthesizes
+          # probe apps into the bdd-apps VM harness (bead 1.5), the four
+          # `minimalist-with-<probe>` example flakes are included in
+          # `nix flake check` and their probe apps execute inside the
+          # bdd-apps VM which has a real podman/docker daemon.
           excludes = [
             "/multi-arch/"
-            "/minimalist-with-amicontained"
-            "/minimalist-with-cdk"
-            "/minimalist-with-deepce"
-            "/minimalist-with-linpeas"
           ];
         })
 

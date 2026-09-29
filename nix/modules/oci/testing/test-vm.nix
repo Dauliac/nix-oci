@@ -228,6 +228,16 @@ in
             {
               imports = [ nixosModule ] ++ lib.optional (nixosTestModule != null) nixosTestModule;
 
+              # When `_vmBackend = "docker"`, we still get podman from the
+              # test module's `_podman-config.nix` (which we cannot remove
+              # without churn in shared test infra); we additionally
+              # enable dockerd so the deploy suite can be exercised
+              # against docker via the same VM. The pytest driver picks
+              # the right socket via `DOCKER_HOST` in the testScript.
+              virtualisation.docker.enable = lib.mkIf (
+                config.test.oci._vmBackend == "docker"
+              ) true;
+
               # Per-spec writable tmpfs mounts backing each declared
               # `stateDirectories` entry. Sized modestly (256 MiB each)
               # so a PostgreSQL initdb has room without dominating the

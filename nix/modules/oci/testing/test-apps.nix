@@ -56,12 +56,60 @@ in
       #     from the load-*/push-* smoke tests this VM is meant to
       #     exercise; giving it a real home would require its own
       #     scaffolding.
-      allApps = lib.filterAttrs (
+      baseApps = lib.filterAttrs (
         n: _: !(lib.hasPrefix "oci-push-" n) && !(lib.hasPrefix "oci-sandbox-" n)
       ) (config.oci.flake.apps or { });
+
+      # ── Container-probe apps (amicontained / CDK / DEEPCE / linPEAS)
+      # Registered pipeline steps stay in the gate derivation; they do
+      # NOT surface as flake apps by default. For the VM smoke run we
+      # want each opted-in probe to run through the same
+      # nix-oci-app-* systemd oneshot machinery as the other apps, so
+      # we synthesize apps here from the same mkApp* library functions.
+      ociLib = config.lib.oci or { };
+      containersByName = config.oci.containers or { };
+      # Guard: only build probe apps when the ociLib functions are
+      # available AND the container has enabled the probe. `perSystemConfig`
+      # here is the current perSystem `config`.
+      mkProbeAppsFor =
+        probeName: mkFn: enabledPath:
+        lib.optionalAttrs (mkFn != null) (
+          lib.listToAttrs (
+            lib.concatMap (
+              containerId:
+              let
+                cc = containersByName.${containerId};
+                isOn = lib.attrByPath enabledPath false cc;
+              in
+              if isOn then
+                [
+                  {
+                    name = "oci-${probeName}-${containerId}";
+                    value = mkFn {
+                      perSystemConfig = config;
+                      inherit containerId;
+                    };
+                  }
+                ]
+              else
+                [ ]
+            ) (lib.attrNames containersByName)
+          )
+        );
+      probeApps =
+        (mkProbeAppsFor "amicontained" (ociLib.mkAppAmicontained or null)
+          [ "test" "amicontained" "enabled" ]
+        )
+        // (mkProbeAppsFor "cdk" (ociLib.mkAppCdk or null) [ "test" "cdk" "enabled" ])
+        // (mkProbeAppsFor "deepce" (ociLib.mkAppDeepce or null) [ "test" "deepce" "enabled" ])
+        // (mkProbeAppsFor "linpeas" (ociLib.mkAppLinpeas or null)
+          [ "test" "linpeas" "enabled" ]
+        );
+
+      allApps = baseApps // probeApps;
       hasApps = allApps != { };
 
-      containerNames = lib.attrNames (config.oci.containers or { });
+      containerNames = lib.attrNames containersByName;
       hasContainers = containerNames != [ ];
     in
     {
