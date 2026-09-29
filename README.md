@@ -1,8 +1,13 @@
 # nix-oci
 
+[![CI](https://github.com/Dauliac/nix-oci/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Dauliac/nix-oci/actions/workflows/ci.yml)
+[![Deploy Documentation](https://github.com/Dauliac/nix-oci/actions/workflows/deploy-docs.yml/badge.svg?branch=main)](https://github.com/Dauliac/nix-oci/actions/workflows/deploy-docs.yml)
+
 A [flake-parts](https://flake.parts), [NixOS](https://nixos.org/manual/nixos/stable/), [Home Manager](https://nix-community.github.io/home-manager/) and [system-manager](https://system-manager.net) module system for OCI containers, powered by [nix2container](https://github.com/nlewo/nix2container).
 
 nix-oci lets you **build**, **deploy** and **run** containers entirely from Nix, including building images directly from NixOS service definitions.
+
+📚 **Docs:** <https://dauliac.github.io/nix-oci/>
 
 ## What you write vs. what you get
 
@@ -158,7 +163,7 @@ perSystem = { ... }: {
 
 ## Documentation
 
-- [Full documentation](https://dauliac.github.io/nix-oci/) (built with [NDG](https://github.com/feel-co/ndg))
+- [Full documentation](https://dauliac.github.io/nix-oci/) (built with [mdBook](https://rust-lang.github.io/mdBook/))
 - [nix-oci on flake.parts](https://flake.parts/options/nix-oci.html)
 - [NixOS manual](https://nixos.org/manual/nixos/stable/)
 - [Home Manager manual](https://nix-community.github.io/home-manager/)
