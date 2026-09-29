@@ -1,0 +1,86 @@
+{
+  // Renovate config for Dauliac/nix-oci.
+  // Rationale for each rule lives inline; do not remove the comments.
+  // Validate locally with:
+  //   nix run nixpkgs#renovate -- --platform=local --dry-run
+  // or:
+  //   npx --yes --package renovate -- renovate-config-validator renovate.json5
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+
+  extends: [
+    "config:recommended",
+    ":semanticCommits",
+  ],
+
+  timezone: "UTC",
+  // Weekly sweep, off-hours, so bot PRs do not collide with dev.
+  schedule: [ "before 6am on sunday" ],
+
+  // Use GitHub-native auto-merge (queue + wait for required checks + merge).
+  platformAutomerge: true,
+
+  labels: [ "dependencies" ],
+
+  // Throttle so a burst of upstream releases does not flood the queue.
+  prConcurrentLimit: 5,
+  prHourlyLimit: 2,
+
+  // Nix flake inputs are handled by the built-in `nix` manager.
+  nix: { enabled: true },
+
+  // Monthly full `nix flake update` as a safety net for inputs Renovate
+  // did not touch (transitive graph shifts, narHash-only changes).
+  lockFileMaintenance: {
+    enabled: true,
+    schedule: [ "before 6am on the first day of the month" ],
+  },
+
+  packageRules: [
+    // One PR per Nix flake input for clean bisection - never group them.
+    {
+      matchManagers: [ "nix" ],
+      groupName: null,
+      commitMessageTopic: "flake input {{depName}}",
+    },
+    // nixpkgs: pin to nixos-25.11 channel. Cross-channel migrations are
+    // a coordinated human decision (they touch module semantics).
+    {
+      matchManagers: [ "nix" ],
+      matchDepNames: [ "nixpkgs" ],
+      allowedVersions: "/^nixos-25\\.11$/",
+      automerge: false,
+      labels: [ "dependencies", "nix-nixpkgs" ],
+    },
+    // Non-nixpkgs Nix inputs: auto-merge patch and minor bumps when CI
+    // is green. Major bumps still open a PR but wait for review.
+    {
+      matchManagers: [ "nix" ],
+      matchDepNames: [ "!nixpkgs" ],
+      matchUpdateTypes: [ "patch", "minor" ],
+      automerge: true,
+    },
+    // GitHub Actions with pinned tags: auto-merge patch and minor.
+    {
+      matchManagers: [ "github-actions" ],
+      matchUpdateTypes: [ "patch", "minor" ],
+      automerge: true,
+    },
+    // Skip actions pinned to `@main` - they update themselves; a
+    // Renovate PR here would just churn.
+    {
+      matchManagers: [ "github-actions" ],
+      matchCurrentValue: "main",
+      enabled: false,
+    },
+    // Security alerts: label for triage, never auto-merge. Decision
+    // stays human even for patch bumps.
+    {
+      matchDatasources: [ "*" ],
+      matchDepTypes: [ "*" ],
+      vulnerabilityAlerts: {
+        labels: [ "security" ],
+        automerge: false,
+      },
+    },
+  ],
+}

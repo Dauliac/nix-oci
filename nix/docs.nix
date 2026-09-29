@@ -771,6 +771,84 @@ in
             };
           };
 
+          # Renovate config validator: runs only on PRs that touch the
+          # Renovate config or its own workflow file. Catches syntax and
+          # schema regressions in `renovate.json5` before they reach the
+          # hosted Renovate app.
+          workflows.renovate-config-validator = {
+            name = "Renovate config validator";
+
+            on = {
+              pullRequest = {
+                paths = [
+                  "renovate.json5"
+                  ".github/workflows/renovate-config-validator.yml"
+                ];
+              };
+            };
+
+            jobs.validate = {
+              runsOn = "ubuntu-latest";
+              steps = [
+                {
+                  name = "Checkout";
+                  uses = "actions/checkout@v4";
+                }
+                {
+                  name = "Validate renovate.json5";
+                  uses = "suzuki-shunsuke/github-action-renovate-config-validator@v1";
+                  with_ = {
+                    config_file_path = "renovate.json5";
+                  };
+                }
+              ];
+            };
+          };
+
+          # Fallback flake.lock refresher: keeps the repo updateable even
+          # if the hosted Renovate app is uninstalled. Opens a single PR
+          # with the full updated `flake.lock`; NOT auto-merged.
+          workflows.update-flake-lock = {
+            name = "Update flake.lock";
+
+            on = {
+              schedule = [ { cron = "0 3 * * 0"; } ];
+              workflowDispatch = { };
+            };
+
+            permissions = {
+              contents = "write";
+              "pull-requests" = "write";
+            };
+
+            jobs.update = {
+              runsOn = "ubuntu-latest";
+              steps = [
+                {
+                  name = "Checkout";
+                  uses = "actions/checkout@v4";
+                }
+                {
+                  name = "Install Nix";
+                  uses = "DeterminateSystems/nix-installer-action@main";
+                }
+                {
+                  name = "Update flake.lock";
+                  uses = "DeterminateSystems/update-flake-lock@main";
+                  with_ = {
+                    pr-title = "chore(deps): update flake.lock";
+                    pr-labels = "dependencies,nix-flake";
+                    pr-body = ''
+                      Automated `nix flake update` sweep. Merge only after
+                      reviewing per-input changes. Renovate handles
+                      per-input PRs; this is the fallback path.
+                    '';
+                  };
+                }
+              ];
+            };
+          };
+
           # Docs: build and deploy to GitHub Pages
           workflows.deploy-docs = {
             name = "Deploy Documentation";
