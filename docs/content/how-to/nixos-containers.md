@@ -44,57 +44,33 @@ nix run .#oci-push-<name>
 
 ## Run security scans
 
-### CVE scanning
+Scanners run as part of the validation-gated build pipeline. Enabling a
+scanner on a container makes it a prerequisite of `nix build .#oci-<name>`:
+if the scanner fails, the build fails. Reports land under
+`$NIX_OCI_REPORT_DIR` (defaults to `result/report/`). See
+[`nix/modules/oci/pipeline/step-registrations.nix`](https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/pipeline/step-registrations.nix)
+for the full step registry.
 
-```bash
-# Trivy
-nix run .#oci-cve-trivy-<name>
+### CVE, SBOM, credentials, tests
 
-# Grype
-nix run .#oci-cve-grype-<name>
-
-# Vulnix
-nix run .#oci-cve-vulnix-<name>
-```
-
-Enable in your container config (see [`cve.*`](../reference/flake-parts-options.html) in the option reference):
+Enable in your container config (see [`cve.*`](../reference/flake-parts-options.html),
+[`sbom.*`](../reference/flake-parts-options.html), [`credentialsLeak.*`](../reference/flake-parts-options.html),
+and [`test.*`](../reference/flake-parts-options.html) in the option reference):
 
 ```nix
-oci.cve.trivy.enabled = true;
-# or
-oci.cve.grype.enabled = true;
+oci.containers.<name> = {
+  cve.trivy.enabled = true;                  # or grype, vulnix
+  sbom.syft.enabled = true;
+  credentialsLeak.trivy.enabled = true;
+  test.containerStructureTest.enabled = true;  # or dive, dgoss
+};
 ```
 
-### SBOM generation
+Then build; the gate runs every enabled step:
 
 ```bash
-nix run .#oci-sbom-syft-<name>
-```
-
-### Credentials leak detection
-
-```bash
-nix run .#oci-credentials-leak-<name>
-```
-
-## Run tests
-
-### Container Structure Tests
-
-```bash
-nix run .#oci-container-structure-test-<name>
-```
-
-### Dive (layer analysis)
-
-```bash
-nix run .#oci-dive-<name>
-```
-
-### dgoss
-
-```bash
-nix run .#oci-dgoss-<name>
+nix build .#oci-<name>
+ls result/report/
 ```
 
 ## Build image flavours
@@ -145,7 +121,7 @@ oci.containers.my-app = {
 ```
 
 `multiArch.enabled` is computed automatically from `multiArch.systems`
-(non-empty list turns it on); it is read-only and cannot be set directly.
+(non-empty list turns it on); it's read-only and can't be set directly.
 See [`multiArch`](../reference/flake-parts-options.html) in the flake-parts
 option reference.
 

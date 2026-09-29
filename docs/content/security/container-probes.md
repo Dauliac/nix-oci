@@ -14,7 +14,7 @@ and privilege escalation paths.
 ## The problem
 
 Static image analysis catches known CVEs and misconfigurations, but
-it cannot answer questions like:
+it can't answer questions like:
 
 - Does the seccomp profile actually block dangerous syscalls?
 - Are there writable paths an attacker could exploit?
@@ -36,7 +36,7 @@ tools into the image, but that:
 
 ## The solution: `mkContainerProbe`
 
-nix-oci provides a shared `mkContainerProbe` infrastructure
+nix-oci provides a shared [`mkContainerProbe`](../test-reference/nix-lib-testing.html#mkcontainerprobe) infrastructure
 (in `nix/modules/oci/testing/container-probe/lib.nix`) that
 **bind-mounts** tools from the Nix store into the container at test
 time. The production image is never modified.
@@ -97,11 +97,11 @@ nix run .#oci-linpeas-my-app
 
 Each probe:
 
-1. Loads the image into podman via `copyToDockerDaemon`.
+1. Loads the image into podman via the `oci-load-podman-<name>` app.
 2. Runs the container with the tool bind-mounted read-only.
 3. Prints the output to stdout.
 4. Writes a report to `$NIX_OCI_REPORT_DIR` when set (CI integration).
-5. Exits non-zero if critical issues are found.
+5. Exits nonzero if critical issues are found.
 
 ### Failure conditions
 
@@ -116,9 +116,10 @@ Each probe has declarative `failPatterns` and `warnPatterns`:
 
 ### Hermetic mode
 
-Each probe also provides a `mkCheck*` function that runs inside the
-Nix build sandbox via `mkPodmanSandboxCheck`. This makes probe
-results reproducible and cacheable:
+Each probe also provides a [`mkCheck*`](../test-reference/nix-lib-testing.html) function that runs inside a
+NixOS VM via [`mkVMCheck`](../test-reference/nix-lib-testing.html#mkvmcheck)
+(or [`mkHermeticContainerProbe`](../test-reference/nix-lib-testing.html#mkhermeticcontainerprobe)).
+This makes probe results reproducible and cacheable:
 
 ```bash
 nix build .#checks.x86_64-linux.oci-amicontained-my-app
@@ -129,7 +130,7 @@ Hermetic mode requires `extra-sandbox-paths = /sys/fs/cgroup` in
 
 ## Adding a new probe
 
-The `mkContainerProbe` abstraction makes it straightforward to add
+The [`mkContainerProbe`](../test-reference/nix-lib-testing.html#mkcontainerprobe) abstraction makes it straightforward to add
 new tools. A new probe requires only declarative configuration:
 
 ```nix
@@ -154,7 +155,8 @@ bind-mounting, report generation, and failure detection.
 
 ## Further reading
 
-- [CVE scanning, SBOM & integrity](./cve-sbom-integrity.html): static image analysis tools
+- [Vulnerability scanning](./vulnerability-scanning.html): CVE scanning, SBOM, credentials-leak, compliance, lint
+- [Policy checking and integrity testing](./policy-integrity-testing.html): Conftest, container-structure-test, dgoss, Dive
 - [Hardening](./hardening.html): seccomp, AppArmor, capabilities
 - [Security defaults](./security-defaults.html): non-root, distroless defaults
 - [Options reference](../reference/flake-parts-options.html): all probe options

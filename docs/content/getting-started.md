@@ -29,9 +29,9 @@ The fastest way to get started is the template:
     nix-oci.url = "github:Dauliac/nix-oci";
   };
 
-  outputs = inputs:
-    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
-      imports = [ inputs.nix-oci.modules.flake.nix-oci ];
+  outputs = inputs@{ flake-parts, nix-oci, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [ nix-oci.modules.flake.nix-oci ];
       systems = [ "x86_64-linux" "aarch64-linux" ];
 
       oci.enabled = true;
@@ -50,8 +50,10 @@ See [`oci.containers.<name>`](./reference/flake-parts-options.html) in the flake
 ## Step 2: Build the image
 
 ```bash
-# Build the OCI image
+# Build the OCI image. `result/bin/` contains the loader and push
+# scripts: load-podman, load-docker, push, and sandbox.
 nix build .#oci-hello
+ls result/bin/
 
 # Load it into Podman
 nix run .#oci-load-podman-hello
@@ -74,9 +76,9 @@ Add the NixOS module to your system configuration:
 
 ```nix
 # In your NixOS configuration
-{ inputs, pkgs, ... }:
+{ pkgs, nix-oci, ... }:
 {
-  imports = [ inputs.nix-oci.modules.nixos.nix-oci ];
+  imports = [ nix-oci.modules.nixos.nix-oci ];
 
   oci = {
     enable = true;
@@ -123,7 +125,7 @@ filesystem, and builds a minimal OCI image; no Dockerfile needed.
 See [`nixosConfig`](./reference/flake-parts-options.html) in the container module option reference.
 
 ::: {.tip}
-The service adapter for nginx auto-injects a healthcheck endpoint, a stop
+The service adapter for nginx autoinjects a healthcheck endpoint, a stop
 signal (`SIGQUIT`), and foreground mode; you get production-grade container
 metadata automatically. Adapters exist for 10 services: nginx, httpd, caddy,
 postgresql, redis, bind, dnsmasq, postfix, vsftpd, and php-fpm.
@@ -228,15 +230,15 @@ and [Performance tuning](./architecture/performance.html) for details.
 
 ## Step 10: Health-aware deployment (optional)
 
-When a container has a healthcheck (auto-derived from a service adapter or
+When a container has a healthcheck (autoderived from a service adapter or
 set explicitly), the deploy modules wire `sdnotify` so dependent systemd
 services wait until the container reports healthy (`READY=1`):
 
 ```nix
-# NixOS deploy -- healthcheck-aware by default
-{ inputs, ... }:
+# NixOS deploy: healthcheck-aware by default
+{ nix-oci, ... }:
 {
-  imports = [ inputs.nix-oci.modules.nixos.nix-oci ];
+  imports = [ nix-oci.modules.nixos.nix-oci ];
 
   oci = {
     enable = true;

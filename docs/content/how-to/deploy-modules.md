@@ -114,6 +114,33 @@ oci = {
 };
 ```
 
+## Enable CVE scanning in a deploy module
+
+Security scanners register as gate steps on the container build. Enable
+them in the NixOS deploy config exactly as you would in a flake-parts
+module; the scan then runs whenever the loader service builds the image.
+
+```nix
+oci = {
+  enable = true;
+  backend = "podman";
+  containers.my-app = {
+    package = pkgs.my-app;
+    autoStart = true;
+    cve.trivy.enabled = true;         # or grype, vulnix
+    sbom.syft.enabled = true;
+    lint.dockle.enabled = true;
+    policy.conftest.enabled = true;
+  };
+};
+```
+
+Reports land under `$NIX_OCI_REPORT_DIR` (defaults to `result/report/`).
+See [`cve.*`](../reference/nixos-options.html) in the NixOS option
+reference and
+[`nix/modules/oci/pipeline/step-registrations.nix`](https://github.com/Dauliac/nix-oci/blob/main/nix/modules/oci/pipeline/step-registrations.nix)
+for the full step registry.
+
 ## Using Docker instead of Podman
 
 Change the backend:

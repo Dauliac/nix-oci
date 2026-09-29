@@ -105,7 +105,7 @@ flavours.debug = {
 ```
 
 See [`flavours`](../reference/flake-parts-options.html) in the option reference and
-[Optimized layer sharing](./optimize-layers.md) for how images
+[Archive-less container building](../architecture/archive-less-container-building.html) for how images
 sharing common dependencies benefit from registry-level deduplication.
 
 ## Security tooling built in
@@ -147,7 +147,7 @@ image digests. This is a direct consequence of:
 
 ## Further reading
 
-- [Automatic OCI labels](./automatic-labeling.md): how labels encode security posture and K8s PSS level
+- [Automatic OCI labels](../architecture/automatic-labeling.html): how labels encode security posture and K8s PSS level
 - [CIS Docker Benchmark](https://www.cisecurity.org/benchmark/docker): industry container security baseline
 - [NIST SP 800-190](https://csrc.nist.gov/pubs/sp/800/190/final): application container security guide
 - [Google distroless](https://github.com/GoogleContainerTools/distroless): the distroless philosophy
