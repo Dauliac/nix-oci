@@ -101,9 +101,38 @@ in
       deploySpecs = lib.filterAttrs (_: s: s.level == "deploy") vmSpecs;
 
       loadableSpecs = runtimeSpecs // deploySpecs;
+
+      # ── State-directory tmpfs backing ────────────────────────
+      # Specs may declare `stateDirectories = [ "/var/lib/postgresql" ]`.
+      # For each (spec, dir), we back it with a per-spec tmpfs on the
+      # host at `/run/oci-test-state/<name>/<slug>` and inject a
+      # `-v host:container` volume so the container sees a writable dir.
+      # Slug replaces `/` with `_` because host paths must be flat.
+      slugify = s: lib.replaceStrings [ "/" ] [ "_" ] (lib.removePrefix "/" s);
+      stateHostBase = "/run/oci-test-state";
+      stateMountsForSpec =
+        name: spec:
+        lib.map (dir: {
+          hostPath = "${stateHostBase}/${name}/${slugify dir}";
+          containerPath = dir;
+        }) (spec.stateDirectories or [ ]);
+      # All (spec × dir) pairs, flat, for fileSystems declarations.
+      allStateMounts = lib.concatLists (
+        lib.mapAttrsToList stateMountsForSpec loadableSpecs
+      );
+
       bddContainers = lib.mapAttrs (
-        _name: spec:
+        name: spec:
+        let
+          extraStateVolumes = lib.map (m: "${m.hostPath}:${m.containerPath}") (
+            stateMountsForSpec name spec
+          );
+          existingVolumes = spec.container.volumes or [ ];
+        in
         spec.container
+        // lib.optionalAttrs (extraStateVolumes != [ ]) {
+          volumes = existingVolumes ++ extraStateVolumes;
+        }
         // lib.optionalAttrs (spec.level == "runtime") {
           autoStart = true;
           mode = "oneshot";
@@ -198,6 +227,34 @@ in
             { pkgs, ... }:
             {
               imports = [ nixosModule ] ++ lib.optional (nixosTestModule != null) nixosTestModule;
+
+              # When `_vmBackend = "docker"`, we still get podman from the
+              # test module's `_podman-config.nix` (which we cannot remove
+              # without churn in shared test infra); we additionally
+              # enable dockerd so the deploy suite can be exercised
+              # against docker via the same VM. The pytest driver picks
+              # the right socket via `DOCKER_HOST` in the testScript.
+              virtualisation.docker.enable = lib.mkIf (
+                config.test.oci._vmBackend == "docker"
+              ) true;
+
+              # Per-spec writable tmpfs mounts backing each declared
+              # `stateDirectories` entry. Sized modestly (256 MiB each)
+              # so a PostgreSQL initdb has room without dominating the
+              # VM's overall memory budget.
+              fileSystems = lib.listToAttrs (
+                lib.map (m: {
+                  name = m.hostPath;
+                  value = {
+                    device = "tmpfs";
+                    fsType = "tmpfs";
+                    options = [
+                      "size=256m"
+                      "mode=0755"
+                    ];
+                  };
+                }) allStateMounts
+              );
 
               # BDD containers go through the deploy module
               oci = {
