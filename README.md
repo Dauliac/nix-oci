@@ -2,6 +2,26 @@
 
 [![CI](https://github.com/Dauliac/nix-oci/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Dauliac/nix-oci/actions/workflows/ci.yml)
 [![Deploy Documentation](https://github.com/Dauliac/nix-oci/actions/workflows/deploy-docs.yml/badge.svg?branch=main)](https://github.com/Dauliac/nix-oci/actions/workflows/deploy-docs.yml)
+[![License: MIT](https://img.shields.io/github/license/Dauliac/nix-oci?color=blue)](./LICENSE)
+[![Latest tag](https://img.shields.io/github/v/tag/Dauliac/nix-oci?label=release&sort=semver)](https://github.com/Dauliac/nix-oci/tags)
+[![Built with Nix](https://img.shields.io/static/v1?label=built%20with&message=nix&color=5277C3&logo=nixos&logoColor=white)](https://nixos.org)
+[![Powered by nix2container](https://img.shields.io/static/v1?label=powered%20by&message=nix2container&color=informational)](https://github.com/nlewo/nix2container)
+
+<details>
+<summary>More badges</summary>
+
+[![Contributors](https://img.shields.io/github/contributors/Dauliac/nix-oci)](https://github.com/Dauliac/nix-oci/graphs/contributors)
+[![Stars](https://img.shields.io/github/stars/Dauliac/nix-oci?style=flat)](https://github.com/Dauliac/nix-oci/stargazers)
+[![Forks](https://img.shields.io/github/forks/Dauliac/nix-oci?style=flat)](https://github.com/Dauliac/nix-oci/network/members)
+[![Last commit](https://img.shields.io/github/last-commit/Dauliac/nix-oci)](https://github.com/Dauliac/nix-oci/commits/main)
+[![Open issues](https://img.shields.io/github/issues/Dauliac/nix-oci)](https://github.com/Dauliac/nix-oci/issues)
+[![Open PRs](https://img.shields.io/github/issues-pr/Dauliac/nix-oci)](https://github.com/Dauliac/nix-oci/pulls)
+[![flake-parts](https://img.shields.io/static/v1?label=module&message=flake-parts&color=5277C3)](https://flake.parts)
+[![NixOS](https://img.shields.io/static/v1?label=module&message=NixOS&color=5277C3&logo=nixos&logoColor=white)](https://nixos.org/manual/nixos/stable/)
+[![home-manager](https://img.shields.io/static/v1?label=module&message=home-manager&color=5277C3)](https://nix-community.github.io/home-manager/)
+[![system-manager](https://img.shields.io/static/v1?label=module&message=system-manager&color=5277C3)](https://github.com/numtide/system-manager)
+
+</details>
 
 A [flake-parts](https://flake.parts), [NixOS](https://nixos.org/manual/nixos/stable/), [Home Manager](https://nix-community.github.io/home-manager/) and [system-manager](https://system-manager.net) module system for OCI containers, powered by [nix2container](https://github.com/nlewo/nix2container).
 
