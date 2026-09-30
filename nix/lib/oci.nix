@@ -532,12 +532,82 @@ let
             "${ns}.network.udp-ports" = lib.concatStringsSep "," udpPorts;
           };
 
+        # Direct-dependency detail: emit one JSON label describing each
+        # user-declared dep in `dependencies`. Complements the SBOM
+        # pipeline (see nix/modules/oci/security/sbom/) rather than
+        # replacing it; the SBOM covers the full closure, this covers
+        # only the user's explicit dependency list.
+        depsMetaAll = builtins.filter (d: d != null) (
+          map (
+            d:
+            let
+              isAttr = builtins.isAttrs d;
+              dPname = if isAttr then (d.pname or null) else null;
+              dVersion = if isAttr then (d.version or null) else null;
+              dMeta = if isAttr then (d.meta or { }) else { };
+              dDesc = dMeta.description or "";
+            in
+            if dPname == null || dVersion == null then
+              null
+            else
+              {
+                pname = dPname;
+                version = dVersion;
+              }
+              // lib.optionalAttrs (dDesc != "") { description = dDesc; }
+          ) dependencies
+        );
+        depsLabelBudget = 4096;
+        # Trim trailing elements until the JSON encoding fits under the
+        # 4096-byte per-label ceiling that Docker Hub / GHCR enforce.
+        # When we drop elements, append a truncation marker so consumers
+        # can detect the condition without out-of-band knowledge.
+        fitDeps =
+          items:
+          let
+            encoded = builtins.toJSON items;
+          in
+          if builtins.stringLength encoded <= depsLabelBudget then
+            {
+              value = encoded;
+              dropped = 0;
+            }
+          else
+            let
+              n = builtins.length items;
+              trimTo =
+                keep:
+                let
+                  head = lib.sublist 0 keep items;
+                  marker = {
+                    truncated = true;
+                    dropped = n - keep;
+                  };
+                  candidate = builtins.toJSON (head ++ [ marker ]);
+                in
+                if builtins.stringLength candidate <= depsLabelBudget then
+                  {
+                    value = candidate;
+                    dropped = n - keep;
+                  }
+                else if keep == 0 then
+                  {
+                    value = builtins.toJSON [ marker ];
+                    dropped = n;
+                  }
+                else
+                  trimTo (keep - 1);
+            in
+            trimTo (if n == 0 then 0 else n - 1);
+        depsFit = fitDeps depsMetaAll;
+
         nixIdentity =
           lib.optionalAttrs (pname != null) { "${ns}.nix.pname" = pname; }
           // lib.optionalAttrs (version != null) { "${ns}.nix.version" = version; }
           // lib.optionalAttrs (mainProgram != null) { "${ns}.nix.main-program" = mainProgram; }
           // lib.optionalAttrs (dependencies != [ ]) {
             "${ns}.nix.dependency-count" = toString (builtins.length dependencies);
+            "${ns}.nix.deps" = depsFit.value;
           };
 
         knownVulns = meta.knownVulnerabilities or [ ];

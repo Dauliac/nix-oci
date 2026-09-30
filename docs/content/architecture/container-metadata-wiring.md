@@ -85,9 +85,9 @@ flowchart LR
 | Stage | Transformation | File |
 |---|---|---|
 | User input | `["8080:8080"]` | `nix/modules/oci/containers/_options/ports.nix` |
-| OCI ExposedPorts | [`mkExposedPorts`](../reference/nix-lib.html#mkexposedports) → `{ "8080/tcp" = {}; }` | `nix/modules/oci/lib/ports.nix`, `nix/modules/oci/containers/image.nix` |
+| OCI ExposedPorts | [`mkExposedPorts`](../reference/nix-lib.html#oci-mkExposedPorts) → `{ "8080/tcp" = {}; }` | `nix/modules/oci/lib/ports.nix`, `nix/modules/oci/containers/image.nix` |
 | NixOS runner | Passed as-is to `virtualisation.oci-containers` | `nix/modules/deploy/nix-oci/nixos/run-services.nix` |
-| NixOS firewall | Host port extracted via [`parseHostPort`](../reference/nix-lib.html#parsehostport) → integer | `nix/modules/deploy/nix-oci/nixos/run-services.nix` |
+| NixOS firewall | Host port extracted via [`parseHostPort`](../reference/nix-lib.html#oci-parseHostPort) → integer | `nix/modules/deploy/nix-oci/nixos/run-services.nix` |
 | HM runner | Passed as-is to `services.podman.containers` | `nix/modules/deploy/nix-oci/home-manager/run-services.nix` |
 
 ### Environment
@@ -236,10 +236,11 @@ flowchart TD
 | `…nix-oci.nix.version` | `package.version` | `"1.27.3"` |
 | `…nix-oci.nix.main-program` | `package.meta.mainProgram` | `"nginx"` |
 | `…nix-oci.nix.dependency-count` | `builtins.length dependencies` | `"5"` |
+| `…nix-oci.nix.deps` | Each entry of `oci.dependencies` projected to `{ pname, version, description }` | `'[{"pname":"openssl","version":"3.0.13",...}]'` |
 | `…nix-oci.security.known-vulnerabilities` | `package.meta.knownVulnerabilities` | `"CVE-…"` |
 | `…nix-oci.provenance.source-type` | `package.meta.sourceProvenance` | `"fromSource"` |
 
-To disable autolabeling, set [`autoLabels`](../reference/flake-parts-options.html) to `false` on the container.
+To disable autolabeling, set [`autoLabels`](../reference/flake-parts-options.html#ocicontainersnameautolabels) to `false` on the container.
 See [Automatic OCI labels](./automatic-labeling.md) for full details.
 
 ### Config files
@@ -344,7 +345,7 @@ flowchart LR
     style hm fill:#1e1e2e,stroke:#f5c2e7,color:#cdd6f4
 ```
 
-When you disable [`autoStart`](../reference/nixos-options.html), nix-oci creates only the loader service: no runner,
+When you disable [`autoStart`](../reference/nixos-options.html#ocicontainersnameautostart), nix-oci creates only the loader service: no runner,
 no firewall rules, no volumes. It loads the image but doesn't start it.
 
 ## Service dependency chain
@@ -626,7 +627,7 @@ flowchart LR
 | **dnsmasq** | `SIGTERM` | Clean shutdown |
 | **Postfix** | `SIGTERM` | Stop mail system |
 | **vsftpd** | `SIGTERM` | Clean shutdown |
-| *(no adapter)* | See [`stopSignal`](../reference/flake-parts-options.html) | Container runtime default when not specified |
+| *(no adapter)* | See [`stopSignal`](../reference/flake-parts-options.html#ocicontainersnamestopsignal) | Container runtime default when not specified |
 
 Service adapters use `lib.mkDefault`, so the user can always override.
 When no adapter sets a signal, the `extractServiceData` function checks
@@ -674,7 +675,7 @@ For NixOS containers, nix-oci resolves the working directory in priority order:
 This means PostgreSQL containers automatically get `WorkingDir = /var/lib/postgresql`
 without any manual configuration.
 
-For non-NixOS containers, [`workingDir`](../reference/flake-parts-options.html)
+For non-NixOS containers, [`workingDir`](../reference/flake-parts-options.html#ocicontainersnameworkingdir)
 uses the runtime default. Set it explicitly when needed.
 
 | Stage | Transformation | File |
