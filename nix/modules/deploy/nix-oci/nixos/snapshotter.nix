@@ -27,6 +27,11 @@
       anyContainerWantsSoci = builtins.any (
         c: (c.performance.turbo.enable or false) && (c.performance.turbo.soci or false)
       ) (builtins.attrValues cfg.containers);
+      # Backend guard is safe now that _test/_soci-snapshotter-config.nix
+      # no longer defines `oci.backend` (that definition would close a
+      # cycle with the `services.soci-snapshotter.enable` guard on its
+      # module body). The test harness that wants SOCI must set backend
+      # via `_vmBackend = "docker"` (see nix/modules/oci/testing/test-vm.nix).
       isContainerdBackend = cfg.backend == "docker";
     in
     {
