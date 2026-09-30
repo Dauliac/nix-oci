@@ -148,8 +148,7 @@ let
   mkSyscallBlocked =
     containerName: entry:
     let
-      argsLine =
-        if entry.args != "" then "command=${pyStr entry.args}," else "command=None,";
+      argsLine = if entry.args != "" then "command=${pyStr entry.args}," else "command=None,";
       # Multi-line body must live INSIDE the except block. Build the body
       # as one string, then indent every line uniformly.
       handlerBody =
@@ -222,51 +221,43 @@ let
     '';
 
   # Generate code for a single dnsResolutionFails assertion.
-  mkDnsResolutionFails =
-    containerName: entry:
-    ''
-      # dnsResolutionFails: ${entry.hostname}
-      try:
-          client.containers.run(
-              ${pyStr "${containerName}:latest"},
-              entrypoint="/bin/sh",
-              command=${
-                pyStr "-c \"getent hosts ${entry.hostname} 2>&1 || exit 1\""
-              },
-              remove=True,
-          )
-          pytest.fail(
-              "Expected DNS lookup of ${entry.hostname} to fail, but getent exited 0"
-          )
-      except docker.errors.ContainerError:
-          pass  # getent nonzero exit = resolution failed as expected
-    '';
+  mkDnsResolutionFails = containerName: entry: ''
+    # dnsResolutionFails: ${entry.hostname}
+    try:
+        client.containers.run(
+            ${pyStr "${containerName}:latest"},
+            entrypoint="/bin/sh",
+            command=${pyStr "-c \"getent hosts ${entry.hostname} 2>&1 || exit 1\""},
+            remove=True,
+        )
+        pytest.fail(
+            "Expected DNS lookup of ${entry.hostname} to fail, but getent exited 0"
+        )
+    except docker.errors.ContainerError:
+        pass  # getent nonzero exit = resolution failed as expected
+  '';
 
   # Generate code for a single tlsHandshakeFails assertion.
-  mkTlsHandshakeFails =
-    containerName: entry:
-    ''
-      # tlsHandshakeFails: ${entry.url}
-      try:
-          client.containers.run(
-              ${pyStr "${containerName}:latest"},
-              entrypoint="curl",
-              command=${
-                pyStr "--silent --show-error --fail --max-time 10 ${entry.url}"
-              },
-              remove=True,
-          )
-          pytest.fail(
-              "Expected TLS handshake to ${entry.url} to fail, but curl exited 0"
-          )
-      except docker.errors.ContainerError as e:
-          _stderr = (getattr(e, "stderr", b"") or b"").decode("utf-8", errors="replace")
-          # curl exit 60 = SSL certificate problem; 77 = CA cert file problem.
-          # Any nonzero counts, but log the hint for debugging.
-          assert e.exit_status != 0, (
-              f"curl unexpectedly succeeded despite noTlsTrustStore: stderr={_stderr[:500]}"
-          )
-    '';
+  mkTlsHandshakeFails = containerName: entry: ''
+    # tlsHandshakeFails: ${entry.url}
+    try:
+        client.containers.run(
+            ${pyStr "${containerName}:latest"},
+            entrypoint="curl",
+            command=${pyStr "--silent --show-error --fail --max-time 10 ${entry.url}"},
+            remove=True,
+        )
+        pytest.fail(
+            "Expected TLS handshake to ${entry.url} to fail, but curl exited 0"
+        )
+    except docker.errors.ContainerError as e:
+        _stderr = (getattr(e, "stderr", b"") or b"").decode("utf-8", errors="replace")
+        # curl exit 60 = SSL certificate problem; 77 = CA cert file problem.
+        # Any nonzero counts, but log the hint for debugging.
+        assert e.exit_status != 0, (
+            f"curl unexpectedly succeeded despite noTlsTrustStore: stderr={_stderr[:500]}"
+        )
+  '';
 
   # Generate code for envVarSet: assert vars appear in image OCI Config.Env
   # (as reported by `docker/podman image inspect`), NOT in /proc/1/environ.
@@ -330,39 +321,35 @@ let
 
   # Generate code for manifestDigestMatches: compare two manifest files by
   # SHA-256 to prove reproducibility across two builds.
-  mkManifestDigestMatches =
-    _containerName: mdm:
-    ''
-      # manifestDigestMatches: ${mdm.firstPath} vs ${mdm.secondPath}
-      import hashlib
-      def _digest(p):
-          with open(p, "rb") as fh:
-              return hashlib.sha256(fh.read()).hexdigest()
-      _d1 = _digest(${pyStr mdm.firstPath})
-      _d2 = _digest(${pyStr mdm.secondPath})
-      assert _d1 == _d2, (
-          f"Reproducibility: manifest digest mismatch\n"
-          f"  ${mdm.firstPath}: sha256:{_d1}\n"
-          f"  ${mdm.secondPath}: sha256:{_d2}"
-      )
-    '';
+  mkManifestDigestMatches = _containerName: mdm: ''
+    # manifestDigestMatches: ${mdm.firstPath} vs ${mdm.secondPath}
+    import hashlib
+    def _digest(p):
+        with open(p, "rb") as fh:
+            return hashlib.sha256(fh.read()).hexdigest()
+    _d1 = _digest(${pyStr mdm.firstPath})
+    _d2 = _digest(${pyStr mdm.secondPath})
+    assert _d1 == _d2, (
+        f"Reproducibility: manifest digest mismatch\n"
+        f"  ${mdm.firstPath}: sha256:{_d1}\n"
+        f"  ${mdm.secondPath}: sha256:{_d2}"
+    )
+  '';
 
   # Generate code for firewallPortOpen: assert `nft list ruleset` on the
   # test host contains an accept rule for port + protocol.
-  mkFirewallPortOpen =
-    _containerName: entry:
-    ''
-      # firewallPortOpen: ${toString entry.port}/${entry.protocol}
-      import subprocess
-      _rules = subprocess.check_output(["nft", "list", "ruleset"]).decode(
-          "utf-8", errors="replace"
-      )
-      _needle = "${entry.protocol} dport ${toString entry.port}"
-      assert _needle in _rules, (
-          f"Expected firewall accept rule for ${entry.protocol}/${toString entry.port} "
-          f"in nft ruleset, but not found. Rules: {_rules[:2000]}"
-      )
-    '';
+  mkFirewallPortOpen = _containerName: entry: ''
+    # firewallPortOpen: ${toString entry.port}/${entry.protocol}
+    import subprocess
+    _rules = subprocess.check_output(["nft", "list", "ruleset"]).decode(
+        "utf-8", errors="replace"
+    )
+    _needle = "${entry.protocol} dport ${toString entry.port}"
+    assert _needle in _rules, (
+        f"Expected firewall accept rule for ${entry.protocol}/${toString entry.port} "
+        f"in nft ruleset, but not found. Rules: {_rules[:2000]}"
+    )
+  '';
 
   # Generate code for processEnv assertions.
   mkProcessEnv =

@@ -118,13 +118,23 @@
           # Expose BDD checks — internal options set by test-flake-module,
           # wired here so `nix flake check ./tests` and
           # `nix build ./tests#checks.<system>.bdd-vm` resolve.
+          # Expose BDD checks. The old aggregate `bdd-apps` (a single VM
+          # loading every container serially) is intentionally NOT wired
+          # here: `nix flake check` cannot parallelize inside one
+          # derivation, so it degraded to `boot + sum(per-container-load)`
+          # ~= many hours. The per-container `bdd-app-<name>` split IS
+          # wired: Nix's build scheduler runs each VM independently, so
+          # wall clock becomes `boot + max(per-container-load)` and
+          # `--max-jobs` bounds concurrency naturally. The aggregate
+          # derivation still exists as `test.oci._bddAppsCheck` if
+          # anyone actually wants the monolithic shape.
           checks =
             lib.optionalAttrs (config.test.oci._bddVmCheck != null) {
               bdd-vm = config.test.oci._bddVmCheck;
             }
-            // lib.optionalAttrs (config.test.oci._bddAppsCheck != null) {
-              bdd-apps = config.test.oci._bddAppsCheck;
-            };
+            // lib.mapAttrs' (name: drv: lib.nameValuePair "bdd-app-${name}" drv) (
+              config.test.oci._bddAppsChecks or { }
+            );
         };
     };
 }

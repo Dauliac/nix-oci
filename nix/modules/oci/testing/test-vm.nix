@@ -117,19 +117,29 @@ in
           containerPath = dir;
         }) (spec.stateDirectories or [ ]);
       # All (spec × dir) pairs, flat, for fileSystems declarations.
-      allStateMounts = lib.concatLists (
-        lib.mapAttrsToList stateMountsForSpec loadableSpecs
-      );
+      allStateMounts = lib.concatLists (lib.mapAttrsToList stateMountsForSpec loadableSpecs);
+
+      # Flake-only container attributes that do NOT exist on the deploy-side
+      # (nixos) `oci.containers.<name>` submodule. Per the 3-tier option
+      # architecture (see MEMORY.md, "Key Design Decisions"): `test.*` opts
+      # (probe enable flags, container-structure-test config, coherence, etc.)
+      # live only on the flake-side per-container submodule. If a spec sets
+      # them via `container.test.<probe>.enabled = true` to drive flake-side
+      # probe-app synthesis (see nix/modules/oci/testing/test-apps.nix), those
+      # flags are meaningless here and would produce
+      #   `The option 'nodes.machine.oci.containers.<X>.test' does not exist`.
+      # Strip before merging into bddContainers.
+      flakeOnlyContainerKeys = [ "test" ];
+      stripFlakeOnly = c: builtins.removeAttrs c flakeOnlyContainerKeys;
 
       bddContainers = lib.mapAttrs (
         name: spec:
         let
-          extraStateVolumes = lib.map (m: "${m.hostPath}:${m.containerPath}") (
-            stateMountsForSpec name spec
-          );
+          extraStateVolumes = lib.map (m: "${m.hostPath}:${m.containerPath}") (stateMountsForSpec name spec);
           existingVolumes = spec.container.volumes or [ ];
+          deployContainer = stripFlakeOnly spec.container;
         in
-        spec.container
+        deployContainer
         // lib.optionalAttrs (extraStateVolumes != [ ]) {
           volumes = existingVolumes ++ extraStateVolumes;
         }
@@ -234,9 +244,7 @@ in
               # enable dockerd so the deploy suite can be exercised
               # against docker via the same VM. The pytest driver picks
               # the right socket via `DOCKER_HOST` in the testScript.
-              virtualisation.docker.enable = lib.mkIf (
-                config.test.oci._vmBackend == "docker"
-              ) true;
+              virtualisation.docker.enable = lib.mkIf (config.test.oci._vmBackend == "docker") true;
 
               # Per-spec writable tmpfs mounts backing each declared
               # `stateDirectories` entry. Sized modestly (256 MiB each)
