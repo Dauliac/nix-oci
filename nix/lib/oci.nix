@@ -275,15 +275,28 @@ let
         libraries, # list of packages to rebuild
       }:
       let
-        optimizedStdenv = pkgs.stdenvAdapters.withCFlags [
-          "-march=${level}"
-          "-mtune=${level}"
-        ] pkgs.stdenv;
+        # Inject the microarch flags per-package via `overrideAttrs` +
+        # `NIX_CFLAGS_COMPILE`, NOT by swapping in a `withCFlags` stdenv.
+        # In nixpkgs-25.11 the stdenv-swap path lost the cc-wrapper for
+        # some libraries, so autoconf's compiler-sanity probe aborted
+        # with "Missing or broken C compiler" / "C compiler cannot create
+        # executables" the moment the derivation was rebuilt from source
+        # (i.e. cache miss). NIX_CFLAGS_COMPILE is honored by cc-wrapper
+        # directly and does not disturb the compiler discovery machinery.
+        marchFlags = "-march=${level} -mtune=${level}";
 
         optimizedLibs = map (
           pkg:
           let
-            rebuilt = pkg.override { stdenv = optimizedStdenv; };
+            # Prefer `env.NIX_CFLAGS_COMPILE` because packages that use
+            # structured attrs (e.g. zlib in nixpkgs-25.11) forbid overlap
+            # between `env` and top-level derivation arguments. Preserve
+            # whatever the package already put there.
+            rebuilt = pkg.overrideAttrs (old: {
+              env = (old.env or { }) // {
+                NIX_CFLAGS_COMPILE = (old.env.NIX_CFLAGS_COMPILE or "") + " " + marchFlags;
+              };
+            });
           in
           pkgs.runCommand "${pkg.pname or pkg.name}-hwcaps-${level}" { } ''
             mkdir -p $out/lib/glibc-hwcaps/${level}
