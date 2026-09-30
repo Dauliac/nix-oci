@@ -18,7 +18,8 @@
         deploy-wiring-env-dual-write = {
           given = "a Caddy deploy container with environment.MY_VAR = hello";
           "when" = "the loader + runner boot as daemon";
-          "then" = "the image Env contains MY_VAR=hello, the runner --env carries it, and /proc/1/environ inside the container shows it";
+          "then" =
+            "the image Env contains MY_VAR=hello, the runner --env carries it, and /proc/1/environ inside the container shows it";
           level = "deploy";
           mode = "daemon";
           target = "oci";

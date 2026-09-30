@@ -100,7 +100,8 @@
         user-registered-step-accepted = {
           given = "a user registering a custom step via oci.pipeline.steps.myTool";
           "when" = "the pipeline composer assembles the gate";
-          "then" = "the user step is composed exactly like a built-in step (stamp added when mkStamp is defined)";
+          "then" =
+            "the user step is composed exactly like a built-in step (stamp added when mkStamp is defined)";
           level = "eval";
           target = "oci";
           container = {
@@ -112,7 +113,8 @@
         synthetic-marker-round-trip = {
           given = "a synthetic step emitting a distinctive marker at build time and run time (design D5)";
           "when" = "defaultBackend and per-step backend are toggled through the four combinations";
-          "then" = "the marker appears in the gate derivation output for pure/vm backends and in the flake app output for daemon backend";
+          "then" =
+            "the marker appears in the gate derivation output for pure/vm backends and in the flake app output for daemon backend";
           level = "eval";
           target = "oci";
           container = {

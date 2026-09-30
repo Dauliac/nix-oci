@@ -23,7 +23,8 @@
         deploy-wiring-ports-triple-write = {
           given = "a Caddy deploy container with ports = [ 8082:80/tcp ]";
           "when" = "the loader + runner boot and an HTTP client hits :8082 on the VM host";
-          "then" = "ExposedPorts contains 80/tcp, the runner --publishes 8082:80, nft accepts 8082, and the request round-trips";
+          "then" =
+            "ExposedPorts contains 80/tcp, the runner --publishes 8082:80, nft accepts 8082, and the request round-trips";
           level = "deploy";
           mode = "daemon";
           target = "oci";

@@ -21,7 +21,8 @@
         deploy-wiring-volumes-both-surfaces = {
           given = "a Caddy deploy container with declaredVolumes = [ /data ] and volumes = [ /run/wiring-probe:/probe ]";
           "when" = "the loader + runner boot as daemon";
-          "then" = "the image Volumes attrset lists /data and the host probe file is readable at /probe inside the container";
+          "then" =
+            "the image Volumes attrset lists /data and the host probe file is readable at /probe inside the container";
           level = "deploy";
           mode = "daemon";
           target = "oci";
