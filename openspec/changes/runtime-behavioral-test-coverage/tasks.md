@@ -15,7 +15,7 @@
 - [ ] 2.3 Add `_tests/runtime/capabilities.test.nix` reading `/proc/1/status` CapEff bitmask for both drop-ALL default and add-NET_BIND_SERVICE, and verify the bitmask matches the declared config.
 - [ ] 2.4 Add `_tests/runtime/rootfs.test.nix` asserting `touch /new-file` fails with EROFS, and verify the assertion trips.
 - [ ] 2.5 Add `_tests/runtime/privileges.test.nix` with a setuid binary that prints its euid, and verify the euid is the caller's uid (4000) not 0 when `noNewPrivileges = true`.
-- [ ] 2.6 Add `_tests/runtime/dns.test.nix` using a small getaddrinfo tool, and verify the tool exits non-zero when `hardening.disableDns = true` and succeeds when it's false.
+- [ ] 2.6 Add `_tests/runtime/dns.test.nix` using a small getaddrinfo tool, and verify the tool exits nonzero when `hardening.disableDns = true` and succeeds when it's false.
 - [ ] 2.7 Add `_tests/runtime/tls.test.nix` running `curl https://www.google.com`, and verify curl reports cert-verification failure when `hardening.noTlsTrustStore = true`.
 
 ## 3. Runtime performance tests
@@ -31,7 +31,7 @@
 
 - [ ] 4.1 Add `_tests/runtime/gpu-labels.test.nix` covering `gpu.enable = true` label assertions and `gpu.runtimeLibraries` ELF-marker checks in the image, and verify each label and each library file is present.
 - [ ] 4.2 Add `_tests/runtime/gpu-forward-compat.test.nix` asserting the CUDA compat library is present when `forwardCompat = true`, and verify it appears in the image layers.
-- [ ] 4.3 Add `_tests/runtime/probes-framework.test.nix` unit-testing `mkContainerProbe` for `needsShell=true` busybox co-mount, `failPatterns` non-zero exit, `warnPatterns` warning emission, and `NIX_OCI_REPORT_DIR` report file, and verify each behavior.
+- [ ] 4.3 Add `_tests/runtime/probes-framework.test.nix` unit-testing `mkContainerProbe` for `needsShell=true` busybox co-mount, `failPatterns` nonzero exit, `warnPatterns` warning emission, and `NIX_OCI_REPORT_DIR` report file, and verify each behavior.
 - [ ] 4.4 Add `_tests/runtime/probes-e2e.test.nix` covering amicontained + CDK + DEEPCE + linPEAS end-to-end (probe app runs against the loaded container, output is captured and matched against the tool's signature banner), and verify each of the four probes produces output.
 
 ## 5. Pipeline behavior tests (spec: testing/pipeline-behavior-verification)

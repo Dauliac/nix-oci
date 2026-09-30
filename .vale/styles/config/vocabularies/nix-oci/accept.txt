@@ -404,3 +404,12 @@ memoizes
 TOC
 ELF
 FATAL
+deepce
+linpeas
+errno
+hostname
+syscallBlocked
+passthru
+getty
+userland
+prefs

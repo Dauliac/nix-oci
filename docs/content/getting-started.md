@@ -284,7 +284,7 @@ defenses:
   ioctl restrictions), `io_uring` blocked, and an audit mode for iterative
   discovery of missing syscalls.
 - Linux capabilities dropped to the minimum the declared service actually
-  needs (auto-derived from the NixOS service adapter when one applies).
+  needs (derived from the NixOS service adapter when one applies).
 - `no-new-privileges`, a read-only rootfs where possible, and AppArmor
   attachment on hosts that support it.
 

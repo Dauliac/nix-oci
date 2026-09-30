@@ -44,7 +44,7 @@ The generic helpers (`imageConfig`, `labels`, `fileContains`, `fileNotContains`,
 `succeeds`, `fails`, `httpResponds`, `processEnv`, `containerInspect`,
 `systemdProps`, `runtime`) cover most cases. The behavioral coverage tier adds
 eight typed helpers that target specific runtime, build, and network
-observations the generic vocabulary cannot express cleanly.
+observations the generic vocabulary can't express cleanly.
 
 Each helper below lists purpose, expected inputs, and a minimal example. All
 helpers are attributes of `assertions` inside a BDD scenario.

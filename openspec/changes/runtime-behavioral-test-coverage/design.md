@@ -120,5 +120,5 @@ Not applicable. No production behavior changes, no data migration, no deprecated
 
 ## Open Questions
 
-1. **Test-time budget:** what's the acceptable wall-clock ceiling for `nix flake check` after this change lands? Current baseline needs measurement. If we commit to a hard ceiling now, we can size the split between default-CI and opt-in-CI up front instead of after the fact.
-2. **Nixpkgs pin scope for `home-config.test.nix`:** pin only the follower used by home-manager tests, or bump the whole tree? Depends on how far the API drift is and whether other tests care about the same nixpkgs revision.
+1. **Test-time budget.** The acceptable wall-clock ceiling for `nix flake check` after this change lands needs to be decided. Current baseline needs measurement. Committing to a hard ceiling now would let us size the split between default-CI and opt-in-CI up front instead of after the fact.
+2. **Nixpkgs pin scope for `home-config.test.nix`.** Decide whether to pin only the follower used by home-manager tests or bump the whole tree. Depends on how far the API drift is and whether other tests care about the same nixpkgs revision.
