@@ -44,6 +44,41 @@
             "io.github.dauliac.nix-oci.nix.dependency-count" = "3";
           };
         };
+
+        inspect-nix-deps-end-to-end = {
+          given = "a container with three declared dependencies";
+          "when" = "the OCI image is inspected";
+          "then" = "nix.deps decodes to a JSON list naming each dep";
+          level = "inspect";
+          target = "oci";
+          container = {
+            package = pkgs.hello;
+            dependencies = [
+              pkgs.coreutils
+              pkgs.bash
+              pkgs.jq
+            ];
+          };
+          assertions.imageConfig.Labels = {
+            "io.github.dauliac.nix-oci.nix.deps" = builtins.toJSON [
+              {
+                pname = pkgs.coreutils.pname;
+                version = pkgs.coreutils.version;
+                description = pkgs.coreutils.meta.description;
+              }
+              {
+                pname = pkgs.bash.pname;
+                version = pkgs.bash.version;
+                description = pkgs.bash.meta.description;
+              }
+              {
+                pname = pkgs.jq.pname;
+                version = pkgs.jq.version;
+                description = pkgs.jq.meta.description;
+              }
+            ];
+          };
+        };
       };
     };
 }
