@@ -100,11 +100,8 @@ tasks:
       - act push --workflows .github/workflows/ci.yml --list
   ci:regenerate:
     desc: >
-      Regenerate CI workflow + bdd-containers matrix input from Nix.
-      Run this whenever a container is added or removed from
-      oci.containers; the matrix list in .github/workflows/
-      bdd-containers.json is otherwise out of sync and CI will build
-      the wrong set.
+      Regenerate CI workflow + bdd-containers matrix input from Nix. Run this whenever a container is added or removed from oci.containers; the matrix list in .github/workflows/ bdd-containers.json is otherwise out of sync and CI will build the wrong set.
+
     cmds:
       # 1. Enumerate the current `bdd-app-*` checks from the dev flake
       #    and write them to the JSON matrix input.
