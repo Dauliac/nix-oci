@@ -826,11 +826,12 @@ in
                 ];
               };
 
-              # The slow matrix. Only runs when lint + eval pass.
-              # `timeoutMinutes: 60` is a safety cap - the per-container
-              # BDD fan-out spreads load across derivations and the
-              # magic-nix-cache usually keeps us under 30 min.
-              check = {
+              # Single-VM BDD check: runs every runtime/deploy BDD spec
+              # plus the registry push pipeline inside one VM. Separate
+              # from the per-container matrix below because this one
+              # genuinely can't be parallelized further (all tests
+              # share the one VM).
+              check-bdd-vm = {
                 runsOn = "ubuntu-latest";
                 needs = [
                   "lint"
@@ -851,8 +852,105 @@ in
                     uses = "DeterminateSystems/magic-nix-cache-action@main";
                   }
                   {
-                    name = "Check flake";
-                    run = "nix flake check --print-build-logs";
+                    name = "Build bdd-vm";
+                    run = "nix build .#checks.x86_64-linux.bdd-vm --print-build-logs";
+                  }
+                ];
+              };
+
+              # Per-container BDD matrix. Each shard builds exactly one
+              # `bdd-app-<containerId>` derivation on its own runner.
+              # Wall clock drops from sum(per-container) to max(per-container)
+              # because GitHub schedules the matrix in parallel across
+              # runners.
+              #
+              # The container list is read from
+              # ./.github/workflows/bdd-containers.json at generator
+              # time. The dev-partition task `task ci:regenerate`
+              # rewrites that JSON from `config.test.oci._bddAppsChecks`,
+              # then regenerates this workflow. CI treats the JSON
+              # file as the source of truth; it is kept in sync by
+              # pre-commit (treefmt-adjacent) via the same regen task.
+              # Rationale: the `docs` partition does not import the
+              # test infrastructure, so it cannot read
+              # `test.oci._bddAppsChecks` at eval time; a committed
+              # JSON is the simplest way to carry the list across
+              # partitions without a GHA-dynamic matrix (which the
+              # github-actions-nix schema does not type-check).
+              check-bdd-app = {
+                runsOn = "ubuntu-latest";
+                needs = [
+                  "lint"
+                  "eval"
+                ];
+                timeoutMinutes = 45;
+                strategy = {
+                  # failFast=false so one container's regression does
+                  # not mask another container's regression in the
+                  # same push - we want to see every red cell.
+                  failFast = false;
+                  matrix = {
+                    container = lib.importJSON ../.github/workflows/bdd-containers.json;
+                  };
+                };
+                steps = [
+                  {
+                    name = "Checkout";
+                    uses = "actions/checkout@v4";
+                  }
+                  {
+                    name = "Install Nix";
+                    uses = "DeterminateSystems/nix-installer-action@main";
+                  }
+                  {
+                    name = "Cache Nix store";
+                    uses = "DeterminateSystems/magic-nix-cache-action@main";
+                  }
+                  {
+                    name = "Build bdd-app-\${{ matrix.container }}";
+                    run = "nix build .#checks.x86_64-linux.bdd-app-\${{ matrix.container }} --print-build-logs";
+                  }
+                ];
+              };
+
+              # Aggregator - green only when every upstream job (lint,
+              # eval, check-bdd-vm, and every check-bdd-app matrix cell)
+              # has passed. This is the job name referenced by the
+              # branch protection rule "CI / check"; keeping it under
+              # the same name means protection stays wired after the
+              # matrix fan-out.
+              check = {
+                runsOn = "ubuntu-latest";
+                needs = [
+                  "lint"
+                  "eval"
+                  "check-bdd-vm"
+                  "check-bdd-app"
+                ];
+                # `if: always()` so the aggregator runs even when a
+                # matrix cell failed; the explicit result check below
+                # then surfaces that failure.
+                if_ = "always()";
+                steps = [
+                  {
+                    name = "Aggregate upstream results";
+                    run = ''
+                      set -euo pipefail
+                      failed=0
+                      for pair in \
+                        "lint:''${{ needs.lint.result }}" \
+                        "eval:''${{ needs.eval.result }}" \
+                        "check-bdd-vm:''${{ needs.check-bdd-vm.result }}" \
+                        "check-bdd-app:''${{ needs.check-bdd-app.result }}"; do
+                        job=''${pair%%:*}
+                        result=''${pair#*:}
+                        echo "$job: $result"
+                        if [ "$result" != "success" ]; then
+                          failed=1
+                        fi
+                      done
+                      exit $failed
+                    '';
                   }
                 ];
               };

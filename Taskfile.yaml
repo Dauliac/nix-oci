@@ -98,6 +98,47 @@ tasks:
     desc: Dry-run the CI workflow with act (list jobs without executing)
     cmds:
       - act push --workflows .github/workflows/ci.yml --list
+  ci:regenerate:
+    desc: >
+      Regenerate CI workflow + bdd-containers matrix input from Nix.
+      Run this whenever a container is added or removed from
+      oci.containers; the matrix list in .github/workflows/
+      bdd-containers.json is otherwise out of sync and CI will build
+      the wrong set.
+    cmds:
+      # 1. Enumerate the current `bdd-app-*` checks from the dev flake
+      #    and write them to the JSON matrix input.
+      - |
+        set -euo pipefail
+        nix eval .#checks.x86_64-linux --apply '
+          cs: builtins.filter
+            (n: builtins.substring 0 8 n == "bdd-app-")
+            (builtins.attrNames cs)
+        ' --raw 2>/dev/null \
+          | python3 -c "
+        import sys, json, re
+        raw = sys.stdin.read()
+        names = re.findall(r'\"([^\"]+)\"', raw)
+        containers = sorted(n.replace('bdd-app-', '', 1) for n in names)
+        with open('.github/workflows/bdd-containers.json', 'w') as f:
+            json.dump(containers, f, indent=2)
+            f.write('\n')
+        print(f'wrote {len(containers)} containers')
+        "
+      # 2. Rebuild workflows from Nix (the docs partition reads the
+      #    JSON file we just wrote).
+      - nix build .#legacyPackages.x86_64-linux.docs-github-workflows --out-link /tmp/docs-github-workflows
+      # 3. Copy regenerated workflows into place, re-make them writable
+      #    (nix outputs are read-only), and run treefmt so yamlfmt
+      #    normalises the output.
+      - |
+        set -euo pipefail
+        for f in /tmp/docs-github-workflows/*.yml; do
+          dest=".github/workflows/$(basename "$f")"
+          cp -f "$f" "$dest"
+          chmod u+w "$dest"
+        done
+      - nix fmt
   init:
     desc: Setup lefthook git hooks
     sources:

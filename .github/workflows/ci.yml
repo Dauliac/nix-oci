@@ -4,6 +4,32 @@ concurrency:
   group: ci-${{ github.ref }}
 jobs:
   check:
+    if: always()
+    needs:
+      - lint
+      - eval
+      - check-bdd-vm
+      - check-bdd-app
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate upstream results
+        run: |
+          set -euo pipefail
+          failed=0
+          for pair in \
+            "lint:${{ needs.lint.result }}" \
+            "eval:${{ needs.eval.result }}" \
+            "check-bdd-vm:${{ needs.check-bdd-vm.result }}" \
+            "check-bdd-app:${{ needs.check-bdd-app.result }}"; do
+            job=${pair%%:*}
+            result=${pair#*:}
+            echo "$job: $result"
+            if [ "$result" != "success" ]; then
+              failed=1
+            fi
+          done
+          exit $failed
+  check-bdd-app:
     needs:
       - lint
       - eval
@@ -15,8 +41,69 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@main
       - name: Cache Nix store
         uses: DeterminateSystems/magic-nix-cache-action@main
-      - name: Check flake
-        run: nix flake check --print-build-logs
+      - name: Build bdd-app-${{ matrix.container }}
+        run: nix build .#checks.x86_64-linux.bdd-app-${{ matrix.container }} --print-build-logs
+    strategy:
+      fail-fast: false
+      matrix:
+        container:
+          - example-hardened
+          - example-hello
+          - minimalist-with-install-nix
+          - minimalistWithCoherence
+          - minimalistWithCoherenceAndCustom
+          - minimalistWithComplianceTrivy
+          - minimalistWithContainerStructureTest
+          - minimalistWithCredentialsLeaksTrivy
+          - minimalistWithCustomPolicy
+          - minimalistWithDebug
+          - minimalistWithDgoss
+          - minimalistWithExtraPolicies
+          - minimalistWithGrype
+          - minimalistWithHealthcheck
+          - minimalistWithName
+          - minimalistWithTrivyIgnore
+          - minimalistWithTrivyIgnoreAndExtra
+          - minimalistWithVulnix
+          - myapp-nginx
+          - myapp-php
+          - myapp-redis
+          - nginx-nixos
+          - nixosCaddyCst
+          - nixosDnsmasqCst
+          - nixosNginxCst
+          - nixosNginxCustomModules
+          - nixosNginxDeps
+          - nixosNginxHealthcheck
+          - nixosNginxNonroot
+          - nixosNginxPerf
+          - nixosNginxReverseProxy
+          - nixosNginxStaticSite
+          - nixosNginxSyspackages
+          - nixosPostgres
+          - nixosPostgresExtensions
+          - nixosPostgresHealthcheck
+          - nixosRedisCst
+          - nixosRedisHealthcheck
+          - nixosRedisPerf
+          - withRootUserAndPackage
+          - write-shell-application
+          - write-shell-script-bin
+    timeout-minutes: 45
+  check-bdd-vm:
+    needs:
+      - lint
+      - eval
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+      - name: Cache Nix store
+        uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Build bdd-vm
+        run: nix build .#checks.x86_64-linux.bdd-vm --print-build-logs
     timeout-minutes: 60
   eval:
     runs-on: ubuntu-latest
