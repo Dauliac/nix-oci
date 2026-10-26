@@ -23,7 +23,7 @@ tasks:
       - task: test:e2e
   test:check:
     desc: Run all hermetic nix flake checks (via nom). Includes BDD via checks.bdd-{vm,apps}.
-    deps: ['test:fmt']
+    deps: ["test:fmt"]
     cmds:
       - nix flake check -L 2>&1 | nom
   test:unit:
@@ -62,7 +62,7 @@ tasks:
       - nix build .#legacyPackages.x86_64-linux.docs --out-link result-docs
   docs:serve:
     desc: Build and serve the nix-oci documentation site locally
-    deps: ['docs:build']
+    deps: ["docs:build"]
     cmds:
       - |
         echo "Serving docs at http://localhost:8000"
@@ -74,7 +74,7 @@ tasks:
       - nix build --out-link ../../result-flake-parts-website
   flake-parts-website:serve:
     desc: Build and serve the flake.parts website locally
-    deps: ['flake-parts-website:build']
+    deps: ["flake-parts-website:build"]
     cmds:
       - |
         echo "Serving flake.parts website at http://localhost:8001"
@@ -98,3 +98,9 @@ tasks:
     desc: Dry-run the CI workflow with act (list jobs without executing)
     cmds:
       - act push --workflows .github/workflows/ci.yml --list
+  init:
+    desc: Setup lefthook git hooks
+    sources:
+      - ./lefthook.yaml
+    cmds:
+      - lefthook install --force

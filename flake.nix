@@ -173,10 +173,11 @@
                       regclient
                       act
                       vale
+                      go-task
                     ]
                     ++ config.oci.internal.packages;
                   shellHook = ''
-                    ${pkgs.lefthook}/bin/lefthook install --force
+                    ${pkgs.go-task}/bin/task init
                   '';
                 };
               };

@@ -4,6 +4,7 @@ __pycache__/
 .direnv
 .ezci/
 .cimera/
+.task/
 tests/.claude/
 # Claude Code local caches (worktrees, scratch, scheduled tasks).
 # Already-tracked files under .claude/ (opsx commands, openspec skills) are
@@ -13,3 +14,4 @@ flake-parts-website-preview/
 # Vale downloaded style packages (synced via `vale sync`)
 .vale/styles/*/
 !.vale/styles/config/
+/tmp/
