@@ -21,7 +21,7 @@ from `package.meta` and container configuration whenever
   `.licenses`, `.url`, `.authors`, `.documentation` and
   `.base.name = "scratch"`
 
-#### Scenario: autoLabels disabled
+#### Scenario: `autoLabels` disabled
 - **WHEN** `autoLabels = false` on a container
 - **THEN** `mkAutoLabels` returns an empty attrset and no
   `org.opencontainers.image.*` annotations are added by the
@@ -88,7 +88,7 @@ from the hardening configuration, and SHALL emit it only when
 
 #### Scenario: Baseline level
 - **WHEN** `hardening.enable = true` and any restricted-level
-  precondition is not met
+  precondition isn't met
 - **THEN** `kubernetes.pod-security-standard = "baseline"`
 
 ### Requirement: Kubernetes SecurityContext hints
@@ -153,7 +153,7 @@ derived from the container's main package and its declared
 - **THEN** the Labels attrset contains no `nix.deps` key and no
   `nix.dependency-count` key
 
-#### Scenario: Missing meta fields do not fail
+#### Scenario: Missing meta fields don't fail
 - **WHEN** an element of `dependencies` lacks `meta.description`
 - **THEN** its object in `nix.deps` still contains `pname` and
   `version`, and `description` is either absent or an empty string;

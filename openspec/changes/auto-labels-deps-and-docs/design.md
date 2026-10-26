@@ -31,7 +31,7 @@ also enumerates labels and must stay consistent.
 **Non-Goals**
 - Enumerating the transitive Nix closure. The SBOM pipeline
   (`nix/modules/oci/security/sbom/`) is the canonical place for the
-  full closure and this change deliberately does not compete with it.
+  full closure and this change deliberately doesn't compete with it.
 - Adding `org.opencontainers.image.source` and `.revision`. Those
   require flake `self.rev` threading and are already documented as
   user-supplied.

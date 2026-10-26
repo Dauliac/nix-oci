@@ -23,7 +23,7 @@ add it, and the existing `provenance.*` group is documented under
   deterministic because the input is a Nix list.
 - Unit tests in `nix/modules/oci/lib/mkAutoLabels.nix` gain two
   assertions: the new label is present with the expected JSON when
-  `dependencies` is non-empty, and it is absent when `dependencies` is
+  `dependencies` is non-empty, and it's absent when `dependencies` is
   empty.
 - `docs/content/architecture/automatic-labeling.md` is rewritten so
   that every label `mkAutoLabels` emits appears in exactly one row of a
@@ -72,7 +72,7 @@ add it, and the existing `provenance.*` group is documented under
 - **SBOM overlap**: this label is a summary of the user-declared
   direct dependencies (the `oci.dependencies` list), not the transitive
   Nix closure. It complements the existing syft-backed SBOM pipeline
-  under `nix/modules/oci/security/sbom/` and does not attempt to
+  under `nix/modules/oci/security/sbom/` and doesn't attempt to
   replace it.
 - **Reproducibility**: preserved. No timestamps, no impure inputs;
   output is a pure function of `package.meta` and `dependencies[].meta`.
