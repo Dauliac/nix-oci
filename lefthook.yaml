@@ -17,27 +17,59 @@ commit-msg:
       tags: check commit typos
       run: cat "{1}" | head -n 1 | typos -
 pre-commit:
+  # Fast gates only. Mirrors the CI "lint" + "eval" shift-left jobs
+  # so a commit that would fail CI in minute 1 fails locally in
+  # seconds. The 30+ minute VM/BDD matrix (CI "check") is moved to
+  # pre-push so it only runs once per push instead of once per
+  # commit.
   parallel: true
   commands:
     formatter:
+      # Format in place and re-stage so the diff a reviewer sees
+      # matches what CI's treefmt check will enforce.
       tags: formatter
       run: nix fmt
       stage_fixed: true
-    show:
-      tags: show
-      run: nix flake show
-    checks:
-      tags: build checks
-      run: nix flake check --quiet
-    test:
-      tags: checks
+    eval:
+      # Pure-eval sanity: catches module system errors, broken
+      # apps, missing options. ~1 min cold, instant warm.
+      # Replaces the full `nix flake check --quiet` which was
+      # taking 8+ minutes building VMs on every commit.
+      tags: eval
+      run: nix flake show --all-systems > /dev/null
+    unit:
+      # Mirrors CI's "Run unit tests" step. Pure eval, no builds.
+      tags: eval test
       run: |
-        task test --verbose --output prefixed
+        set -euo pipefail
+        failures=$(nix eval .#tests --json --apply \
+          'ts: builtins.filter (n: (ts.${n}).expected != (ts.${n}).expr) (builtins.attrNames ts)')
+        if [ "$failures" != "[]" ]; then
+          echo "Failing unit tests:" >&2
+          echo "$failures" >&2
+          exit 1
+        fi
     vale:
-      # Fast Vale-only gate on staged markdown changes. `nix flake check`
-      # above also covers Vale but rebuilds every check; this hook is
-      # scoped to prose only so contributors get fast feedback on doc
-      # edits without running the VM/BDD suite.
+      # Scoped to staged markdown so prose-only commits get a fast
+      # local gate. See .vale.ini for the scope rules; drafts in
+      # openspec/changes/ are intentionally excluded.
       tags: lint docs
       glob: "*.md"
       run: nix build .#checks.x86_64-linux.lint-vale --print-build-logs
+    treefmt:
+      # Second line of defence after `formatter`: catches cases
+      # where auto-format cannot resolve a diff (e.g. generated
+      # workflows out of sync with nix/docs.nix).
+      tags: lint
+      run: nix build .#checks.x86_64-linux.treefmt --print-build-logs
+
+pre-push:
+  # Expensive matrix moves here. Running the full VM/BDD suite on
+  # every commit meant a 10-commit session paid for 10 passes of
+  # the same 30-min run. Deferring to push means one pass per
+  # push, mirroring what CI does.
+  parallel: false
+  commands:
+    checks:
+      tags: build checks vm
+      run: nix flake check --print-build-logs
