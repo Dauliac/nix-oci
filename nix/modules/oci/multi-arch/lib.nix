@@ -164,6 +164,11 @@ in
                 # Downstream CI can assert the right number of pushed
                 # tags by counting `NIX_OCI_PUSHED_TAG` lines.
                 echo "NIX_OCI_PUSHED_TAG ref=$PRIMARY_REF digest=$DIGEST tag=${primaryTag} primary=true"
+                # Authoritative single-line digest marker consumed by
+                # the oci-attach-referrer-substrate. The multi-arch
+                # index digest IS the correct subject for referrer
+                # attach; per-arch temp tags are not valid subjects.
+                echo "NIX_OCI_PUSHED_DIGEST=$DIGEST"
                 # Legacy marker kept for backwards compatibility with
                 # older consumers. Can be dropped once all parsers
                 # migrate to NIX_OCI_PUSHED_TAG / NIX_OCI_PUSHED.

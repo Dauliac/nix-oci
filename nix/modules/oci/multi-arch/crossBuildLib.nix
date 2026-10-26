@@ -218,6 +218,8 @@ in
                 DIGEST="sha256:$DIGEST"
                 echo "==> Pushed: $PRIMARY_REF (digest: $DIGEST)"
                 echo "NIX_OCI_PUSHED_TAG ref=$PRIMARY_REF digest=$DIGEST tag=${primaryTag} primary=true"
+                # Authoritative digest marker for oci-attach-referrer-substrate.
+                echo "NIX_OCI_PUSHED_DIGEST=$DIGEST"
                 ${lib.concatMapStrings (tag: ''
                   echo "==> Tagging additional: ${tag}"
                   regctl image copy "$PRIMARY_REF" "$BASE_NAME:${tag}"

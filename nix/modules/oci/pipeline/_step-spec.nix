@@ -41,8 +41,15 @@ types.submodule {
         "license"
         "push"
         "credentials"
+        "provenance"
       ];
-      description = "Tool category for documentation and grouping.";
+      description = ''
+        Tool category for documentation and grouping.
+
+        `"provenance"` covers post-push referrer attach steps (SLSA,
+        VEX, SCAI, sigstore bundles, in-toto Statements), all of
+        which share the `oci-attach-referrer-substrate` machinery.
+      '';
     };
 
     backend = mkOption {

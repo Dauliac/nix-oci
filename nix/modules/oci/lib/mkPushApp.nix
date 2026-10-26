@@ -13,6 +13,8 @@
 #   OCI_DIR              → if set, push to local ocidir:// instead
 # Output contract:
 #   "NIX_OCI_PUSHED_TAG ref=<full-ref> digest=<digest> tag=<tag> primary=<bool>"
+#   For the primary tag additionally:
+#   "NIX_OCI_PUSHED_DIGEST=<sha256:...>"        (consumed by oci-attach-referrer-substrate)
 # fired on stdout -- downstream consumers grep for this marker.
 { lib, ... }:
 {
@@ -100,6 +102,9 @@
               if [ -n "$LOCAL_DIGEST" ] && [ "$LOCAL_DIGEST" = "$REMOTE_DIGEST" ]; then
                 echo "[${appName}] image unchanged (digest=$LOCAL_DIGEST) -- skipping push"
                 echo "NIX_OCI_PUSHED_TAG ref=$REF digest=$LOCAL_DIGEST tag=${tag} primary=${primaryLiteral}"
+                ${lib.optionalString tagConfig.primary ''
+                  echo "NIX_OCI_PUSHED_DIGEST=$LOCAL_DIGEST"
+                ''}
               else
                 echo "[${appName}] pushing ${containerId} -> $REF"
 
@@ -110,6 +115,9 @@
 
                 echo "[${appName}] pushed $REF@$DIGEST"
                 echo "NIX_OCI_PUSHED_TAG ref=$REF digest=$DIGEST tag=${tag} primary=${primaryLiteral}"
+                ${lib.optionalString tagConfig.primary ''
+                  echo "NIX_OCI_PUSHED_DIGEST=$DIGEST"
+                ''}
               fi
             '';
           };

@@ -17,6 +17,9 @@
 # Output contract:
 #   "NIX_OCI_PUSHED_TAG ref=<full-ref> digest=<digest> tag=<tag> primary=<bool>"
 #   emitted on stdout for each tag -- downstream consumers grep for this.
+#   After the primary push, additionally:
+#   "NIX_OCI_PUSHED_DIGEST=<sha256:...>"
+#   consumed by the oci-attach-referrer-substrate for referrer subject binding.
 { ... }:
 {
   config.perSystem =
@@ -156,6 +159,12 @@
                     echo "[${appName}] pushed $BASE_REF:${primaryTag}@$DIGEST"
                     echo "NIX_OCI_PUSHED_TAG ref=$BASE_REF:${primaryTag} digest=$DIGEST tag=${primaryTag} primary=true"
                   fi
+
+                  # Emit the simple digest marker consumed by the
+                  # oci-attach-referrer-substrate. All additional tags
+                  # point at the same digest by construction (registry
+                  # side copies), so a single line is authoritative.
+                  echo "NIX_OCI_PUSHED_DIGEST=$DIGEST"
 
                   # Step 2: Create additional tags via registry-side copy (skip if already correct).
                   ${lib.concatMapStrings mkAdditionalTagScript additionalTags}
