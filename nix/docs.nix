@@ -711,9 +711,21 @@ in
         githubActions = {
           enable = true;
 
-          # CI: run all checks on PRs and main pushes.
-          # Docs-only PRs skip the VM/BDD suite via pathsIgnore. Main pushes
-          # always run the full check so protected-branch history stays green.
+          # CI: shift-left pipeline. Cheap gates fail-fast before the
+          # expensive VM/BDD suite runs so broken MRs do not burn
+          # 30+ minutes of runner time.
+          #
+          #   lint      -> Vale + treefmt (~1 min, cold)
+          #   eval      -> unit tests + flake eval  (~2 min, cold)
+          #   check     -> full `nix flake check`  (~30+ min, VMs/BDD)
+          #
+          # `check` requires `lint` and `eval` to succeed. A single
+          # typo in a comment no longer costs a VM pass; a broken
+          # flake eval no longer waits for 44 BDD derivations.
+          #
+          # Docs-only PRs skip the VM/BDD suite via pathsIgnore. Main
+          # pushes always run the full matrix so protected-branch
+          # history stays green.
           workflows.ci = {
             name = "CI";
 
@@ -733,43 +745,117 @@ in
               cancelInProgress = true;
             };
 
-            jobs.check = {
-              runsOn = "ubuntu-latest";
-              steps = [
-                {
-                  name = "Checkout";
-                  uses = "actions/checkout@v4";
-                }
-                {
-                  name = "Install Nix";
-                  uses = "DeterminateSystems/nix-installer-action@main";
-                }
-                {
-                  name = "Cache Nix store";
-                  uses = "DeterminateSystems/magic-nix-cache-action@main";
-                }
-                {
-                  # Pure-eval nix-lib unit tests exposed under `flake.tests`.
-                  # These are `{ expected, expr }` records; `nix flake check`
-                  # does not exercise them, so we compare them here directly.
-                  name = "Run unit tests";
-                  run = ''
-                    set -euo pipefail
-                    failures=$(nix eval .#tests --json --apply \
-                      'ts: builtins.filter (n: (ts.''${n}).expected != (ts.''${n}).expr) (builtins.attrNames ts)')
-                    if [ "$failures" != "[]" ]; then
-                      echo "Failing unit tests:"
-                      echo "$failures"
-                      exit 1
-                    fi
-                    echo "All unit tests pass."
-                  '';
-                }
-                {
-                  name = "Check flake";
-                  run = "nix flake check --print-build-logs";
-                }
-              ];
+            jobs = {
+              # Fast prose + formatting gate. Fails on Vale errors,
+              # treefmt diffs, or any other `fmt-check` output.
+              # Finishes in ~1 minute on a warm cache.
+              lint = {
+                runsOn = "ubuntu-latest";
+                timeoutMinutes = 15;
+                steps = [
+                  {
+                    name = "Checkout";
+                    uses = "actions/checkout@v4";
+                  }
+                  {
+                    name = "Install Nix";
+                    uses = "DeterminateSystems/nix-installer-action@main";
+                  }
+                  {
+                    name = "Cache Nix store";
+                    uses = "DeterminateSystems/magic-nix-cache-action@main";
+                  }
+                  {
+                    name = "Lint prose (Vale)";
+                    run = "nix build .#checks.x86_64-linux.lint-vale --print-build-logs";
+                  }
+                  {
+                    # treefmt is wired as a flake check; running it
+                    # here catches drift before the long check matrix.
+                    name = "Check formatting (treefmt)";
+                    run = "nix build .#checks.x86_64-linux.treefmt --print-build-logs";
+                  }
+                ];
+              };
+
+              # Pure-eval gate. Catches module system errors, unit
+              # test regressions, and broken flake outputs before any
+              # expensive derivation builds.
+              eval = {
+                runsOn = "ubuntu-latest";
+                timeoutMinutes = 20;
+                steps = [
+                  {
+                    name = "Checkout";
+                    uses = "actions/checkout@v4";
+                  }
+                  {
+                    name = "Install Nix";
+                    uses = "DeterminateSystems/nix-installer-action@main";
+                  }
+                  {
+                    name = "Cache Nix store";
+                    uses = "DeterminateSystems/magic-nix-cache-action@main";
+                  }
+                  {
+                    # Pure-eval nix-lib unit tests exposed under
+                    # `flake.tests`. These are `{ expected, expr }`
+                    # records; `nix flake check` does not exercise
+                    # them, so we compare them here directly.
+                    name = "Run unit tests";
+                    run = ''
+                      set -euo pipefail
+                      failures=$(nix eval .#tests --json --apply \
+                        'ts: builtins.filter (n: (ts.''${n}).expected != (ts.''${n}).expr) (builtins.attrNames ts)')
+                      if [ "$failures" != "[]" ]; then
+                        echo "Failing unit tests:"
+                        echo "$failures"
+                        exit 1
+                      fi
+                      echo "All unit tests pass."
+                    '';
+                  }
+                  {
+                    # Evaluate the flake without building derivations.
+                    # Catches eval errors across every output
+                    # (modules, apps, checks, packages) in ~1 minute
+                    # instead of the 30+ minutes a full check takes.
+                    name = "Evaluate flake outputs";
+                    run = "nix flake show --all-systems > /dev/null";
+                  }
+                ];
+              };
+
+              # The slow matrix. Only runs when lint + eval pass.
+              # `timeoutMinutes: 60` is a safety cap - the per-container
+              # BDD fan-out spreads load across derivations and the
+              # magic-nix-cache usually keeps us under 30 min.
+              check = {
+                runsOn = "ubuntu-latest";
+                needs = [
+                  "lint"
+                  "eval"
+                ];
+                timeoutMinutes = 60;
+                steps = [
+                  {
+                    name = "Checkout";
+                    uses = "actions/checkout@v4";
+                  }
+                  {
+                    name = "Install Nix";
+                    uses = "DeterminateSystems/nix-installer-action@main";
+                  }
+                  {
+                    name = "Cache Nix store";
+                    uses = "DeterminateSystems/magic-nix-cache-action@main";
+                  }
+                  {
+                    name = "Check flake";
+                    run = "nix flake check --print-build-logs";
+                  }
+                ];
+              };
             };
           };
 
