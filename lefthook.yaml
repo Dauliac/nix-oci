@@ -62,7 +62,6 @@ pre-commit:
       # workflows out of sync with nix/docs.nix).
       tags: lint
       run: nix build .#checks.x86_64-linux.treefmt --print-build-logs
-
 pre-push:
   # Expensive matrix moves here. Running the full VM/BDD suite on
   # every commit meant a 10-commit session paid for 10 passes of
