@@ -29,7 +29,10 @@
           (lib.fileset.maybeMissing (repoRoot + "/CHANGELOG.md"))
           (lib.fileset.maybeMissing (repoRoot + "/CONTRIBUTING.md"))
           (lib.fileset.fileFilter (f: f.hasExt "md") (repoRoot + "/docs/content"))
-          (lib.fileset.fileFilter (f: f.hasExt "md") (repoRoot + "/openspec"))
+          # Only lint archived specs, not in-flight drafts in
+          # openspec/changes/ or exploration material in
+          # openspec/exploration/. See .vale.ini for rationale.
+          (lib.fileset.fileFilter (f: f.hasExt "md") (repoRoot + "/openspec/specs"))
           (lib.fileset.maybeMissing (repoRoot + "/plan"))
         ];
       };
