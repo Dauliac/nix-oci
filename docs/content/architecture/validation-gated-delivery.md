@@ -123,7 +123,7 @@ flowchart LR
 | `nix:` → `docker://` | [Distribution Spec](https://github.com/opencontainers/distribution-spec) push API | `oci-push-*` |
 | `nix:` → `docker-daemon:` | Docker Engine API (local) | `oci-load-docker-*` |
 | `nix:` → `containers-storage:` | containers/storage library | `oci-load-podman-*` |
-| [`mkTransientArchive`](../reference/nix-lib.html#mktransientarchive) | [Image Layout](https://github.com/opencontainers/image-spec/blob/main/image-layout.md) (ephemeral) | Pure checks only |
+| [`mkTransientArchive`](../reference/nix-lib.html#oci-mkTransientArchive) | [Image Layout](https://github.com/opencontainers/image-spec/blob/main/image-layout.md) (ephemeral) | Pure checks only |
 
 Every arrow streams or creates transient data. No tarball ever lands
 in the Nix store.

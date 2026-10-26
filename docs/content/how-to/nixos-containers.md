@@ -53,9 +53,9 @@ for the full step registry.
 
 ### CVE, SBOM, credentials, tests
 
-Enable in your container config (see [`cve.*`](../reference/flake-parts-options.html),
-[`sbom.*`](../reference/flake-parts-options.html), [`credentialsLeak.*`](../reference/flake-parts-options.html),
-and [`test.*`](../reference/flake-parts-options.html) in the option reference):
+Enable in your container config (see [`cve.*`](../reference/flake-parts-options.html#cveconfigpath),
+[`sbom.*`](../reference/flake-parts-options.html#sbompath), [`credentialsLeak.*`](../reference/flake-parts-options.html#credentialsleakconfigpath),
+and [`test.*`](../reference/flake-parts-options.html#testcdkenabled) in the option reference):
 
 ```nix
 oci.containers.<name> = {
@@ -96,7 +96,7 @@ oci.containers.my-app = {
 };
 ```
 
-See [`flavours`](../reference/flake-parts-options.html) in the flake-parts option reference.
+See [`flavours`](../reference/flake-parts-options.html#flavours) in the flake-parts option reference.
 
 ```bash
 # Build the debug variant
@@ -122,7 +122,7 @@ oci.containers.my-app = {
 
 `multiArch.enabled` is computed automatically from `multiArch.systems`
 (non-empty list turns it on); it's read-only and can't be set directly.
-See [`multiArch`](../reference/flake-parts-options.html) in the flake-parts
+See [`multiArch`](../reference/flake-parts-options.html#multiarchenabled) in the flake-parts
 option reference.
 
 ```bash

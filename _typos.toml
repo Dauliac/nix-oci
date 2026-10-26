@@ -1,2 +1,5 @@
+[default.extend-words]
+passt = "passt"
+
 [files]
 extend-exclude = ["docs/flake-parts-website/"]

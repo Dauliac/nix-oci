@@ -16,9 +16,9 @@ Each topic has its own detailed page:
 - [Security defaults](../security/security-defaults.html): non-root by default, distroless by construction, security tooling, bit-for-bit reproducibility
 - [Automatic OCI labels](./automatic-labeling.md): OCI standard annotations, build metadata, hardening hints, Kubernetes SecurityContext/PSS, network ports, Nix identity, nixpkgs security
 - [Automatic metadata derivation](./automatic-metadata.md): healthchecks, stop signals, working directories, volume declarations from NixOS services
-- **Multi-architecture images** (dedicated page planned): CI-parallel native builds or single-machine cross-compilation for multi-arch OCI manifests. See [`multiArch`](../reference/flake-parts-options.html) in the option reference until then.
+- **Multi-architecture images** (dedicated page planned): CI-parallel native builds or single-machine cross-compilation for multi-arch OCI manifests. See [`multiArch`](../reference/flake-parts-options.html#multiarchenabled) in the option reference until then.
 - [OCI standards compliance](./oci-standards-compliance.md): layer changesets, media types, file attributes, image configuration, and how nix-oci aligns with the OCI image specification
-- **NixOS and home-manager in containers** (dedicated page planned): why NixOS module evaluation and home-manager dotfiles produce declarative, introspectable, comfortable containers. See [`nixosConfig`](../reference/flake-parts-options.html) and [`homeConfig`](../reference/flake-parts-options.html) in the option reference until then.
+- **NixOS and home-manager in containers** (dedicated page planned): why NixOS module evaluation and home-manager dotfiles produce declarative, introspectable, comfortable containers. See [`nixosConfig`](../reference/flake-parts-options.html#nixosconfigmodules) and [`homeConfig`](../reference/flake-parts-options.html#homeconfigmodules) in the option reference until then.
 - **Container sandbox** (dedicated page planned): rootless, isolated shell into any container's filesystem using bubblewrap. Wired as the `oci-sandbox-<name>` flake app.
 
 The rest of this page covers the remaining design choices that don't
@@ -27,7 +27,7 @@ warrant a full page.
 ## FHS-structured root filesystem
 
 Container root filesystems follow the [Filesystem Hierarchy Standard](https://refspecs.linuxfoundation.org/FHS_3.0/fhs-3.0.html)
-layout. The [`mkRoot`](../reference/nix-lib.html#mkroot) function uses `pkgs.buildEnv` with
+layout. The [`mkRoot`](../reference/nix-lib.html#flake-oci-mkRoot) function uses `pkgs.buildEnv` with
 `pathsToLink = ["/bin" "/lib" "/etc"]` to assemble a conventional
 directory tree.
 
@@ -63,7 +63,7 @@ specified manually:
 
 1. `package.version` (preferred)
 2. Base image tag (when using `fromImage`)
-3. Fallback (see [`tag`](../reference/flake-parts-options.html) option reference)
+3. Fallback (see [`tag`](../reference/flake-parts-options.html#ocicontainersnametag) option reference)
 
 ### Why it matters
 
@@ -175,18 +175,18 @@ ensuring they're reproducible across machines and CI environments.
 
 | Option | Rationale |
 |---|---|
-| [`isRoot`](../reference/flake-parts-options.html) | Security (build) vs. pragmatism ([deploy](../reference/nixos-options.html)) |
-| [`optimizeLayers`](../reference/flake-parts-options.html) | Speed (build) vs. efficiency ([deploy](../reference/nixos-options.html)) |
-| [`layerStrategy`](../reference/flake-parts-options.html) | Maximum cross-image sharing |
-| [`user`](../reference/flake-parts-options.html) | Overridden by `isRoot` logic |
-| [`tag`](../reference/flake-parts-options.html) | Overridden by package version |
-| [`entrypoint`](../reference/flake-parts-options.html) | Autoderived from package |
-| [`autoStart`](../reference/nixos-options.html) | Load image only; explicit opt-in to run |
-| [`healthcheck`](../reference/flake-parts-options.html) | Service adapters derive from NixOS config |
-| [`stopSignal`](../reference/flake-parts-options.html) | Correct graceful shutdown per service |
-| [`workingDir`](../reference/flake-parts-options.html) | systemd -> dataDir -> home |
-| [`declaredVolumes`](../reference/flake-parts-options.html) | systemd StateDirectory/RuntimeDirectory |
-| [`autoLabels`](../reference/flake-parts-options.html) | Self-describing images |
+| [`isRoot`](../reference/flake-parts-options.html#ocicontainersnameisroot) | Security (build) vs. pragmatism ([deploy](../reference/nixos-options.html)) |
+| [`optimizeLayers`](../reference/flake-parts-options.html#ocicontainersnameoptimizelayers) | Speed (build) vs. efficiency ([deploy](../reference/nixos-options.html)) |
+| [`layerStrategy`](../reference/flake-parts-options.html#ocicontainersnamelayerstrategy) | Maximum cross-image sharing |
+| [`user`](../reference/flake-parts-options.html#ocicontainersnameuser) | Overridden by `isRoot` logic |
+| [`tag`](../reference/flake-parts-options.html#ocicontainersnametag) | Overridden by package version |
+| [`entrypoint`](../reference/flake-parts-options.html#ocicontainersnameentrypoint) | Autoderived from package |
+| [`autoStart`](../reference/nixos-options.html#ocicontainersnameautostart) | Load image only; explicit opt-in to run |
+| [`healthcheck`](../reference/flake-parts-options.html#ocicontainersnamehealthchecktimeout) | Service adapters derive from NixOS config |
+| [`stopSignal`](../reference/flake-parts-options.html#ocicontainersnamestopsignal) | Correct graceful shutdown per service |
+| [`workingDir`](../reference/flake-parts-options.html#ocicontainersnameworkingdir) | systemd -> dataDir -> home |
+| [`declaredVolumes`](../reference/flake-parts-options.html#ocicontainersnamedeclaredvolumes) | systemd StateDirectory/RuntimeDirectory |
+| [`autoLabels`](../reference/flake-parts-options.html#ocicontainersnameautolabels) | Self-describing images |
 | CA certificates | TLS works out of the box |
 
 See the [flake-parts](../reference/flake-parts-options.html),

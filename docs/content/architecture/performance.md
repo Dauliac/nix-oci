@@ -6,7 +6,7 @@ description = "How nix-oci optimises container runtime performance with memory a
 # Performance tuning
 
 nix-oci exposes a set of per-container options under
-[`performance.*`](../reference/flake-parts-options.html) that let you
+[`performance.*`](../reference/flake-parts-options.html#performanceenable) that let you
 trade generality for speed without leaving the Nix module system.
 All tuning is **opt-in**, set `performance.enable = true` to activate
 the subsystem, then pick the knobs you need.
@@ -293,5 +293,5 @@ oci.containers.my-api = {
 - [Automatic labeling](automatic-labeling.html): how labels encode the performance profile
 - [Archive-less container building](archive-less-container-building.html): how nix2container avoids tar overhead
 - [Security defaults](../security/security-defaults.html): how security and performance defaults interact
-- [`performance.*` option reference](../reference/flake-parts-options.html): full option specification
+- [`performance.*` option reference](../reference/flake-parts-options.html#performanceenable): full option specification
 - [NixOS Wiki: Build flags](https://wiki.nixos.org/wiki/Build_flags): how to set `-march` and LTO at the package level

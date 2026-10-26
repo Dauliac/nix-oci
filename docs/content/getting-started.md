@@ -45,7 +45,7 @@ The fastest way to get started is the template:
 }
 ```
 
-See [`oci.containers.<name>`](./reference/flake-parts-options.html) in the flake-parts option reference.
+See [`oci.containers.<name>`](./reference/flake-parts-options.html#ocicontainers) in the flake-parts option reference.
 
 ### How it works
 
@@ -119,7 +119,7 @@ Add the NixOS module to your system configuration:
 }
 ```
 
-See [`oci.containers.<name>`](./reference/nixos-options.html) in the NixOS option reference.
+See [`oci.containers.<name>`](./reference/nixos-options.html#ocicontainers) in the NixOS option reference.
 
 ### How it works
 
@@ -170,7 +170,7 @@ profile (no kernel, no getty, no full systemd stack) and extracts three things:
 
 A single Nix expression drives everything, so you get NixOS ergonomics
 (`services.nginx.enable = true`) without writing a Dockerfile. See
-[`nixosConfig`](./reference/flake-parts-options.html) in the container module option reference.
+[`nixosConfig`](./reference/flake-parts-options.html#nixosconfigmodules) in the container module option reference.
 
 ::: {.tip}
 The service adapter for nginx autoinjects a healthcheck endpoint, a stop
@@ -188,7 +188,7 @@ get pre-extracted at lock time so evaluation stays pure (no IFD):
 ::: {.warning}
 Commit the base image identity files to your repository.
 Run the lock command first to extract them; see the
-[`fromImage` reference](./reference/flake-parts-options.html) for details.
+[`fromImage` reference](./reference/flake-parts-options.html#fromimageenabled) for details.
 :::
 
 ```nix
@@ -240,7 +240,7 @@ perSystem = { ... }: {
 };
 ```
 
-See [`homeManager`](./reference/flake-parts-options.html) in the container module option reference.
+See [`homeManager`](./reference/flake-parts-options.html#ocicontainersnamehomemanagerflake) in the container module option reference.
 
 ### How it works
 
@@ -273,7 +273,7 @@ perSystem = { ... }: {
 
 See [Hardening](./security/hardening.html),
 [Security defaults](./security/security-defaults.html), and
-[`hardening.*`](./reference/flake-parts-options.html) in the option reference for details.
+[`hardening.*`](./reference/flake-parts-options.html#hardeningenable) in the option reference for details.
 
 ### How it works
 
@@ -311,7 +311,7 @@ perSystem = { ... }: {
 };
 ```
 
-See [`performance.*`](./reference/flake-parts-options.html) in the option reference
+See [`performance.*`](./reference/flake-parts-options.html#performanceenable) in the option reference
 and [Performance tuning](./architecture/performance.html) for details.
 
 ### How it works
@@ -421,7 +421,7 @@ Override `policy.conftest.policyDir` with your own Rego files to add
 organization-specific rules.
 
 See [Supply-chain security](./security/index.html)
-and [`cve.*`, `lint.*`, `policy.*`](./reference/flake-parts-options.html) in the option reference for the full set of security tools.
+and [`cve.*`, `lint.*`, `policy.*`](./reference/flake-parts-options.html#cveconfigpath) in the option reference for the full set of security tools.
 
 ## Next steps
 

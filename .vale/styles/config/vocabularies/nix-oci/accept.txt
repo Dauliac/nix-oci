@@ -413,3 +413,8 @@ passthru
 getty
 userland
 prefs
+GHCR
+boolean
+overengineering
+Diataxis
+autoLabels

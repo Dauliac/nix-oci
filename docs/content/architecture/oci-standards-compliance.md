@@ -24,10 +24,10 @@ The spec defines three layer media types:
 | Media type | Compression | nix-oci support |
 |---|---|---|
 | `application/vnd.oci.image.layer.v1.tar` | none | via nix2container |
-| `application/vnd.oci.image.layer.v1.tar+gzip` | gzip | see [`performance.compression`](../reference/flake-parts-options.html) |
+| `application/vnd.oci.image.layer.v1.tar+gzip` | gzip | see [`performance.compression`](../reference/flake-parts-options.html#ocicontainersnameperformancecompression) |
 | `application/vnd.oci.image.layer.v1.tar+zstd` | zstd | opt-in |
 
-nix-oci exposes a [`performance.compression`](../reference/flake-parts-options.html)
+nix-oci exposes a [`performance.compression`](../reference/flake-parts-options.html#ocicontainersnameperformancecompression)
 option to choose between gzip (universal compatibility) and zstd (faster, smaller).
 Skopeo applies compression at transport time; nix2container
 builds layer descriptions as JSON and materializes tarballs on-the-fly.
@@ -73,7 +73,7 @@ The spec uses relative paths in layer tar examples (`etc/passwd`, not
 layer tars. For the primary push path (skopeo to a registry), runtimes
 accept both forms.
 
-For the Docker archive path (`docker load`), the [`mkDockerArchive`](../reference/nix-lib.html#mkdockerarchive)
+For the Docker archive path (`docker load`), the [`mkDockerArchive`](../reference/nix-lib.html#oci-mkDockerArchive)
 function rewrites paths using Python's `tarfile` module, which
 preserves all tar metadata (uid, gid, mode, xattrs, hardlinks, device
 nodes) while stripping leading slashes. This avoids the metadata loss
@@ -88,7 +88,7 @@ for file paths. nix-oci satisfies this through two mechanisms:
    package outputs into a single directory tree, resolving collisions
    before nix-oci produces any tar.
 2. **nix2container store-path model**: each Nix store path appears
-   exactly once in the layer description. The [`foldImageLayers`](../reference/nix-lib.html#foldimagelayers) function
+   exactly once in the layer description. The [`foldImageLayers`](../reference/nix-lib.html#oci-foldImageLayers) function
    chains layers so each one excludes paths already present in prior
    layers.
 
@@ -96,7 +96,7 @@ for file paths. nix-oci satisfies this through two mechanisms:
 
 The spec stores hardlinks as tar entries with type `1`. Since Nix store
 paths are immutable and content-addressed, nix2container's tar generation
-preserves hardlinks within store paths. The [`mkDockerArchive`](../reference/nix-lib.html#mkdockerarchive)
+preserves hardlinks within store paths. The [`mkDockerArchive`](../reference/nix-lib.html#oci-mkDockerArchive)
 rewriter also preserves hardlink entries (the `TarInfo` object carries
 the link type and target through unchanged).
 
@@ -130,7 +130,7 @@ nix-oci orders layers from most stable (dependencies) to least stable
 layers change infrequently, upper layers change with each release.
 This maximizes registry-level deduplication and minimizes pull sizes.
 
-The [`foldImageLayers`](../reference/nix-lib.html#foldimagelayers) function implements **fold-based cross-layer
+The [`foldImageLayers`](../reference/nix-lib.html#oci-foldImageLayers) function implements **fold-based cross-layer
 deduplication**: it builds each layer with `layers = priorLayers`, so
 nix2container automatically excludes store paths already present in
 earlier layers. The result is zero duplicated store paths across the
@@ -185,7 +185,7 @@ org.opencontainers.image.base.name
 ```
 
 nix-oci derives these automatically from `package.meta` when you enable
-[`autoLabels`](../reference/flake-parts-options.html).
+[`autoLabels`](../reference/flake-parts-options.html#ocicontainersnameautolabels).
 See [Automatic labeling](./automatic-labeling.md) for the full label taxonomy.
 
 ## Compression and transport

@@ -73,7 +73,7 @@ The behavioral coverage tier adds eight typed helpers under `assertions.*`:
 | [`dnsResolutionFails`](./nix-lib-testing.html#dnsresolutionfails) | `getaddrinfo` fails for a given hostname. |
 | [`tlsHandshakeFails`](./nix-lib-testing.html#tlshandshakefails) | HTTPS to a URL fails with a cert-verification error. |
 | [`envVarSet`](./nix-lib-testing.html#envvarset) | An env var in `/proc/1/environ` matches an exact value or regex. |
-| [`sociZtocPresent`](./nix-lib-testing.html#soci-ztoc-present) | A SOCI v2 zTOC referrer manifest exists for a pushed image. |
+| [`sociZtocPresent`](./nix-lib-testing.html#sociztocpresent) | A SOCI v2 zTOC referrer manifest exists for a pushed image. |
 | [`manifestDigestMatches`](./nix-lib-testing.html#manifestdigestmatches) | Two builds of a container produce identical manifest digests. |
 | [`firewallPortOpen`](./nix-lib-testing.html#firewallportopen) | The NixOS firewall accepts a declared port on TCP or UDP. |
 

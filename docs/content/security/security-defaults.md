@@ -13,7 +13,7 @@ Kubernetes [Pod Security Standards](https://kubernetes.io/docs/concepts/security
 ## Non-root by default
 
 Containers built with nix-oci run as a **non-root user** by default
-(see [`isRoot`](../reference/flake-parts-options.html) option reference).
+(see [`isRoot`](../reference/flake-parts-options.html#ocicontainersnameisroot) option reference).
 When you disable `isRoot`, nix-oci creates a dedicated user entry in `/etc/passwd`
 with **UID 4000** and **GID 4000**, a deliberate choice that avoids
 collisions with both system UIDs (0-999) and typical human UIDs
@@ -50,7 +50,7 @@ entry exist. This ensures that:
 ### Deploy modules default to root
 
 The deploy modules (`modules.nixos.nix-oci`, `modules.homeManager.nix-oci`)
-override [`isRoot`](../reference/nixos-options.html) via `mkDefault`. This is a pragmatic choice:
+override [`isRoot`](../reference/nixos-options.html#ocicontainersnameisroot) via `mkDefault`. This is a pragmatic choice:
 deploy-time containers typically run system services (Caddy, Redis,
 dnsmasq) that may need to bind privileged ports or access host-mounted
 volumes. You should explicitly set `isRoot = false` once you
@@ -104,7 +104,7 @@ flavours.debug = {
 };
 ```
 
-See [`flavours`](../reference/flake-parts-options.html) in the option reference and
+See [`flavours`](../reference/flake-parts-options.html#flavours) in the option reference and
 [Archive-less container building](../architecture/archive-less-container-building.html) for how images
 sharing common dependencies benefit from registry-level deduplication.
 

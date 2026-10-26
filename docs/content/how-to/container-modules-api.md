@@ -59,7 +59,7 @@ oci.containers.my-nginx = {
 
 That's it. nix-oci evaluates the NixOS modules, extracts the nginx binary
 as the entrypoint, creates a non-root `nginx` user, and builds a minimal image.
-See [`nixosConfig`](../reference/flake-parts-options.html) in the container module option reference.
+See [`nixosConfig`](../reference/flake-parts-options.html#nixosconfigmodules) in the container module option reference.
 
 ## 3. Build and test
 
@@ -103,7 +103,7 @@ oci.containers.my-nginx = {
 ## 5. Run as root or non-root
 
 Containers run as a non-root user derived from the service name
-(see [`isRoot`](../reference/flake-parts-options.html) option reference).
+(see [`isRoot`](../reference/flake-parts-options.html#ocicontainersnameisroot) option reference).
 To run as root (required for some services like caddy that bind to port 80):
 
 ```nix
@@ -125,7 +125,7 @@ oci.containers.my-caddy = {
 
 ## 6. Add container structure tests
 
-Validate your container image with CST (see [`test.containerStructureTest`](../reference/flake-parts-options.html) in the option reference):
+Validate your container image with CST (see [`test.containerStructureTest`](../reference/flake-parts-options.html#ocicontainersnametestcontainerstructuretestenabled) in the option reference):
 
 ```nix
 oci.containers.my-nginx = {
@@ -156,7 +156,7 @@ nix run .#oci-container-structure-test-my-nginx
 
 ## 7. Push to a registry
 
-See [`registry`](../reference/flake-parts-options.html) in the option reference.
+See [`registry`](../reference/flake-parts-options.html#ocicontainersnameregistry) in the option reference.
 
 ```nix
 oci.containers.my-nginx = {

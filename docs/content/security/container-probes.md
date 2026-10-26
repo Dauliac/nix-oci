@@ -36,7 +36,7 @@ tools into the image, but that:
 
 ## The solution: `mkContainerProbe`
 
-nix-oci provides a shared [`mkContainerProbe`](../test-reference/nix-lib-testing.html#mkcontainerprobe) infrastructure
+nix-oci provides a shared [`mkContainerProbe`](../test-reference/nix-lib-testing.html#oci-mkContainerProbe) infrastructure
 (in `nix/modules/oci/testing/container-probe/lib.nix`) that
 **bind-mounts** tools from the Nix store into the container at test
 time. The production image is never modified.
@@ -68,7 +68,7 @@ tooling.
 
 ### Enable globally
 
-See [`oci.test.*`](../reference/flake-parts-options.html) in the flake-parts option reference.
+See [`oci.test.*`](../reference/flake-parts-options.html#ocicontainersnametestcdkenabled) in the flake-parts option reference.
 
 ```nix
 # All containers get all probes
@@ -119,8 +119,8 @@ Each probe has declarative `failPatterns` and `warnPatterns`:
 ### Hermetic mode
 
 Each probe also provides a [`mkCheck*`](../test-reference/nix-lib-testing.html) function that runs inside a
-NixOS VM via [`mkVMCheck`](../test-reference/nix-lib-testing.html#mkvmcheck)
-(or [`mkHermeticContainerProbe`](../test-reference/nix-lib-testing.html#mkhermeticcontainerprobe)).
+NixOS VM via [`mkVMCheck`](../test-reference/nix-lib-testing.html#oci-mkVMCheck)
+(or [`mkHermeticContainerProbe`](../test-reference/nix-lib-testing.html#oci-mkHermeticContainerProbe)).
 This makes probe results reproducible and cacheable:
 
 ```bash
@@ -132,7 +132,7 @@ Hermetic mode requires `extra-sandbox-paths = /sys/fs/cgroup` in
 
 ## Adding a new probe
 
-The [`mkContainerProbe`](../test-reference/nix-lib-testing.html#mkcontainerprobe) abstraction makes it straightforward to add
+The [`mkContainerProbe`](../test-reference/nix-lib-testing.html#oci-mkContainerProbe) abstraction makes it straightforward to add
 new tools. A new probe requires only declarative configuration:
 
 ```nix

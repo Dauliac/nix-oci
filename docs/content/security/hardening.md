@@ -86,7 +86,7 @@ oci.containers.my-app = {
 };
 ```
 
-Setting [`hardening.enable`](../reference/flake-parts-options.html)
+Setting [`hardening.enable`](../reference/flake-parts-options.html#ocicontainersnamehardeningenable)
 activates the full hardening stack with sensible defaults.
 Each sub-feature can be individually tuned. See the
 [flake-parts option reference](../reference/flake-parts-options.html)
@@ -102,7 +102,7 @@ Seccomp uses BPF programs to filter syscalls at the kernel boundary.
 
 ### Enforcement mode
 
-[`hardening.seccomp.mode`](../reference/flake-parts-options.html)
+[`hardening.seccomp.mode`](../reference/flake-parts-options.html#ocicontainersnamehardeningseccompmode)
 controls what happens when a process attempts a blocked syscall:
 
 | Mode | Action | Use case |
@@ -116,7 +116,7 @@ actually needs, then switch to `"enforce"` for production.
 ### Predefined profiles
 
 nix-oci ships five profiles via
-[`hardening.seccomp.profile`](../reference/flake-parts-options.html),
+[`hardening.seccomp.profile`](../reference/flake-parts-options.html#ocicontainersnamehardeningseccompprofile),
 each using a different filtering strategy:
 
 | Profile | Strategy | Syscalls | Best for |
@@ -201,7 +201,7 @@ oci.containers.my-app.nixosConfig = {
 ### Custom profiles
 
 For full control, provide an OCI runtime spec JSON file via
-[`hardening.seccomp.customProfileJson`](../reference/flake-parts-options.html):
+[`hardening.seccomp.customProfileJson`](../reference/flake-parts-options.html#ocicontainersnamehardeningseccompcustomprofilejson):
 
 ```nix
 hardening.seccomp.customProfileJson = ./my-seccomp-profile.json;
@@ -320,7 +320,7 @@ deny high-level *actions* (mount, ptrace, user namespaces).
 
 Linux capabilities split root's monolithic privilege into ~40
 distinct units. nix-oci defaults to dropping all capabilities via
-[`hardening.capabilities`](../reference/flake-parts-options.html):
+[`hardening.capabilities`](../reference/flake-parts-options.html#ocicontainersnamehardeningcapabilities):
 
 ```nix
 hardening.capabilities = {
@@ -352,7 +352,7 @@ Deploy modules translate these to `--cap-drop ALL --cap-add NET_BIND_SERVICE`.
 
 > **Verified by** [`_tests/hardening/rootfs.test.nix`](../../../nix/modules/oci/containers/_tests/hardening/rootfs.test.nix), `touch /new-file` from inside the container fails with `EROFS` when `readOnlyRootfs = true`.
 
-[`hardening.readOnlyRootfs`](../reference/flake-parts-options.html):
+[`hardening.readOnlyRootfs`](../reference/flake-parts-options.html#ocicontainersnamehardeningreadonlyrootfs):
 
 ```nix
 hardening.readOnlyRootfs = true;
@@ -373,7 +373,7 @@ Applications that need writable storage should use declared volumes
 
 > **Verified by** [`_tests/hardening/privileges.test.nix`](../../../nix/modules/oci/containers/_tests/hardening/privileges.test.nix), a setuid binary invoked inside the container reports the caller's UID (4000), not 0, when `noNewPrivileges = true`.
 
-[`hardening.noNewPrivileges`](../reference/flake-parts-options.html):
+[`hardening.noNewPrivileges`](../reference/flake-parts-options.html#ocicontainersnamehardeningnonewprivileges):
 
 ```nix
 hardening.noNewPrivileges = true;
@@ -419,7 +419,7 @@ vector.
 
 > **Verified by** [`_tests/hardening/dns.test.nix`](../../../nix/modules/oci/containers/_tests/hardening/dns.test.nix), a `getaddrinfo` probe inside the container exits nonzero when `disableDns = true` and succeeds when it's false.
 
-[`hardening.disableDns`](../reference/flake-parts-options.html):
+[`hardening.disableDns`](../reference/flake-parts-options.html#ocicontainersnamehardeningdisabledns):
 
 ```nix
 hardening.disableDns = true;
@@ -436,7 +436,7 @@ DNS at runtime, use `--dns=127.0.0.1` or network policies.
 
 > **Verified by** [`_tests/hardening/tls.test.nix`](../../../nix/modules/oci/containers/_tests/hardening/tls.test.nix), `curl https://www.google.com` inside the container reports a certificate-verification failure when `noTlsTrustStore = true`.
 
-[`hardening.noTlsTrustStore`](../reference/flake-parts-options.html):
+[`hardening.noTlsTrustStore`](../reference/flake-parts-options.html#ocicontainersnamehardeningnotlstruststore):
 
 ```nix
 hardening.noTlsTrustStore = true;
