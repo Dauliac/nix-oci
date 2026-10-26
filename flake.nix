@@ -109,16 +109,28 @@
                 # Lock files live at <project-root>/oci/.
                 oci.fromImageManifestRootPath = ./oci + "/";
 
-                # Expose the aggregated BDD checks. `xi check` from root
-                # builds these, running every runtime/deploy BDD spec in a
-                # single VM plus the flake-level app-build test.
+                # Expose BDD checks. `xi check` from root builds these:
+                #   - `bdd-vm`: single VM running every runtime/deploy BDD
+                #     spec + the registry push pipeline.
+                #   - `bdd-app-<containerId>`: one minimal VM per container,
+                #     loading only that container's oci-load-podman-* and
+                #     probe apps. Nix's build scheduler runs them in parallel
+                #     via `--max-jobs`; wall clock is `boot + max(per-container-load)`
+                #     instead of the old aggregate's `boot + sum(per-container-load)`
+                #     (which serialized ~44 apps at ~15 min each on cold storage).
+                # The old aggregate `bdd-apps` is intentionally omitted from
+                # root checks (see test-apps.nix comments): it still exists
+                # as `test.oci._bddAppsCheck` for anyone who wants the
+                # single-VM shape, but running it via `nix flake check` is
+                # never the right call because Nix cannot parallelize inside
+                # a single derivation.
                 checks =
                   lib.optionalAttrs (config.test.oci._bddVmCheck != null) {
                     bdd-vm = config.test.oci._bddVmCheck;
                   }
-                  // lib.optionalAttrs (config.test.oci._bddAppsCheck != null) {
-                    bdd-apps = config.test.oci._bddAppsCheck;
-                  };
+                  // lib.mapAttrs' (name: drv: lib.nameValuePair "bdd-app-${name}" drv) (
+                    config.test.oci._bddAppsChecks or { }
+                  );
 
                 # Opt-in multi-arch aggregate (design D8): NOT wired into
                 # `checks.<sys>.*` because `nix flake check` unconditionally

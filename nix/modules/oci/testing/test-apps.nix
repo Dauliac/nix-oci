@@ -17,6 +17,15 @@ let
   nixosTestModule = config.flake.modules.nixos.nix-oci-test or null;
 in
 {
+  imports = [
+    # Dendritic probe registry: one file per container-probe tool
+    # contributes its name to `oci.testing.knownProbes`, which this
+    # module iterates to synthesise probe apps. _probes/ is _-prefixed
+    # so import-tree does NOT auto-discover it; the import below is
+    # the single entry point.
+    ./_probes
+  ];
+
   options.perSystem = flake-parts-lib.mkPerSystemOption (
     { ... }:
     {
@@ -87,19 +96,31 @@ in
         && !(lib.hasPrefix "oci-load-docker-" n)
       ) (config.oci.flake.apps or { });
 
-      # ── Container-probe apps (amicontained / CDK / DEEPCE / linPEAS)
-      # Registered pipeline steps stay in the gate derivation; they do
-      # NOT surface as flake apps by default. For the VM smoke run we
-      # want each opted-in probe to run through the same
-      # nix-oci-app-* systemd oneshot machinery as the other apps, so
-      # we synthesize apps here from the same mkApp* library functions.
+      # ── Container-probe apps (dendritic discovery) ──────────
+      # The list of known probe names is contributed by sibling files
+      # under _probes/. Each probe name maps mechanically to:
+      #   mkAppFn     = ociLib.mkApp${Capitalized name}
+      #   enabledPath = [ "test" name "enabled" ]
+      # so adding a new probe is a one-file change under _probes/ plus
+      # the corresponding lib function and per-container option; no edit
+      # to this file. Pipeline steps register separately in the gate
+      # derivation; those do NOT surface as flake apps by default.
       ociLib = config.lib.oci or { };
       containersByName = config.oci.containers or { };
-      # Guard: only build probe apps when the ociLib functions are
-      # available AND the container has enabled the probe. `perSystemConfig`
-      # here is the current perSystem `config`.
+      knownProbes = lib.sort (a: b: a < b) (config.oci.testing.knownProbes or [ ]);
+
+      capitalize = s: (lib.toUpper (builtins.substring 0 1 s)) + (builtins.substring 1 (-1) s);
+
       mkProbeAppsFor =
-        probeName: mkFn: enabledPath:
+        probeName:
+        let
+          mkFn = ociLib."mkApp${capitalize probeName}" or null;
+          enabledPath = [
+            "test"
+            probeName
+            "enabled"
+          ];
+        in
         lib.optionalAttrs (mkFn != null) (
           lib.listToAttrs (
             lib.concatMap (
@@ -123,27 +144,8 @@ in
             ) (lib.attrNames containersByName)
           )
         );
-      probeApps =
-        (mkProbeAppsFor "amicontained" (ociLib.mkAppAmicontained or null) [
-          "test"
-          "amicontained"
-          "enabled"
-        ])
-        // (mkProbeAppsFor "cdk" (ociLib.mkAppCdk or null) [
-          "test"
-          "cdk"
-          "enabled"
-        ])
-        // (mkProbeAppsFor "deepce" (ociLib.mkAppDeepce or null) [
-          "test"
-          "deepce"
-          "enabled"
-        ])
-        // (mkProbeAppsFor "linpeas" (ociLib.mkAppLinpeas or null) [
-          "test"
-          "linpeas"
-          "enabled"
-        ]);
+
+      probeApps = lib.foldl' (acc: probeName: acc // (mkProbeAppsFor probeName)) { } knownProbes;
 
       allApps = baseApps // probeApps;
       hasApps = allApps != { };
@@ -159,36 +161,83 @@ in
       appsForContainer =
         containerId: lib.filterAttrs (name: _: lib.hasSuffix "-${containerId}" name) allApps;
 
+      # Default parallel strategy for the per-container smoke VMs.
+      # `wantedBy` wires every app oneshot into multi-user.target so
+      # systemd runs them concurrently and `wait_for_unit multi-user`
+      # blocks until all have reached active (RemainAfterExit). This is
+      # the fastest shape when loading many apps in one VM; for a
+      # one-app per-container VM it is semantically equivalent to
+      # sequential (and still cheaper, no driver round-trips).
+      defaultParallelStrategy = "wantedBy";
+
       # Shared node builder, parameterized on the app subset.
+      # Composition: imports the nix-oci + nix-oci-test NixOS modules
+      # (needed for `testing.appScripts` + `oci.enable`) alongside the
+      # dendritic `_app-vm` module that owns the option surface. Callers
+      # (per-container _tests files) can override any sizing / backend /
+      # strategy knob via standard module composition:
+      #
+      #   oci.testing.appVm.resources.memoryMiB = lib.mkOverride 50 3072;
+      #   oci.testing.appVm.parallelStrategy = lib.mkForce "sequential";
+      #
+      # without touching this builder.
       mkAppsNode =
-        apps:
+        {
+          apps,
+          parallelStrategy ? defaultParallelStrategy,
+        }:
         { ... }:
         {
           imports = [
             nixosModule
             nixosTestModule
+            ./_app-vm
           ];
-
-          testing = {
-            enable = true;
-            appScripts = apps;
-          };
-
-          oci = {
-            enable = true;
-            backend = "podman";
+          oci.testing.appVm = {
+            inherit apps parallelStrategy;
           };
         };
 
-      mkAppsTestScript = apps: ''
-        machine.wait_for_unit("multi-user.target")
-        machine.wait_for_unit("podman.socket")
+      # testScript shape depends on strategy. The `wantedBy` strategy
+      # anchors every oneshot to multi-user.target in the systemd unit
+      # graph, so a single `wait_for_unit` blocks until every app
+      # oneshot has reached active, no Python loop. `sequential` keeps
+      # the per-subtest `systemctl start` loop (the historical shape).
+      # `no-block` fans out via --no-block then waits in a second pass.
+      mkAppsTestScript =
+        {
+          apps,
+          parallelStrategy ? defaultParallelStrategy,
+        }:
+        if parallelStrategy == "wantedBy" then
+          ''
+            machine.wait_for_unit("multi-user.target")
+            machine.wait_for_unit("podman.socket")
+          ''
+        else if parallelStrategy == "no-block" then
+          ''
+            machine.wait_for_unit("multi-user.target")
+            machine.wait_for_unit("podman.socket")
 
-        ${lib.concatMapStringsSep "\n" (name: ''
-          with subtest("${name}"):
-              machine.succeed("systemctl start nix-oci-app-${name}.service")
-        '') (lib.attrNames apps)}
-      '';
+            ${lib.concatMapStringsSep "\n" (name: ''
+              machine.succeed("systemctl start --no-block nix-oci-app-${name}.service")
+            '') (lib.attrNames apps)}
+
+            ${lib.concatMapStringsSep "\n" (name: ''
+              with subtest("${name}"):
+                  machine.wait_for_unit("nix-oci-app-${name}.service")
+            '') (lib.attrNames apps)}
+          ''
+        else
+          ''
+            machine.wait_for_unit("multi-user.target")
+            machine.wait_for_unit("podman.socket")
+
+            ${lib.concatMapStringsSep "\n" (name: ''
+              with subtest("${name}"):
+                  machine.succeed("systemctl start nix-oci-app-${name}.service")
+            '') (lib.attrNames apps)}
+          '';
 
       # Per-container VM checks. One VM per container, each carrying only
       # its own load/probe apps. Nix's --max-jobs runs them in parallel; a
@@ -212,8 +261,8 @@ in
                     else
                       testHelpers.mkVMTest {
                         name = "nix-oci-app-${containerId}";
-                        nodes.machine = mkAppsNode apps;
-                        testScript = mkAppsTestScript apps;
+                        nodes.machine = mkAppsNode { inherit apps; };
+                        testScript = mkAppsTestScript { inherit apps; };
                       };
                 }
               ) containerNames
@@ -227,8 +276,8 @@ in
       test.oci._bddAppsCheck = lib.mkIf (canBuildTest && hasApps && hasContainers) (
         testHelpers.mkVMTest {
           name = "nix-oci-app-tests";
-          nodes.machine = mkAppsNode allApps;
-          testScript = mkAppsTestScript allApps;
+          nodes.machine = mkAppsNode { apps = allApps; };
+          testScript = mkAppsTestScript { apps = allApps; };
         }
       );
 
