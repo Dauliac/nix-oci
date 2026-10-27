@@ -236,7 +236,21 @@ in
           nodes.machine =
             { pkgs, ... }:
             {
-              imports = [ nixosModule ] ++ lib.optional (nixosTestModule != null) nixosTestModule;
+              imports = [
+                nixosModule
+                # Shared VM sizing + boot-speed defaults. Historically
+                # only the per-container `_app-vm` tests inherited
+                # these; without them, this aggregate VM fell back to
+                # the NixOS test default disk (~1 GiB) and ran out of
+                # space while loading the ~44 OCI images into
+                # containers-storage, aborting with
+                # `writing blob: ... no space left on device`.
+                # The defaults set `diskSize = 32768` (32 GiB), which
+                # the per-container VMs explicitly downsize via
+                # `_app-vm`.
+                ./_vm-defaults
+              ]
+              ++ lib.optional (nixosTestModule != null) nixosTestModule;
 
               # When `_vmBackend = "docker"`, we still get podman from the
               # test module's `_podman-config.nix` (which we cannot remove

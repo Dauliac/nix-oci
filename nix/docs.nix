@@ -840,6 +840,28 @@ in
                 timeoutMinutes = 60;
                 steps = [
                   {
+                    # ubuntu-latest ships with ~14 GiB free, which is
+                    # not enough to materialise the aggregate VM's
+                    # 32 GiB disk image AND populate its containers-
+                    # storage with ~44 OCI images (several carry full
+                    # nixpkgs closures, totalling several GiB of
+                    # layers each). jlumbroso/free-disk-space wipes
+                    # pre-installed toolchains (dotnet, android,
+                    # haskell, large docker images) and typically
+                    # reclaims 25-35 GiB.
+                    name = "Free up runner disk space";
+                    uses = "jlumbroso/free-disk-space@main";
+                    with_ = {
+                      tool-cache = true;
+                      android = true;
+                      dotnet = true;
+                      haskell = true;
+                      large-packages = false;
+                      swap-storage = true;
+                      docker-images = true;
+                    };
+                  }
+                  {
                     name = "Checkout";
                     uses = "actions/checkout@v4";
                   }

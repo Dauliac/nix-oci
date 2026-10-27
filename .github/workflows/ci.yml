@@ -96,6 +96,16 @@ jobs:
       - eval
     runs-on: ubuntu-latest
     steps:
+      - name: Free up runner disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          android: true
+          docker-images: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          swap-storage: true
+          tool-cache: true
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install Nix
