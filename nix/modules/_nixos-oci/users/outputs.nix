@@ -15,8 +15,19 @@ in
     description = "Generated passwd/group/shadow/gshadow derivations.";
     default =
       let
-        users = config.users.users;
-        groups = config.users.groups;
+        # Backfill uids/gids for `isSystemUser = true` users that no
+        # nixpkgs module gave an explicit id (dnsmasq is the canonical
+        # case). Pool allocator lives in oci.lib - see users/lib.nix
+        # for the rationale.
+        users = config.oci.lib.allocateMissingIds {
+          attr = config.users.users;
+          field = "uid";
+        };
+        groups = config.oci.lib.allocateMissingIds {
+          attr = config.users.groups;
+          field = "gid";
+        };
+
         # Read-only nologin shell: prevents interactive login for all users.
         nologin = pkgs.runCommand "bin-nologin" { } ''
                     mkdir -p $out/bin

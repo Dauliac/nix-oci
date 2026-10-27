@@ -28,5 +28,72 @@ in
         in
         "${name}:x:${toString u.uid}:${gid}::${u.home}:/bin/nologin";
     };
+
+    # High-system-user pool for container `/etc/passwd` and
+    # `/etc/group` emission.
+    #
+    # NixOS allocates UIDs/GIDs for `isSystemUser = true` users at
+    # system-activation time; inside a container there is no
+    # activation script, so any system user whose nixpkgs module
+    # does not set an explicit uid (e.g. `services.dnsmasq`, which
+    # lacks a `config.ids.uids.dnsmasq` entry) would otherwise be
+    # silently dropped from the shadow files. The container's
+    # systemd unit then fails with `chown: invalid user: '<svc>'`
+    # on startup and crash-loops. `allocateMissingIds` walks the
+    # declared users / groups and assigns a stable id from the
+    # pool to anyone missing one, so every declared principal ends
+    # up in the shadow files.
+    #
+    # Pool choice:
+    #   - Starts at 999 and counts down. Explicit nixpkgs uids live
+    #     in the 60..300 range (`<nixpkgs>/nixos/modules/misc/ids.nix`);
+    #     500..999 is unused by the modules we rely on and small
+    #     enough to never overflow for a single container.
+    #   - Sort by name so the id assigned to a given user does not
+    #     drift across evals when unrelated attrs change.
+    idPoolStart = lib.mkOption {
+      type = lib.types.ints.positive;
+      internal = true;
+      readOnly = true;
+      description = "First id handed out by allocateMissingIds (counts down).";
+      default = 999;
+    };
+
+    allocateMissingIds = lib.mkOption {
+      type = lib.types.unspecified;
+      internal = true;
+      readOnly = true;
+      description = ''
+        Assign a stable id from the pool to any entry in `attr` whose
+        `field` is `null`. Takes `{ attr, field, poolStart }` and
+        returns an attrset with the same shape as `attr` where every
+        entry has `field` set to either its original value or an
+        allocated one. Deterministic across evals (sorted by name).
+      '';
+      default =
+        {
+          attr,
+          field,
+          poolStart ? config.oci.lib.idPoolStart,
+        }:
+        let
+          missing = lib.sort builtins.lessThan (
+            lib.attrNames (lib.filterAttrs (_: v: v.${field} == null) attr)
+          );
+          assigned = lib.listToAttrs (
+            lib.imap0 (i: name: {
+              inherit name;
+              value = poolStart - i;
+            }) missing
+          );
+        in
+        lib.mapAttrs (
+          name: v:
+          v
+          // {
+            ${field} = if v.${field} != null then v.${field} else assigned.${name} or null;
+          }
+        ) attr;
+    };
   };
 }
