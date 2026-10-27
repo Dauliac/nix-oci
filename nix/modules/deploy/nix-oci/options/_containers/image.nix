@@ -82,9 +82,25 @@ let
 
   ociConfig =
     if useNixosEval then
-      # Rich path: same as mkOCIImage
+      # Rich path: same as mkOCIImage.
+      #
+      # Entrypoint resolution:
+      #   1. NixOS eval's _output.entrypoint (service adapters, e.g. nginx, bind)
+      #   2. Flake-side container.entrypoint explicit setting
+      #   3. Fallback to `/bin/${mainProgram}` of the package - mirrors the
+      #      legacy path. Without this fallback, bare-package containers
+      #      that enter the rich path (every container does, because the
+      #      deploy module wraps everything in a NixOS eval) end up with
+      #      NO Entrypoint field in their OCI image, and crun fails to
+      #      start them with `cannot find `` in $PATH`.
       {
-        entrypoint = if out.entrypoint != [ ] then out.entrypoint else config.entrypoint;
+        entrypoint =
+          if out.entrypoint != [ ] then
+            out.entrypoint
+          else if config.entrypoint != [ ] then
+            config.entrypoint
+          else
+            legacyEntrypoint;
         User = if config.isRoot then "root" else config.user;
         Env = out.envVars;
         Labels =
