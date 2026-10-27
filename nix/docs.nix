@@ -901,9 +901,19 @@ in
               # github-actions-nix schema does not type-check).
               check-bdd-app = {
                 runsOn = "ubuntu-latest";
+                # Serialize AFTER check-bdd-vm so the single long-running
+                # VM job gets uncontested access to a runner slot before
+                # we flood the free-tier concurrency ceiling with 42
+                # parallel shards. Two prior runs on 091aef2 and 8000d26
+                # saw `check-bdd-vm` cancelled by a GHA runner shutdown
+                # signal (not a test failure) at 14 min and 5 min
+                # respectively, right as a wave of matrix shards started
+                # consuming slots. Making the matrix wait trades wall
+                # clock for determinism.
                 needs = [
                   "lint"
                   "eval"
+                  "check-bdd-vm"
                 ];
                 timeoutMinutes = 45;
                 strategy = {

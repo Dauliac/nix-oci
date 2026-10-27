@@ -33,6 +33,7 @@ jobs:
     needs:
       - lint
       - eval
+      - check-bdd-vm
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
