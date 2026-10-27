@@ -20,11 +20,23 @@ in
       type = lib.types.unspecified;
       internal = true;
       readOnly = true;
-      description = "Generate a passwd line from a user name and attrset.";
+      description = ''
+        Generate a passwd line from a user name and attrset, given a
+        groups attrset for the gid lookup. Taking groups as a parameter
+        (instead of reading `config.users.groups` directly) lets callers
+        pass the backfilled attrset from `allocateMissingIds`, so system
+        users whose nixpkgs module did not set an explicit gid still
+        resolve to a stable allocated value instead of null (which
+        `toString` cannot coerce to a string and which turns the
+        emitted /etc/passwd line into a malformed garbage entry nss
+        then fails to parse - the real root cause of `chown: invalid
+        user: 'dnsmasq'` crash loops at container boot).
+      '';
       default =
-        name: u:
+        groups: name: u:
         let
-          gid = toString (config.users.groups.${u.group}.gid or 0);
+          rawGid = groups.${u.group}.gid or null;
+          gid = if rawGid != null then toString rawGid else "0";
         in
         "${name}:x:${toString u.uid}:${gid}::${u.home}:/bin/nologin";
     };

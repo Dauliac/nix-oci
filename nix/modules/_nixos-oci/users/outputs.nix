@@ -43,7 +43,9 @@ in
         nologin
         (pkgs.writeTextDir "etc/passwd" (
           lib.concatStringsSep "\n" (
-            lib.mapAttrsToList config.oci.lib.mkShadowEntry (lib.filterAttrs (_: u: u.uid != null) users)
+            lib.mapAttrsToList (config.oci.lib.mkShadowEntry groups) (
+              lib.filterAttrs (_: u: u.uid != null) users
+            )
           )
         ))
         (pkgs.writeTextDir "etc/group" (
