@@ -100,11 +100,11 @@ tasks:
       - act push --workflows .github/workflows/ci.yml --list
   ci:regenerate:
     desc: >
-      Regenerate CI workflow + bdd-containers matrix input from Nix. Run this whenever a container is added or removed from oci.containers; the matrix list in .github/workflows/ bdd-containers.json is otherwise out of sync and CI will build the wrong set.
+      Regenerate CI workflow + matrix input JSONs (bdd-containers.json, bdd-vm-groups.json) from Nix. Run this whenever containers or BDD-spec groups change; the matrix lists would otherwise go stale and CI would build the wrong set.
 
     cmds:
-      # 1. Enumerate the current `bdd-app-*` checks from the dev flake
-      #    and write them to the JSON matrix input.
+      # 1. Enumerate the current `bdd-app-*` checks and write them
+      #    to the per-container matrix input.
       - |
         set -euo pipefail
         nix eval .#checks.x86_64-linux --apply '
@@ -122,10 +122,29 @@ tasks:
             f.write('\n')
         print(f'wrote {len(containers)} containers')
         "
-      # 2. Rebuild workflows from Nix (the docs partition reads the
-      #    JSON file we just wrote).
+      # 2. Enumerate the current `bdd-vm-*` checks and write them to
+      #    the per-group matrix input.
+      - |
+        set -euo pipefail
+        nix eval .#checks.x86_64-linux --apply '
+          cs: builtins.filter
+            (n: builtins.substring 0 7 n == "bdd-vm-")
+            (builtins.attrNames cs)
+        ' --raw 2>/dev/null \
+          | python3 -c "
+        import sys, json, re
+        raw = sys.stdin.read()
+        names = re.findall(r'\"([^\"]+)\"', raw)
+        groups = sorted(n.replace('bdd-vm-', '', 1) for n in names)
+        with open('.github/workflows/bdd-vm-groups.json', 'w') as f:
+            json.dump(groups, f, indent=2)
+            f.write('\n')
+        print(f'wrote {len(groups)} bdd-vm groups')
+        "
+      # 3. Rebuild workflows from Nix (the docs partition reads the
+      #    JSON files we just wrote).
       - nix build .#legacyPackages.x86_64-linux.docs-github-workflows --out-link /tmp/docs-github-workflows
-      # 3. Copy regenerated workflows into place, re-make them writable
+      # 4. Copy regenerated workflows into place, re-make them writable
       #    (nix outputs are read-only), and run treefmt so yamlfmt
       #    normalises the output.
       - |

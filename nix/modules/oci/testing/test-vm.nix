@@ -73,7 +73,24 @@ in
         type = lib.types.nullOr lib.types.package;
         default = null;
         internal = true;
-        description = "BDD VM test derivation (set by test-vm.nix, consumed by e2e gate).";
+        description = ''
+          Aggregate BDD VM test derivation running every runtime/deploy
+          spec in a single VM. Kept as a compatibility alias; the
+          parallelizable variant lives in `_bddVmChecks`.
+        '';
+      };
+      options.test.oci._bddVmChecks = lib.mkOption {
+        type = lib.types.attrsOf lib.types.package;
+        default = { };
+        internal = true;
+        description = ''
+          Per-group BDD VM test derivations (one VM per spec-group
+          prefix). Consumed by the main flake as
+          `checks.<system>.bdd-vm-<group>` so Nix's build scheduler
+          parallelises them and GitHub Actions can shard them across
+          runners. Shorter per-shard wall clock also sidesteps Azure
+          spot preemption that was killing the single aggregate VM.
+        '';
       };
     }
   );
@@ -222,9 +239,229 @@ in
       # These are added as extraBuildInputs so `nix build` the check
       # transitively builds all example images, but they never enter the VM.
       flakeOCIsList = lib.attrValues flakeOCIs;
+
+      # ── Per-group spec sharding ────────────────────────────
+      # Specs are keyed `<group>--<scenario>`. Bucket by the first
+      # dash-separated token (`deploy`, `runtime`, `hardening`,
+      # `performance`, `probes`, ...) so GitHub Actions can fan them
+      # out across runners. Each shard VM boots ~5-10 containers
+      # instead of ~44, finishes in under 5 min, and so avoids the
+      # Azure spot preemption that was killing the single aggregate
+      # VM (see 091aef2, 953e3f3 postmortems).
+      #
+      # One shard (prefer `deploy`, else alphabetically-first) carries
+      # the registry-push test so it runs exactly once.
+      groupPrefix =
+        name:
+        let
+          parts = lib.splitString "-" name;
+        in
+        if parts == [ ] then "misc" else builtins.head parts;
+
+      loadableSpecsByGroup =
+        let
+          groups = lib.groupBy (name: groupPrefix name) (lib.attrNames loadableSpecs);
+        in
+        lib.mapAttrs (_: names: lib.getAttrs names loadableSpecs) groups;
+
+      registryHostGroup =
+        if lib.hasAttr "deploy" loadableSpecsByGroup then
+          "deploy"
+        else if loadableSpecsByGroup != { } then
+          lib.head (lib.sort builtins.lessThan (lib.attrNames loadableSpecsByGroup))
+        else
+          null;
+
+      # Shard-level VM builder. Called once per group to produce the
+      # matrix entry, and once with all specs to produce the backward-
+      # compat aggregate `_bddVmCheck`.
+      mkBddVmFor =
+        {
+          shardName,
+          shardSpecs,
+          includeRegistryTest,
+        }:
+        let
+          shardRuntime = lib.filterAttrs (_: s: s.level == "runtime") shardSpecs;
+          shardDeploy = lib.filterAttrs (_: s: s.level == "deploy") shardSpecs;
+          shardMounts = lib.concatLists (lib.mapAttrsToList stateMountsForSpec shardSpecs);
+          shardBddContainers = lib.getAttrs (lib.attrNames shardSpecs) bddContainers;
+          shardBddContainerNames = lib.attrNames shardBddContainers;
+          shardPytestCode = lib.concatMapStringsSep "\n\n" (
+            name:
+            let
+              spec = shardSpecs.${name};
+            in
+            pythonGen.mkPytestFunction {
+              containerName = name;
+              inherit (spec) assertions;
+              given = spec.given or "";
+              "when" = spec."when" or "";
+              "then" = spec."then" or "";
+            }
+          ) (lib.attrNames shardSpecs);
+          shardTestSuiteFile = pkgs.writeText "test_bdd_vm_${shardName}.py" ''
+            import docker
+            import json
+            import pytest
+
+            @pytest.fixture(scope="session")
+            def client():
+                return docker.from_env()
+
+            ${shardPytestCode}
+            ${lib.optionalString (includeRegistryTest && registryTestOCI != null) ''
+
+              def test_registry_push_pipeline_loaded(client):
+                  """Verify the registry-pushed image was pulled into podman."""
+                  images = client.images.list()
+                  image_tags = [t for img in images for t in (img.tags or [])]
+                  assert any("${registryLowerName}" in t for t in image_tags), (
+                      f"Expected '${registryLowerName}' in loaded images, got: {image_tags}"
+                  )
+            ''}
+          '';
+        in
+        testHelpers.mkVMTest {
+          name = "nix-oci-bdd-vm-${shardName}";
+          passthru.flakeOCIs = if includeRegistryTest then flakeOCIs else { };
+          nodes.machine =
+            { pkgs, ... }:
+            {
+              imports = [
+                nixosModule
+                ./_vm-defaults
+              ]
+              ++ lib.optional (nixosTestModule != null) nixosTestModule;
+
+              virtualisation.docker.enable = lib.mkIf (config.test.oci._vmBackend == "docker") true;
+
+              fileSystems = lib.listToAttrs (
+                lib.map (m: {
+                  name = m.hostPath;
+                  value = {
+                    device = "tmpfs";
+                    fsType = "tmpfs";
+                    options = [
+                      "size=256m"
+                      "mode=0755"
+                    ];
+                  };
+                }) shardMounts
+              );
+
+              oci = {
+                enable = true;
+                backend = config.test.oci._vmBackend;
+                perContainer = [
+                  (
+                    { lib, ... }:
+                    {
+                      config.layerStrategy = lib.mkDefault "fine-grained";
+                      config.optimizeLayers = lib.mkDefault true;
+                    }
+                  )
+                ];
+                containers = shardBddContainers;
+              };
+
+              systemd.services = lib.optionalAttrs (includeRegistryTest && registryTestOCI != null) {
+                "flake-oci-load-${registryTestName}" = {
+                  description = "Push ${registryTestName} to local registry (pipeline test)";
+                  wantedBy = [ "multi-user.target" ];
+                  after = [ "docker-registry.service" ];
+                  requires = [ "docker-registry.service" ];
+                  serviceConfig = {
+                    Type = "oneshot";
+                    RemainAfterExit = true;
+                  };
+                  path = [
+                    skopeoNix2container
+                    pkgs.podman
+                  ];
+                  script = ''
+                    set -euo pipefail
+                    for _i in $(seq 1 60); do
+                      if ${pkgs.curl}/bin/curl -sf http://localhost:5000/v2/ >/dev/null 2>&1; then
+                        break
+                      fi
+                      sleep 0.5
+                    done
+                    echo "Pushing ${registryTestName} to local registry ..."
+                    skopeo --insecure-policy copy \
+                      --dest-tls-verify=false \
+                      nix:${registryTestOCI} \
+                      docker://localhost:5000/${registryLowerName}:latest
+                    echo "Pulling from registry ..."
+                    podman pull --tls-verify=false \
+                      localhost:5000/${registryLowerName}:latest
+                    echo "Successfully loaded ${registryTestName}"
+                  '';
+                };
+              };
+
+              environment.systemPackages = [
+                (pkgs.python3.withPackages (
+                  ps: with ps; [
+                    docker
+                    pytest
+                    requests
+                  ]
+                ))
+              ];
+            };
+
+          testScript =
+            let
+              backend = config.test.oci._vmBackend or "podman";
+              socketUnit = if backend == "docker" then "docker.socket" else "podman.socket";
+              containerServicePrefix = if backend == "docker" then "docker-" else "podman-";
+              dockerHost =
+                if backend == "docker" then "unix:///var/run/docker.sock" else "unix:///run/podman/podman.sock";
+            in
+            ''
+              machine.wait_for_unit("multi-user.target")
+              machine.wait_for_unit("${socketUnit}")
+              ${lib.optionalString (includeRegistryTest && registryTestOCI != null) ''
+                machine.wait_for_unit("docker-registry.service")
+              ''}
+
+              ${lib.concatMapStringsSep "\n" (
+                name: ''machine.wait_for_unit("oci-load-${name}.service")''
+              ) shardBddContainerNames}
+
+              ${lib.concatMapStringsSep "\n" (
+                name: ''machine.wait_for_unit("${containerServicePrefix}${name}.service")''
+              ) (lib.attrNames (shardRuntime // shardDeploy))}
+
+              ${lib.optionalString (includeRegistryTest && registryTestOCI != null) ''
+                machine.wait_for_unit("flake-oci-load-${registryTestName}.service")
+              ''}
+
+              machine.copy_from_host("${shardTestSuiteFile}", "/tmp/test_bdd_vm.py")
+              machine.succeed(
+                  "cd /tmp && DOCKER_HOST=${dockerHost} "
+                  "pytest test_bdd_vm.py -v --tb=short 2>&1"
+              )
+            '';
+        };
     in
     {
-      # Internal: derivation stored here, exposed via checks.e2e in the consuming flake.
+      # Per-group matrix: one VM per BDD prefix bucket. Short per-shard
+      # runtime avoids the Azure spot preemption that was killing the
+      # single aggregate VM at 4-15 min marks.
+      test.oci._bddVmChecks = lib.mkIf (canBuildTest && hasAnyContainers) (
+        lib.mapAttrs (
+          shardName: shardSpecs:
+          mkBddVmFor {
+            inherit shardName shardSpecs;
+            includeRegistryTest = shardName == registryHostGroup;
+          }
+        ) loadableSpecsByGroup
+      );
+
+      # Aggregate: every spec in one VM. Kept for backward compat;
+      # consumers should prefer `_bddVmChecks` to parallelise.
       test.oci._bddVmCheck = lib.mkIf (canBuildTest && hasAnyContainers) (
         testHelpers.mkVMTest {
           name = "nix-oci-bdd-vm";

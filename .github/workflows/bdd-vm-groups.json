@@ -1,0 +1,10 @@
+[
+  "deploy",
+  "entrypoint",
+  "environment",
+  "invariant",
+  "nixos",
+  "performance",
+  "probes",
+  "runtime"
+]

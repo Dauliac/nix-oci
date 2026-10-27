@@ -113,9 +113,21 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@main
       - name: Cache Nix store
         uses: DeterminateSystems/magic-nix-cache-action@main
-      - name: Build bdd-vm
-        run: nix build .#checks.x86_64-linux.bdd-vm --print-build-logs
-    timeout-minutes: 60
+      - name: Build bdd-vm-${{ matrix.group }}
+        run: nix build .#checks.x86_64-linux.bdd-vm-${{ matrix.group }} --print-build-logs
+    strategy:
+      fail-fast: false
+      matrix:
+        group:
+          - deploy
+          - entrypoint
+          - environment
+          - invariant
+          - nixos
+          - performance
+          - probes
+          - runtime
+    timeout-minutes: 30
   eval:
     runs-on: ubuntu-latest
     steps:

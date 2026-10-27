@@ -110,24 +110,30 @@
                 oci.fromImageManifestRootPath = ./oci + "/";
 
                 # Expose BDD checks. `xi check` from root builds these:
-                #   - `bdd-vm`: single VM running every runtime/deploy BDD
-                #     spec + the registry push pipeline.
+                #   - `bdd-vm-<group>`: one VM per BDD spec-prefix bucket
+                #     (deploy, runtime, hardening, performance, probes,
+                #     ...), running that bucket's specs plus (on the
+                #     designated host group, default `deploy`) the
+                #     registry push pipeline. Replaces the single
+                #     aggregate `bdd-vm` which kept getting killed by
+                #     Azure spot preemption past the 4-15 min mark.
                 #   - `bdd-app-<containerId>`: one minimal VM per container,
                 #     loading only that container's oci-load-podman-* and
                 #     probe apps. Nix's build scheduler runs them in parallel
                 #     via `--max-jobs`; wall clock is `boot + max(per-container-load)`
                 #     instead of the old aggregate's `boot + sum(per-container-load)`
                 #     (which serialized ~44 apps at ~15 min each on cold storage).
-                # The old aggregate `bdd-apps` is intentionally omitted from
-                # root checks (see test-apps.nix comments): it still exists
-                # as `test.oci._bddAppsCheck` for anyone who wants the
-                # single-VM shape, but running it via `nix flake check` is
-                # never the right call because Nix cannot parallelize inside
-                # a single derivation.
+                # The old aggregates `bdd-vm` and `bdd-apps` are
+                # intentionally omitted from root checks; they still
+                # exist as `test.oci._bddVmCheck` and
+                # `test.oci._bddAppsCheck` for anyone who wants the
+                # single-VM shape, but running them via `nix flake
+                # check` is never the right call because Nix cannot
+                # parallelize inside a single derivation.
                 checks =
-                  lib.optionalAttrs (config.test.oci._bddVmCheck != null) {
-                    bdd-vm = config.test.oci._bddVmCheck;
-                  }
+                  lib.mapAttrs' (name: drv: lib.nameValuePair "bdd-vm-${name}" drv) (
+                    config.test.oci._bddVmChecks or { }
+                  )
                   // lib.mapAttrs' (name: drv: lib.nameValuePair "bdd-app-${name}" drv) (
                     config.test.oci._bddAppsChecks or { }
                   );

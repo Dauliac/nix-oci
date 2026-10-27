@@ -826,29 +826,41 @@ in
                 ];
               };
 
-              # Single-VM BDD check: runs every runtime/deploy BDD spec
-              # plus the registry push pipeline inside one VM. Separate
-              # from the per-container matrix below because this one
-              # genuinely can't be parallelized further (all tests
-              # share the one VM).
+              # Per-group BDD VM matrix: one shard per spec-prefix
+              # bucket (deploy, runtime, hardening, performance,
+              # probes, ...). Each shard VM boots ~5-10 containers
+              # and finishes in under 5 min, which keeps every job
+              # well under the Azure spot preemption window that
+              # was killing the single aggregate `bdd-vm` at the
+              # 4-15 min mark (see postmortems on 091aef2, 953e3f3).
+              #
+              # The group list is read from
+              # ./.github/workflows/bdd-vm-groups.json at generator
+              # time; `task ci:regenerate` rewrites it from
+              # `config.test.oci._bddVmChecks`.
               check-bdd-vm = {
                 runsOn = "ubuntu-latest";
                 needs = [
                   "lint"
                   "eval"
                 ];
-                timeoutMinutes = 60;
+                timeoutMinutes = 30;
+                strategy = {
+                  # failFast=false so one group's regression does
+                  # not mask another group's regression.
+                  failFast = false;
+                  matrix = {
+                    group = lib.importJSON ../.github/workflows/bdd-vm-groups.json;
+                  };
+                };
                 steps = [
                   {
                     # ubuntu-latest ships with ~14 GiB free, which is
-                    # not enough to materialise the aggregate VM's
-                    # 32 GiB disk image AND populate its containers-
-                    # storage with ~44 OCI images (several carry full
-                    # nixpkgs closures, totalling several GiB of
-                    # layers each). jlumbroso/free-disk-space wipes
-                    # pre-installed toolchains (dotnet, android,
-                    # haskell, large docker images) and typically
-                    # reclaims 25-35 GiB.
+                    # not enough to materialise a 32 GiB disk image
+                    # alongside Nix store state. jlumbroso/free-disk-
+                    # space wipes pre-installed toolchains (dotnet,
+                    # android, haskell, large docker images) and
+                    # typically reclaims 25-35 GiB.
                     name = "Free up runner disk space";
                     uses = "jlumbroso/free-disk-space@main";
                     with_ = {
@@ -874,8 +886,8 @@ in
                     uses = "DeterminateSystems/magic-nix-cache-action@main";
                   }
                   {
-                    name = "Build bdd-vm";
-                    run = "nix build .#checks.x86_64-linux.bdd-vm --print-build-logs";
+                    name = "Build bdd-vm-\${{ matrix.group }}";
+                    run = "nix build .#checks.x86_64-linux.bdd-vm-\${{ matrix.group }} --print-build-logs";
                   }
                 ];
               };
