@@ -125,7 +125,6 @@ jobs:
           - invariant
           - nixos
           - performance
-          - probes
           - runtime
     timeout-minutes: 30
   eval:

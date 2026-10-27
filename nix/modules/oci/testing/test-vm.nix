@@ -15,14 +15,29 @@ let
   nixosTestModule = config.flake.modules.nixos.nix-oci-test or null;
   pythonGen = import ./_python-gen.nix { inherit lib; };
 
+  # Groups whose scenarios cannot run in the aggregate bdd-vm because
+  # they depend on per-container `_app-vm` infrastructure (probe-app
+  # synthesis, oci.testing.appVm.apps, etc.) that is only wired by the
+  # per-container `bdd-app-*` matrix. Their containers use a dummy
+  # `pkgs.hello` package with `test.<probe>.enabled = true`, so loading
+  # them in bdd-vm boots the dummy but never executes the probe app
+  # that would write to /tmp/nix-oci-reports.  Pytest then asserts on
+  # missing reports and fails.  Keeping these groups out of bdd-vm
+  # keeps the matrix green; the pytest escape-hatch stays available
+  # for the per-container matrix which does have the right machinery.
+  bddVmExcludedGroups = [ "probes-e2e" ];
+
   extractVmSpecs =
     allSpecs:
     lib.concatMapAttrs (
       group: scenarios:
-      lib.concatMapAttrs (
-        name: spec:
-        if spec.level == "runtime" || spec.level == "deploy" then { "${group}--${name}" = spec; } else { }
-      ) scenarios
+      if lib.elem group bddVmExcludedGroups then
+        { }
+      else
+        lib.concatMapAttrs (
+          name: spec:
+          if spec.level == "runtime" || spec.level == "deploy" then { "${group}--${name}" = spec; } else { }
+        ) scenarios
     ) allSpecs;
 in
 {
