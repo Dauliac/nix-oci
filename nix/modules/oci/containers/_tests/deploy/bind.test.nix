@@ -25,16 +25,13 @@
           container = {
             isRoot = true;
             ports = [ "5354:53/udp" ];
-            # BLOCKER: the bind adapter expects mainService = "named"
-            # but NixOS creates systemd.services.bind, so the
-            # entrypoint lookup at
-            # `nix/modules/_nixos-oci/entrypoint/lib.nix:29` throws
-            # `attribute 'named' missing`. Use "bind" here to unblock
-            # eval; the adapter's healthcheck injection will NOT
-            # fire (isNamed guard mismatches) but the container
-            # itself boots. Adapter fix tracked as
-            # `docs-ci-deploy-19u`.
             nixosConfig = {
+              # Matches the systemd unit name NixOS actually creates
+              # (`systemd.services.bind`); the bind service adapter at
+              # `nix/modules/_nixos-oci/service-adapters/bind.nix`
+              # fires on this value and overrides ExecStart with `-g`
+              # + Type=simple so the daemon stays in foreground inside
+              # the container.
               mainService = "bind";
               modules = [
                 (
