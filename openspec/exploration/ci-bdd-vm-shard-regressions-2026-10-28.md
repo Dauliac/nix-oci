@@ -91,61 +91,79 @@ times out at 900s because the restart loop keeps the unit from reaching
 
 ## 3. `check-bdd-vm (deploy)`
 
-### Symptom
+### Status after ff2eb32 + 7989293
 
-`podman-deploy-dnsmasq--deploy-dnsmasq-resolves-hosts-entry.service` and
-`podman-deploy-bind--deploy-bind-resolves-version-bind.service` restart
-in a loop. dnsmasq exits with
-`code=exited, status=5/NOTINSTALLED`; bind with
-`status=1/FAILURE`. Then systemd restart counter climbs to 214 before
-`wait_for_unit` times out.
+The deploy shard surfaced three independent sub-failures. Each needs
+its own debugging pass; none are architectural.
 
-Each individual container start is reported as `Error: container is
-stopped` by the podman-side oneshot runner.
+### 3a. dnsmasq - EC_FILE (FIXED by d7744cc)
 
-### What is NOT the cause
+**Symptom**: `podman-deploy-dnsmasq--...service` exited with
+`status=3/NOTIMPLEMENTED` and restarted in a loop. Dnsmasq's internal
+exit code 3 is `EC_FILE` ("file access error").
 
-- Not the dnsmasq passwd bug fixed by `d4f4996`. Local verification:
-  the generated `/etc/passwd` for the deploy-dnsmasq container contains
-  `dnsmasq:x:998:998::/var/empty:/bin/nologin`
-  so `chown -R dnsmasq` and `dnsmasq --user=dnsmasq` have a valid user.
-- Not the bare-package Entrypoint bug fixed by `6c8c4e8`. The dnsmasq
-  container has `nixosConfig.mainService = "dnsmasq"` and its NixOS
-  eval emits a proper `_output.entrypoint =
-  [ "/nix/store/.../container-entrypoint" ]`.
+**Confirmed cause** (verified locally):
 
-### What is likely
+    $ dnsmasq --test -C /nix/store/.../dnsmasq.conf
+    dnsmasq: cannot read /etc/dnsmasq-conf.conf: No such file ...
+    exit=3
 
-- `status=5` (`EXIT_NOTINSTALLED`) is systemd's label when ExecStart
-  references a missing executable. For a containerised oneshot the
-  mapping is murkier: it is the exit code the inside-container process
-  returned, surfaced through podman. The container-entrypoint script
-  runs:
-  `mkdir -p /var/lib/dnsmasq; touch; chown; dnsmasq --test; dnsmasq -k --enable-dbus --user=dnsmasq`.
-  If `dnsmasq --test` or the pre-start hook exits 5, bash propagates
-  that under `set -e`.
-- `--enable-dbus` may be the culprit: dbus is not running inside the
-  container; dnsmasq exits early. The adapter in
-  `nix/modules/_nixos-oci/service-adapters/dnsmasq.nix` does not strip
-  the dbus flag. Compare against the NixOS evaluation that produces
-  the entrypoint script and see whether dbus is marked wanted.
-- bind failing with `status=1` is a separate story and almost certainly
-  the service's config pre-flight failing; check `named-checkconf`
-  path and the generated zone file.
+nixpkgs' `services.dnsmasq` adds `conf-file = /etc/dnsmasq-conf.conf`
+and `resolv-file = /etc/dnsmasq-resolv.conf` whenever
+`resolveLocalQueries = true` (the default). On a NixOS host those
+files are created by the service preStart `touch
+/etc/dnsmasq-{conf,resolv}.conf` on a writable /etc. In a container,
+/etc is nix-store-backed and the podman overlay cannot persist the
+touched files reliably.
 
-### Entry points
+**Fix** (d7744cc): the dnsmasq service adapter now sets
+`services.dnsmasq.resolveLocalQueries = lib.mkDefault false` which
+removes both config lines from the generated dnsmasq.conf. Containers
+never want the local-resolver wiring anyway.
 
-1. Pull the dnsmasq container's startup log from the next CI run:
-   `gh run view <run-id> --log --job <bdd-vm-deploy> \
-      | grep -A 50 "deploy-dnsmasq.*container-entrypoint"`
-2. Reproduce locally:
-   ```
-   nix build .#oci.containers."deploy-dnsmasq--deploy-dnsmasq-resolves-hosts-entry".image \
-       --out-link /tmp/img
-   podman load < /tmp/img && podman run deploy-dnsmasq...
-   ```
-3. Audit the service adapter for `--enable-dbus` and the bind adapter
-   for `named-checkconf`.
+**NOT the cause** (also verified fixed earlier in the session):
+- The dnsmasq passwd bug (d4f4996).
+- The bare-package Entrypoint bug (6c8c4e8).
+- The `--enable-dbus` dbus-missing issue (ff2eb32).
+
+### 3b. postgresql - status 125 (podman error)
+
+**Symptom**: `podman-deploy-postgresql--...service` exits with
+`status=125/n/a`. Status 125 is podman's "command invocation failure"
+- the container runtime itself refused to start the container.
+
+**Entry points**:
+1. Inspect `extraOptions` and `cmd` for the postgresql container:
+   `nix eval .#checks.x86_64-linux.bdd-vm-deploy.nodes.machine.config.virtualisation.oci-containers.containers."deploy-postgresql--...".extraOptions`
+2. Compare to a passing container (e.g. the nginx-nixos one in the
+   `nixos` shard which is green).
+3. Status 125 is often a mount-path or `--user` mismatch.
+
+### 3c. wiring-volumes - status 125 (podman error)
+
+**Symptom**: `podman-deploy-wiring-volumes--...service` exits with
+`status=125/n/a`.
+
+Same category as 3b. The wiring tests set up specific volume
+scenarios; one of them may be creating a bind mount that podman
+refuses.
+
+**Entry points**:
+1. The spec at
+   `nix/modules/oci/containers/_tests/deploy/wiring-volumes.test.nix`
+   drives this container.
+2. Inspect the generated `--volume` flags on
+   `virtualisation.oci-containers.containers."deploy-wiring-volumes--...".volumes`.
+
+### 3d. deploy-bind - BLOCKED (upstream nixpkgs bug)
+
+**Status**: Excluded from the matrix in 7989293. Re-enable when
+nixpkgs reorders the `named-checkconf` arguments or sets
+`doCheck = false` on the configFile derivation.
+
+**Reference**: `nix/modules/oci/testing/test-vm.nix` has an inline
+comment at the `bddVmExcludedGroups = [ "probes-e2e" "deploy-bind" ]`
+line documenting the full reproduction.
 
 ---
 
