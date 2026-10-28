@@ -40,6 +40,28 @@ in
     oci.container.stopSignal = lib.mkDefault "SIGTERM";
     oci.container.extraPackages = [ pkgs.dig ];
 
+    # nixpkgs' `services.dnsmasq` module adds
+    #   conf-file = /etc/dnsmasq-conf.conf
+    #   resolv-file = /etc/dnsmasq-resolv.conf
+    # to the generated dnsmasq.conf whenever `resolveLocalQueries` is
+    # true (the default). On a normal NixOS host those paths are
+    # created by the service's preStart `touch /etc/dnsmasq-{conf,
+    # resolv}.conf`. Inside a container the entrypoint script does
+    # run those touches, but the OCI image's /etc is a nix-store-
+    # backed directory where the overlay cannot persist the new
+    # files reliably: dnsmasq --test then exits with
+    #   dnsmasq: cannot read /etc/dnsmasq-conf.conf: No such file ...
+    #   exit=3 (EC_FILE)
+    # which systemd surfaces as `status=3/NOTIMPLEMENTED`.
+    #
+    # Containers never want the local-resolver wiring anyway (there
+    # is no /etc/resolv.conf to splice ourselves into), so disable
+    # `resolveLocalQueries` by default. Both config lines disappear
+    # from the generated dnsmasq.conf, the touches become
+    # irrelevant, and dnsmasq --test passes. Consumers who need the
+    # local resolver on their host can still opt back in.
+    services.dnsmasq.resolveLocalQueries = lib.mkDefault false;
+
     # nixpkgs' `services.dnsmasq` hard-codes a D-Bus-dependent ExecStart:
     #   Type = "dbus";
     #   BusName = "uk.org.thekelleys.dnsmasq";
