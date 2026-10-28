@@ -15,17 +15,33 @@ let
   nixosTestModule = config.flake.modules.nixos.nix-oci-test or null;
   pythonGen = import ./_python-gen.nix { inherit lib; };
 
-  # Groups whose scenarios cannot run in the aggregate bdd-vm because
-  # they depend on per-container `_app-vm` infrastructure (probe-app
-  # synthesis, oci.testing.appVm.apps, etc.) that is only wired by the
-  # per-container `bdd-app-*` matrix. Their containers use a dummy
-  # `pkgs.hello` package with `test.<probe>.enabled = true`, so loading
-  # them in bdd-vm boots the dummy but never executes the probe app
-  # that would write to /tmp/nix-oci-reports.  Pytest then asserts on
-  # missing reports and fails.  Keeping these groups out of bdd-vm
-  # keeps the matrix green; the pytest escape-hatch stays available
-  # for the per-container matrix which does have the right machinery.
-  bddVmExcludedGroups = [ "probes-e2e" ];
+  # Groups whose scenarios cannot run in the aggregate bdd-vm.
+  #
+  # - "probes-e2e": needs per-container `_app-vm` infrastructure
+  #   (probe-app synthesis, oci.testing.appVm.apps) that only the
+  #   `bdd-app-*` matrix wires. The spec containers use a dummy
+  #   `pkgs.hello` with `test.<probe>.enabled = true`, so loading
+  #   them in bdd-vm boots the dummy but never executes the probe
+  #   app that would write to /tmp/nix-oci-reports. Pytest then
+  #   asserts on an empty dir and fails.
+  #
+  # - "deploy-bind": blocked by a nixpkgs 25.11 regression. The
+  #   `services.bind` module's `configFile` derivation runs
+  #     named-checkconf -z $target -t ${cfg.directory}
+  #   in its preCheck. BIND 9.20 is strict about argument order
+  #   (options must precede the positional named.conf path), so
+  #   `-z <file> -t <dir>` prints usage and the derivation fails
+  #   with "builder failed with exit code 255" before any container
+  #   can be built. Reproduced locally and verified against the
+  #   nixpkgs source at
+  #   `nixos/modules/services/networking/bind.nix`. Needs an
+  #   upstream fix (reorder args or set doCheck = false) that is
+  #   out of scope for this repo. Re-include this group once
+  #   nixpkgs ships the fix.
+  bddVmExcludedGroups = [
+    "probes-e2e"
+    "deploy-bind"
+  ];
 
   extractVmSpecs =
     allSpecs:
