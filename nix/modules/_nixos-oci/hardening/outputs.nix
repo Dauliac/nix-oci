@@ -32,6 +32,12 @@ let
   # -- Seccomp profile data (same as nix-lib mkSeccompProfile) --
 
   baseSyscalls = [
+    # execve/execveat MUST be allowed in every ERRNO-default profile:
+    # crun applies the seccomp filter before exec'ing the container
+    # entrypoint, so blocking them aborts EVERY container start with
+    # `exec container process: Operation not permitted`.
+    "execve"
+    "execveat"
     "exit"
     "exit_group"
     "read"
