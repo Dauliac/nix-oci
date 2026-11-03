@@ -1064,6 +1064,14 @@ let
     # -- NixOS eval helpers (pure cores) --
 
     # Normalize a value to a list (null -> [], scalar -> [x], list -> list).
+    #
+    # systemd's RuntimeDirectory=/StateDirectory=/CacheDirectory=/LogsDirectory=
+    # accept a single whitespace-separated string listing multiple relative
+    # paths (systemd.exec(5)), not just a list -- e.g. nixpkgs' postgresql
+    # module sets StateDirectory = "postgresql postgresql/16". A bare string
+    # must be split on whitespace, not wrapped as one element, or the second
+    # path ends up as a stray relative `mkdir` argument instead of its own
+    # directory.
     toList =
       x:
       if builtins.isList x then
@@ -1071,7 +1079,7 @@ let
       else if x == null then
         [ ]
       else
-        [ x ];
+        lib.filter (s: s != "") (lib.splitString " " x);
 
     # Generate an entrypoint wrapper script from systemd service data.
     # serviceData is a plain attrset produced by extractServiceData in _nixos-oci/entrypoint.nix.
