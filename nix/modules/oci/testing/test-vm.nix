@@ -161,14 +161,26 @@ in
       # plus `RequiresMountsFor` ordering on the container's systemd unit.
       # That did not hold up in CI: the container still hit
       # `Error: statfs <path>: no such file or directory` even with the
-      # ordering wired correctly (confirmed via direct eval), while the
-      # much simpler `systemd.tmpfiles.rules`-based directory pre-creation
-      # used for bind-mount sources below worked cleanly in the same run.
-      # State dirs now go through that same proven mechanism: a plain
-      # directory under the existing `/run` tmpfs, created by
-      # tmpfiles-setup.service before any container unit can start. This
-      # trades per-spec tmpfs size isolation for reliability; test VMs
-      # have ample `/run` headroom for a throwaway postgres initdb.
+      # ordering wired correctly (confirmed via direct eval), while a
+      # plain `systemd.tmpfiles.rules`-based directory pre-creation (used
+      # for bind-mount sources below) worked cleanly in the same run.
+      #
+      # These directories must additionally be OWNED by the container's
+      # resolved user, not root: a container with `mainService` set but
+      # no `isRoot = true` runs as that service's auto-derived non-root
+      # user (e.g. "postgres") from the start (matches real NixOS: the
+      # service's systemd unit sets `User = "postgres"`, with the data
+      # directory provisioned by systemd's own StateDirectory mechanism,
+      # not by the service's own preStart/execStart). A root-owned,
+      # root:root-only host directory would make the first `initdb`
+      # call fail with "cannot be run as root" (if isRoot=true) or
+      # "Permission denied" (if isRoot=false but the directory isn't
+      # writable by that user) regardless of podman's own user mapping.
+      # Resolving the correct ownership needs the container's OWN final
+      # evaluated config (user name -> numeric uid/gid via its NixOS
+      # eval's users.users/users.groups), which -- like the apparmor
+      # profile wiring above -- is only reachable via a nested
+      # `{ config, ... }` import, not the pre-called outer node function.
       slugify = s: lib.replaceStrings [ "/" ] [ "_" ] (lib.removePrefix "/" s);
       stateHostBase = "/run/oci-test-state";
       stateMountsForSpec =
@@ -177,26 +189,37 @@ in
           hostPath = "${stateHostBase}/${name}/${slugify dir}";
           containerPath = dir;
         }) (spec.stateDirectories or [ ]);
+      hasStateDirs = s: (s.stateDirectories or [ ]) != [ ];
+      stateDirTmpfilesRulesFor =
+        config: names:
+        lib.concatMap (
+          name:
+          let
+            container = config.oci.containers.${name};
+            userName = container.user;
+            userEntry = container.nixosConfig.eval.users.users.${userName};
+            groupEntry = container.nixosConfig.eval.users.groups.${userEntry.group};
+          in
+          lib.map (m: "d ${m.hostPath} 0700 ${toString userEntry.uid} ${toString groupEntry.gid} -") (
+            stateMountsForSpec name loadableSpecs.${name}
+          )
+        ) names;
 
-      # ── Host-side directories podman needs pre-created ────────
-      # Covers two cases:
-      #   - `container.volumes = [ "/run/foo:/bar" ]` bind-mount sources
-      #     the test populates at assertion time (see
-      #     deploy/wiring-volumes.test.nix).
-      #   - `stateDirectories` writable state dirs (above).
-      # podman does NOT auto-create missing bind-mount *source*
-      # directories -- it fails the container with `Error: statfs <path>:
-      # no such file or directory`. Pre-create every such host path via
-      # tmpfiles so it exists before the container's systemd unit ever
-      # tries to start (tmpfiles-setup.service is ordered via
-      # sysinit.target, well before any container unit).
+      # ── Host-side bind-mount source directories ───────────────
+      # Specs may declare `container.volumes = [ "/run/foo:/bar" ]` to bind-
+      # mount a host directory the test populates at assertion time (see
+      # deploy/wiring-volumes.test.nix). podman does NOT auto-create
+      # missing bind-mount *source* directories -- it fails the container
+      # with `Error: statfs <path>: no such file or directory`. Pre-create
+      # every such host path via tmpfiles so it exists before the
+      # container's systemd unit ever tries to start (tmpfiles-setup.service
+      # is ordered via sysinit.target, well before any container unit).
+      # Unlike state dirs above, these are test-populated scratch dirs with
+      # no particular owner requirement, so plain root:root is fine.
       volumeHostPath = v: lib.head (lib.splitString ":" v);
-      volumeHostPathsForSpec =
-        name: spec:
-        lib.map volumeHostPath (spec.container.volumes or [ ])
-        ++ lib.map (m: m.hostPath) (stateMountsForSpec name spec);
+      volumeHostPathsForSpec = spec: lib.map volumeHostPath (spec.container.volumes or [ ]);
       allVolumeHostPaths = lib.unique (
-        lib.concatLists (lib.mapAttrsToList volumeHostPathsForSpec loadableSpecs)
+        lib.concatMap volumeHostPathsForSpec (lib.attrValues loadableSpecs)
       );
 
       # apparmor.service wiring for the aggregate VM (see usesApparmor in
@@ -206,6 +229,7 @@ in
       aggUsesApparmor =
         s: (s.container.hardening.enable or false) && (s.container.hardening.apparmor.enable or false);
       allApparmorNames = lib.attrNames (lib.filterAttrs (_: aggUsesApparmor) loadableSpecs);
+      allStateDirNames = lib.attrNames (lib.filterAttrs (_: hasStateDirs) loadableSpecs);
       allStateRequires = lib.mapAttrs' (
         name: _:
         lib.nameValuePair "${aggContainerServicePrefix}${name}" {
@@ -363,8 +387,9 @@ in
           shardRuntime = lib.filterAttrs (_: s: s.level == "runtime") shardSpecs;
           shardDeploy = lib.filterAttrs (_: s: s.level == "deploy") shardSpecs;
           shardVolumeHostPaths = lib.unique (
-            lib.concatLists (lib.mapAttrsToList volumeHostPathsForSpec shardSpecs)
+            lib.concatMap volumeHostPathsForSpec (lib.attrValues shardSpecs)
           );
+          shardStateDirNames = lib.attrNames (lib.filterAttrs (_: hasStateDirs) shardSpecs);
           # Containers with hardening.apparmor.enable need the host's
           # apparmor.service to have loaded their named profile before they
           # start (symptom: `Error: apparmor profile "nix-oci-<name>"
@@ -454,6 +479,16 @@ in
                       ) shardApparmorNames
                     );
                   };
+                }
+              )
+              # Owner-aware tmpfiles rules for stateDirectories hosts paths
+              # (see stateDirTmpfilesRulesFor above); same nested-module
+              # requirement as the apparmor block -- needs this node's own
+              # resolved config to look up each container's numeric uid/gid.
+              ++ lib.optional (shardStateDirNames != [ ]) (
+                { config, ... }:
+                {
+                  systemd.tmpfiles.rules = stateDirTmpfilesRulesFor config shardStateDirNames;
                 }
               );
 
@@ -622,6 +657,15 @@ in
                       ) allApparmorNames
                     );
                   };
+                }
+              )
+              # Owner-aware tmpfiles rules for stateDirectories host paths
+              # (see stateDirTmpfilesRulesFor above and the per-shard
+              # equivalent in mkBddVmFor for the full rationale).
+              ++ lib.optional (allStateDirNames != [ ]) (
+                { config, ... }:
+                {
+                  systemd.tmpfiles.rules = stateDirTmpfilesRulesFor config allStateDirNames;
                 }
               );
 

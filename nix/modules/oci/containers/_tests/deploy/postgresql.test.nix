@@ -6,9 +6,20 @@
 #
 # Uses `stateDirectories` from the section-1 infra
 # (nix/modules/oci/testing/test-vm.nix) to back
-# `/var/lib/postgresql` and `/run/postgresql` with per-spec tmpfs on
-# the VM host  -  this unblocks the container that would otherwise
-# crash-loop because those paths are read-only in the Nix store.
+# `/var/lib/postgresql` and `/run/postgresql` with a writable,
+# owner-matched directory on the VM host  -  this unblocks the
+# container that would otherwise crash-loop because those paths are
+# read-only in the Nix store.
+#
+# isRoot = false (explicit, overriding the deploy-side default of
+# true) plus an explicit `user = "postgres"`: postgres's own
+# preStart/initdb refuse to run as root, matching real NixOS where
+# `services.postgresql`'s systemd unit runs under `User = "postgres"`.
+# The container's auto-derived user comes from the service PACKAGE
+# name ("postgresql"), not its systemd User= directive, and no such
+# user exists in the generated image -- it must be set explicitly.
+# test-vm.nix resolves this user and pre-creates the backing host
+# directories owned by its numeric uid/gid.
 { ... }:
 {
   perSystem =
@@ -27,7 +38,8 @@
             "/run/postgresql"
           ];
           container = {
-            isRoot = true;
+            isRoot = false;
+            user = "postgres";
             ports = [ "5432:5432" ];
             nixosConfig = {
               mainService = "postgresql";
