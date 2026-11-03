@@ -150,12 +150,25 @@ in
 
       loadableSpecs = runtimeSpecs // deploySpecs;
 
-      # ── State-directory tmpfs backing ────────────────────────
+      # ── State-directory writable backing ──────────────────────
       # Specs may declare `stateDirectories = [ "/var/lib/postgresql" ]`.
-      # For each (spec, dir), we back it with a per-spec tmpfs on the
-      # host at `/run/oci-test-state/<name>/<slug>` and inject a
+      # For each (spec, dir), we back it with a per-spec writable directory
+      # on the host at `/run/oci-test-state/<name>/<slug>` and inject a
       # `-v host:container` volume so the container sees a writable dir.
       # Slug replaces `/` with `_` because host paths must be flat.
+      #
+      # Originally backed by a dedicated per-spec `fileSystems` tmpfs mount
+      # plus `RequiresMountsFor` ordering on the container's systemd unit.
+      # That did not hold up in CI: the container still hit
+      # `Error: statfs <path>: no such file or directory` even with the
+      # ordering wired correctly (confirmed via direct eval), while the
+      # much simpler `systemd.tmpfiles.rules`-based directory pre-creation
+      # used for bind-mount sources below worked cleanly in the same run.
+      # State dirs now go through that same proven mechanism: a plain
+      # directory under the existing `/run` tmpfs, created by
+      # tmpfiles-setup.service before any container unit can start. This
+      # trades per-spec tmpfs size isolation for reliability; test VMs
+      # have ample `/run` headroom for a throwaway postgres initdb.
       slugify = s: lib.replaceStrings [ "/" ] [ "_" ] (lib.removePrefix "/" s);
       stateHostBase = "/run/oci-test-state";
       stateMountsForSpec =
@@ -164,35 +177,42 @@ in
           hostPath = "${stateHostBase}/${name}/${slugify dir}";
           containerPath = dir;
         }) (spec.stateDirectories or [ ]);
-      # All (spec × dir) pairs, flat, for fileSystems declarations.
-      allStateMounts = lib.concatLists (lib.mapAttrsToList stateMountsForSpec loadableSpecs);
 
-      # ── Host-side bind-mount source directories ──────────────
-      # Specs may declare `container.volumes = [ "/run/foo:/bar" ]` to bind-
-      # mount a host directory the test populates at assertion time (see
-      # deploy/wiring-volumes.test.nix). Unlike `declaredVolumes` (image
-      # metadata) or `stateDirectories` (tmpfs-backed writable state),
-      # podman does NOT auto-create missing bind-mount *source* directories
-      # -- it fails the container with `Error: statfs <path>: no such file
-      # or directory`. Pre-create every such host path via tmpfiles so it
-      # exists before the container's systemd unit ever tries to start
-      # (tmpfiles-setup.service is ordered via sysinit.target, same as the
-      # state-dir tmpfs mounts above).
+      # ── Host-side directories podman needs pre-created ────────
+      # Covers two cases:
+      #   - `container.volumes = [ "/run/foo:/bar" ]` bind-mount sources
+      #     the test populates at assertion time (see
+      #     deploy/wiring-volumes.test.nix).
+      #   - `stateDirectories` writable state dirs (above).
+      # podman does NOT auto-create missing bind-mount *source*
+      # directories -- it fails the container with `Error: statfs <path>:
+      # no such file or directory`. Pre-create every such host path via
+      # tmpfiles so it exists before the container's systemd unit ever
+      # tries to start (tmpfiles-setup.service is ordered via
+      # sysinit.target, well before any container unit).
       volumeHostPath = v: lib.head (lib.splitString ":" v);
-      volumeHostPathsForSpec = spec: lib.map volumeHostPath (spec.container.volumes or [ ]);
+      volumeHostPathsForSpec =
+        name: spec:
+        lib.map volumeHostPath (spec.container.volumes or [ ])
+        ++ lib.map (m: m.hostPath) (stateMountsForSpec name spec);
       allVolumeHostPaths = lib.unique (
-        lib.concatMap volumeHostPathsForSpec (lib.attrValues loadableSpecs)
+        lib.concatLists (lib.mapAttrsToList volumeHostPathsForSpec loadableSpecs)
       );
 
-      # RequiresMountsFor wiring for the aggregate VM (see shardStateRequires
-      # in mkBddVmFor for the per-shard equivalent and rationale).
-      aggContainerServicePrefix = if config.test.oci._vmBackend == "docker" then "docker-" else "podman-";
+      # apparmor.service wiring for the aggregate VM (see usesApparmor in
+      # mkBddVmFor for the per-shard equivalent and rationale).
+      aggBackend = config.test.oci._vmBackend;
+      aggContainerServicePrefix = if aggBackend == "docker" then "docker-" else "podman-";
+      aggUsesApparmor =
+        s: (s.container.hardening.enable or false) && (s.container.hardening.apparmor.enable or false);
+      allApparmorNames = lib.attrNames (lib.filterAttrs (_: aggUsesApparmor) loadableSpecs);
       allStateRequires = lib.mapAttrs' (
-        name: spec:
+        name: _:
         lib.nameValuePair "${aggContainerServicePrefix}${name}" {
-          unitConfig.RequiresMountsFor = lib.map (m: m.hostPath) (stateMountsForSpec name spec);
+          after = [ "apparmor.service" ];
+          requires = [ "apparmor.service" ];
         }
-      ) (lib.filterAttrs (_: s: (s.stateDirectories or [ ]) != [ ]) loadableSpecs);
+      ) (lib.filterAttrs (_: aggUsesApparmor) loadableSpecs);
 
       # Flake-only container attributes that do NOT exist on the deploy-side
       # (nixos) `oci.containers.<name>` submodule. Per the 3-tier option
@@ -342,24 +362,27 @@ in
         let
           shardRuntime = lib.filterAttrs (_: s: s.level == "runtime") shardSpecs;
           shardDeploy = lib.filterAttrs (_: s: s.level == "deploy") shardSpecs;
-          shardMounts = lib.concatLists (lib.mapAttrsToList stateMountsForSpec shardSpecs);
           shardVolumeHostPaths = lib.unique (
-            lib.concatMap volumeHostPathsForSpec (lib.attrValues shardSpecs)
+            lib.concatLists (lib.mapAttrsToList volumeHostPathsForSpec shardSpecs)
           );
-          # Pin each container's systemd unit to its state-dir tmpfs mounts via
-          # RequiresMountsFor, rather than trusting target-based ordering
-          # (After=basic.target -> sysinit.target -> local-fs.target). This is
-          # the systemd-recommended way to depend on a specific mount by path
-          # and removes any ambiguity about whether the tmpfs is active before
-          # podman tries to bind-mount it (symptom: `Error: statfs <path>: no
-          # such file or directory`, status=125).
-          containerServicePrefix = if config.test.oci._vmBackend == "docker" then "docker-" else "podman-";
+          # Containers with hardening.apparmor.enable need the host's
+          # apparmor.service to have loaded their named profile before they
+          # start (symptom: `Error: apparmor profile "nix-oci-<name>"
+          # specified, but Apparmor is not enabled on this system`) -- see
+          # the `security.apparmor` block below, which registers the
+          # already-generated profile for each such container.
+          shardBackend = config.test.oci._vmBackend;
+          containerServicePrefix = if shardBackend == "docker" then "docker-" else "podman-";
+          usesApparmor =
+            s: (s.container.hardening.enable or false) && (s.container.hardening.apparmor.enable or false);
+          shardApparmorNames = lib.attrNames (lib.filterAttrs (_: usesApparmor) shardSpecs);
           shardStateRequires = lib.mapAttrs' (
-            name: spec:
+            name: _:
             lib.nameValuePair "${containerServicePrefix}${name}" {
-              unitConfig.RequiresMountsFor = lib.map (m: m.hostPath) (stateMountsForSpec name spec);
+              after = [ "apparmor.service" ];
+              requires = [ "apparmor.service" ];
             }
-          ) (lib.filterAttrs (_: s: (s.stateDirectories or [ ]) != [ ]) shardSpecs);
+          ) (lib.filterAttrs (_: usesApparmor) shardSpecs);
           shardBddContainers = lib.getAttrs (lib.attrNames shardSpecs) bddContainers;
           shardBddContainerNames = lib.attrNames shardBddContainers;
           shardPytestCode = lib.concatMapStringsSep "\n\n" (
@@ -407,29 +430,40 @@ in
                 nixosModule
                 ./_vm-defaults
               ]
-              ++ lib.optional (nixosTestModule != null) nixosTestModule;
-
-              virtualisation.docker.enable = lib.mkIf (config.test.oci._vmBackend == "docker") true;
-
-              fileSystems = lib.listToAttrs (
-                lib.map (m: {
-                  name = m.hostPath;
-                  value = {
-                    device = "tmpfs";
-                    fsType = "tmpfs";
-                    options = [
-                      "size=256m"
-                      "mode=0755"
-                    ];
+              ++ lib.optional (nixosTestModule != null) nixosTestModule
+              # Load each apparmor-hardened container's generated profile
+              # into the host kernel so podman's
+              # `--security-opt apparmor=<name>` has something to apply
+              # (see shardExtraUnitFor above). Nested as a module so
+              # `config` resolves to this node's own final evaluated
+              # config (self-referential, standard NixOS module idiom) --
+              # mkVMTest pre-calls the outer node function with only
+              # `{ pkgs, lib }`, so `config` is not available at this level.
+              ++ lib.optional (shardApparmorNames != [ ]) (
+                { config, ... }:
+                {
+                  security.apparmor = {
+                    enable = true;
+                    policies = lib.listToAttrs (
+                      lib.map (
+                        name:
+                        lib.nameValuePair "nix-oci-${name}" {
+                          path =
+                            config.oci.containers.${name}.nixosConfig.eval.oci.container._output.hardening.apparmorProfile;
+                        }
+                      ) shardApparmorNames
+                    );
                   };
-                }) shardMounts
+                }
               );
+
+              virtualisation.docker.enable = lib.mkIf (shardBackend == "docker") true;
 
               systemd.tmpfiles.rules = lib.map (p: "d ${p} 0755 root root -") shardVolumeHostPaths;
 
               oci = {
                 enable = true;
-                backend = config.test.oci._vmBackend;
+                backend = shardBackend;
                 perContainer = [
                   (
                     { lib, ... }:
@@ -566,7 +600,30 @@ in
                 # `_app-vm`.
                 ./_vm-defaults
               ]
-              ++ lib.optional (nixosTestModule != null) nixosTestModule;
+              ++ lib.optional (nixosTestModule != null) nixosTestModule
+              # See the equivalent nested module in mkBddVmFor for why this
+              # is a nested `{ config, ... }` import rather than a plain
+              # attribute on this node: mkVMTest pre-calls this outer node
+              # function with only `{ pkgs, lib }`, so `config` (the node's
+              # own final evaluated config) is only reachable one level
+              # deeper, via NixOS's real module evaluator.
+              ++ lib.optional (allApparmorNames != [ ]) (
+                { config, ... }:
+                {
+                  security.apparmor = {
+                    enable = true;
+                    policies = lib.listToAttrs (
+                      lib.map (
+                        name:
+                        lib.nameValuePair "nix-oci-${name}" {
+                          path =
+                            config.oci.containers.${name}.nixosConfig.eval.oci.container._output.hardening.apparmorProfile;
+                        }
+                      ) allApparmorNames
+                    );
+                  };
+                }
+              );
 
               # When `_vmBackend = "docker"`, we still get podman from the
               # test module's `_podman-config.nix` (which we cannot remove
@@ -574,32 +631,14 @@ in
               # enable dockerd so the deploy suite can be exercised
               # against docker via the same VM. The pytest driver picks
               # the right socket via `DOCKER_HOST` in the testScript.
-              virtualisation.docker.enable = lib.mkIf (config.test.oci._vmBackend == "docker") true;
-
-              # Per-spec writable tmpfs mounts backing each declared
-              # `stateDirectories` entry. Sized modestly (256 MiB each)
-              # so a PostgreSQL initdb has room without dominating the
-              # VM's overall memory budget.
-              fileSystems = lib.listToAttrs (
-                lib.map (m: {
-                  name = m.hostPath;
-                  value = {
-                    device = "tmpfs";
-                    fsType = "tmpfs";
-                    options = [
-                      "size=256m"
-                      "mode=0755"
-                    ];
-                  };
-                }) allStateMounts
-              );
+              virtualisation.docker.enable = lib.mkIf (aggBackend == "docker") true;
 
               systemd.tmpfiles.rules = lib.map (p: "d ${p} 0755 root root -") allVolumeHostPaths;
 
               # BDD containers go through the deploy module
               oci = {
                 enable = true;
-                backend = config.test.oci._vmBackend;
+                backend = aggBackend;
                 perContainer = [
                   (
                     { lib, ... }:
