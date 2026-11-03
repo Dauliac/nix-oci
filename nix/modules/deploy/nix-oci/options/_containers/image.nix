@@ -215,7 +215,9 @@ in
       assert _nixosChecks == "" || _nixosChecks != "";
       nix2container.buildImage (
         {
-          name = config.name;
+          # OCI repository names must be lowercase (podman rejects
+          # mixed-case refs); keep in sync with imageRef.
+          name = lib.toLower config.name;
           tag = config.tag;
           config = ociConfig;
         }

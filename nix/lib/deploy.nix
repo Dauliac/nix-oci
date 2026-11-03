@@ -110,12 +110,14 @@ in
 
   # Build the registry image reference for a container.
   # e.g. "localhost:5000/my-container:latest"
+  # The repository part is lowercased (OCI spec requirement; podman
+  # rejects mixed-case references)  -  keep in sync with imageRef.
   registryImageRef =
     {
       registry,
       container,
     }:
-    "${registry.host}:${toString registry.port}/${container.name}:${container.tag}";
+    "${registry.host}:${toString registry.port}/${lib.toLower container.name}:${container.tag}";
 
   # Filter containers that have autoStart enabled.
   autoStartContainers = containers: lib.filterAttrs (_: c: c.autoStart) containers;

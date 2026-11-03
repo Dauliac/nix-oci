@@ -20,6 +20,11 @@ let
   # Escape a string for embedding in Python source (double-quoted).
   pyStr = s: ''"${lib.replaceStrings [ ''"'' "\\" "\n" ] [ ''\"'' "\\\\" "\\n" ] s}"'';
 
+  # Image reference for a container/spec name. Lowercased because OCI
+  # repository names must be lowercase (images are built with
+  # `lib.toLower` on the name); container names keep their case.
+  imageRefOf = name: "${lib.toLower name}:latest";
+
   # Indent every line by n spaces.
   indent =
     n: s:
@@ -66,7 +71,7 @@ let
       # 127.0.0.1 PING` (and every other localhost check) hits the
       # probe's own loopback, where nothing is listening.
       result = client.containers.run(
-          ${pyStr "${containerName}:latest"},
+          ${pyStr (imageRefOf containerName)},
           entrypoint=${pyStr entry.command},
           ${argsLine}
           network_mode="host",
@@ -93,7 +98,7 @@ let
       # fails: ${entry.command} ${entry.args}
       try:
           client.containers.run(
-              ${pyStr "${containerName}:latest"},
+              ${pyStr (imageRefOf containerName)},
               entrypoint=${pyStr entry.command},
               ${if entry.args != "" then "command=${pyStr entry.args}," else "command=None,"}
               remove=True,
@@ -166,7 +171,7 @@ let
       # syscallBlocked: ${entry.syscall} via ${entry.probe}
       try:
           client.containers.run(
-              ${pyStr "${containerName}:latest"},
+              ${pyStr (imageRefOf containerName)},
               entrypoint=${pyStr entry.probe},
               ${argsLine}
               remove=True,
@@ -208,7 +213,7 @@ let
       # fsWriteBlocked: ${entry.path}
       try:
           client.containers.run(
-              ${pyStr "${containerName}:latest"},
+              ${pyStr (imageRefOf containerName)},
               entrypoint="/bin/sh",
               command=${pyStr "-c \"touch ${entry.path}\""},
               remove=True,
@@ -225,7 +230,7 @@ let
     # dnsResolutionFails: ${entry.hostname}
     try:
         client.containers.run(
-            ${pyStr "${containerName}:latest"},
+            ${pyStr (imageRefOf containerName)},
             entrypoint="/bin/sh",
             command=${pyStr "-c \"getent hosts ${entry.hostname} 2>&1 || exit 1\""},
             remove=True,
@@ -242,7 +247,7 @@ let
     # tlsHandshakeFails: ${entry.url}
     try:
         client.containers.run(
-            ${pyStr "${containerName}:latest"},
+            ${pyStr (imageRefOf containerName)},
             entrypoint="curl",
             command=${pyStr "--silent --show-error --fail --max-time 10 ${entry.url}"},
             remove=True,
@@ -275,7 +280,7 @@ let
     in
     ''
       # envVarSet: image OCI Config.Env
-      _img = client.images.get(${pyStr "${containerName}:latest"})
+      _img = client.images.get(${pyStr (imageRefOf containerName)})
       _env_list = (_img.attrs.get("Config", {}) or {}).get("Env", []) or []
       ${concatStringsSep "\n" checks}
     '';
@@ -369,7 +374,7 @@ let
     ''
       # processEnv checks
       proc_output = client.containers.run(
-          ${pyStr "${containerName}:latest"},
+          ${pyStr (imageRefOf containerName)},
           entrypoint="/bin/cat",
           command="/proc/1/environ",
           remove=True,
