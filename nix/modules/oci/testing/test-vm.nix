@@ -167,6 +167,33 @@ in
       # All (spec × dir) pairs, flat, for fileSystems declarations.
       allStateMounts = lib.concatLists (lib.mapAttrsToList stateMountsForSpec loadableSpecs);
 
+      # ── Host-side bind-mount source directories ──────────────
+      # Specs may declare `container.volumes = [ "/run/foo:/bar" ]` to bind-
+      # mount a host directory the test populates at assertion time (see
+      # deploy/wiring-volumes.test.nix). Unlike `declaredVolumes` (image
+      # metadata) or `stateDirectories` (tmpfs-backed writable state),
+      # podman does NOT auto-create missing bind-mount *source* directories
+      # -- it fails the container with `Error: statfs <path>: no such file
+      # or directory`. Pre-create every such host path via tmpfiles so it
+      # exists before the container's systemd unit ever tries to start
+      # (tmpfiles-setup.service is ordered via sysinit.target, same as the
+      # state-dir tmpfs mounts above).
+      volumeHostPath = v: lib.head (lib.splitString ":" v);
+      volumeHostPathsForSpec = spec: lib.map volumeHostPath (spec.container.volumes or [ ]);
+      allVolumeHostPaths = lib.unique (
+        lib.concatMap volumeHostPathsForSpec (lib.attrValues loadableSpecs)
+      );
+
+      # RequiresMountsFor wiring for the aggregate VM (see shardStateRequires
+      # in mkBddVmFor for the per-shard equivalent and rationale).
+      aggContainerServicePrefix = if config.test.oci._vmBackend == "docker" then "docker-" else "podman-";
+      allStateRequires = lib.mapAttrs' (
+        name: spec:
+        lib.nameValuePair "${aggContainerServicePrefix}${name}" {
+          unitConfig.RequiresMountsFor = lib.map (m: m.hostPath) (stateMountsForSpec name spec);
+        }
+      ) (lib.filterAttrs (_: s: (s.stateDirectories or [ ]) != [ ]) loadableSpecs);
+
       # Flake-only container attributes that do NOT exist on the deploy-side
       # (nixos) `oci.containers.<name>` submodule. Per the 3-tier option
       # architecture (see MEMORY.md, "Key Design Decisions"): `test.*` opts
@@ -316,6 +343,23 @@ in
           shardRuntime = lib.filterAttrs (_: s: s.level == "runtime") shardSpecs;
           shardDeploy = lib.filterAttrs (_: s: s.level == "deploy") shardSpecs;
           shardMounts = lib.concatLists (lib.mapAttrsToList stateMountsForSpec shardSpecs);
+          shardVolumeHostPaths = lib.unique (
+            lib.concatMap volumeHostPathsForSpec (lib.attrValues shardSpecs)
+          );
+          # Pin each container's systemd unit to its state-dir tmpfs mounts via
+          # RequiresMountsFor, rather than trusting target-based ordering
+          # (After=basic.target -> sysinit.target -> local-fs.target). This is
+          # the systemd-recommended way to depend on a specific mount by path
+          # and removes any ambiguity about whether the tmpfs is active before
+          # podman tries to bind-mount it (symptom: `Error: statfs <path>: no
+          # such file or directory`, status=125).
+          containerServicePrefix = if config.test.oci._vmBackend == "docker" then "docker-" else "podman-";
+          shardStateRequires = lib.mapAttrs' (
+            name: spec:
+            lib.nameValuePair "${containerServicePrefix}${name}" {
+              unitConfig.RequiresMountsFor = lib.map (m: m.hostPath) (stateMountsForSpec name spec);
+            }
+          ) (lib.filterAttrs (_: s: (s.stateDirectories or [ ]) != [ ]) shardSpecs);
           shardBddContainers = lib.getAttrs (lib.attrNames shardSpecs) bddContainers;
           shardBddContainerNames = lib.attrNames shardBddContainers;
           shardPytestCode = lib.concatMapStringsSep "\n\n" (
@@ -381,6 +425,8 @@ in
                 }) shardMounts
               );
 
+              systemd.tmpfiles.rules = lib.map (p: "d ${p} 0755 root root -") shardVolumeHostPaths;
+
               oci = {
                 enable = true;
                 backend = config.test.oci._vmBackend;
@@ -396,40 +442,42 @@ in
                 containers = shardBddContainers;
               };
 
-              systemd.services = lib.optionalAttrs (includeRegistryTest && registryTestOCI != null) {
-                "flake-oci-load-${registryTestName}" = {
-                  description = "Push ${registryTestName} to local registry (pipeline test)";
-                  wantedBy = [ "multi-user.target" ];
-                  after = [ "docker-registry.service" ];
-                  requires = [ "docker-registry.service" ];
-                  serviceConfig = {
-                    Type = "oneshot";
-                    RemainAfterExit = true;
+              systemd.services =
+                shardStateRequires
+                // lib.optionalAttrs (includeRegistryTest && registryTestOCI != null) {
+                  "flake-oci-load-${registryTestName}" = {
+                    description = "Push ${registryTestName} to local registry (pipeline test)";
+                    wantedBy = [ "multi-user.target" ];
+                    after = [ "docker-registry.service" ];
+                    requires = [ "docker-registry.service" ];
+                    serviceConfig = {
+                      Type = "oneshot";
+                      RemainAfterExit = true;
+                    };
+                    path = [
+                      skopeoNix2container
+                      pkgs.podman
+                    ];
+                    script = ''
+                      set -euo pipefail
+                      for _i in $(seq 1 60); do
+                        if ${pkgs.curl}/bin/curl -sf http://localhost:5000/v2/ >/dev/null 2>&1; then
+                          break
+                        fi
+                        sleep 0.5
+                      done
+                      echo "Pushing ${registryTestName} to local registry ..."
+                      skopeo --insecure-policy copy \
+                        --dest-tls-verify=false \
+                        nix:${registryTestOCI} \
+                        docker://localhost:5000/${registryLowerName}:latest
+                      echo "Pulling from registry ..."
+                      podman pull --tls-verify=false \
+                        localhost:5000/${registryLowerName}:latest
+                      echo "Successfully loaded ${registryTestName}"
+                    '';
                   };
-                  path = [
-                    skopeoNix2container
-                    pkgs.podman
-                  ];
-                  script = ''
-                    set -euo pipefail
-                    for _i in $(seq 1 60); do
-                      if ${pkgs.curl}/bin/curl -sf http://localhost:5000/v2/ >/dev/null 2>&1; then
-                        break
-                      fi
-                      sleep 0.5
-                    done
-                    echo "Pushing ${registryTestName} to local registry ..."
-                    skopeo --insecure-policy copy \
-                      --dest-tls-verify=false \
-                      nix:${registryTestOCI} \
-                      docker://localhost:5000/${registryLowerName}:latest
-                    echo "Pulling from registry ..."
-                    podman pull --tls-verify=false \
-                      localhost:5000/${registryLowerName}:latest
-                    echo "Successfully loaded ${registryTestName}"
-                  '';
                 };
-              };
 
               environment.systemPackages = [
                 (pkgs.python3.withPackages (
@@ -546,6 +594,8 @@ in
                 }) allStateMounts
               );
 
+              systemd.tmpfiles.rules = lib.map (p: "d ${p} 0755 root root -") allVolumeHostPaths;
+
               # BDD containers go through the deploy module
               oci = {
                 enable = true;
@@ -564,40 +614,42 @@ in
 
               # Single registry push test: push one small image to validate
               # the skopeo nix: -> registry -> podman pull pipeline.
-              systemd.services = lib.optionalAttrs (registryTestOCI != null) {
-                "flake-oci-load-${registryTestName}" = {
-                  description = "Push ${registryTestName} to local registry (pipeline test)";
-                  wantedBy = [ "multi-user.target" ];
-                  after = [ "docker-registry.service" ];
-                  requires = [ "docker-registry.service" ];
-                  serviceConfig = {
-                    Type = "oneshot";
-                    RemainAfterExit = true;
+              systemd.services =
+                allStateRequires
+                // lib.optionalAttrs (registryTestOCI != null) {
+                  "flake-oci-load-${registryTestName}" = {
+                    description = "Push ${registryTestName} to local registry (pipeline test)";
+                    wantedBy = [ "multi-user.target" ];
+                    after = [ "docker-registry.service" ];
+                    requires = [ "docker-registry.service" ];
+                    serviceConfig = {
+                      Type = "oneshot";
+                      RemainAfterExit = true;
+                    };
+                    path = [
+                      skopeoNix2container
+                      pkgs.podman
+                    ];
+                    script = ''
+                      set -euo pipefail
+                      for _i in $(seq 1 60); do
+                        if ${pkgs.curl}/bin/curl -sf http://localhost:5000/v2/ >/dev/null 2>&1; then
+                          break
+                        fi
+                        sleep 0.5
+                      done
+                      echo "Pushing ${registryTestName} to local registry ..."
+                      skopeo --insecure-policy copy \
+                        --dest-tls-verify=false \
+                        nix:${registryTestOCI} \
+                        docker://localhost:5000/${registryLowerName}:latest
+                      echo "Pulling from registry ..."
+                      podman pull --tls-verify=false \
+                        localhost:5000/${registryLowerName}:latest
+                      echo "Successfully loaded ${registryTestName}"
+                    '';
                   };
-                  path = [
-                    skopeoNix2container
-                    pkgs.podman
-                  ];
-                  script = ''
-                    set -euo pipefail
-                    for _i in $(seq 1 60); do
-                      if ${pkgs.curl}/bin/curl -sf http://localhost:5000/v2/ >/dev/null 2>&1; then
-                        break
-                      fi
-                      sleep 0.5
-                    done
-                    echo "Pushing ${registryTestName} to local registry ..."
-                    skopeo --insecure-policy copy \
-                      --dest-tls-verify=false \
-                      nix:${registryTestOCI} \
-                      docker://localhost:5000/${registryLowerName}:latest
-                    echo "Pulling from registry ..."
-                    podman pull --tls-verify=false \
-                      localhost:5000/${registryLowerName}:latest
-                    echo "Successfully loaded ${registryTestName}"
-                  '';
                 };
-              };
 
               environment.systemPackages = [
                 (pkgs.python3.withPackages (
