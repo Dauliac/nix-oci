@@ -73,10 +73,21 @@ in
     # ExecStart drops `--enable-dbus`, and the BusName / Type fields are
     # cleared. Reload stays as SIGHUP (the one `kill -HUP $MAINPID`
     # command does not need dbus).
+    #
+    # --pid-file=/tmp/dnsmasq.pid: even with -k (keep in foreground),
+    # dnsmasq writes a pidfile when started as root, defaulting to
+    # /var/run/dnsmasq.pid. The OCI image has no /var/run, and dnsmasq
+    # treats the failed O_EXCL open as fatal:
+    #   dnsmasq: failed to open pidfile /var/run/dnsmasq.pid: No such file ...
+    #   exit=3 (EC_FILE, surfaced by systemd as NOTIMPLEMENTED)
+    # /tmp exists in every nix-oci rootfs and each container start gets a
+    # fresh overlay, so the O_EXCL create never collides with a stale file.
+    # (Verified: `--pid-file=/dev/null` fails with EEXIST and an empty
+    # `--pid-file=` is a config error, so a real path is the only option.)
     systemd.services.dnsmasq.serviceConfig = {
       Type = lib.mkForce "simple";
       BusName = lib.mkForce null;
-      ExecStart = lib.mkForce "${dnsmasqCfg.package}/bin/dnsmasq -k --user=dnsmasq -C ${dnsmasqCfg.configFile}";
+      ExecStart = lib.mkForce "${dnsmasqCfg.package}/bin/dnsmasq -k --user=dnsmasq --pid-file=/tmp/dnsmasq.pid -C ${dnsmasqCfg.configFile}";
     };
   };
 }
