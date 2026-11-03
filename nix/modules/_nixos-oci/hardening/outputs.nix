@@ -481,11 +481,11 @@ in
             # Base abstractions
             [ "#include <abstractions/base>" ]
             # Deny user namespace creation (LPE mitigation).
-            ++ lib.optional aa.denyUserNamespace "deny userns_create,"
+            ++ lib.optional aa.denyUserNamespace "deny userns,"
             # Deny mount operations.
             ++ lib.optional aa.denyMount "deny mount,"
             # Deny ptrace.
-            ++ lib.optional aa.denyPtrace "deny ptrace (read read trace traceby),"
+            ++ lib.optional aa.denyPtrace "deny ptrace (trace, tracedby, read, read),"
             # Default: deny raw network access.
             ++ [
               "deny network raw,"

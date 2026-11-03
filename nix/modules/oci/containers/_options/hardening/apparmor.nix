@@ -8,7 +8,7 @@
 #   - Network access (TCP/UDP bind/connect)
 #   - Capability usage (even more granular than cap drop)
 #   - Mount operations (which fstype, where)
-#   - User namespace creation (deny userns_create — blocks LPE class)
+#   - User namespace creation (deny userns — blocks LPE class)
 #
 # Enforcement order at runtime:
 #   seccomp (BPF) → capabilities (kernel) → AppArmor (LSM)
@@ -64,7 +64,7 @@
             to reach normally-root-only kernel code paths
             (CVE-2023-2640, CVE-2023-32629, etc.).
 
-            Enforced via AppArmor `deny userns_create,` rule.
+            Enforced via AppArmor `deny userns,` rule.
             Complementary to seccomp clone(CLONE_NEWUSER) arg filter
             and capability drop SYS_ADMIN.
           '';
@@ -89,7 +89,7 @@
             Deny ptrace of other processes.
 
             Prevents process inspection and memory manipulation attacks.
-            Enforced via AppArmor `deny ptrace (read, read, trace, traceby),`
+            Enforced via AppArmor `deny ptrace (trace, tracedby, read, read),`
             rule.
           '';
         };

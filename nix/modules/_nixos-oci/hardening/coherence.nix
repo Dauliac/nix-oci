@@ -320,7 +320,7 @@ in
             message = ''
               nix-oci coherence: AppArmor denies ${
                 concatStringsSep " and " (
-                  optional cfg.apparmor.denyMount "mount" ++ optional cfg.apparmor.denyUserNamespace "userns_create"
+                  optional cfg.apparmor.denyMount "mount" ++ optional cfg.apparmor.denyUserNamespace "userns"
                 )
               }
               but capabilities.add includes SYS_ADMIN which grants these operations.
