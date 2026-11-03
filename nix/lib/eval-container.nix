@@ -235,6 +235,14 @@ in
           inherit (pkgs) system;
           modules = [
             ociNixOSModules
+            # Make the container's attr name available as a module arg
+            # (like pkgs/lib), not a Tier 1 option: `name` is Tier 2
+            # (image artifact identity, see container-options-namespace.nix)
+            # and deliberately NOT forwarded into this eval as
+            # oci.container.name. Hardening rule generation (AppArmor
+            # profile naming) needs a stable per-container identity
+            # distinct from that build-time concern.
+            { _module.args.containerName = containerName; }
           ]
           ++ lib.optional (nixLibNixosModule != null) nixLibNixosModule
           ++ [

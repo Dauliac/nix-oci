@@ -2,6 +2,13 @@
   config,
   lib,
   pkgs,
+  # Per-container identity, injected via _module.args by eval-container.nix
+  # (see its comment there). `name` is a Tier 2 (image-artifact) option and
+  # deliberately not forwarded as oci.container.name into this eval, so the
+  # AppArmor profile below needs its own identity to stay unique per
+  # container; defaults to the historical generic fallback for standalone
+  # consumers of this module tree that don't go through eval-container.nix.
+  containerName ? "container",
   ...
 }:
 let
@@ -467,7 +474,6 @@ in
       default =
         let
           aa = cfg.apparmor;
-          containerName = config.oci.container.name or "container";
           profileName = "nix-oci-${containerName}";
 
           flags =
