@@ -119,6 +119,7 @@ jobs:
       fail-fast: false
       matrix:
         group:
+          - apparmordocker
           - deploy
           - entrypoint
           - environment
