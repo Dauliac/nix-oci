@@ -13,14 +13,6 @@
 {
   perSystem =
     { pkgs, ... }:
-    let
-      readInit = [
-        "${pkgs.busybox}/bin/busybox"
-        "sh"
-        "-c"
-        "cat /proc/1/environ; sleep 3600"
-      ];
-    in
     {
       test.oci.perContainer.performance-allocator-config-runtime = {
         # jemalloc: MALLOC_CONF is jemallocDefaults // user-config, joined "k:v"
@@ -37,7 +29,14 @@
           container = {
             package = pkgs.busybox;
             isRoot = true;
-            entrypoint = readInit;
+            # No custom entrypoint: `assertions.processEnv` spins up its own
+            # ephemeral probe (`/bin/cat /proc/1/environ`), so this field
+            # never affects the actual assertion. It previously overrode the
+            # entrypoint to a `sleep 3600` loop, which fed into the real
+            # autoStart container's image too (level = "runtime" -> mode =
+            # "oneshot") -- that unit's ExecStart then blocked on the sleep
+            # for a full hour, stalling `multi-user.target` and the whole VM
+            # boot well past the 900s wait budget.
             performance.enable = true;
             performance.allocator = "jemalloc";
             performance.allocatorConfig = {
@@ -57,7 +56,6 @@
           container = {
             package = pkgs.busybox;
             isRoot = true;
-            entrypoint = readInit;
             performance.enable = true;
             performance.allocator = "mimalloc";
             performance.allocatorConfig = {
@@ -77,7 +75,6 @@
           container = {
             package = pkgs.busybox;
             isRoot = true;
-            entrypoint = readInit;
             performance.enable = true;
             performance.allocator = "tcmalloc";
             performance.allocatorConfig = {
