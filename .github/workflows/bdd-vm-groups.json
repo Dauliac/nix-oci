@@ -5,6 +5,7 @@
   "environment",
   "invariant",
   "nixos",
-  "performance",
+  "performance-a",
+  "performance-b",
   "runtime"
 ]

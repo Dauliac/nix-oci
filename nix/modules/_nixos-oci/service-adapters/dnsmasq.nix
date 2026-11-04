@@ -44,6 +44,13 @@ in
 {
   config = lib.mkIf isDnsmasq {
     oci.container._output.detectedPorts = [ (dnsmasqCfg.settings.port or 53) ];
+    # `dig`'s own retry budget (default +tries=3, each +time seconds)
+    # can exceed podman's external --health-timeout, which kills the
+    # command mid-retry and counts it as a failure regardless of
+    # whether a later retry would have succeeded. Pin dig to a single
+    # bounded attempt and give podman generous headroom above it, plus
+    # more retries/startPeriod so a slow-booting VM under CPU
+    # contention doesn't flip this unhealthy before dnsmasq settles.
     oci.container.healthcheck.command = lib.mkDefault [
       "${pkgs.dig}/bin/dig"
       "@${addr}"
@@ -52,7 +59,11 @@ in
       "localhost"
       "+short"
       "+time=3"
+      "+tries=1"
     ];
+    oci.container.healthcheck.timeout = lib.mkDefault 8;
+    oci.container.healthcheck.startPeriod = lib.mkDefault 10;
+    oci.container.healthcheck.retries = lib.mkDefault 5;
     oci.container.stopSignal = lib.mkDefault "SIGTERM";
     oci.container.extraPackages = [ pkgs.dig ];
 

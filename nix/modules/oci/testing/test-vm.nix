@@ -469,21 +469,54 @@ in
 
       # ── Per-group spec sharding ────────────────────────────
       # Specs are keyed `<group>--<scenario>`. Bucket by the first
-      # dash-separated token (`deploy`, `runtime`, `hardening`,
-      # `performance`, `probes`, ...) so GitHub Actions can fan them
-      # out across runners. Each shard VM boots ~5-10 containers
-      # instead of ~44, finishes in under 5 min, and so avoids the
-      # Azure spot preemption that was killing the single aggregate
-      # VM (see 091aef2, 953e3f3 postmortems).
+      # dash-separated token of the group (`deploy`, `runtime`,
+      # `hardening`, `performance`, `probes`, ...) so GitHub Actions
+      # can fan them out across runners. Each shard VM boots ~5-10
+      # containers instead of ~44, finishes in under 5 min, and so
+      # avoids the Azure spot preemption that was killing the single
+      # aggregate VM (see 091aef2, 953e3f3 postmortems).
       #
       # One shard (prefer `deploy`, else alphabetically-first) carries
       # the registry-push test so it runs exactly once.
+      #
+      # `performance`'s 13 groups all share that first token, so by
+      # default they'd all land in one shard -- 14 containers booting
+      # concurrently in a single VM, which was overrunning the 30min
+      # CI job timeout (likely CPU contention: the VM requests more
+      # vCPUs than the GH-hosted runner actually has). Split it across
+      # two shards via an explicit override, same ~7 containers each.
+      # Keys here are the group as it actually appears in spec keys
+      # (`<group>--<scenario>`), which is the `test.oci.perContainer`
+      # attribute name with the spec's `level` appended -- e.g. the
+      # `performance-allocator-config` test group at `level = "runtime"`
+      # produces group key `performance-allocator-config-runtime`.
+      performanceShardOverride =
+        lib.genAttrs [
+          "performance-allocator-runtime"
+          "performance-allocator-config-runtime"
+          "performance-hwcaps-runtime"
+          "performance-enable-runtime"
+          "performance-huge-pages-runtime"
+          "performance-startup-runtime"
+        ] (_: "performance-a")
+        // lib.genAttrs [
+          "performance-compression-runtime"
+          "performance-glibc-tunables-runtime"
+          "performance-glibc-tunables-preset-runtime"
+          "performance-turbo-soci-runtime"
+          "performance-turbo-soci-span-size-runtime"
+          "performance-turbo-enable-runtime"
+          "performance-turbo-layer-cache-runtime"
+        ] (_: "performance-b");
+
       groupPrefix =
         name:
         let
-          parts = lib.splitString "-" name;
+          group = lib.head (lib.splitString "--" name);
+          parts = lib.splitString "-" group;
+          firstToken = if parts == [ ] then "misc" else builtins.head parts;
         in
-        if parts == [ ] then "misc" else builtins.head parts;
+        performanceShardOverride.${group} or firstToken;
 
       loadableSpecsByGroup =
         let
