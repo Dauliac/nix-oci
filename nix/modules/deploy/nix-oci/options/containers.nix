@@ -32,11 +32,13 @@ let
       pkgs,
       nix2container,
       nixLibNixosModule ? null,
+      # Overridable so docs generation can inject a stub that no-ops
+      # derivation-producing functions (mkRoot, mkSeccompProfile, ...)
+      # which can't evaluate during docs builds.
+      ociLib ? mkOciLib lib,
       ...
     }:
     let
-      ociLib = mkOciLib lib;
-
       baseModules = [
         sharedOptions
         deployExtensions

@@ -39,8 +39,8 @@
 
 ## 7. Reference-build resilience
 
-- [ ] **7.1** `nix/docs.nix:135-174`, replace the inline duplicated `oci.enable` / `oci.backend` / `oci.containers` schema with `import`s of `nix/modules/deploy/nix-oci/options/{enable,backend,containers}.nix`, evaluated through the same `nixosOptionsDoc` pipeline. `blocking:human`.
-- [ ] **7.2** Verify: `nix build .#legacyPackages.<system>.docs` succeeds; rendered `reference/*.md` byte-diff (modulo `/nix/store/…` hashes) matches pre-change output. Depends on 7.1.
+- [x] **7.1** `nix/docs.nix:135-174`, replace the inline duplicated `oci.enable` / `oci.backend` / `oci.containers` schema with `import`s of `nix/modules/deploy/nix-oci/options/{enable,backend,containers}.nix`, evaluated through the same `nixosOptionsDoc` pipeline. Done via `flakeModules.nixos.nix-oci-{enable,backend,containers}` (same modules `config.flake.modules` already resolves); `containers.nix`'s `mkOciLib` made overridable (`ociLib ? mkOciLib lib`) so docs generation can keep injecting its non-derivation-producing stub.
+- [x] **7.2** Verify: `nix build .#legacyPackages.x86_64-linux.docs` succeeds; rendered `reference/{nixos,home-manager,system-manager}-options.html` diff (modulo `/nix/store/…` hashes) against pre-change output is additive only: "Declared by" backlinks to the real source files, plus the previously-missing `oci.perContainer` option (dropped by the old hand-duplicated schema  -  now fixed as a side effect). No other content changed.
 
 ## 8. Minor cleanup
 

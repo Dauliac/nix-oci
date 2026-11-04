@@ -113,14 +113,15 @@ in
         };
 
         # --- Deploy module options (oci.*) ---
-        # The deploy submodule imports shared options (_options/) + deploy extensions (_containers/).
-        # We resolve import-tree here and provide nix2container + ociLib via specialArgs.
-        sharedOptions = import-tree ./modules/oci/containers/_options;
-        deployExtensions = import-tree ./modules/deploy/nix-oci/options/_containers;
-
+        # Import the real deploy modules (same ones NixOS/HM/system-manager
+        # consumers import) instead of redeclaring their schema, so the
+        # reference docs can't drift from the actual options.
+        #
         # Minimal ociLib stub for option declarations (only needed for default values).
         # Uses the shared pure library where possible; stubs for derivation-producing
-        # functions that can't evaluate during docs generation.
+        # functions that can't evaluate during docs generation. Threaded into
+        # modules.nix-oci-containers below via _module.args, overriding its
+        # default (the real, derivation-producing ociLib).
         ociLib = (import ./lib/oci.nix { inherit lib; }) // {
           mkShadowSetup = _: [ ];
           mkRoot = _: null;
@@ -129,50 +130,9 @@ in
         };
 
         deployOptionModules = [
-          (
-            { lib, ... }:
-            {
-              options.oci.enable = lib.mkEnableOption "nix-oci container deployment";
-            }
-          )
-          (
-            { lib, ... }:
-            {
-              options.oci.backend = lib.mkOption {
-                type = lib.types.enum [
-                  "docker"
-                  "podman"
-                ];
-                default = "podman";
-                description = "Container runtime backend to load and run images.";
-              };
-            }
-          )
-          (
-            { lib, ... }:
-            {
-              options.oci.containers = lib.mkOption {
-                type = lib.types.attrsOf (
-                  lib.types.submoduleWith {
-                    modules = [
-                      sharedOptions
-                      deployExtensions
-                    ];
-                    specialArgs = {
-                      inherit pkgs ociLib;
-                      nix2container = inputs.nix2container.packages.${system}.nix2container;
-                    };
-                  }
-                );
-                default = { };
-                description = ''
-                  OCI containers to build, load, and optionally run.
-                  Each entry builds an image via nix2container and creates
-                  a systemd service to load it into the container runtime.
-                '';
-              };
-            }
-          )
+          flakeModules.nixos.nix-oci-enable
+          flakeModules.nixos.nix-oci-backend
+          flakeModules.nixos.nix-oci-containers
         ];
 
         deployEval = lib.evalModules {
@@ -180,6 +140,10 @@ in
             {
               options._module.args = lib.mkOption { internal = true; };
               config._module.check = false;
+              config._module.args = {
+                inherit pkgs ociLib;
+                nix2container = inputs.nix2container.packages.${system}.nix2container;
+              };
             }
           ];
         };
