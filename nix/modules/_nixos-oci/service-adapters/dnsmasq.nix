@@ -40,6 +40,14 @@ let
       "127.0.0.1"
     else
       firstAddr;
+
+  # TEMPORARY DIAGNOSTIC: see oci.container.healthcheck.command below.
+  diagHealthScript = pkgs.writeShellScript "dnsmasq-health-debug" ''
+    out=$(${pkgs.dig}/bin/dig @${addr} -p ${port} localhost +short +time=3 +tries=1 2>&1)
+    ec=$?
+    ${pkgs.util-linux}/bin/logger -t nixoci-dnsmasq-health "exit=$ec out=$out"
+    exit $ec
+  '';
 in
 {
   config = lib.mkIf isDnsmasq {
@@ -51,21 +59,23 @@ in
     # bounded attempt and give podman generous headroom above it, plus
     # more retries/startPeriod so a slow-booting VM under CPU
     # contention doesn't flip this unhealthy before dnsmasq settles.
-    oci.container.healthcheck.command = lib.mkDefault [
-      "${pkgs.dig}/bin/dig"
-      "@${addr}"
-      "-p"
-      port
-      "localhost"
-      "+short"
-      "+time=3"
-      "+tries=1"
-    ];
+    # TEMPORARY DIAGNOSTIC (see bead/PR notes): the plain `dig` healthcheck
+    # below fails on every single attempt in CI with no visible error --
+    # podman doesn't forward --health-cmd's own stdout/stderr to the
+    # journal, so the real failure reason has been invisible. Wrap it to
+    # `logger` the exit code + combined output under a distinctive tag;
+    # NixOS test VMs mirror the journal to the console, so this should
+    # show up as a `nixoci-dnsmasq-health[pid]: ...` line in the CI log.
+    # Revert to the plain command once the cause is identified.
+    oci.container.healthcheck.command = lib.mkDefault [ "${diagHealthScript}" ];
     oci.container.healthcheck.timeout = lib.mkDefault 8;
     oci.container.healthcheck.startPeriod = lib.mkDefault 10;
     oci.container.healthcheck.retries = lib.mkDefault 5;
     oci.container.stopSignal = lib.mkDefault "SIGTERM";
-    oci.container.extraPackages = [ pkgs.dig ];
+    oci.container.extraPackages = [
+      pkgs.dig
+      pkgs.util-linux
+    ];
 
     # nixpkgs' `services.dnsmasq` module adds
     #   conf-file = /etc/dnsmasq-conf.conf
