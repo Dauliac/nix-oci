@@ -76,6 +76,7 @@ let
           ${argsLine}
           network_mode="host",
           remove=True,
+          **_hardening_kwargs(${pyStr containerName}),
       )
       ${stdoutCheck}
     '';
@@ -102,6 +103,7 @@ let
               entrypoint=${pyStr entry.command},
               ${if entry.args != "" then "command=${pyStr entry.args}," else "command=None,"}
               remove=True,
+              **_hardening_kwargs(${pyStr containerName}),
           )
           pytest.fail("Expected non-zero exit from ${entry.command}")
       except docker.errors.ContainerError as e:
@@ -175,6 +177,7 @@ let
               entrypoint=${pyStr entry.probe},
               ${argsLine}
               remove=True,
+              **_hardening_kwargs(${pyStr containerName}),
           )
           pytest.fail(
               "Expected syscall ${entry.syscall} to be blocked by container hardening, "
@@ -217,6 +220,7 @@ let
               entrypoint="/bin/sh",
               command=${pyStr "-c \"touch ${entry.path}\""},
               remove=True,
+              **_hardening_kwargs(${pyStr containerName}),
           )
           pytest.fail(
               "Expected write to ${entry.path} to be blocked, but touch exited 0"

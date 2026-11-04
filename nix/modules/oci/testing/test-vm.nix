@@ -190,6 +190,65 @@ in
           containerPath = dir;
         }) (spec.stateDirectories or [ ]);
       hasStateDirs = s: (s.stateDirectories or [ ]) != [ ];
+
+      # ── Probe-container hardening kwargs ───────────────────────
+      # BDD `syscallBlocked`/`fsWriteBlocked`/`succeeds`/`fails` assertions
+      # run a fresh, ephemeral probe container directly against the image
+      # (`client.containers.run(image, ...)`), separate from the autoStart
+      # systemd-managed container that actually carries the computed
+      # `securityOpts` (seccomp/apparmor/cap-drop/read-only flags, see
+      # `_containers/security.nix`). Without this, the probe inherits none
+      # of the hardening under test: seccomp/capabilities/rootfs scenarios
+      # silently exercise podman/docker's bare defaults instead of the
+      # container's configured hardening, and any apparent "pass" (e.g. a
+      # /proc/sys write failing due to the default capability set lacking
+      # CAP_SYS_ADMIN) can be a false positive unrelated to the feature
+      # under test.
+      #
+      # `config.oci.containers.${name}.securityOpts` (reachable only via a
+      # nested `{ config, ... }` module, same reason as stateDirTmpfilesRulesFor
+      # above) is a list of raw `--flag=value` CLI strings. Parse it into a
+      # structured attrset so it can be serialized as JSON and consumed by
+      # docker-py kwargs in the generated pytest file (see
+      # _python-gen.nix's `_hardening_kwargs`).
+      parseSecurityOpts =
+        opts:
+        lib.foldl' (
+          acc: opt:
+          if lib.hasPrefix "--security-opt=seccomp=" opt then
+            acc // { seccomp_profile_path = lib.removePrefix "--security-opt=seccomp=" opt; }
+          else if lib.hasPrefix "--security-opt=apparmor=" opt then
+            acc // { apparmor_profile = lib.removePrefix "--security-opt=apparmor=" opt; }
+          else if opt == "--security-opt=no-new-privileges" then
+            acc // { no_new_privileges = true; }
+          else if opt == "--read-only" then
+            acc // { read_only = true; }
+          else if lib.hasPrefix "--cap-drop=" opt then
+            acc // { cap_drop = (acc.cap_drop or [ ]) ++ [ (lib.removePrefix "--cap-drop=" opt) ]; }
+          else if lib.hasPrefix "--cap-add=" opt then
+            acc // { cap_add = (acc.cap_add or [ ]) ++ [ (lib.removePrefix "--cap-add=" opt) ]; }
+          else if lib.hasPrefix "--tmpfs=" opt then
+            let
+              rest = lib.removePrefix "--tmpfs=" opt;
+              parts = lib.splitString ":" rest;
+              path = lib.head parts;
+              mountOpts = lib.concatStringsSep ":" (lib.tail parts);
+            in
+            acc // { tmpfs = (acc.tmpfs or { }) // { ${path} = mountOpts; }; }
+          else
+            acc
+        ) { } opts;
+
+      probeHardeningJsonFor =
+        config: names:
+        builtins.toJSON (
+          lib.listToAttrs (
+            lib.map (
+              name: lib.nameValuePair name (parseSecurityOpts (config.oci.containers.${name}.securityOpts or [ ]))
+            ) names
+          )
+        );
+
       stateDirTmpfilesRulesFor =
         config: names:
         lib.concatMap (
@@ -317,6 +376,46 @@ in
 
       registryLowerName = if registryTestName != null then lib.toLower registryTestName else "";
 
+      # Loads /etc/nix-oci-test-hardening.json (see probeHardeningJsonFor)
+      # and exposes `_hardening_kwargs(name)`, which the generated
+      # assertion code (_python-gen.nix) splats into every ephemeral probe
+      # container's `client.containers.run(...)` call so probes actually
+      # exercise the container's configured hardening instead of
+      # podman/docker's bare defaults.
+      hardeningPreamble = ''
+        with open("/etc/nix-oci-test-hardening.json") as _hf:
+            _HARDENING = json.load(_hf)
+
+
+        def _hardening_security_opt(h):
+            opts = []
+            if h.get("seccomp_profile_path"):
+                with open(h["seccomp_profile_path"]) as _f:
+                    opts.append("seccomp=" + _f.read())
+            if h.get("apparmor_profile"):
+                opts.append("apparmor=" + h["apparmor_profile"])
+            if h.get("no_new_privileges"):
+                opts.append("no-new-privileges")
+            return opts
+
+
+        def _hardening_kwargs(name):
+            h = _HARDENING.get(name, {})
+            kwargs = {}
+            security_opt = _hardening_security_opt(h)
+            if security_opt:
+                kwargs["security_opt"] = security_opt
+            if h.get("cap_drop"):
+                kwargs["cap_drop"] = h["cap_drop"]
+            if h.get("cap_add"):
+                kwargs["cap_add"] = h["cap_add"]
+            if h.get("read_only"):
+                kwargs["read_only"] = True
+            if h.get("tmpfs"):
+                kwargs["tmpfs"] = h["tmpfs"]
+            return kwargs
+      '';
+
       testSuiteFile = pkgs.writeText "test_bdd_vm.py" ''
         import docker
         import json
@@ -325,6 +424,8 @@ in
         @pytest.fixture(scope="session")
         def client():
             return docker.from_env()
+
+        ${hardeningPreamble}
 
         ${pytestCode}
 
@@ -456,6 +557,8 @@ in
             def client():
                 return docker.from_env()
 
+            ${hardeningPreamble}
+
             ${shardPytestCode}
             ${lib.optionalString (includeRegistryTest && registryTestOCI != null) ''
 
@@ -526,6 +629,16 @@ in
                 { config, ... }:
                 {
                   systemd.tmpfiles.rules = stateDirTmpfilesRulesFor config shardStateDirNames;
+                }
+              )
+              # Expose each BDD container's real computed hardening flags
+              # (securityOpts) to the pytest probe invocations. See
+              # probeHardeningJsonFor above for the rationale.
+              ++ lib.optional (shardBddContainerNames != [ ]) (
+                { config, ... }:
+                {
+                  environment.etc."nix-oci-test-hardening.json".text =
+                    probeHardeningJsonFor config shardBddContainerNames;
                 }
               );
 
@@ -721,6 +834,14 @@ in
                 { config, ... }:
                 {
                   systemd.tmpfiles.rules = stateDirTmpfilesRulesFor config allStateDirNames;
+                }
+              )
+              # See the matching shard-level block in mkBddVmFor.
+              ++ lib.optional (bddContainerNames != [ ]) (
+                { config, ... }:
+                {
+                  environment.etc."nix-oci-test-hardening.json".text =
+                    probeHardeningJsonFor config bddContainerNames;
                 }
               );
 
