@@ -13,14 +13,6 @@
 {
   perSystem =
     { pkgs, ... }:
-    let
-      readInit = [
-        "${pkgs.busybox}/bin/busybox"
-        "sh"
-        "-c"
-        "cat /proc/1/environ; sleep 3600"
-      ];
-    in
     {
       test.oci.perContainer.performance-glibc-tunables-runtime = {
         # Explicit tunables only: two keys sorted lexicographically.
@@ -34,7 +26,10 @@
           container = {
             package = pkgs.busybox;
             isRoot = true;
-            entrypoint = readInit;
+            # No custom entrypoint: `assertions.processEnv` spins up its own
+            # ephemeral probe, so this field never affects the actual
+            # assertion. See allocator.test.nix for why a sleep-forever
+            # override here breaks VM boot.
             performance.enable = true;
             performance.glibcTunables = {
               "glibc.malloc.arena_max" = "2";
@@ -60,7 +55,6 @@
           container = {
             package = pkgs.busybox;
             isRoot = true;
-            entrypoint = readInit;
             performance.enable = true;
             performance.glibcTunablesPreset = "high-throughput";
           };
@@ -78,7 +72,6 @@
           container = {
             package = pkgs.busybox;
             isRoot = true;
-            entrypoint = readInit;
             performance.enable = true;
             performance.glibcTunablesPreset = "balanced";
             performance.glibcTunables = {
