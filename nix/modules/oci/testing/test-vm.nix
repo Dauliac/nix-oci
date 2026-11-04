@@ -234,7 +234,12 @@ in
               path = lib.head parts;
               mountOpts = lib.concatStringsSep ":" (lib.tail parts);
             in
-            acc // { tmpfs = (acc.tmpfs or { }) // { ${path} = mountOpts; }; }
+            acc
+            // {
+              tmpfs = (acc.tmpfs or { }) // {
+                ${path} = mountOpts;
+              };
+            }
           else
             acc
         ) { } opts;
@@ -316,8 +321,20 @@ in
           extraStateVolumes = lib.map (m: "${m.hostPath}:${m.containerPath}") (stateMountsForSpec name spec);
           existingVolumes = spec.container.volumes or [ ];
           deployContainer = stripFlakeOnly spec.container;
+          # testDependencies (_option-test-spec.nix) is declared on the spec
+          # but was never actually merged anywhere -- a dead option. Without
+          # this, a scenario like runtime-tls-handshake-fails declares
+          # `testDependencies = [ pkgs.curl ]` expecting curl on PATH, but
+          # the built image only ever contains `container.package`'s own
+          # closure, so the probe fails with "executable file `curl` not
+          # found in $PATH" instead of exercising the TLS assertion.
+          existingDeps = spec.container.dependencies or [ ];
+          extraTestDeps = spec.testDependencies or [ ];
         in
         deployContainer
+        // lib.optionalAttrs (extraTestDeps != [ ]) {
+          dependencies = existingDeps ++ extraTestDeps;
+        }
         // lib.optionalAttrs (extraStateVolumes != [ ]) {
           volumes = existingVolumes ++ extraStateVolumes;
         }
@@ -388,10 +405,17 @@ in
 
 
         def _hardening_security_opt(h):
+            # podman's REST API (unlike the CLI) resolves `seccomp=<value>`
+            # server-side: it treats the value as a path and opens it
+            # itself, rather than accepting inline profile JSON. The test
+            # client and the podman daemon share the same VM filesystem, so
+            # passing the Nix store path straight through (exactly what the
+            # real autoStart container's --security-opt gets) works; passing
+            # the file's content instead makes podman try to open() the
+            # whole JSON blob as a path and fail with "file name too long".
             opts = []
             if h.get("seccomp_profile_path"):
-                with open(h["seccomp_profile_path"]) as _f:
-                    opts.append("seccomp=" + _f.read())
+                opts.append("seccomp=" + h["seccomp_profile_path"])
             if h.get("apparmor_profile"):
                 opts.append("apparmor=" + h["apparmor_profile"])
             if h.get("no_new_privileges"):
@@ -840,8 +864,7 @@ in
               ++ lib.optional (bddContainerNames != [ ]) (
                 { config, ... }:
                 {
-                  environment.etc."nix-oci-test-hardening.json".text =
-                    probeHardeningJsonFor config bddContainerNames;
+                  environment.etc."nix-oci-test-hardening.json".text = probeHardeningJsonFor config bddContainerNames;
                 }
               );
 
