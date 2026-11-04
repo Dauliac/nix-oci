@@ -10,6 +10,7 @@
   pkgs,
   ociNixOSModules,
   nixLibNixosModule ? null,
+  backend ? null,
   ...
 }:
 let
@@ -28,7 +29,12 @@ let
     || (config.homeConfig.homeManagerFlake or null) != null;
 
   result = evalContainerLib.evalContainerNixos {
-    inherit pkgs ociNixOSModules nixLibNixosModule;
+    inherit
+      pkgs
+      ociNixOSModules
+      nixLibNixosModule
+      backend
+      ;
     containerName = name;
     containerConfig = config;
     nixosModules = nixosCfg.modules;

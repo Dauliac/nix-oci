@@ -117,6 +117,12 @@ in
       fromImageEnabled ? false,
       basePasswdPath ? null,
       baseGroupPath ? null,
+      # Deploy-time container runtime ("podman"/"docker"), or null when
+      # called from a context with no backend selection (flake-side
+      # build-only containers). Forwarded as a module arg below so
+      # hardening coherence checks can see it; see containers.nix's
+      # specialArgs for where this is threaded from.
+      backend ? null,
     }:
     let
       containerIsRoot = containerConfig.isRoot;
@@ -243,6 +249,14 @@ in
             # profile naming) needs a stable per-container identity
             # distinct from that build-time concern.
             { _module.args.containerName = containerName; }
+            # Same rationale as containerName above: the deploy-time
+            # backend ("podman"/"docker") is a top-level oci.backend
+            # option, not forwarded as a Tier 1 container option. Hardening
+            # coherence checks need it to detect backend-specific
+            # limitations (e.g. nixpkgs' podman lacks AppArmor support).
+            # null in contexts with no backend selection (flake-side
+            # build-only containers).
+            { _module.args.backend = backend; }
           ]
           ++ lib.optional (nixLibNixosModule != null) nixLibNixosModule
           ++ [

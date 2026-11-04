@@ -32,13 +32,20 @@ let
       pkgs,
       nix2container,
       nixLibNixosModule ? null,
-      # Overridable so docs generation can inject a stub that no-ops
-      # derivation-producing functions (mkRoot, mkSeccompProfile, ...)
-      # which can't evaluate during docs builds.
-      ociLib ? mkOciLib lib,
       ...
     }:
     let
+      # Reads config._module.args.ociLib if some other module in this eval
+      # set it (docs generation injects a stub there that no-ops
+      # derivation-producing functions which can't evaluate during docs
+      # builds); otherwise computes the real one. NOT a function argument:
+      # nixpkgs resolves missing module-function arguments by querying
+      # config._module.args unconditionally, which would shadow a `?`
+      # default and throw for every real deployment (mod is imported
+      # directly into NixOS/HM/system-manager configs, which never set
+      # _module.args.ociLib).
+      ociLib = config._module.args.ociLib or (mkOciLib lib);
+
       baseModules = [
         sharedOptions
         deployExtensions
@@ -76,6 +83,14 @@ let
                   ociNixOSModules
                   nixLibNixosModule
                   ;
+                # Deploy-time container runtime selection, threaded through
+                # to the nested per-container NixOS eval so hardening
+                # coherence checks can detect backend-specific limitations
+                # (e.g. nixpkgs' podman lacks AppArmor support). Not
+                # meaningful for flake-side (build-only) containers, which
+                # have no backend selection; evalContainerNixos defaults it
+                # to null there.
+                backend = config.oci.backend;
               };
             }
           );

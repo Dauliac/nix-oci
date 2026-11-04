@@ -20,6 +20,21 @@
 let
   cfg = config.oci.container.hardening;
 
+  # Deploy-time container runtime ("podman"/"docker"), injected via
+  # _module.args by eval-container.nix (see its comment there). Read via
+  # `config._module.args.X or default`, NOT a `backend ? null,` function
+  # argument: nixpkgs resolves missing module-function arguments by
+  # querying config._module.args unconditionally once it decides the
+  # arg "is not externally provided", which ignores a `?` default and
+  # throws "attribute 'backend' missing" for any caller that evaluates
+  # this module without threading _module.args.backend (e.g. the
+  # standalone coherence probe harness in
+  # containers/_tests/invariant/_helpers.nix). Same pattern as `ociLib`
+  # in deploy/nix-oci/options/containers.nix. null in contexts with no
+  # backend selection, e.g. flake-side build-only containers -- the D1
+  # check below simply never fires in that case.
+  backend = config._module.args.backend or null;
+
   inherit (lib)
     elem
     concatStringsSep
@@ -355,7 +370,46 @@ in
               Fix: remove the deny options (custom profile is authoritative),
               or remove the custom profile to use computed rules.
             '';
-          };
+          }
+      # -- D1: AppArmor dead under the podman backend --
+      #
+      # nixpkgs' pkgs.podman is built without the Go "apparmor" build tag:
+      # containers/common's apparmor.IsEnabled() is gated by
+      # `//go:build linux && apparmor`, with a `//go:build !linux ||
+      # !apparmor` stub that unconditionally returns false wired in instead.
+      # Confirmed by reading podman's own vendored source and by a live VM
+      # boot: the kernel LSM, apparmor_parser, and the generated profile all
+      # load correctly (profile shows up in /sys/kernel/security/apparmor
+      # /profiles in enforce mode), but podman still refuses to start the
+      # container with "apparmor profile ... specified, but Apparmor is not
+      # enabled on this system" -- the host-side config is irrelevant, the
+      # binary itself cannot see it. This makes the option a silent no-op
+      # (zero enforcement, false sense of security) rather than a build
+      # failure, which is worse than refusing outright.
+      #
+      # `backend` is only known in deploy contexts (threaded via
+      # containers.nix's specialArgs -> nixos-config.nix ->
+      # evalContainerNixos -> _module.args.backend); it is null for
+      # flake-side build-only containers, where no backend is selected yet
+      # and this check does not apply.
+      ++ optional (cfg.apparmor.enable && backend == "podman") {
+        assertion = false;
+        message = ''
+          nix-oci coherence: hardening.apparmor.enable = true but the
+          deploy backend is "podman". nixpkgs' podman package is built
+          without AppArmor support (no "apparmor" Go build tag), so
+          podman's apparmor.IsEnabled() always returns false regardless
+          of the host's actual AppArmor state. The container will fail
+          to start with "Apparmor is not enabled on this system", or if
+          no profile were attached, would silently run completely
+          unconfined -- either way this option provides zero real
+          enforcement under podman.
+          Fix: set hardening.apparmor.enable = false (rely on seccomp +
+          capabilities instead), or switch to backend = "docker", which
+          has working AppArmor support (requires a small
+          /sbin/apparmor_parser compatibility shim on NixOS).
+        '';
+      };
 
     # =====================================================================
     #  WARNINGS — soft trace, build succeeds

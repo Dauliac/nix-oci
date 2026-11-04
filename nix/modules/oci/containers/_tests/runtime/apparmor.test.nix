@@ -1,48 +1,31 @@
 # Runtime-level BDD test specs for hardening.apparmor.
 #
-# Extends the build/inspect coverage in
-# ../hardening/apparmor.test.nix with `level = "runtime"` scenarios
-# that assert the generated AppArmor profile denies writes to
-# sensitive host-visible paths (e.g. /proc/sys/*) at execution time.
+# Extends the build/inspect coverage in ../hardening/apparmor.test.nix.
 #
-# Uses the `fsWriteBlocked` typed assertion with expectedErrno = "EACCES"
-# because AppArmor deny reports EACCES, not EROFS (that is rootfs' job).
+# The positive-enforcement scenario (AppArmor profile applied, write to
+# /proc/sys denied) lived here under the default "podman" backend and was
+# removed: nixpkgs' podman package is built without AppArmor support (no
+# "apparmor" Go build tag; confirmed by reading its vendored source --
+# containers/common's apparmor.IsEnabled() stub unconditionally returns
+# false). The container reliably fails with "apparmor profile ...
+# specified, but Apparmor is not enabled on this system" regardless of
+# how correctly the host and profile are configured -- verified via a
+# live VM boot: the kernel LSM, apparmor_parser, and the generated
+# profile all load correctly in enforce mode, podman just can't see it.
+# hardening/coherence.nix now asserts against this combination directly
+# (hardening.apparmor.enable = true + backend = "podman" fails the
+# build), so a BDD scenario exercising it would never evaluate anyway.
+# The equivalent positive-enforcement coverage lives under the docker
+# backend instead, see runtime/apparmor-docker.test.nix.
 { ... }:
 {
   perSystem =
     { pkgs, ... }:
     {
       test.oci.perContainer.runtime-hardening-apparmor = {
-        # Positive case: AppArmor profile is applied → write to
-        # /proc/sys is denied.
-        runtime-proc-sys-write-denied = {
-          given = "a container with hardening.apparmor.enable = true running under a host with AppArmor loaded";
-          "when" = "the container attempts to write to /proc/sys/kernel/hostname";
-          "then" = "the write is denied with EACCES by the AppArmor profile";
-          level = "runtime";
-          target = "oci";
-          container = {
-            package = pkgs.busybox;
-            isRoot = true;
-            hardening.enable = true;
-            hardening.apparmor = {
-              enable = true;
-              mode = "enforce";
-            };
-          };
-          assertions.fsWriteBlocked = [
-            {
-              path = "/proc/sys/kernel/hostname";
-              expectedErrno = "EACCES";
-            }
-          ];
-          exampleFile = ../../../../../../examples/flake/hardening/hardening-full-01.nix;
-        };
-
-        # Negative case: no AppArmor profile applied → the same
-        # write succeeds (or fails for a different, non-AppArmor
-        # reason). This anchors the positive case so a
-        # spurious deny doesn't get read as an AppArmor success.
+        # No AppArmor profile applied -> a benign command still succeeds.
+        # Verifies hardening.enable = true alone (apparmor.enable = false)
+        # doesn't block ordinary execution.
         runtime-no-apparmor-write-succeeds = {
           given = "a container with hardening.apparmor.enable = false";
           "when" = "the container attempts to run a benign command";
