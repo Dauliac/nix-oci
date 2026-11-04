@@ -785,6 +785,25 @@ in
                 if backend == "docker" then "unix:///var/run/docker.sock" else "unix:///run/podman/podman.sock";
             in
             ''
+              ${lib.optionalString (shardName == "deploy") ''
+                # TEMPORARY DIAGNOSTIC: dnsmasq's healthcheck fails every
+                # attempt with no visible cause (podman doesn't surface
+                # --health-cmd's own output anywhere the journal picks up).
+                # Run it directly via the backdoor console -- available well
+                # before multi-user.target -- and print whatever it says,
+                # before the real wait below times out. Remove once the
+                # actual failure is identified.
+                import time
+                time.sleep(60)
+                status, out = machine.execute(
+                    "podman healthcheck run deploy-dnsmasq--deploy-dnsmasq-resolves-hosts-entry 2>&1"
+                )
+                print(f"DIAG dnsmasq healthcheck run: status={status} out={out!r}")
+                status2, out2 = machine.execute(
+                    "podman exec deploy-dnsmasq--deploy-dnsmasq-resolves-hosts-entry ${pkgs.dig}/bin/dig @127.0.0.1 -p 5353 localhost +short +time=3 2>&1"
+                )
+                print(f"DIAG dnsmasq direct dig: status={status2} out={out2!r}")
+              ''}
               machine.wait_for_unit("multi-user.target")
               machine.wait_for_unit("${socketUnit}")
               ${lib.optionalString (includeRegistryTest && registryTestOCI != null) ''
