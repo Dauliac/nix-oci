@@ -396,7 +396,31 @@ in
           # specified, but Apparmor is not enabled on this system`) -- see
           # the `security.apparmor` block below, which registers the
           # already-generated profile for each such container.
-          shardBackend = config.test.oci._vmBackend;
+          #
+          # A spec may set `requiresBackend = "docker";` to pin its whole
+          # shard to a specific backend regardless of the project-wide
+          # `_vmBackend` default. Needed because nixpkgs' podman is built
+          # without the Go "apparmor" build tag (its AppArmor detection is
+          # permanently stubbed to false), so any apparmor-enforcement
+          # scenario has to run under docker instead; see
+          # apparmor-docker.test.nix. Specs within one shard must agree --
+          # put a backend-pinned spec in its own dedicated shard (group
+          # name with a unique first dash-token, see groupPrefix above)
+          # rather than mixing it into an existing one.
+          shardRequiresBackend =
+            let
+              backends = lib.unique (
+                lib.filter (b: b != null) (lib.mapAttrsToList (_: s: s.requiresBackend or null) shardSpecs)
+              );
+            in
+            if backends == [ ] then
+              null
+            else if lib.length backends == 1 then
+              lib.head backends
+            else
+              throw "nix-oci test-vm: shard ${shardName} mixes requiresBackend values ${toString backends}; put each in its own shard";
+          shardBackend =
+            if shardRequiresBackend != null then shardRequiresBackend else config.test.oci._vmBackend;
           containerServicePrefix = if shardBackend == "docker" then "docker-" else "podman-";
           usesApparmor =
             s: (s.container.hardening.enable or false) && (s.container.hardening.apparmor.enable or false);
@@ -479,6 +503,19 @@ in
                       ) shardApparmorNames
                     );
                   };
+                  # docker's AppArmor detection (containerd's vendored
+                  # pkg/apparmor, no Go build tag gate -- unlike podman,
+                  # whose nixpkgs build lacks AppArmor support entirely)
+                  # hardcodes a check for /sbin/apparmor_parser, an FHS
+                  # path NixOS does not populate by default: apparmor_parser
+                  # only exists at its Nix store path, referenced directly
+                  # by apparmor.service's own ExecStart. Shim it in so
+                  # containerd's hostSupports() can actually find it.
+                  # Mirrors NixOS's own /lib64 compat-symlink convention.
+                  systemd.tmpfiles.rules = [
+                    "d /sbin 0755 root root -"
+                    "L+ /sbin/apparmor_parser - - - - ${pkgs.apparmor-parser}/bin/apparmor_parser"
+                  ];
                 }
               )
               # Owner-aware tmpfiles rules for stateDirectories hosts paths
@@ -493,6 +530,14 @@ in
               );
 
               virtualisation.docker.enable = lib.mkIf (shardBackend == "docker") true;
+              # The shared test module's _podman-config.nix unconditionally
+              # enables virtualisation.podman.dockerSocket (so podman can
+              # emulate the docker socket for podman-backed shards), which
+              # conflicts with virtualisation.docker.enable -- both would try
+              # to serve the same socket. No existing shard forces the global
+              # _vmBackend to "docker", so this conflict was never actually
+              # exercised before a requiresBackend = "docker" spec existed.
+              virtualisation.podman.dockerSocket.enable = lib.mkIf (shardBackend == "docker") (lib.mkForce false);
 
               systemd.tmpfiles.rules = lib.map (p: "d ${p} 0755 root root -") shardVolumeHostPaths;
 
@@ -561,7 +606,9 @@ in
 
           testScript =
             let
-              backend = config.test.oci._vmBackend or "podman";
+              # shardBackend (not the global _vmBackend) so a spec's
+              # `requiresBackend` override actually takes effect here too.
+              backend = shardBackend;
               socketUnit = if backend == "docker" then "docker.socket" else "podman.socket";
               containerServicePrefix = if backend == "docker" then "docker-" else "podman-";
               dockerHost =
@@ -657,6 +704,14 @@ in
                       ) allApparmorNames
                     );
                   };
+                  # See the matching shim in mkBddVmFor for why this exists:
+                  # docker's (unlike podman's) AppArmor detection is real but
+                  # hardcodes a check for /sbin/apparmor_parser, an FHS path
+                  # NixOS does not populate by default.
+                  systemd.tmpfiles.rules = [
+                    "d /sbin 0755 root root -"
+                    "L+ /sbin/apparmor_parser - - - - ${pkgs.apparmor-parser}/bin/apparmor_parser"
+                  ];
                 }
               )
               # Owner-aware tmpfiles rules for stateDirectories host paths

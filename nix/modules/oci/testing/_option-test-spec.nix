@@ -339,6 +339,27 @@ types.submodule {
       '';
     };
 
+    requiresBackend = mkOption {
+      type = types.nullOr (
+        types.enum [
+          "podman"
+          "docker"
+        ]
+      );
+      default = null;
+      description = ''
+        Pin this scenario's VM-matrix shard to a specific container
+        runtime backend, overriding the project-wide `_vmBackend`
+        default. Needed when a scenario depends on backend-specific
+        behavior the default doesn't support (e.g. AppArmor
+        enforcement: nixpkgs' podman lacks AppArmor support entirely,
+        while docker has working support once a `/sbin/apparmor_parser`
+        compatibility shim is in place). All scenarios sharing a
+        matrix shard must agree on the same value (or leave it null);
+        give a backend-pinned scenario its own dedicated shard.
+      '';
+    };
+
     assertions = mkOption {
       type = types.submodule {
         options = {
