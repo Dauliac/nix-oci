@@ -23,7 +23,23 @@ let
   # NixOS settings can produce a list or comma-separated string
   listenAddr = if builtins.isList rawAddr then builtins.head rawAddr else rawAddr;
   # Use first address if multiple are configured
-  addr = builtins.head (lib.splitString "," listenAddr);
+  firstAddr = builtins.head (lib.splitString "," listenAddr);
+  # A wildcard bind address ("0.0.0.0"/"*"/"::") is not a usable query
+  # target: dig has to connect to a concrete address, and sending a
+  # UDP query to 0.0.0.0 is unreliable (varies by kernel/resolver and
+  # reliably times out in some sandboxes). dnsmasq bound to a wildcard
+  # address also answers on loopback, so query that instead.
+  addr =
+    if
+      builtins.elem firstAddr [
+        "0.0.0.0"
+        "*"
+        "::"
+      ]
+    then
+      "127.0.0.1"
+    else
+      firstAddr;
 in
 {
   config = lib.mkIf isDnsmasq {

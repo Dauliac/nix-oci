@@ -43,6 +43,12 @@ let
     else
       "127.0.0.1:9000";
 
+  # Matches the "ping.path" default injected below. Not read back from
+  # pool.settings: this module also writes that key, and pool.settings
+  # is merged as a whole, so reading it here risks the same infinite
+  # recursion the `listenAddr`/`socket` comment above warns about.
+  pingPath = "/ping";
+
   # PHP-FPM may listen on a Unix socket or TCP -- only report TCP ports.
   detectedPort =
     let
@@ -66,7 +72,26 @@ in
       "ping.response" = lib.mkDefault "pong";
     };
 
+    # cgi-fcgi forwards its entire process environment as FastCGI params
+    # (it has no notion of "just these CGI vars"). Two consequences:
+    #   1. Without SCRIPT_NAME/SCRIPT_FILENAME/REQUEST_METHOD set, PHP-FPM
+    #      never sees a request matching ping.path, so the check can't
+    #      actually prove the pool is serving requests.
+    #   2. podman execs --health-cmd with the container's full (and often
+    #      sizeable) environment inherited. The bundled fcgi library is old
+    #      enough that forwarding a large/unclean environ as FCGI_PARAMS
+    #      makes FPM hang up mid-handshake (connect() succeeds, then the
+    #      first write gets SIGPIPE/ECONNRESET) -- reproduced locally: the
+    #      exact same cgi-fcgi invocation returns pong under a minimal env
+    #      and fails under a realistic container-sized one.
+    # `env -i` resets to only the three CGI vars the ping handler needs,
+    # fixing both at once.
     oci.container.healthcheck.command = lib.mkDefault [
+      "${pkgs.coreutils}/bin/env"
+      "-i"
+      "SCRIPT_NAME=${pingPath}"
+      "SCRIPT_FILENAME=${pingPath}"
+      "REQUEST_METHOD=GET"
       "${pkgs.fcgi}/bin/cgi-fcgi"
       "-bind"
       "-connect"
@@ -74,6 +99,9 @@ in
     ];
     # SIGQUIT: graceful shutdown -- finish serving current requests.
     oci.container.stopSignal = lib.mkDefault "SIGQUIT";
-    oci.container.extraPackages = [ pkgs.fcgi ];
+    oci.container.extraPackages = [
+      pkgs.fcgi
+      pkgs.coreutils
+    ];
   };
 }
