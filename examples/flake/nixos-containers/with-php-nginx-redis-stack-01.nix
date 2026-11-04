@@ -148,8 +148,14 @@
                   services.phpfpm.pools.${project} = {
                     user = "app";
                     group = "app";
+                    # Must be the pool-level `listen` option, not
+                    # `settings."listen"` -- the latter only overrides the
+                    # generated pool.conf, while the healthcheck adapter
+                    # connects to `.socket`, which is derived from `listen`
+                    # and would otherwise still point at the default unix
+                    # socket nothing is listening on.
+                    listen = "0.0.0.0:${toString phpFpmPort}";
                     settings = {
-                      "listen" = "0.0.0.0:${toString phpFpmPort}";
                       "pm" = "dynamic";
                       "pm.max_children" = 10;
                       "pm.start_servers" = 2;

@@ -36,8 +36,22 @@
                       phpPackage = pkgs.php;
                       # TCP socket so cgi-fcgi from the VM host can
                       # reach the pool via the published port map.
+                      #
+                      # Must be the pool-level `listen` option, not
+                      # `settings."listen"`: the phpfpm module derives its
+                      # read-only `socket` (what the adapter's healthcheck
+                      # connects to) from `listen`/its own default, then
+                      # writes `settings.listen` from that via mkDefault.
+                      # Setting `settings."listen"` directly overrides the
+                      # generated pool.conf (so the probe test, which dials
+                      # the port directly, still passed) but leaves `socket`
+                      # pointing at the unused default unix socket path --
+                      # the real container's own internal healthcheck was
+                      # dialing a socket nothing listens on, so it never
+                      # went healthy and blocked boot for the full 15min
+                      # TimeoutStartSec.
+                      listen = "0.0.0.0:9000";
                       settings = {
-                        "listen" = "0.0.0.0:9000";
                         "listen.owner" = "nobody";
                         "listen.group" = "nogroup";
                         "pm" = "static";

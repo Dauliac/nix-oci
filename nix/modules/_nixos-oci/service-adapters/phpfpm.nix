@@ -50,17 +50,25 @@ let
   pingPath = "/ping";
 
   # PHP-FPM may listen on a Unix socket or TCP -- only report TCP ports.
-  detectedPort =
-    let
-      parts = lib.splitString ":" listenAddr;
-    in
-    if builtins.length parts >= 2 then
-      let
-        raw = lib.last parts;
-      in
-      lib.toInt raw
+  addrParts = lib.splitString ":" listenAddr;
+  isTcp = builtins.length addrParts >= 2;
+  detectedPort = if isTcp then lib.toInt (lib.last addrParts) else null;
+
+  # A wildcard bind host ("0.0.0.0"/"*"/"::") is not a usable connect
+  # target for cgi-fcgi (see the dnsmasq adapter for the same issue);
+  # query loopback instead, which a wildcard-bound pool also answers on.
+  healthConnectAddr =
+    if
+      isTcp
+      && builtins.elem (lib.head addrParts) [
+        "0.0.0.0"
+        "*"
+        "::"
+      ]
+    then
+      "127.0.0.1:${toString detectedPort}"
     else
-      null;
+      listenAddr;
 in
 {
   config = lib.mkIf isPhpFpm {
@@ -95,7 +103,7 @@ in
       "${pkgs.fcgi}/bin/cgi-fcgi"
       "-bind"
       "-connect"
-      listenAddr
+      healthConnectAddr
     ];
     # SIGQUIT: graceful shutdown -- finish serving current requests.
     oci.container.stopSignal = lib.mkDefault "SIGQUIT";
