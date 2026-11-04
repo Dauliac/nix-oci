@@ -794,15 +794,33 @@ in
                 # before the real wait below times out. Remove once the
                 # actual failure is identified.
                 import time
-                time.sleep(60)
+                _dnsmasq_name = "deploy-dnsmasq--deploy-dnsmasq-resolves-hosts-entry"
+                for _attempt in range(70):
+                    _poll_status, _poll_out = machine.execute(
+                        f"podman inspect {_dnsmasq_name} >/dev/null 2>&1"
+                    )
+                    if _poll_status == 0:
+                        break
+                    time.sleep(10)
+                else:
+                    print("DIAG dnsmasq: container never appeared within 700s")
+                time.sleep(20)
                 status, out = machine.execute(
-                    "podman healthcheck run deploy-dnsmasq--deploy-dnsmasq-resolves-hosts-entry 2>&1"
+                    f"podman healthcheck run {_dnsmasq_name} 2>&1"
                 )
                 print(f"DIAG dnsmasq healthcheck run: status={status} out={out!r}")
                 status2, out2 = machine.execute(
-                    "podman exec deploy-dnsmasq--deploy-dnsmasq-resolves-hosts-entry ${pkgs.dig}/bin/dig @127.0.0.1 -p 5353 localhost +short +time=3 2>&1"
+                    f"podman exec {_dnsmasq_name} ${pkgs.dig}/bin/dig @127.0.0.1 -p 5353 localhost +short +time=3 2>&1"
                 )
                 print(f"DIAG dnsmasq direct dig: status={status2} out={out2!r}")
+                status3, out3 = machine.execute(
+                    f"podman logs {_dnsmasq_name} 2>&1 | tail -n 30"
+                )
+                print(f"DIAG dnsmasq container logs: status={status3} out={out3!r}")
+                status4, out4 = machine.execute(
+                    f"podman exec {_dnsmasq_name} sh -c 'ps aux; ss -lun 2>&1 || netstat -lun 2>&1'"
+                )
+                print(f"DIAG dnsmasq procs/sockets: status={status4} out={out4!r}")
               ''}
               machine.wait_for_unit("multi-user.target")
               machine.wait_for_unit("${socketUnit}")
