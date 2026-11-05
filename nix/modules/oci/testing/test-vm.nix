@@ -822,6 +822,16 @@ in
                     f"podman exec {_dnsmasq_name} ${pkgs.dig}/bin/dig @127.0.0.1 -p 5353 localhost +short +time=3 2>&1"
                 )
                 print(f"DIAG dnsmasq direct dig: status={status2} out={out2!r}")
+                # dig got no response at all (confirmed: "no servers could
+                # be reached"). Check from the host side -- no extra
+                # packages needed inside the container -- whether dnsmasq's
+                # own process is actually still alive and what it's doing.
+                status3, out3 = machine.execute(
+                    f"podman inspect {_dnsmasq_name} --format '{{{{.State.Running}}}} {{{{.State.ExitCode}}}} {{{{.State.Status}}}}' 2>&1"
+                )
+                print(f"DIAG dnsmasq container state: status={status3} out={out3!r}")
+                status4, out4 = machine.execute(f"podman top {_dnsmasq_name} 2>&1")
+                print(f"DIAG dnsmasq top: status={status4} out={out4!r}")
               ''}
               machine.wait_for_unit("multi-user.target")
               machine.wait_for_unit("${socketUnit}")
