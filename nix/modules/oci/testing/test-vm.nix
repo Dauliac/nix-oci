@@ -801,15 +801,19 @@ in
                 # own run unit starts. A short extra poll covers the
                 # remaining create+start race.
                 machine.wait_for_unit(f"oci-load-{_dnsmasq_name}.service")
-                for _attempt in range(10):
+                for _attempt in range(20):
                     _poll_status, _poll_out = machine.execute(
-                        f"podman inspect {_dnsmasq_name} >/dev/null 2>&1"
+                        # `podman inspect` (unscoped) matches the already-
+                        # loaded IMAGE of the same name and returns 0
+                        # immediately; scope to the container explicitly so
+                        # this actually waits for the run unit to create it.
+                        f"podman container inspect {_dnsmasq_name} >/dev/null 2>&1"
                     )
                     if _poll_status == 0:
                         break
                     time.sleep(5)
                 else:
-                    print("DIAG dnsmasq: container never appeared within 50s of load finishing")
+                    print("DIAG dnsmasq: container never appeared within 100s of load finishing")
                 status, out = machine.execute(
                     f"podman healthcheck run {_dnsmasq_name} 2>&1"
                 )
