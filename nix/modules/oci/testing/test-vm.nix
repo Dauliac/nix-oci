@@ -726,11 +726,18 @@ in
                 }
               )
               # Push each `sociZtocPresent` container to the in-VM registry
-              # via its real `copyToRegistry` passthru script (the one that
-              # actually regenerates the SOCI zTOC during copy), not a plain
-              # `podman push` of the locally-loaded image. Same nested-module
-              # requirement as apparmor/stateDir above: needs this node's own
-              # resolved `config.oci.containers.<name>.image`.
+              # with the turbo-patched skopeo's `--dest-soci` flags, which
+              # is what actually generates the zTOC referrer during copy.
+              # The container's own `.image.copyToRegistry`/`.copyTo`
+              # passthru scripts always use the plain nixpkgs skopeo
+              # (nlewo/nix2container's generic script, see its default.nix)
+              # regardless of `performance.turbo.soci` -- that option only
+              # drives OCI labels in this pipeline, nothing invokes the
+              # turbo skopeo for per-container deploy-module images. So
+              # invoke `skopeoNix2container` (turbo, already resolved
+              # above) directly against the raw `.image` derivation. Same
+              # nested-module requirement as apparmor/stateDir above:
+              # needs this node's own resolved `config.oci.containers`.
               ++ lib.optional (shardSociNames != [ ]) (
                 { config, ... }:
                 {
@@ -738,8 +745,12 @@ in
                     name: spec:
                     let
                       soci = spec.assertions.sociZtocPresent;
-                      copyScript = config.oci.containers.${name}.image.copyToRegistry;
+                      image = config.oci.containers.${name}.image;
                       dest = "docker://localhost:5000/${soci.repository}:${soci.tag}";
+                      sociFlags = lib.concatStringsSep " " (
+                        [ "--dest-soci" ]
+                        ++ lib.optional ((soci.spanSize or null) != null) "--dest-soci-span-size ${toString soci.spanSize}"
+                      );
                     in
                     lib.nameValuePair "oci-registry-push-${name}" {
                       description = "Push ${name} to local registry (sociZtocPresent assertion)";
@@ -756,7 +767,10 @@ in
                         Type = "oneshot";
                         RemainAfterExit = true;
                       };
-                      path = [ pkgs.curl ];
+                      path = [
+                        skopeoNix2container
+                        pkgs.curl
+                      ];
                       script = ''
                         set -euo pipefail
                         for _i in $(seq 1 60); do
@@ -765,7 +779,8 @@ in
                           fi
                           sleep 0.5
                         done
-                        ${copyScript}/bin/${copyScript.name} --dest-tls-verify=false ${dest}
+                        skopeo --insecure-policy copy ${sociFlags} --dest-tls-verify=false \
+                          nix:${image} ${dest}
                       '';
                     }
                   ) shardSociPushes;
@@ -1027,8 +1042,10 @@ in
                 }
               )
               # See the matching shard-level block in mkBddVmFor for the
-              # full rationale: push `sociZtocPresent` containers via their
-              # real `copyToRegistry` script, not a plain `podman push`.
+              # full rationale: invoke the turbo skopeo directly with
+              # `--dest-soci`, not the container's own `.image.copyToRegistry`
+              # (always plain skopeo in this pipeline) and not a bare
+              # `podman push`.
               ++ lib.optional (aggSociNames != [ ]) (
                 { config, ... }:
                 {
@@ -1036,8 +1053,12 @@ in
                     name: spec:
                     let
                       soci = spec.assertions.sociZtocPresent;
-                      copyScript = config.oci.containers.${name}.image.copyToRegistry;
+                      image = config.oci.containers.${name}.image;
                       dest = "docker://localhost:5000/${soci.repository}:${soci.tag}";
+                      sociFlags = lib.concatStringsSep " " (
+                        [ "--dest-soci" ]
+                        ++ lib.optional ((soci.spanSize or null) != null) "--dest-soci-span-size ${toString soci.spanSize}"
+                      );
                     in
                     lib.nameValuePair "oci-registry-push-${name}" {
                       description = "Push ${name} to local registry (sociZtocPresent assertion)";
@@ -1054,7 +1075,10 @@ in
                         Type = "oneshot";
                         RemainAfterExit = true;
                       };
-                      path = [ pkgs.curl ];
+                      path = [
+                        skopeoNix2container
+                        pkgs.curl
+                      ];
                       script = ''
                         set -euo pipefail
                         for _i in $(seq 1 60); do
@@ -1063,7 +1087,8 @@ in
                           fi
                           sleep 0.5
                         done
-                        ${copyScript}/bin/${copyScript.name} --dest-tls-verify=false ${dest}
+                        skopeo --insecure-policy copy ${sociFlags} --dest-tls-verify=false \
+                          nix:${image} ${dest}
                       '';
                     }
                   ) aggSociPushes;
