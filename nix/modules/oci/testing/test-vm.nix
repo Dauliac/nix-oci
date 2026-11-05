@@ -352,6 +352,49 @@ in
       testableSpecs = runtimeSpecs // deploySpecs;
       hasTestableSpecs = testableSpecs != { };
 
+      # See the matching shard-level block in mkBddVmFor: containers
+      # whose spec asserts `sociZtocPresent` need an explicit push to
+      # the in-VM registry (autoStart only loads them locally).
+      aggSociPushes = lib.filterAttrs (
+        _: s: (s.assertions.sociZtocPresent or null) != null
+      ) testableSpecs;
+      aggSociNames = lib.attrNames aggSociPushes;
+      aggSociPushUnits = lib.mapAttrs' (
+        name: spec:
+        let
+          soci = spec.assertions.sociZtocPresent;
+        in
+        lib.nameValuePair "oci-registry-push-${name}" {
+          description = "Push ${name} to local registry (sociZtocPresent assertion)";
+          wantedBy = [ "multi-user.target" ];
+          after = [
+            "docker-registry.service"
+            "oci-load-${name}.service"
+          ];
+          requires = [
+            "docker-registry.service"
+            "oci-load-${name}.service"
+          ];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+          };
+          path = [ pkgs.podman ];
+          script = ''
+            set -euo pipefail
+            for _i in $(seq 1 60); do
+              if ${pkgs.curl}/bin/curl -sf http://localhost:5000/v2/ >/dev/null 2>&1; then
+                break
+              fi
+              sleep 0.5
+            done
+            podman push --tls-verify=false \
+              ${lib.toLower name}:latest \
+              localhost:5000/${soci.repository}:${soci.tag}
+          '';
+        }
+      ) aggSociPushes;
+
       # ── Flake-level containers: build deps only ─────────────
       # All flake example images must build successfully, but they are
       # NOT pushed into the VM. Only one is pushed to test the registry
@@ -592,6 +635,48 @@ in
           ) (lib.filterAttrs (_: usesApparmor) shardSpecs);
           shardBddContainers = lib.getAttrs (lib.attrNames shardSpecs) bddContainers;
           shardBddContainerNames = lib.attrNames shardBddContainers;
+          # Containers whose spec asserts `sociZtocPresent` need their
+          # already-loaded local image pushed to the in-VM registry
+          # before pytest runs -- the SOCI zTOC referrer is only
+          # attached on push, and `autoStart` only loads images into
+          # podman's local store, it never touches the registry.
+          shardSociPushes = lib.filterAttrs (_: s: (s.assertions.sociZtocPresent or null) != null) shardSpecs;
+          shardSociNames = lib.attrNames shardSociPushes;
+          shardSociPushUnits = lib.mapAttrs' (
+            name: spec:
+            let
+              soci = spec.assertions.sociZtocPresent;
+            in
+            lib.nameValuePair "oci-registry-push-${name}" {
+              description = "Push ${name} to local registry (sociZtocPresent assertion)";
+              wantedBy = [ "multi-user.target" ];
+              after = [
+                "docker-registry.service"
+                "oci-load-${name}.service"
+              ];
+              requires = [
+                "docker-registry.service"
+                "oci-load-${name}.service"
+              ];
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+              };
+              path = [ pkgs.podman ];
+              script = ''
+                set -euo pipefail
+                for _i in $(seq 1 60); do
+                  if ${pkgs.curl}/bin/curl -sf http://localhost:5000/v2/ >/dev/null 2>&1; then
+                    break
+                  fi
+                  sleep 0.5
+                done
+                podman push --tls-verify=false \
+                  ${lib.toLower name}:latest \
+                  localhost:5000/${soci.repository}:${soci.tag}
+              '';
+            }
+          ) shardSociPushes;
           shardPytestCode = lib.concatMapStringsSep "\n\n" (
             name:
             let
@@ -728,6 +813,7 @@ in
 
               systemd.services =
                 shardStateRequires
+                // shardSociPushUnits
                 // lib.optionalAttrs (includeRegistryTest && registryTestOCI != null) {
                   "flake-oci-load-${registryTestName}" = {
                     description = "Push ${registryTestName} to local registry (pipeline test)";
@@ -771,6 +857,7 @@ in
                     requests
                   ]
                 ))
+                pkgs.skopeo
               ];
             };
 
@@ -835,7 +922,7 @@ in
               ''}
               machine.wait_for_unit("multi-user.target")
               machine.wait_for_unit("${socketUnit}")
-              ${lib.optionalString (includeRegistryTest && registryTestOCI != null) ''
+              ${lib.optionalString ((includeRegistryTest && registryTestOCI != null) || shardSociNames != [ ]) ''
                 machine.wait_for_unit("docker-registry.service")
               ''}
 
@@ -850,6 +937,10 @@ in
               ${lib.optionalString (includeRegistryTest && registryTestOCI != null) ''
                 machine.wait_for_unit("flake-oci-load-${registryTestName}.service")
               ''}
+
+              ${lib.concatMapStringsSep "\n" (
+                name: ''machine.wait_for_unit("oci-registry-push-${name}.service")''
+              ) shardSociNames}
 
               machine.copy_from_host("${shardTestSuiteFile}", "/tmp/test_bdd_vm.py")
               machine.succeed(
@@ -979,6 +1070,7 @@ in
               # the skopeo nix: -> registry -> podman pull pipeline.
               systemd.services =
                 allStateRequires
+                // aggSociPushUnits
                 // lib.optionalAttrs (registryTestOCI != null) {
                   "flake-oci-load-${registryTestName}" = {
                     description = "Push ${registryTestName} to local registry (pipeline test)";
@@ -1022,6 +1114,7 @@ in
                     requests
                   ]
                 ))
+                pkgs.skopeo
               ];
             };
 
@@ -1052,6 +1145,11 @@ in
               ${lib.optionalString (registryTestOCI != null) ''
                 machine.wait_for_unit("flake-oci-load-${registryTestName}.service")
               ''}
+
+              # Wait for sociZtocPresent registry pushes
+              ${lib.concatMapStringsSep "\n" (
+                name: ''machine.wait_for_unit("oci-registry-push-${name}.service")''
+              ) aggSociNames}
 
               # Run all pytest assertions
               machine.copy_from_host("${testSuiteFile}", "/tmp/test_bdd_vm.py")
