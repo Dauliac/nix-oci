@@ -3,15 +3,36 @@
 # dnsmasq runs in foreground by default in NixOS (--keep-in-foreground).
 # No foreground adapter needed.
 #
-# Healthcheck: sends a DNS query to the configured listen address and port.
-# Uses "localhost" as the query name -- dnsmasq will resolve it even without
-# upstream servers configured (from /etc/hosts).
+# Healthcheck: sends a raw DNS query to the configured listen address and
+# port and checks that *any* bytes come back, using bash's built-in
+# /dev/udp redirection -- no external DNS client. Uses "localhost" as the
+# query name -- dnsmasq will resolve it even without upstream servers
+# configured (from /etc/hosts).
+#
+# Previously this shelled out to `dig` (added via extraPackages). That
+# pulled in the full bind.dnsutils closure -- bind-lib, libxml2, jemalloc,
+# liburcu, libuv, protobuf-c, fstrm -- roughly 590 MiB of libraries with
+# nothing to do with dnsmasq or with sending one UDP packet. Combined with
+# dnsmasq's own surprisingly large closure (it pulls in nftables and
+# systemd-minimal), the image's nix store closure ballooned to ~1.5-2 GiB,
+# and nix2container's `nix:` copy transport walks that closure file by
+# file to assemble layers. Caught live via strace during a hung CI image
+# load: skopeo's worker threads were walking locale files from completely
+# unrelated packages (e.g. diffutils' translation files) just to finish
+# copying this image. That made the image slow to load even in complete
+# isolation (measured ~290s with no other containers competing for I/O),
+# and under any contention (the real "deploy" shard runs 8 containers'
+# loads in parallel) that regularly blew past CI's job timeout -- the
+# underlying cause of docs-ci-deploy-bp5, not a dnsmasq config problem.
+#
+# /bin/sh in every healthcheck-enabled container is already a symlink to
+# bashInteractive (see nix/modules/_nixos-oci/healthcheck/outputs.nix), so
+# this adds no new package at all.
 #
 # StopSignal: SIGTERM -- dnsmasq exits cleanly on SIGTERM.
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 let
@@ -44,28 +65,19 @@ in
 {
   config = lib.mkIf isDnsmasq {
     oci.container._output.detectedPorts = [ (dnsmasqCfg.settings.port or 53) ];
-    # `dig`'s own retry budget (default +tries=3, each +time seconds)
-    # can exceed podman's external --health-timeout, which kills the
-    # command mid-retry and counts it as a failure regardless of
-    # whether a later retry would have succeeded. Pin dig to a single
-    # bounded attempt and give podman generous headroom above it, plus
-    # more retries/startPeriod so a slow-booting VM under CPU
-    # contention doesn't flip this unhealthy before dnsmasq settles.
+    # Raw DNS query over bash's /dev/udp, read with a bounded timeout via
+    # the `read` builtin -- no external command, so nothing here can
+    # exceed podman's external --health-timeout the way dig's own
+    # retry budget could. Keep generous retries/startPeriod so a
+    # slow-booting VM under CPU contention doesn't flip this unhealthy
+    # before dnsmasq settles.
     oci.container.healthcheck.command = lib.mkDefault [
-      "${pkgs.dig}/bin/dig"
-      "@${addr}"
-      "-p"
-      port
-      "localhost"
-      "+short"
-      "+time=3"
-      "+tries=1"
+      "exec 3<>/dev/udp/${addr}/${port} && printf '\\xaa\\xaa\\x01\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x09localhost\\x00\\x00\\x01\\x00\\x01' >&3 && read -t 3 -N 2 -u 3 _reply"
     ];
     oci.container.healthcheck.timeout = lib.mkDefault 8;
     oci.container.healthcheck.startPeriod = lib.mkDefault 10;
     oci.container.healthcheck.retries = lib.mkDefault 5;
     oci.container.stopSignal = lib.mkDefault "SIGTERM";
-    oci.container.extraPackages = [ pkgs.dig ];
 
     # nixpkgs' `services.dnsmasq` module adds
     #   conf-file = /etc/dnsmasq-conf.conf
