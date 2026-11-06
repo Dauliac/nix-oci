@@ -358,20 +358,36 @@ in
       # (autoStart only loads them locally, and neither a plain
       # `podman push` nor the container's own `.image.copyToRegistry`
       # regenerate the zTOC -- see the push-unit script itself for the
-      # full story). The actual push units live in a nested
+      # full story). Similarly, containers with a non-default
+      # `performance.compression` need an explicit re-copy via turbo
+      # skopeo's `--dest-compress-format`: nix2container "delegates
+      # compression to skopeo at transport time" (see
+      # performance/compression.nix), and the default local-load path
+      # (`oci-load-<name>.service`, plain skopeo, no format flag)
+      # never does that transport-time conversion -- the option is a
+      # no-op for locally-loaded deploy-module images otherwise. The
+      # actual push/recompress units live in a nested
       # `{ config, ... }` import on the node (see the apparmor/stateDir
       # precedent above) so they can reach `config.oci.containers`.
       aggSociPushes = lib.filterAttrs (
         _: s: (s.assertions.sociZtocPresent or null) != null
       ) testableSpecs;
       aggSociNames = lib.attrNames aggSociPushes;
-      # Chain the pushes so only one turbo-skopeo zTOC generation runs
-      # at a time -- each one holds a full layer in memory (hundreds of
-      # MB), and running two concurrently OOM-panicked the test VM.
-      aggSociPrev = lib.listToAttrs (
+      aggCompressionPushes = lib.filterAttrs (
+        _: s: (s.container.performance.compression or "gzip") != "gzip"
+      ) testableSpecs;
+      aggCompressionNames = lib.attrNames aggCompressionPushes;
+      # Chain ALL extra pushes (soci + compression) into one sequence so
+      # only one turbo-skopeo copy runs at a time -- each one can hold a
+      # full layer in memory (hundreds of MB for these test images), and
+      # running two concurrently OOM-panicked the test VM.
+      aggExtraPushUnits =
+        (map (name: "oci-registry-push-${name}.service") aggSociNames)
+        ++ (map (name: "oci-compression-push-${name}.service") aggCompressionNames);
+      aggExtraPushPrev = lib.listToAttrs (
         lib.imap0 (
-          i: name: lib.nameValuePair name (if i == 0 then null else lib.elemAt aggSociNames (i - 1))
-        ) aggSociNames
+          i: unit: lib.nameValuePair unit (if i == 0 then null else lib.elemAt aggExtraPushUnits (i - 1))
+        ) aggExtraPushUnits
       );
 
       # ── Flake-level containers: build deps only ─────────────
@@ -619,19 +635,34 @@ in
           # `--dest-soci` flags before pytest runs (`autoStart` only
           # loads images into podman's local store, never the
           # registry; see the push-unit script below for why neither a
-          # plain `podman push` nor `.image.copyToRegistry` works). The
-          # actual push units are added via a nested `{ config, ... }`
-          # import below (see the apparmor/stateDir precedent).
+          # plain `podman push` nor `.image.copyToRegistry` works).
+          # Containers with a non-default `performance.compression`
+          # similarly need an explicit re-copy via turbo skopeo's
+          # `--dest-compress-format`: nix2container delegates
+          # compression to skopeo "at transport time" (see
+          # performance/compression.nix) and the default local-load
+          # path never does that conversion, so the option is a no-op
+          # otherwise. Both kinds of units are added via a nested
+          # `{ config, ... }` import below (see the apparmor/stateDir
+          # precedent).
           shardSociPushes = lib.filterAttrs (_: s: (s.assertions.sociZtocPresent or null) != null) shardSpecs;
           shardSociNames = lib.attrNames shardSociPushes;
-          # Chain the pushes so only one turbo-skopeo zTOC generation
-          # runs at a time -- each one holds a full layer in memory
-          # (hundreds of MB), and running two concurrently
+          shardCompressionPushes = lib.filterAttrs (
+            _: s: (s.container.performance.compression or "gzip") != "gzip"
+          ) shardSpecs;
+          shardCompressionNames = lib.attrNames shardCompressionPushes;
+          # Chain ALL extra pushes (soci + compression) into one
+          # sequence so only one turbo-skopeo copy runs at a time --
+          # each one can hold a full layer in memory (hundreds of MB
+          # for these test images), and running two concurrently
           # OOM-panicked the test VM.
-          shardSociPrev = lib.listToAttrs (
+          shardExtraPushUnits =
+            (map (name: "oci-registry-push-${name}.service") shardSociNames)
+            ++ (map (name: "oci-compression-push-${name}.service") shardCompressionNames);
+          shardExtraPushPrev = lib.listToAttrs (
             lib.imap0 (
-              i: name: lib.nameValuePair name (if i == 0 then null else lib.elemAt shardSociNames (i - 1))
-            ) shardSociNames
+              i: unit: lib.nameValuePair unit (if i == 0 then null else lib.elemAt shardExtraPushUnits (i - 1))
+            ) shardExtraPushUnits
           );
           shardPytestCode = lib.concatMapStringsSep "\n\n" (
             name:
@@ -771,12 +802,13 @@ in
                         "--dest-soci"
                         "--dest-soci-span-size ${toString sociSpanSizeBytes}"
                       ];
-                      prevPush = shardSociPrev.${name};
+                      thisUnit = "oci-registry-push-${name}.service";
+                      prevUnit = shardExtraPushPrev.${thisUnit};
                       orderingDeps = [
                         "docker-registry.service"
                         "oci-load-${name}.service"
                       ]
-                      ++ lib.optional (prevPush != null) "oci-registry-push-${prevPush}.service";
+                      ++ lib.optional (prevUnit != null) prevUnit;
                     in
                     lib.nameValuePair "oci-registry-push-${name}" {
                       description = "Push ${name} to local registry (sociZtocPresent assertion)";
@@ -787,6 +819,16 @@ in
                         Type = "oneshot";
                         RemainAfterExit = true;
                       };
+                      # Isolated HOME: skopeo's on-disk BlobInfoCache
+                      # (~/.local/share/containers/cache/...) persists
+                      # across invocations under the same HOME. Without
+                      # this, chaining the pushes (above) means the
+                      # second push's identical-content layer gets
+                      # cross-repo blob-mounted via that shared cache
+                      # instead of re-pushed, silently skipping this
+                      # container's own SOCI capture -- its registry
+                      # ends up with no referrer at all.
+                      environment.HOME = "/run/oci-registry-push-home-${name}";
                       path = [
                         skopeoNix2container
                         pkgs.curl
@@ -804,6 +846,46 @@ in
                       '';
                     }
                   ) shardSociPushes;
+                }
+              )
+              # Re-copy containers with a non-default `performance.compression`
+              # through turbo skopeo with `--dest-compress-format`, straight to
+              # the same local containers-storage tag `oci-load-<name>.service`
+              # already created (skopeo's format conversion works against any
+              # destination transport, no registry needed here). Runs after
+              # that load so this result is the one pytest actually sees.
+              ++ lib.optional (shardCompressionNames != [ ]) (
+                { config, ... }:
+                {
+                  systemd.services = lib.mapAttrs' (
+                    name: spec:
+                    let
+                      image = config.oci.containers.${name}.image;
+                      compressionFormat = spec.container.performance.compression or "gzip";
+                      thisUnit = "oci-compression-push-${name}.service";
+                      prevUnit = shardExtraPushPrev.${thisUnit};
+                      orderingDeps = [
+                        "oci-load-${name}.service"
+                      ]
+                      ++ lib.optional (prevUnit != null) prevUnit;
+                    in
+                    lib.nameValuePair "oci-compression-push-${name}" {
+                      description = "Re-copy ${name} into containers-storage with --dest-compress-format ${compressionFormat}";
+                      wantedBy = [ "multi-user.target" ];
+                      after = orderingDeps;
+                      requires = orderingDeps;
+                      serviceConfig = {
+                        Type = "oneshot";
+                        RemainAfterExit = true;
+                      };
+                      path = [ skopeoNix2container ];
+                      script = ''
+                        set -euo pipefail
+                        skopeo --insecure-policy copy --dest-compress-format ${compressionFormat} \
+                          nix:${image} containers-storage:${lib.toLower name}:latest
+                      '';
+                    }
+                  ) shardCompressionPushes;
                 }
               );
 
@@ -964,6 +1046,10 @@ in
                 name: ''machine.wait_for_unit("oci-registry-push-${name}.service")''
               ) shardSociNames}
 
+              ${lib.concatMapStringsSep "\n" (
+                name: ''machine.wait_for_unit("oci-compression-push-${name}.service")''
+              ) shardCompressionNames}
+
               machine.copy_from_host("${shardTestSuiteFile}", "/tmp/test_bdd_vm.py")
               machine.succeed(
                   "cd /tmp && DOCKER_HOST=${dockerHost} "
@@ -1085,12 +1171,13 @@ in
                         "--dest-soci"
                         "--dest-soci-span-size ${toString sociSpanSizeBytes}"
                       ];
-                      prevPush = aggSociPrev.${name};
+                      thisUnit = "oci-registry-push-${name}.service";
+                      prevUnit = aggExtraPushPrev.${thisUnit};
                       orderingDeps = [
                         "docker-registry.service"
                         "oci-load-${name}.service"
                       ]
-                      ++ lib.optional (prevPush != null) "oci-registry-push-${prevPush}.service";
+                      ++ lib.optional (prevUnit != null) prevUnit;
                     in
                     lib.nameValuePair "oci-registry-push-${name}" {
                       description = "Push ${name} to local registry (sociZtocPresent assertion)";
@@ -1101,6 +1188,16 @@ in
                         Type = "oneshot";
                         RemainAfterExit = true;
                       };
+                      # Isolated HOME: skopeo's on-disk BlobInfoCache
+                      # (~/.local/share/containers/cache/...) persists
+                      # across invocations under the same HOME. Without
+                      # this, chaining the pushes (above) means the
+                      # second push's identical-content layer gets
+                      # cross-repo blob-mounted via that shared cache
+                      # instead of re-pushed, silently skipping this
+                      # container's own SOCI capture -- its registry
+                      # ends up with no referrer at all.
+                      environment.HOME = "/run/oci-registry-push-home-${name}";
                       path = [
                         skopeoNix2container
                         pkgs.curl
@@ -1118,6 +1215,44 @@ in
                       '';
                     }
                   ) aggSociPushes;
+                }
+              )
+              # See the matching shard-level block in mkBddVmFor: re-copy
+              # non-default-compression containers via turbo skopeo's
+              # `--dest-compress-format`, straight into the same local
+              # containers-storage tag.
+              ++ lib.optional (aggCompressionNames != [ ]) (
+                { config, ... }:
+                {
+                  systemd.services = lib.mapAttrs' (
+                    name: spec:
+                    let
+                      image = config.oci.containers.${name}.image;
+                      compressionFormat = spec.container.performance.compression or "gzip";
+                      thisUnit = "oci-compression-push-${name}.service";
+                      prevUnit = aggExtraPushPrev.${thisUnit};
+                      orderingDeps = [
+                        "oci-load-${name}.service"
+                      ]
+                      ++ lib.optional (prevUnit != null) prevUnit;
+                    in
+                    lib.nameValuePair "oci-compression-push-${name}" {
+                      description = "Re-copy ${name} into containers-storage with --dest-compress-format ${compressionFormat}";
+                      wantedBy = [ "multi-user.target" ];
+                      after = orderingDeps;
+                      requires = orderingDeps;
+                      serviceConfig = {
+                        Type = "oneshot";
+                        RemainAfterExit = true;
+                      };
+                      path = [ skopeoNix2container ];
+                      script = ''
+                        set -euo pipefail
+                        skopeo --insecure-policy copy --dest-compress-format ${compressionFormat} \
+                          nix:${image} containers-storage:${lib.toLower name}:latest
+                      '';
+                    }
+                  ) aggCompressionPushes;
                 }
               );
 
@@ -1230,6 +1365,11 @@ in
               ${lib.concatMapStringsSep "\n" (
                 name: ''machine.wait_for_unit("oci-registry-push-${name}.service")''
               ) aggSociNames}
+
+              # Wait for non-default-compression re-copies
+              ${lib.concatMapStringsSep "\n" (
+                name: ''machine.wait_for_unit("oci-compression-push-${name}.service")''
+              ) aggCompressionNames}
 
               # Run all pytest assertions
               machine.copy_from_host("${testSuiteFile}", "/tmp/test_bdd_vm.py")
