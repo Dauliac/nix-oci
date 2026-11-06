@@ -747,10 +747,16 @@ in
                       soci = spec.assertions.sociZtocPresent;
                       image = config.oci.containers.${name}.image;
                       dest = "docker://localhost:5000/${soci.repository}:${soci.tag}";
-                      sociFlags = lib.concatStringsSep " " (
-                        [ "--dest-soci" ]
-                        ++ lib.optional ((soci.spanSize or null) != null) "--dest-soci-span-size ${toString soci.spanSize}"
-                      );
+                      # soci.spanSize (from assertions.sociZtocPresent) is a
+                      # display string like "1MiB" for the pytest substring
+                      # check, NOT a byte count skopeo will accept -- the
+                      # real numeric value is the container's own configured
+                      # performance.turbo.sociSpanSize.
+                      sociSpanSizeBytes = spec.container.performance.turbo.sociSpanSize or 4194304;
+                      sociFlags = lib.concatStringsSep " " [
+                        "--dest-soci"
+                        "--dest-soci-span-size ${toString sociSpanSizeBytes}"
+                      ];
                     in
                     lib.nameValuePair "oci-registry-push-${name}" {
                       description = "Push ${name} to local registry (sociZtocPresent assertion)";
@@ -1055,10 +1061,16 @@ in
                       soci = spec.assertions.sociZtocPresent;
                       image = config.oci.containers.${name}.image;
                       dest = "docker://localhost:5000/${soci.repository}:${soci.tag}";
-                      sociFlags = lib.concatStringsSep " " (
-                        [ "--dest-soci" ]
-                        ++ lib.optional ((soci.spanSize or null) != null) "--dest-soci-span-size ${toString soci.spanSize}"
-                      );
+                      # soci.spanSize (from assertions.sociZtocPresent) is a
+                      # display string like "1MiB" for the pytest substring
+                      # check, NOT a byte count skopeo will accept -- the
+                      # real numeric value is the container's own configured
+                      # performance.turbo.sociSpanSize.
+                      sociSpanSizeBytes = spec.container.performance.turbo.sociSpanSize or 4194304;
+                      sociFlags = lib.concatStringsSep " " [
+                        "--dest-soci"
+                        "--dest-soci-span-size ${toString sociSpanSizeBytes}"
+                      ];
                     in
                     lib.nameValuePair "oci-registry-push-${name}" {
                       description = "Push ${name} to local registry (sociZtocPresent assertion)";
