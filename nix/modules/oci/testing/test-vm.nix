@@ -352,6 +352,44 @@ in
       testableSpecs = runtimeSpecs // deploySpecs;
       hasTestableSpecs = testableSpecs != { };
 
+      # See the matching shard-level block in mkBddVmFor: containers
+      # whose spec asserts `sociZtocPresent` need an explicit push to
+      # the in-VM registry via the turbo skopeo's `--dest-soci` flags
+      # (autoStart only loads them locally, and neither a plain
+      # `podman push` nor the container's own `.image.copyToRegistry`
+      # regenerate the zTOC -- see the push-unit script itself for the
+      # full story). Similarly, containers with a non-default
+      # `performance.compression` need an explicit re-copy via turbo
+      # skopeo's `--dest-compress-format`: nix2container "delegates
+      # compression to skopeo at transport time" (see
+      # performance/compression.nix), and the default local-load path
+      # (`oci-load-<name>.service`, plain skopeo, no format flag)
+      # never does that transport-time conversion -- the option is a
+      # no-op for locally-loaded deploy-module images otherwise. The
+      # actual push/recompress units live in a nested
+      # `{ config, ... }` import on the node (see the apparmor/stateDir
+      # precedent above) so they can reach `config.oci.containers`.
+      aggSociPushes = lib.filterAttrs (
+        _: s: (s.assertions.sociZtocPresent or null) != null
+      ) testableSpecs;
+      aggSociNames = lib.attrNames aggSociPushes;
+      aggCompressionPushes = lib.filterAttrs (
+        _: s: (s.container.performance.compression or "gzip") != "gzip"
+      ) testableSpecs;
+      aggCompressionNames = lib.attrNames aggCompressionPushes;
+      # Chain ALL extra pushes (soci + compression) into one sequence so
+      # only one turbo-skopeo copy runs at a time -- each one can hold a
+      # full layer in memory (hundreds of MB for these test images), and
+      # running two concurrently OOM-panicked the test VM.
+      aggExtraPushUnits =
+        (map (name: "oci-registry-push-${name}.service") aggSociNames)
+        ++ (map (name: "oci-compression-push-${name}.service") aggCompressionNames);
+      aggExtraPushPrev = lib.listToAttrs (
+        lib.imap0 (
+          i: unit: lib.nameValuePair unit (if i == 0 then null else lib.elemAt aggExtraPushUnits (i - 1))
+        ) aggExtraPushUnits
+      );
+
       # ── Flake-level containers: build deps only ─────────────
       # All flake example images must build successfully, but they are
       # NOT pushed into the VM. Only one is pushed to test the registry
@@ -592,6 +630,40 @@ in
           ) (lib.filterAttrs (_: usesApparmor) shardSpecs);
           shardBddContainers = lib.getAttrs (lib.attrNames shardSpecs) bddContainers;
           shardBddContainerNames = lib.attrNames shardBddContainers;
+          # Containers whose spec asserts `sociZtocPresent` need an
+          # explicit push to the in-VM registry via the turbo skopeo's
+          # `--dest-soci` flags before pytest runs (`autoStart` only
+          # loads images into podman's local store, never the
+          # registry; see the push-unit script below for why neither a
+          # plain `podman push` nor `.image.copyToRegistry` works).
+          # Containers with a non-default `performance.compression`
+          # similarly need an explicit re-copy via turbo skopeo's
+          # `--dest-compress-format`: nix2container delegates
+          # compression to skopeo "at transport time" (see
+          # performance/compression.nix) and the default local-load
+          # path never does that conversion, so the option is a no-op
+          # otherwise. Both kinds of units are added via a nested
+          # `{ config, ... }` import below (see the apparmor/stateDir
+          # precedent).
+          shardSociPushes = lib.filterAttrs (_: s: (s.assertions.sociZtocPresent or null) != null) shardSpecs;
+          shardSociNames = lib.attrNames shardSociPushes;
+          shardCompressionPushes = lib.filterAttrs (
+            _: s: (s.container.performance.compression or "gzip") != "gzip"
+          ) shardSpecs;
+          shardCompressionNames = lib.attrNames shardCompressionPushes;
+          # Chain ALL extra pushes (soci + compression) into one
+          # sequence so only one turbo-skopeo copy runs at a time --
+          # each one can hold a full layer in memory (hundreds of MB
+          # for these test images), and running two concurrently
+          # OOM-panicked the test VM.
+          shardExtraPushUnits =
+            (map (name: "oci-registry-push-${name}.service") shardSociNames)
+            ++ (map (name: "oci-compression-push-${name}.service") shardCompressionNames);
+          shardExtraPushPrev = lib.listToAttrs (
+            lib.imap0 (
+              i: unit: lib.nameValuePair unit (if i == 0 then null else lib.elemAt shardExtraPushUnits (i - 1))
+            ) shardExtraPushUnits
+          );
           shardPytestCode = lib.concatMapStringsSep "\n\n" (
             name:
             let
@@ -697,6 +769,144 @@ in
                   environment.etc."nix-oci-test-hardening.json".text =
                     probeHardeningJsonFor config shardBddContainerNames;
                 }
+              )
+              # Push each `sociZtocPresent` container to the in-VM registry
+              # with the turbo-patched skopeo's `--dest-soci` flags, which
+              # is what actually generates the zTOC referrer during copy.
+              # The container's own `.image.copyToRegistry`/`.copyTo`
+              # passthru scripts always use the plain nixpkgs skopeo
+              # (nlewo/nix2container's generic script, see its default.nix)
+              # regardless of `performance.turbo.soci` -- that option only
+              # drives OCI labels in this pipeline, nothing invokes the
+              # turbo skopeo for per-container deploy-module images. So
+              # invoke `skopeoNix2container` (turbo, already resolved
+              # above) directly against the raw `.image` derivation. Same
+              # nested-module requirement as apparmor/stateDir above:
+              # needs this node's own resolved `config.oci.containers`.
+              ++ lib.optional (shardSociNames != [ ]) (
+                { config, ... }:
+                {
+                  systemd.services = lib.mapAttrs' (
+                    name: spec:
+                    let
+                      soci = spec.assertions.sociZtocPresent;
+                      image = config.oci.containers.${name}.image;
+                      dest = "docker://localhost:5000/${soci.repository}:${soci.tag}";
+                      # soci.spanSize (from assertions.sociZtocPresent) is a
+                      # display string like "1MiB" for the pytest substring
+                      # check, NOT a byte count skopeo will accept -- the
+                      # real numeric value is the container's own configured
+                      # performance.turbo.sociSpanSize.
+                      sociSpanSizeBytes = spec.container.performance.turbo.sociSpanSize or 4194304;
+                      sociFlags = lib.concatStringsSep " " [
+                        "--dest-soci"
+                        "--dest-soci-span-size ${toString sociSpanSizeBytes}"
+                      ];
+                      thisUnit = "oci-registry-push-${name}.service";
+                      prevUnit = shardExtraPushPrev.${thisUnit};
+                      orderingDeps = [
+                        "docker-registry.service"
+                        "oci-load-${name}.service"
+                      ]
+                      ++ lib.optional (prevUnit != null) prevUnit;
+                    in
+                    lib.nameValuePair "oci-registry-push-${name}" {
+                      description = "Push ${name} to local registry (sociZtocPresent assertion)";
+                      wantedBy = [ "multi-user.target" ];
+                      after = orderingDeps;
+                      requires = orderingDeps;
+                      serviceConfig = {
+                        Type = "oneshot";
+                        RemainAfterExit = true;
+                      };
+                      path = [
+                        skopeoNix2container
+                        pkgs.curl
+                      ];
+                      script = ''
+                        set -euo pipefail
+                        for _i in $(seq 1 60); do
+                          if curl -sf http://localhost:5000/v2/ >/dev/null 2>&1; then
+                            break
+                          fi
+                          sleep 0.5
+                        done
+                        # skopeo's on-disk BlobInfoCache lives at a FIXED
+                        # root-owned path (/var/lib/containers/cache), NOT
+                        # under $HOME -- these services run as root, so
+                        # environment.HOME above does not affect it. Without
+                        # clearing it, the chained pushes above cross-repo
+                        # blob-mount this container's identical-content layer
+                        # from whichever push ran first (confirmed via the
+                        # registry's own access log: a HEAD + POST
+                        # .../uploads/?from=<repo>&mount=<digest>), silently
+                        # skipping this container's own SOCI capture.
+                        rm -rf /var/lib/containers/cache
+                        skopeo --insecure-policy copy ${sociFlags} --dest-tls-verify=false \
+                          nix:${image} ${dest}
+                      '';
+                    }
+                  ) shardSociPushes;
+                }
+              )
+              # Re-copy containers with a non-default `performance.compression`
+              # through turbo skopeo with `--dest-compress-format`, straight to
+              # the same local containers-storage tag `oci-load-<name>.service`
+              # already created (skopeo's format conversion works against any
+              # destination transport, no registry needed here). Runs after
+              # that load so this result is the one pytest actually sees.
+              ++ lib.optional (shardCompressionNames != [ ]) (
+                { config, ... }:
+                {
+                  systemd.services = lib.mapAttrs' (
+                    name: spec:
+                    let
+                      image = config.oci.containers.${name}.image;
+                      compressionFormat = spec.container.performance.compression or "gzip";
+                      dest = "docker://localhost:5000/${lib.toLower name}:latest";
+                      thisUnit = "oci-compression-push-${name}.service";
+                      prevUnit = shardExtraPushPrev.${thisUnit};
+                      orderingDeps = [
+                        "docker-registry.service"
+                        "oci-load-${name}.service"
+                      ]
+                      ++ lib.optional (prevUnit != null) prevUnit;
+                    in
+                    lib.nameValuePair "oci-compression-push-${name}" {
+                      # containers-storage normalizes/strips layer
+                      # compression on store (it keeps layers as extracted
+                      # diffs for overlay mounting, not as wire-format
+                      # blobs), so `skopeo inspect --raw containers-storage:`
+                      # can never observe the requested format -- push to
+                      # the registry instead, where the manifest's
+                      # mediaType genuinely reflects it.
+                      description = "Push ${name} to local registry with --dest-compress-format ${compressionFormat}";
+                      wantedBy = [ "multi-user.target" ];
+                      after = orderingDeps;
+                      requires = orderingDeps;
+                      serviceConfig = {
+                        Type = "oneshot";
+                        RemainAfterExit = true;
+                      };
+                      path = [
+                        skopeoNix2container
+                        pkgs.curl
+                      ];
+                      script = ''
+                        set -euo pipefail
+                        for _i in $(seq 1 60); do
+                          if curl -sf http://localhost:5000/v2/ >/dev/null 2>&1; then
+                            break
+                          fi
+                          sleep 0.5
+                        done
+                        rm -rf /var/lib/containers/cache
+                        skopeo --insecure-policy copy --dest-compress-format ${compressionFormat} --dest-tls-verify=false \
+                          nix:${image} ${dest}
+                      '';
+                    }
+                  ) shardCompressionPushes;
+                }
               );
 
               virtualisation.docker.enable = lib.mkIf (shardBackend == "docker") true;
@@ -771,6 +981,7 @@ in
                     requests
                   ]
                 ))
+                pkgs.skopeo
               ];
             };
 
@@ -835,9 +1046,16 @@ in
               ''}
               machine.wait_for_unit("multi-user.target")
               machine.wait_for_unit("${socketUnit}")
-              ${lib.optionalString (includeRegistryTest && registryTestOCI != null) ''
-                machine.wait_for_unit("docker-registry.service")
-              ''}
+              ${lib.optionalString
+                (
+                  (includeRegistryTest && registryTestOCI != null)
+                  || shardSociNames != [ ]
+                  || shardCompressionNames != [ ]
+                )
+                ''
+                  machine.wait_for_unit("docker-registry.service")
+                ''
+              }
 
               ${lib.concatMapStringsSep "\n" (
                 name: ''machine.wait_for_unit("oci-load-${name}.service")''
@@ -850,6 +1068,14 @@ in
               ${lib.optionalString (includeRegistryTest && registryTestOCI != null) ''
                 machine.wait_for_unit("flake-oci-load-${registryTestName}.service")
               ''}
+
+              ${lib.concatMapStringsSep "\n" (
+                name: ''machine.wait_for_unit("oci-registry-push-${name}.service")''
+              ) shardSociNames}
+
+              ${lib.concatMapStringsSep "\n" (
+                name: ''machine.wait_for_unit("oci-compression-push-${name}.service")''
+              ) shardCompressionNames}
 
               machine.copy_from_host("${shardTestSuiteFile}", "/tmp/test_bdd_vm.py")
               machine.succeed(
@@ -947,6 +1173,128 @@ in
                 {
                   environment.etc."nix-oci-test-hardening.json".text = probeHardeningJsonFor config bddContainerNames;
                 }
+              )
+              # See the matching shard-level block in mkBddVmFor for the
+              # full rationale: invoke the turbo skopeo directly with
+              # `--dest-soci`, not the container's own `.image.copyToRegistry`
+              # (always plain skopeo in this pipeline) and not a bare
+              # `podman push`.
+              ++ lib.optional (aggSociNames != [ ]) (
+                { config, ... }:
+                {
+                  systemd.services = lib.mapAttrs' (
+                    name: spec:
+                    let
+                      soci = spec.assertions.sociZtocPresent;
+                      image = config.oci.containers.${name}.image;
+                      dest = "docker://localhost:5000/${soci.repository}:${soci.tag}";
+                      # soci.spanSize (from assertions.sociZtocPresent) is a
+                      # display string like "1MiB" for the pytest substring
+                      # check, NOT a byte count skopeo will accept -- the
+                      # real numeric value is the container's own configured
+                      # performance.turbo.sociSpanSize.
+                      sociSpanSizeBytes = spec.container.performance.turbo.sociSpanSize or 4194304;
+                      sociFlags = lib.concatStringsSep " " [
+                        "--dest-soci"
+                        "--dest-soci-span-size ${toString sociSpanSizeBytes}"
+                      ];
+                      thisUnit = "oci-registry-push-${name}.service";
+                      prevUnit = aggExtraPushPrev.${thisUnit};
+                      orderingDeps = [
+                        "docker-registry.service"
+                        "oci-load-${name}.service"
+                      ]
+                      ++ lib.optional (prevUnit != null) prevUnit;
+                    in
+                    lib.nameValuePair "oci-registry-push-${name}" {
+                      description = "Push ${name} to local registry (sociZtocPresent assertion)";
+                      wantedBy = [ "multi-user.target" ];
+                      after = orderingDeps;
+                      requires = orderingDeps;
+                      serviceConfig = {
+                        Type = "oneshot";
+                        RemainAfterExit = true;
+                      };
+                      path = [
+                        skopeoNix2container
+                        pkgs.curl
+                      ];
+                      script = ''
+                        set -euo pipefail
+                        for _i in $(seq 1 60); do
+                          if curl -sf http://localhost:5000/v2/ >/dev/null 2>&1; then
+                            break
+                          fi
+                          sleep 0.5
+                        done
+                        # skopeo's on-disk BlobInfoCache lives at a FIXED
+                        # root-owned path (/var/lib/containers/cache), NOT
+                        # under $HOME -- these services run as root, so
+                        # environment.HOME above does not affect it. Without
+                        # clearing it, the chained pushes above cross-repo
+                        # blob-mount this container's identical-content layer
+                        # from whichever push ran first (confirmed via the
+                        # registry's own access log: a HEAD + POST
+                        # .../uploads/?from=<repo>&mount=<digest>), silently
+                        # skipping this container's own SOCI capture.
+                        rm -rf /var/lib/containers/cache
+                        skopeo --insecure-policy copy ${sociFlags} --dest-tls-verify=false \
+                          nix:${image} ${dest}
+                      '';
+                    }
+                  ) aggSociPushes;
+                }
+              )
+              # See the matching shard-level block in mkBddVmFor: push
+              # non-default-compression containers to the registry via
+              # turbo skopeo's `--dest-compress-format` (containers-storage
+              # normalizes/strips compression on store, so it can never be
+              # observed via `skopeo inspect --raw containers-storage:`).
+              ++ lib.optional (aggCompressionNames != [ ]) (
+                { config, ... }:
+                {
+                  systemd.services = lib.mapAttrs' (
+                    name: spec:
+                    let
+                      image = config.oci.containers.${name}.image;
+                      compressionFormat = spec.container.performance.compression or "gzip";
+                      dest = "docker://localhost:5000/${lib.toLower name}:latest";
+                      thisUnit = "oci-compression-push-${name}.service";
+                      prevUnit = aggExtraPushPrev.${thisUnit};
+                      orderingDeps = [
+                        "docker-registry.service"
+                        "oci-load-${name}.service"
+                      ]
+                      ++ lib.optional (prevUnit != null) prevUnit;
+                    in
+                    lib.nameValuePair "oci-compression-push-${name}" {
+                      description = "Push ${name} to local registry with --dest-compress-format ${compressionFormat}";
+                      wantedBy = [ "multi-user.target" ];
+                      after = orderingDeps;
+                      requires = orderingDeps;
+                      serviceConfig = {
+                        Type = "oneshot";
+                        RemainAfterExit = true;
+                      };
+                      path = [
+                        skopeoNix2container
+                        pkgs.curl
+                      ];
+                      script = ''
+                        set -euo pipefail
+                        for _i in $(seq 1 60); do
+                          if curl -sf http://localhost:5000/v2/ >/dev/null 2>&1; then
+                            break
+                          fi
+                          sleep 0.5
+                        done
+                        rm -rf /var/lib/containers/cache
+                        skopeo --insecure-policy copy --dest-compress-format ${compressionFormat} --dest-tls-verify=false \
+                          nix:${image} ${dest}
+                      '';
+                    }
+                  ) aggCompressionPushes;
+                }
               );
 
               # When `_vmBackend = "docker"`, we still get podman from the
@@ -1022,6 +1370,7 @@ in
                     requests
                   ]
                 ))
+                pkgs.skopeo
               ];
             };
 
@@ -1052,6 +1401,16 @@ in
               ${lib.optionalString (registryTestOCI != null) ''
                 machine.wait_for_unit("flake-oci-load-${registryTestName}.service")
               ''}
+
+              # Wait for sociZtocPresent registry pushes
+              ${lib.concatMapStringsSep "\n" (
+                name: ''machine.wait_for_unit("oci-registry-push-${name}.service")''
+              ) aggSociNames}
+
+              # Wait for non-default-compression re-copies
+              ${lib.concatMapStringsSep "\n" (
+                name: ''machine.wait_for_unit("oci-compression-push-${name}.service")''
+              ) aggCompressionNames}
 
               # Run all pytest assertions
               machine.copy_from_host("${testSuiteFile}", "/tmp/test_bdd_vm.py")
