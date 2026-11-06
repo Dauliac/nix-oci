@@ -819,16 +819,6 @@ in
                         Type = "oneshot";
                         RemainAfterExit = true;
                       };
-                      # Isolated HOME: skopeo's on-disk BlobInfoCache
-                      # (~/.local/share/containers/cache/...) persists
-                      # across invocations under the same HOME. Without
-                      # this, chaining the pushes (above) means the
-                      # second push's identical-content layer gets
-                      # cross-repo blob-mounted via that shared cache
-                      # instead of re-pushed, silently skipping this
-                      # container's own SOCI capture -- its registry
-                      # ends up with no referrer at all.
-                      environment.HOME = "/run/oci-registry-push-home-${name}";
                       path = [
                         skopeoNix2container
                         pkgs.curl
@@ -841,6 +831,17 @@ in
                           fi
                           sleep 0.5
                         done
+                        # skopeo's on-disk BlobInfoCache lives at a FIXED
+                        # root-owned path (/var/lib/containers/cache), NOT
+                        # under $HOME -- these services run as root, so
+                        # environment.HOME above does not affect it. Without
+                        # clearing it, the chained pushes above cross-repo
+                        # blob-mount this container's identical-content layer
+                        # from whichever push ran first (confirmed via the
+                        # registry's own access log: a HEAD + POST
+                        # .../uploads/?from=<repo>&mount=<digest>), silently
+                        # skipping this container's own SOCI capture.
+                        rm -rf /var/lib/containers/cache
                         skopeo --insecure-policy copy ${sociFlags} --dest-tls-verify=false \
                           nix:${image} ${dest}
                       '';
@@ -862,15 +863,24 @@ in
                     let
                       image = config.oci.containers.${name}.image;
                       compressionFormat = spec.container.performance.compression or "gzip";
+                      dest = "docker://localhost:5000/${lib.toLower name}:latest";
                       thisUnit = "oci-compression-push-${name}.service";
                       prevUnit = shardExtraPushPrev.${thisUnit};
                       orderingDeps = [
+                        "docker-registry.service"
                         "oci-load-${name}.service"
                       ]
                       ++ lib.optional (prevUnit != null) prevUnit;
                     in
                     lib.nameValuePair "oci-compression-push-${name}" {
-                      description = "Re-copy ${name} into containers-storage with --dest-compress-format ${compressionFormat}";
+                      # containers-storage normalizes/strips layer
+                      # compression on store (it keeps layers as extracted
+                      # diffs for overlay mounting, not as wire-format
+                      # blobs), so `skopeo inspect --raw containers-storage:`
+                      # can never observe the requested format -- push to
+                      # the registry instead, where the manifest's
+                      # mediaType genuinely reflects it.
+                      description = "Push ${name} to local registry with --dest-compress-format ${compressionFormat}";
                       wantedBy = [ "multi-user.target" ];
                       after = orderingDeps;
                       requires = orderingDeps;
@@ -878,11 +888,21 @@ in
                         Type = "oneshot";
                         RemainAfterExit = true;
                       };
-                      path = [ skopeoNix2container ];
+                      path = [
+                        skopeoNix2container
+                        pkgs.curl
+                      ];
                       script = ''
                         set -euo pipefail
-                        skopeo --insecure-policy copy --dest-compress-format ${compressionFormat} \
-                          nix:${image} containers-storage:${lib.toLower name}:latest
+                        for _i in $(seq 1 60); do
+                          if curl -sf http://localhost:5000/v2/ >/dev/null 2>&1; then
+                            break
+                          fi
+                          sleep 0.5
+                        done
+                        rm -rf /var/lib/containers/cache
+                        skopeo --insecure-policy copy --dest-compress-format ${compressionFormat} --dest-tls-verify=false \
+                          nix:${image} ${dest}
                       '';
                     }
                   ) shardCompressionPushes;
@@ -1026,9 +1046,16 @@ in
               ''}
               machine.wait_for_unit("multi-user.target")
               machine.wait_for_unit("${socketUnit}")
-              ${lib.optionalString ((includeRegistryTest && registryTestOCI != null) || shardSociNames != [ ]) ''
-                machine.wait_for_unit("docker-registry.service")
-              ''}
+              ${lib.optionalString
+                (
+                  (includeRegistryTest && registryTestOCI != null)
+                  || shardSociNames != [ ]
+                  || shardCompressionNames != [ ]
+                )
+                ''
+                  machine.wait_for_unit("docker-registry.service")
+                ''
+              }
 
               ${lib.concatMapStringsSep "\n" (
                 name: ''machine.wait_for_unit("oci-load-${name}.service")''
@@ -1188,16 +1215,6 @@ in
                         Type = "oneshot";
                         RemainAfterExit = true;
                       };
-                      # Isolated HOME: skopeo's on-disk BlobInfoCache
-                      # (~/.local/share/containers/cache/...) persists
-                      # across invocations under the same HOME. Without
-                      # this, chaining the pushes (above) means the
-                      # second push's identical-content layer gets
-                      # cross-repo blob-mounted via that shared cache
-                      # instead of re-pushed, silently skipping this
-                      # container's own SOCI capture -- its registry
-                      # ends up with no referrer at all.
-                      environment.HOME = "/run/oci-registry-push-home-${name}";
                       path = [
                         skopeoNix2container
                         pkgs.curl
@@ -1210,6 +1227,17 @@ in
                           fi
                           sleep 0.5
                         done
+                        # skopeo's on-disk BlobInfoCache lives at a FIXED
+                        # root-owned path (/var/lib/containers/cache), NOT
+                        # under $HOME -- these services run as root, so
+                        # environment.HOME above does not affect it. Without
+                        # clearing it, the chained pushes above cross-repo
+                        # blob-mount this container's identical-content layer
+                        # from whichever push ran first (confirmed via the
+                        # registry's own access log: a HEAD + POST
+                        # .../uploads/?from=<repo>&mount=<digest>), silently
+                        # skipping this container's own SOCI capture.
+                        rm -rf /var/lib/containers/cache
                         skopeo --insecure-policy copy ${sociFlags} --dest-tls-verify=false \
                           nix:${image} ${dest}
                       '';
@@ -1217,10 +1245,11 @@ in
                   ) aggSociPushes;
                 }
               )
-              # See the matching shard-level block in mkBddVmFor: re-copy
-              # non-default-compression containers via turbo skopeo's
-              # `--dest-compress-format`, straight into the same local
-              # containers-storage tag.
+              # See the matching shard-level block in mkBddVmFor: push
+              # non-default-compression containers to the registry via
+              # turbo skopeo's `--dest-compress-format` (containers-storage
+              # normalizes/strips compression on store, so it can never be
+              # observed via `skopeo inspect --raw containers-storage:`).
               ++ lib.optional (aggCompressionNames != [ ]) (
                 { config, ... }:
                 {
@@ -1229,15 +1258,17 @@ in
                     let
                       image = config.oci.containers.${name}.image;
                       compressionFormat = spec.container.performance.compression or "gzip";
+                      dest = "docker://localhost:5000/${lib.toLower name}:latest";
                       thisUnit = "oci-compression-push-${name}.service";
                       prevUnit = aggExtraPushPrev.${thisUnit};
                       orderingDeps = [
+                        "docker-registry.service"
                         "oci-load-${name}.service"
                       ]
                       ++ lib.optional (prevUnit != null) prevUnit;
                     in
                     lib.nameValuePair "oci-compression-push-${name}" {
-                      description = "Re-copy ${name} into containers-storage with --dest-compress-format ${compressionFormat}";
+                      description = "Push ${name} to local registry with --dest-compress-format ${compressionFormat}";
                       wantedBy = [ "multi-user.target" ];
                       after = orderingDeps;
                       requires = orderingDeps;
@@ -1245,11 +1276,21 @@ in
                         Type = "oneshot";
                         RemainAfterExit = true;
                       };
-                      path = [ skopeoNix2container ];
+                      path = [
+                        skopeoNix2container
+                        pkgs.curl
+                      ];
                       script = ''
                         set -euo pipefail
-                        skopeo --insecure-policy copy --dest-compress-format ${compressionFormat} \
-                          nix:${image} containers-storage:${lib.toLower name}:latest
+                        for _i in $(seq 1 60); do
+                          if curl -sf http://localhost:5000/v2/ >/dev/null 2>&1; then
+                            break
+                          fi
+                          sleep 0.5
+                        done
+                        rm -rf /var/lib/containers/cache
+                        skopeo --insecure-policy copy --dest-compress-format ${compressionFormat} --dest-tls-verify=false \
+                          nix:${image} ${dest}
                       '';
                     }
                   ) aggCompressionPushes;

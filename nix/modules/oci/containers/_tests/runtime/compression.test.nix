@@ -35,12 +35,18 @@
             # the Docker-compat inspect API nor `podman image inspect
             # --format '{{json .Manifest}}'` expose the raw manifest (the
             # latter fails with "can't evaluate field Manifest in type
-            # interface {}" -- there is no such field); skopeo reads it
-            # straight out of containers-storage instead.
+            # interface {}" -- there is no such field). Read it from the
+            # in-VM registry rather than containers-storage: local storage
+            # normalizes/strips layer compression on store (layers are
+            # kept as extracted diffs for overlay mounting, not as
+            # wire-format blobs), so the requested compression format can
+            # never be observed there -- the test harness pushes this
+            # container to the registry with --dest-compress-format for
+            # exactly this reason (see test-vm.nix).
             import json, subprocess
             _raw = subprocess.check_output([
-                "skopeo", "inspect", "--raw",
-                "containers-storage:performance-compression-runtime--runtime-zstd-layers:latest",
+                "skopeo", "inspect", "--raw", "--tls-verify=false",
+                "docker://localhost:5000/performance-compression-runtime--runtime-zstd-layers:latest",
             ])
             _manifest = json.loads(_raw)
             _layers = _manifest.get("layers") or []
@@ -70,12 +76,12 @@
             performance.compression = "gzip:estargz";
           };
           assertions.runtime = ''
-            # See runtime-zstd-layers above: skopeo reads the raw OCI
-            # manifest from containers-storage directly.
+            # See runtime-zstd-layers above: read the raw OCI manifest
+            # from the in-VM registry, not containers-storage.
             import json, subprocess
             _raw = subprocess.check_output([
-                "skopeo", "inspect", "--raw",
-                "containers-storage:performance-compression-runtime--runtime-estargz-layers:latest",
+                "skopeo", "inspect", "--raw", "--tls-verify=false",
+                "docker://localhost:5000/performance-compression-runtime--runtime-estargz-layers:latest",
             ])
             _manifest = json.loads(_raw)
             _layers = _manifest.get("layers") or []
