@@ -161,12 +161,13 @@ let
         description = "Image tag under which the SOCI-indexed image was pushed.";
       };
       spanSize = mkOption {
-        type = types.nullOr types.str;
+        type = types.nullOr types.int;
         default = null;
         description = ''
           If set, assert the generated zTOC honours this SOCI span size
-          (e.g. `"1MiB"`). Compared against the span-size field decoded
-          by the `soci` CLI.
+          in bytes (e.g. `1048576` for 1 MiB). Compared against the
+          `com.amazon.soci.span-size` annotation on the zTOC descriptor
+          inside the pushed SOCI v2 index manifest.
         '';
       };
     };
