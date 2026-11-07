@@ -785,54 +785,6 @@ in
                 if backend == "docker" then "unix:///var/run/docker.sock" else "unix:///run/podman/podman.sock";
             in
             ''
-              ${lib.optionalString (shardName == "deploy") ''
-                # TEMPORARY DIAGNOSTIC: dnsmasq's healthcheck fails every
-                # attempt with no visible cause (podman doesn't surface
-                # --health-cmd's own output anywhere the journal picks up).
-                # Run it directly via the backdoor console -- available well
-                # before multi-user.target -- and print whatever it says,
-                # before the real wait below times out. Remove once the
-                # actual failure is identified.
-                import time
-                _dnsmasq_name = "deploy-dnsmasq--deploy-dnsmasq-resolves-hosts-entry"
-                # Wait on the load unit specifically (image load, independent
-                # of the run-time hang) rather than guessing with a long
-                # sleep loop -- it finishes shortly before the container's
-                # own run unit starts. A short extra poll covers the
-                # remaining create+start race.
-                machine.wait_for_unit(f"oci-load-{_dnsmasq_name}.service")
-                for _attempt in range(20):
-                    _poll_status, _poll_out = machine.execute(
-                        # `podman inspect` (unscoped) matches the already-
-                        # loaded IMAGE of the same name and returns 0
-                        # immediately; scope to the container explicitly so
-                        # this actually waits for the run unit to create it.
-                        f"podman container inspect {_dnsmasq_name} >/dev/null 2>&1"
-                    )
-                    if _poll_status == 0:
-                        break
-                    time.sleep(5)
-                else:
-                    print("DIAG dnsmasq: container never appeared within 100s of load finishing")
-                status, out = machine.execute(
-                    f"podman healthcheck run {_dnsmasq_name} 2>&1"
-                )
-                print(f"DIAG dnsmasq healthcheck run: status={status} out={out!r}")
-                status2, out2 = machine.execute(
-                    f"podman exec {_dnsmasq_name} ${pkgs.dig}/bin/dig @127.0.0.1 -p 5353 localhost +short +time=3 2>&1"
-                )
-                print(f"DIAG dnsmasq direct dig: status={status2} out={out2!r}")
-                # dig got no response at all (confirmed: "no servers could
-                # be reached"). Check from the host side -- no extra
-                # packages needed inside the container -- whether dnsmasq's
-                # own process is actually still alive and what it's doing.
-                status3, out3 = machine.execute(
-                    f"podman inspect {_dnsmasq_name} --format '{{{{.State.Running}}}} {{{{.State.ExitCode}}}} {{{{.State.Status}}}}' 2>&1"
-                )
-                print(f"DIAG dnsmasq container state: status={status3} out={out3!r}")
-                status4, out4 = machine.execute(f"podman top {_dnsmasq_name} 2>&1")
-                print(f"DIAG dnsmasq top: status={status4} out={out4!r}")
-              ''}
               machine.wait_for_unit("multi-user.target")
               machine.wait_for_unit("${socketUnit}")
               ${lib.optionalString (includeRegistryTest && registryTestOCI != null) ''
