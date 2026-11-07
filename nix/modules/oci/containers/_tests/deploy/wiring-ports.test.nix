@@ -76,8 +76,26 @@
                     capture_output=True, text=True,
                 )
                 _unit = _svc.stdout + _svc.stderr
-            assert "--publish" in _unit and "8082:80" in _unit, (
-                f"Expected --publish 8082:80 in runner unit, got:\n{_unit[:2000]}"
+            # nixpkgs' virtualisation.oci-containers module writes the
+            # full podman/docker run invocation -- including --publish
+            # -- into a generated wrapper script, not inline in the
+            # unit's own Environment= lines; ExecStart just points at
+            # it. Read that script too so this checks the actual
+            # runner invocation, not just the unit's pointer to it.
+            _script_path = ""
+            for _line in _unit.splitlines():
+                if _line.startswith("ExecStart="):
+                    _script_path = _line[len("ExecStart="):].strip()
+                    break
+            _script_body = ""
+            if _script_path:
+                _cat = subprocess.run(
+                    ["cat", _script_path], capture_output=True, text=True,
+                )
+                _script_body = _cat.stdout
+            _combined = _unit + "\n" + _script_body
+            assert "--publish" in _combined and "8082:80" in _combined, (
+                f"Expected --publish 8082:80 in runner unit or its start script, got:\n{_combined[:2000]}"
             )
 
             # (3) NixOS firewall accepts 8082 on the input chain.

@@ -41,7 +41,7 @@
               mainService = "caddy";
               modules = [
                 (
-                  { ... }:
+                  { pkgs, ... }:
                   {
                     services.caddy = {
                       enable = true;
@@ -49,6 +49,10 @@
                         respond "wiring-volumes-ok"
                       '';
                     };
+                    # Test-only: the assertion below execs `cat` inside
+                    # this container via `podman exec`; Caddy's scratch
+                    # image has no coreutils by default.
+                    oci.container.extraPackages = [ pkgs.coreutils ];
                   }
                 )
               ];

@@ -69,10 +69,20 @@
           };
           # cgi-fcgi sends a FastCGI PING request and prints the
           # pool's ping.response body (default "pong") on stdout.
+          #
+          # cgi-fcgi forwards the invoking process's environment as
+          # FastCGI params verbatim (see the adapter's own healthcheck
+          # comment in service-adapters/phpfpm.nix for the full
+          # explanation). Without SCRIPT_NAME/SCRIPT_FILENAME set to
+          # ping.path, PHP-FPM never recognizes this as a ping request
+          # and falls through to a normal (failing) request, so the
+          # entrypoint has to be `env -i` with those vars set, exactly
+          # like the adapter's own healthcheck -- a bare `cgi-fcgi ...
+          # /ping` positional argument is not a thing cgi-fcgi reads.
           assertions.succeeds = [
             {
-              command = "${pkgs.fcgi}/bin/cgi-fcgi";
-              args = "-bind -connect 127.0.0.1:9000 /ping";
+              command = "${pkgs.coreutils}/bin/env";
+              args = "-i SCRIPT_NAME=/ping SCRIPT_FILENAME=/ping REQUEST_METHOD=GET ${pkgs.fcgi}/bin/cgi-fcgi -bind -connect 127.0.0.1:9000";
               stdout = "pong";
             }
           ];
