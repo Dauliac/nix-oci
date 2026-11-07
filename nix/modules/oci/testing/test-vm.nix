@@ -476,8 +476,9 @@ in
       # avoids the Azure spot preemption that was killing the single
       # aggregate VM (see 091aef2, 953e3f3 postmortems).
       #
-      # One shard (prefer `deploy`, else alphabetically-first) carries
-      # the registry-push test so it runs exactly once.
+      # One shard (prefer `deploy-a`, else `deploy`, else
+      # alphabetically-first) carries the registry-push test so it
+      # runs exactly once.
       #
       # `performance`'s 13 groups all share that first token, so by
       # default they'd all land in one shard -- 14 containers booting
@@ -509,6 +510,39 @@ in
           "performance-turbo-layer-cache-runtime"
         ] (_: "performance-b");
 
+      # `deploy`'s 8 groups all share that first token too, and the
+      # shard also runs the flake-level registry-push smoke test by
+      # default (see `registryHostGroup` below). CI run 42209149129
+      # (and the repeat after the dnsmasq healthcheck fix, run
+      # 42216807543) both hit the 30min job timeout: the job log shows
+      # `oci-load-deploy-dnsmasq.service` sitting in `wait_for_unit`
+      # for 486-594s while the registry-push test's own skopeo
+      # copy/podman pull stalls on repeated "blob unknown" registry
+      # 404s -- real contention over the VM's single local registry,
+      # not a per-group slowness problem (the other 7 groups each go
+      # healthy within ~35s once that contention clears). `deploy-bind`
+      # is excluded from the VM entirely (see `bddVmExcludedGroups`
+      # above) so it does not factor into either shard. Split the
+      # remaining 8 groups into two 4-container shards, same pattern
+      # as `performanceShardOverride`, to roughly halve the registry
+      # contention each shard's boot has to absorb. Keys are the group
+      # as it appears in spec keys (`<group>--<scenario>`), same shape
+      # as above -- deploy groups don't get a level suffix since each
+      # has exactly one scenario.
+      deployShardOverride =
+        lib.genAttrs [
+          "deploy-dnsmasq"
+          "deploy-docker-backend"
+          "deploy-phpfpm"
+          "deploy-postgresql"
+        ] (_: "deploy-a")
+        // lib.genAttrs [
+          "deploy-wiring-deps"
+          "deploy-wiring-env"
+          "deploy-wiring-ports"
+          "deploy-wiring-volumes"
+        ] (_: "deploy-b");
+
       groupPrefix =
         name:
         let
@@ -516,7 +550,7 @@ in
           parts = lib.splitString "-" group;
           firstToken = if parts == [ ] then "misc" else builtins.head parts;
         in
-        performanceShardOverride.${group} or firstToken;
+        performanceShardOverride.${group} or deployShardOverride.${group} or firstToken;
 
       loadableSpecsByGroup =
         let
@@ -525,7 +559,9 @@ in
         lib.mapAttrs (_: names: lib.getAttrs names loadableSpecs) groups;
 
       registryHostGroup =
-        if lib.hasAttr "deploy" loadableSpecsByGroup then
+        if lib.hasAttr "deploy-a" loadableSpecsByGroup then
+          "deploy-a"
+        else if lib.hasAttr "deploy" loadableSpecsByGroup then
           "deploy"
         else if loadableSpecsByGroup != { } then
           lib.head (lib.sort builtins.lessThan (lib.attrNames loadableSpecsByGroup))
