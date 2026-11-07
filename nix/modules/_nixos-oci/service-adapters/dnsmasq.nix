@@ -6,8 +6,27 @@
 # Healthcheck: sends a raw DNS query to the configured listen address and
 # port and checks that *any* bytes come back, using bash's built-in
 # /dev/udp redirection -- no external DNS client. Uses "localhost" as the
-# query name -- dnsmasq will resolve it even without upstream servers
-# configured (from /etc/hosts).
+# query name, answered by a default `address=/localhost/127.0.0.1` entry
+# below, so the healthcheck always has a guaranteed local match and never
+# depends on a consumer's own hosts-file/address config.
+#
+# `bind-interfaces` is set below for a related but distinct reason: by
+# default (--bind-dynamic, dnsmasq's modern default) dnsmasq does a
+# per-query netlink round-trip to the kernel to verify the receiving
+# interface before answering *any* query, including ones with a clean
+# local match. Caught live via strace against a running container: a
+# query arrives (recvmsg succeeds, correct bytes), dnsmasq opens a
+# netlink socket and sends an interface-verification request, and no
+# DNS reply is ever sent back, for any query, including ones dnsmasq is
+# explicitly configured to answer (confirmed by querying both an
+# unconfigured name and one covered by a user's own `address=` entry --
+# both got zero response). `bind-interfaces` uses the older, static
+# per-interface binding mode and skips that runtime netlink dependency
+# entirely; verified live that queries succeed immediately once this is
+# set. This was the actual mechanism behind docs-ci-deploy-bp5's "dig
+# gets no response" -- independent of dig, independent of the UDP
+# healthcheck probe above, and independent of the image-closure-size
+# issue also fixed in this adapter (see below).
 #
 # Previously this shelled out to `dig` (added via extraPackages). That
 # pulled in the full bind.dnsutils closure -- bind-lib, libxml2, jemalloc,
@@ -71,13 +90,35 @@ in
     # retry budget could. Keep generous retries/startPeriod so a
     # slow-booting VM under CPU contention doesn't flip this unhealthy
     # before dnsmasq settles.
+    #
+    # `-N 1`, not `-N 2` or more: bash's `read -N n` on a UDP socket can
+    # issue multiple single-byte read() syscalls to satisfy the request.
+    # Each individual read() on a UDP socket consumes (and discards) the
+    # *entire* pending datagram regardless of the requested buffer size,
+    # so asking for 2+ bytes means the first syscall eats and discards
+    # the whole reply, and the second syscall then blocks forever
+    # waiting for a new datagram that never arrives -- read -t 3 would
+    # time out on every single check. Verified live: `-N 2` reliably
+    # read only the first byte and hung; `-N 1` (one syscall, one
+    # datagram, fully consumed) succeeds immediately. We only need to
+    # know *that* a reply arrived, not read any of its content.
     oci.container.healthcheck.command = lib.mkDefault [
-      "exec 3<>/dev/udp/${addr}/${port} && printf '\\xaa\\xaa\\x01\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x09localhost\\x00\\x00\\x01\\x00\\x01' >&3 && read -t 3 -N 2 -u 3 _reply"
+      "exec 3<>/dev/udp/${addr}/${port} && printf '\\xaa\\xaa\\x01\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x09localhost\\x00\\x00\\x01\\x00\\x01' >&3 && read -t 3 -N 1 -u 3 _reply"
     ];
     oci.container.healthcheck.timeout = lib.mkDefault 8;
     oci.container.healthcheck.startPeriod = lib.mkDefault 10;
     oci.container.healthcheck.retries = lib.mkDefault 5;
     oci.container.stopSignal = lib.mkDefault "SIGTERM";
+
+    # See the header comment above: skips the per-query netlink interface
+    # check that otherwise silently swallows every query.
+    services.dnsmasq.settings.bind-interfaces = lib.mkDefault true;
+    # Guarantees the healthcheck's "localhost" query always has a local
+    # match, regardless of whether a consumer configures their own
+    # hosts-file/address entries. `address` is a list-typed setting, so
+    # this merges additively with any consumer-supplied entries rather
+    # than overriding them.
+    services.dnsmasq.settings.address = lib.mkDefault [ "/localhost/127.0.0.1" ];
 
     # nixpkgs' `services.dnsmasq` module adds
     #   conf-file = /etc/dnsmasq-conf.conf
