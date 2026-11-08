@@ -290,6 +290,10 @@ in
       # mkBddVmFor for the per-shard equivalent and rationale).
       aggBackend = config.test.oci._vmBackend;
       aggContainerServicePrefix = if aggBackend == "docker" then "docker-" else "podman-";
+      # See shardNeedsRegistry in mkBddVmFor for the full rationale.
+      aggNeedsRegistry = lib.any (s: (s.assertions.sociZtocPresent or null) != null) (
+        lib.attrValues loadableSpecs
+      );
       aggUsesApparmor =
         s: (s.container.hardening.enable or false) && (s.container.hardening.apparmor.enable or false);
       allApparmorNames = lib.attrNames (lib.filterAttrs (_: aggUsesApparmor) loadableSpecs);
@@ -503,11 +507,23 @@ in
           "performance-compression-runtime"
           "performance-glibc-tunables-runtime"
           "performance-glibc-tunables-preset-runtime"
-          "performance-turbo-soci-runtime"
-          "performance-turbo-soci-span-size-runtime"
           "performance-turbo-enable-runtime"
           "performance-turbo-layer-cache-runtime"
-        ] (_: "performance-b");
+        ] (_: "performance-b")
+        # performance-turbo-soci-runtime's two scenarios need
+        # oci.registry.enable = true (see shardNeedsRegistry below) to
+        # push their images through the local registry -- the
+        # sociZtocPresent assertion queries the registry's referrers
+        # API directly, and nothing else pushes these specific images
+        # there otherwise. Kept in its own shard rather than flipping
+        # that switch for the whole performance-b VM: registry push+
+        # pull round-trips for every one of performance-b's other
+        # unrelated containers would add boot time this shard doesn't
+        # have slack for (see the 30min-CI-timeout history comment
+        # above mkBddVmFor).
+        // lib.genAttrs [
+          "performance-turbo-soci-runtime"
+        ] (_: "performance-c");
 
       groupPrefix =
         name:
@@ -583,6 +599,18 @@ in
           usesApparmor =
             s: (s.container.hardening.enable or false) && (s.container.hardening.apparmor.enable or false);
           shardApparmorNames = lib.attrNames (lib.filterAttrs (_: usesApparmor) shardSpecs);
+          # sociZtocPresent queries the local registry's referrers API
+          # directly for a specific repo:tag, so that container's image
+          # has to actually be IN the registry. oci.registry.enable
+          # switches oci-load from a direct podman/docker load to a
+          # registry push (nix2container's copyToRegistry), using
+          # repo:tag = lib.toLower container.name:container.tag -- see
+          # nix/modules/deploy/nix-oci/nixos/load-services.nix and
+          # nix/lib/deploy.nix's registryImageRef. Nothing else pushes
+          # these images there otherwise.
+          shardNeedsRegistry = lib.any (s: (s.assertions.sociZtocPresent or null) != null) (
+            lib.attrValues shardSpecs
+          );
           shardStateRequires = lib.mapAttrs' (
             name: _:
             lib.nameValuePair "${containerServicePrefix}${name}" {
@@ -714,6 +742,7 @@ in
               oci = {
                 enable = true;
                 backend = shardBackend;
+                registry.enable = lib.mkIf shardNeedsRegistry true;
                 perContainer = [
                   (
                     { lib, ... }:
@@ -922,6 +951,7 @@ in
               oci = {
                 enable = true;
                 backend = aggBackend;
+                registry.enable = lib.mkIf aggNeedsRegistry true;
                 perContainer = [
                   (
                     { lib, ... }:
