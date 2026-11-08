@@ -314,14 +314,31 @@ let
            f"http://${soci.registry}/v2/${soci.repository}/manifests/${soci.tag}"]
       )
       import hashlib, json
-      _digest = "sha256:" + hashlib.sha256(_manifest).hexdigest()
+      _parsed = json.loads(_manifest)
+      if "manifests" in _parsed:
+          # SOCI v2 (turbo-skopeo) pushes the tag as an OCI Index rather
+          # than a flat manifest: one descriptor is the real image, one
+          # is the SOCI index artifact. Referrers attach to the real
+          # image's own digest, not the wrapping index's digest -- find
+          # the descriptor without an artifactType (the SOCI index entry
+          # carries application/vnd.amazon.soci.index.v2+json; the plain
+          # image manifest carries none). See upstream's own
+          # tests/validate_manifest.py for the same filter.
+          _img_descs = [m for m in _parsed["manifests"] if not m.get("artifactType")]
+          assert len(_img_descs) == 1, (
+              f"expected exactly one non-artifact manifest descriptor in index, got: {_parsed['manifests']!r}"
+          )
+          _digest = _img_descs[0]["digest"]
+      else:
+          _digest = "sha256:" + hashlib.sha256(_manifest).hexdigest()
       _referrers_body = subprocess.check_output(
           ["curl", "-sSf", f"http://${soci.registry}/v2/${soci.repository}/referrers/{_digest}"]
       ).decode("utf-8", errors="replace")
-      # A SOCI v2 zTOC referrer uses artifactType application/vnd.oci.soci.ztoc.v1+json
-      # (or similar; be lenient  -  presence of any referrer manifest is the
-      # first-order signal).
-      assert "manifests" in _referrers_body and "ztoc" in _referrers_body.lower(), (
+      # turbo-skopeo's SOCI v2 referrer carries artifactType
+      # application/vnd.amazon.soci.index.v2+json (confirmed against
+      # upstream's own tests/validate_manifest.py) -- not a literal
+      # "ztoc" string anywhere in the manifest.
+      assert "manifests" in _referrers_body and "vnd.amazon.soci.index" in _referrers_body, (
           f"Expected SOCI zTOC referrer for ${soci.repository}:${soci.tag} at {_ref_url}, "
           f"got: {_referrers_body[:500]}"
       )
