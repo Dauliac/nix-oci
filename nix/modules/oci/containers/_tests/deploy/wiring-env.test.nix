@@ -31,7 +31,7 @@
               mainService = "caddy";
               modules = [
                 (
-                  { ... }:
+                  { pkgs, ... }:
                   {
                     services.caddy = {
                       enable = true;
@@ -39,6 +39,10 @@
                         respond "wiring-env-ok"
                       '';
                     };
+                    # Test-only: assertion (3) below execs `cat
+                    # /proc/1/environ` inside this container; Caddy's
+                    # scratch image has no coreutils by default.
+                    oci.container.extraPackages = [ pkgs.coreutils ];
                   }
                 )
               ];

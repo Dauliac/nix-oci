@@ -77,11 +77,12 @@
                 )
                 _unit = _svc.stdout + _svc.stderr
             # nixpkgs' virtualisation.oci-containers module writes the
-            # full podman/docker run invocation -- including --publish
-            # -- into a generated wrapper script, not inline in the
-            # unit's own Environment= lines; ExecStart just points at
-            # it. Read that script too so this checks the actual
-            # runner invocation, not just the unit's pointer to it.
+            # full podman/docker run invocation -- including the port
+            # publish flag -- into a generated wrapper script, not
+            # inline in the unit's own Environment= lines; ExecStart
+            # just points at it. Read that script too so this checks
+            # the actual runner invocation, not just the unit's
+            # pointer to it.
             _script_path = ""
             for _line in _unit.splitlines():
                 if _line.startswith("ExecStart="):
@@ -94,8 +95,12 @@
                 )
                 _script_body = _cat.stdout
             _combined = _unit + "\n" + _script_body
-            assert "--publish" in _combined and "8082:80" in _combined, (
-                f"Expected --publish 8082:80 in runner unit or its start script, got:\n{_combined[:2000]}"
+            # nixpkgs' virtualisation.oci-containers emits the short
+            # `-p` form, not `--publish` -- accept either spelling.
+            assert (
+                "-p 8082:80" in _combined or "--publish 8082:80" in _combined
+            ), (
+                f"Expected -p/--publish 8082:80 in runner unit or its start script, got:\n{_combined[:2000]}"
             )
 
             # (3) NixOS firewall accepts 8082 on the input chain.
