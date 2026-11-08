@@ -771,6 +771,13 @@ in
                     requests
                   ]
                 ))
+                # `nft` for assertions.runtime scripts that inspect the
+                # firewall ruleset directly (e.g. the wiring-ports test).
+                # Not pulled in automatically just by having a firewall
+                # enabled: nixpkgs' firewall module drives nft via its
+                # own full store paths internally, it doesn't put the
+                # binary on the general system PATH.
+                pkgs.nftables
               ];
             };
 
@@ -974,6 +981,13 @@ in
                     requests
                   ]
                 ))
+                # `nft` for assertions.runtime scripts that inspect the
+                # firewall ruleset directly (e.g. the wiring-ports test).
+                # Not pulled in automatically just by having a firewall
+                # enabled: nixpkgs' firewall module drives nft via its
+                # own full store paths internally, it doesn't put the
+                # binary on the general system PATH.
+                pkgs.nftables
               ];
             };
 
