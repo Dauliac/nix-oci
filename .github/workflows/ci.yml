@@ -120,7 +120,8 @@ jobs:
       matrix:
         group:
           - apparmordocker
-          - deploy
+          - deploy-a
+          - deploy-b
           - entrypoint
           - environment
           - invariant
