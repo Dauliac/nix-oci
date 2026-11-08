@@ -127,6 +127,7 @@ jobs:
           - nixos
           - performance-a
           - performance-b
+          - performance-c
           - runtime
     timeout-minutes: 30
   eval:

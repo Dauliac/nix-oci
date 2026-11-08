@@ -31,24 +31,21 @@
             performance.compression = "zstd";
           };
           assertions.runtime = ''
-            # zstd layer mediaType check via low-level manifest inspect.
-            _img = client.images.get("performance-compression-runtime--runtime-zstd-layers:latest")
-            _manifest = _img.attrs.get("Manifest") or {}
+            # zstd layer mediaType check via the raw OCI manifest.
+            # `podman image inspect`'s own Manifest field isn't reliably
+            # present across podman versions (confirmed: recent podman
+            # errors with "can't evaluate field Manifest in type
+            # interface {}" -- the struct simply doesn't carry the raw
+            # manifest). `skopeo inspect --raw` reads the manifest blob
+            # directly from containers-storage and is stable across
+            # podman/skopeo versions.
+            import json, subprocess
+            _raw = subprocess.check_output([
+                "${pkgs.skopeo}/bin/skopeo", "inspect", "--raw",
+                "containers-storage:performance-compression-runtime--runtime-zstd-layers:latest",
+            ])
+            _manifest = json.loads(_raw)
             _layers = _manifest.get("layers") or []
-            # Fallback: docker/podman may expose RootFS with layer digests
-            # only; parse the OCI manifest via the API if needed.
-            if not _layers:
-                # Try low-level API for the manifest blob.
-                import json, subprocess
-                _raw = subprocess.check_output([
-                    "podman", "image", "inspect", "--format", "{{json .Manifest}}",
-                    "performance-compression-runtime--runtime-zstd-layers:latest",
-                ])
-                try:
-                    _manifest = json.loads(_raw)
-                    _layers = _manifest.get("layers") or []
-                except Exception:
-                    pass
             assert _layers, "expected at least one layer in the manifest"
             for _l in _layers:
                 _mt = _l.get("mediaType", "")
@@ -75,10 +72,12 @@
             performance.compression = "gzip:estargz";
           };
           assertions.runtime = ''
+            # See runtime-zstd-layers above: skopeo inspect --raw instead
+            # of podman image inspect's unreliable Manifest field.
             import json, subprocess
             _raw = subprocess.check_output([
-                "podman", "image", "inspect", "--format", "{{json .Manifest}}",
-                "performance-compression-runtime--runtime-estargz-layers:latest",
+                "${pkgs.skopeo}/bin/skopeo", "inspect", "--raw",
+                "containers-storage:performance-compression-runtime--runtime-estargz-layers:latest",
             ])
             _manifest = json.loads(_raw)
             _layers = _manifest.get("layers") or []

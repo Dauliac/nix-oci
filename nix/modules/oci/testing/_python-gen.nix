@@ -289,41 +289,56 @@ let
       ${concatStringsSep "\n" checks}
     '';
 
-  # Generate code for sociZtocPresent: use ORAS-style referrers API to
-  # look for a SOCI zTOC referrer manifest attached to the image.
+  # Generate code for sociZtocPresent. turbo-skopeo's SOCI v2 support
+  # does not use the OCI 1.1 Referrers API at all (confirmed live: the
+  # registry correctly 404s every /referrers/<digest> query turbo-
+  # skopeo itself makes during push, which it treats as "no cache,
+  # compute fresh" rather than an error). It pushes the tag as a plain
+  # OCI Index with the real image and the SOCI index as sibling
+  # manifest descriptors, discoverable only by reading
+  # index.manifests[] directly -- same approach upstream's own
+  # tests/validate_manifest.py uses (confirmed against nix2container-
+  # turbo's source).
   mkSociZtocPresent =
     containerName: soci:
     let
       spanCheck = optionalString (soci.spanSize != null) ''
+        _soci_raw = subprocess.check_output([
+            "curl", "-sSf",
+            "-H", "Accept: application/vnd.oci.image.manifest.v1+json",
+            f"http://${soci.registry}/v2/${soci.repository}/manifests/{_soci_descs[0]['digest']}"
+        ])
+        _soci_manifest = json.loads(_soci_raw)
         _expected_span = ${pyStr soci.spanSize}
-        # The `soci inspect` CLI is preferred; fallback to substring match
-        # on the referrer manifest JSON.
-        assert _expected_span in _referrers_body, (
-            f"Expected SOCI span size {_expected_span!r} in referrer manifest, got: {_referrers_body[:500]}"
+        _span_values = [
+            l.get("annotations", {}).get("com.amazon.soci.span-size")
+            for l in _soci_manifest.get("layers", [])
+        ]
+        assert _expected_span in _span_values, (
+            f"Expected SOCI span size {_expected_span!r} in one of the zTOC layer "
+            f"annotations, got: {_span_values!r}"
         )
       '';
     in
     ''
       # sociZtocPresent: ${soci.registry}/${soci.repository}:${soci.tag}
-      import subprocess
-      _ref_url = f"http://${soci.registry}/v2/${soci.repository}/referrers/"
-      # Resolve image digest first
-      _manifest = subprocess.check_output(
+      import subprocess, json
+      _idx_raw = subprocess.check_output(
           ["curl", "-sSf",
-           "-H", "Accept: application/vnd.oci.image.manifest.v1+json",
+           "-H", "Accept: application/vnd.oci.image.index.v1+json",
            f"http://${soci.registry}/v2/${soci.repository}/manifests/${soci.tag}"]
       )
-      import hashlib, json
-      _digest = "sha256:" + hashlib.sha256(_manifest).hexdigest()
-      _referrers_body = subprocess.check_output(
-          ["curl", "-sSf", f"http://${soci.registry}/v2/${soci.repository}/referrers/{_digest}"]
-      ).decode("utf-8", errors="replace")
-      # A SOCI v2 zTOC referrer uses artifactType application/vnd.oci.soci.ztoc.v1+json
-      # (or similar; be lenient  -  presence of any referrer manifest is the
-      # first-order signal).
-      assert "manifests" in _referrers_body and "ztoc" in _referrers_body.lower(), (
-          f"Expected SOCI zTOC referrer for ${soci.repository}:${soci.tag} at {_ref_url}, "
-          f"got: {_referrers_body[:500]}"
+      _idx = json.loads(_idx_raw)
+      assert "manifests" in _idx, (
+          f"Expected an OCI Index at ${soci.repository}:${soci.tag}, got: {_idx_raw[:500]!r}"
+      )
+      _soci_descs = [
+          m for m in _idx["manifests"]
+          if m.get("artifactType") == "application/vnd.amazon.soci.index.v2+json"
+      ]
+      assert _soci_descs, (
+          f"Expected a SOCI v2 index descriptor for ${soci.repository}:${soci.tag}, "
+          f"got manifests: {_idx['manifests']!r}"
       )
       ${spanCheck}
     '';

@@ -40,6 +40,16 @@ in
       ];
       _module.args.nix2container = inputs.nix2container.packages.${pkgs.system}.nix2container;
       _module.args.nixLibNixosModule = inputs.nix-lib.nixosModules.default;
+      # Same null-when-unavailable fallback as perSystem's
+      # oci.packages.skopeoTurbo -- see nix/modules/oci/packages/skopeoTurbo.nix.
+      # Load-services.nix needs this directly: NixOS modules can't reach
+      # perSystem options, so this mirrors the nix2container injection
+      # above rather than routing through config.oci.packages.
+      _module.args.skopeoTurbo =
+        if inputs ? nix2container-turbo then
+          inputs.nix2container-turbo.packages.${pkgs.system}.skopeo
+        else
+          null;
     };
 
   flake.modules.homeManager.nix-oci =

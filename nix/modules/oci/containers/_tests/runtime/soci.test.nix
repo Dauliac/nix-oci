@@ -60,7 +60,11 @@
             registry = "localhost:5000";
             repository = "performance-turbo-soci-runtime--runtime-soci-span-size-1mib";
             tag = "latest";
-            spanSize = "1MiB";
+            # com.amazon.soci.span-size is a raw decimal byte count
+            # (confirmed against nix2container-turbo's own
+            # soci/index.go), not a human-readable unit string -- must
+            # match performance.turbo.sociSpanSize above exactly.
+            spanSize = "1048576";
           };
         };
       };
