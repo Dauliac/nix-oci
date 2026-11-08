@@ -4,9 +4,15 @@
 # scenario `dnsmasq resolves a configured hosts entry` in
 # `openspec/changes/runtime-behavioral-test-coverage/specs/testing/deploy-runtime-verification/spec.md`.
 #
-# The dnsmasq adapter runs the daemon in the foreground by default
-# and injects a dig-based healthcheck. The runtime probe queries
-# a static hosts-entry via the VM host's port map.
+# The dnsmasq adapter's own healthcheck is dependency-free (bash's
+# built-in UDP redirection; see the adapter's header comment), so
+# dnsmasq's production image closure no longer includes a DNS
+# client. The test harness's `assertions.succeeds` step, however,
+# re-runs this exact image with `command` as the entrypoint (see
+# `nix/modules/oci/testing/_python-gen.nix`'s `mkSucceeds`), so `dig`
+# still has to be present *inside the image* for the assertion below
+# to exec at all -- added here, test-local only, so production
+# consumers of the adapter keep the smaller closure.
 { ... }:
 {
   perSystem =
@@ -27,7 +33,7 @@
               mainService = "dnsmasq";
               modules = [
                 (
-                  { ... }:
+                  { pkgs, ... }:
                   {
                     services.dnsmasq = {
                       enable = true;
@@ -41,6 +47,10 @@
                         ];
                       };
                     };
+                    # Test-only: the `dig` client the assertion below
+                    # execs inside this image. Not part of the
+                    # production adapter (see header comment).
+                    oci.container.extraPackages = [ pkgs.dig ];
                   }
                 )
               ];

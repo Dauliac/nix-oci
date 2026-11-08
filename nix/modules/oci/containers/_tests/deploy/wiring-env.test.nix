@@ -31,7 +31,7 @@
               mainService = "caddy";
               modules = [
                 (
-                  { ... }:
+                  { pkgs, ... }:
                   {
                     services.caddy = {
                       enable = true;
@@ -39,6 +39,10 @@
                         respond "wiring-env-ok"
                       '';
                     };
+                    # Test-only: assertion (3) below execs `cat
+                    # /proc/1/environ` inside this container; Caddy's
+                    # scratch image has no coreutils by default.
+                    oci.container.extraPackages = [ pkgs.coreutils ];
                   }
                 )
               ];
@@ -68,8 +72,26 @@
                 if _svc.returncode == 0 and _svc.stdout:
                     _unit = _svc.stdout
                     break
-            assert "MY_VAR=hello" in _unit, (
-                f"Expected MY_VAR=hello in runner unit, got:\n{_unit[:2000]}"
+            # nixpkgs' virtualisation.oci-containers module writes the
+            # full podman/docker run invocation -- including --env --
+            # into a generated wrapper script, not inline in the
+            # unit's own Environment= lines; ExecStart just points at
+            # it. Read that script too so this checks the actual
+            # runner invocation, not just the unit's pointer to it.
+            _script_path = ""
+            for _line in _unit.splitlines():
+                if _line.startswith("ExecStart="):
+                    _script_path = _line[len("ExecStart="):].strip()
+                    break
+            _script_body = ""
+            if _script_path:
+                _cat = subprocess.run(
+                    ["cat", _script_path], capture_output=True, text=True,
+                )
+                _script_body = _cat.stdout
+            _combined = _unit + "\n" + _script_body
+            assert "MY_VAR=hello" in _combined, (
+                f"Expected MY_VAR=hello in runner unit or its start script, got:\n{_combined[:2000]}"
             )
 
             # (3) /proc/1/environ inside the running container shows
