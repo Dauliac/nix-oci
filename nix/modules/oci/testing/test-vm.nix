@@ -737,6 +737,16 @@ in
               # exercised before a requiresBackend = "docker" spec existed.
               virtualisation.podman.dockerSocket.enable = lib.mkIf (shardBackend == "docker") (lib.mkForce false);
 
+              # The 4096 MiB _vm-defaults baseline is sized for direct
+              # podman/docker loads. Pushing through the registry adds
+              # the registry daemon's own footprint plus concurrent
+              # skopeo copy processes buffering blobs over HTTP rather
+              # than writing straight into containers-storage -- confirmed
+              # OOMing the VM (kernel panic, panic_on_oom) on a stock
+              # GitHub Actions runner with just 2 containers, so this
+              # isn't host-contention noise.
+              virtualisation.memorySize = lib.mkIf shardNeedsRegistry (lib.mkForce 8192);
+
               systemd.tmpfiles.rules = lib.map (p: "d ${p} 0755 root root -") shardVolumeHostPaths;
 
               oci = {
@@ -944,6 +954,9 @@ in
               # against docker via the same VM. The pytest driver picks
               # the right socket via `DOCKER_HOST` in the testScript.
               virtualisation.docker.enable = lib.mkIf (aggBackend == "docker") true;
+
+              # See shardNeedsRegistry's memorySize override in mkBddVmFor.
+              virtualisation.memorySize = lib.mkIf aggNeedsRegistry (lib.mkForce 8192);
 
               systemd.tmpfiles.rules = lib.map (p: "d ${p} 0755 root root -") allVolumeHostPaths;
 
