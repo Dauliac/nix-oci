@@ -49,6 +49,7 @@
             };
           };
           assertions.runtime = ''
+            import re
             import subprocess
 
             _cid = "deploy-wiring-env--deploy-wiring-env-dual-write"
@@ -62,7 +63,11 @@
 
             # (2) Runner unit carries --env MY_VAR=hello (or an
             # equivalent -e MY_VAR=hello). Try both backend service
-            # name prefixes.
+            # name prefixes. The actual podman/docker invocation (with
+            # the -e/--env flag) lives in the ExecStart wrapper script,
+            # not inline in the unit file -- `systemctl cat` alone only
+            # shows "ExecStart=<path to wrapper script>", so also read
+            # that script's content.
             _unit = ""
             for _prefix in ("podman-", "docker-"):
                 _svc = subprocess.run(
@@ -71,6 +76,18 @@
                 )
                 if _svc.returncode == 0 and _svc.stdout:
                     _unit = _svc.stdout
+                    _show = subprocess.run(
+                        ["systemctl", "show", _prefix + _cid + ".service",
+                         "-p", "ExecStart", "--value"],
+                        capture_output=True, text=True,
+                    )
+                    _m = re.search(r"path=(\S+)", _show.stdout)
+                    if _m:
+                        try:
+                            with open(_m.group(1)) as _f:
+                                _unit += "\n" + _f.read()
+                        except OSError:
+                            pass
                     break
             # nixpkgs' virtualisation.oci-containers module writes the
             # full podman/docker run invocation -- including --env --
@@ -95,10 +112,17 @@
             )
 
             # (3) /proc/1/environ inside the running container shows
-            # the value. docker exec into the daemon container.
+            # the value. Read it from the VM host's view of the
+            # container's main PID (containers share the host kernel,
+            # so /proc/<hostPid>/environ is directly readable as root)
+            # rather than `exec_run(["cat", ...])` -- the Caddy image
+            # this container runs is a minimal nix2container build
+            # with no coreutils, so there is no `cat` (or any shell)
+            # binary inside it to exec in the first place.
             _c = client.containers.get(_cid)
-            _rc, _out = _c.exec_run(["cat", "/proc/1/environ"])
-            _raw = _out.decode("utf-8", errors="replace") if isinstance(_out, bytes) else str(_out)
+            _pid = (_c.attrs.get("State") or {}).get("Pid")
+            with open(f"/proc/{_pid}/environ", "rb") as _f:
+                _raw = _f.read().decode("utf-8", errors="replace")
             _pairs = _raw.split("\x00")
             assert "MY_VAR=hello" in _pairs, (
                 f"Expected MY_VAR=hello in /proc/1/environ, got: {_pairs[:20]}"

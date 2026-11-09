@@ -59,7 +59,9 @@
             };
           };
           assertions.runtime = ''
+            import io
             import subprocess
+            import tarfile
 
             _cid = "deploy-wiring-volumes--deploy-wiring-volumes-both-surfaces"
 
@@ -83,9 +85,22 @@
                 check=True,
             )
 
+            # Read the file straight off the container's filesystem via
+            # the Docker/Podman API's archive endpoint rather than
+            # `exec_run(["cat", ...])` -- the Caddy image this container
+            # runs is a minimal nix2container build with no coreutils,
+            # so there is no `cat` (or any shell) binary inside it to
+            # exec in the first place.
             _c = client.containers.get(_cid)
-            _rc, _out = _c.exec_run(["cat", "/probe/token"])
-            _text = _out.decode("utf-8", errors="replace") if isinstance(_out, bytes) else str(_out)
+            _tar_stream, _ = _c.get_archive("/probe/token")
+            _buf = io.BytesIO()
+            for _chunk in _tar_stream:
+                _buf.write(_chunk)
+            _buf.seek(0)
+            with tarfile.open(fileobj=_buf) as _tf:
+                _member = _tf.getmembers()[0]
+                _extracted = _tf.extractfile(_member)
+                _text = _extracted.read().decode("utf-8", errors="replace")
             assert _probe_body in _text, (
                 f"Expected {_probe_body!r} readable at container /probe/token, got: {_text[:500]}"
             )
