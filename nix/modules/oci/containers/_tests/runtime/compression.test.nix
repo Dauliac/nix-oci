@@ -52,21 +52,16 @@
           level = "runtime";
           target = "oci";
           container = {
-            # A package not shared with any sibling container in this
-            # shard (busybox is also used by runtime-zstd-layers and
-            # both performance-turbo-soci-runtime scenarios). turbo-
-            # skopeo's cross-push layer cache keys reuse purely on
-            # source-layer digest, with no check that the cached
-            # entry's compression format matches what's currently
-            # requested (confirmed against nix2container-turbo's own
-            # destination/soci_wrap.go) -- sharing busybox's identical
-            # layer with those other turbo-enabled pushes let an
-            # earlier push's cached compressed blob get silently
-            # reused here instead of actually compressing fresh as
-            # gzip:estargz (reproduced live: manifest came back
-            # mediaType +zstd despite requesting gzip:estargz). A
-            # distinct package guarantees a distinct source digest, so
-            # there's nothing to collide with.
+            # Package choice here is incidental, not the fix: every
+            # nix2container image shares at least one small bootstrap-
+            # metadata layer regardless of package (confirmed live --
+            # swapping busybox for this distinct package did NOT, on
+            # its own, stop the collision below). The actual fix is
+            # keeping this whole group out of any shard that also runs
+            # performance-turbo-soci-runtime's turbo pushes -- see
+            # performanceShardOverride's comment in test-vm.nix for the
+            # full explanation of nix2container-turbo's layer-cache
+            # format-blind reuse.
             package = pkgs.hello;
             isRoot = true;
             performance.enable = true;

@@ -533,21 +533,46 @@ in
           "performance-glibc-tunables-preset-runtime"
           "performance-turbo-enable-runtime"
           "performance-turbo-layer-cache-runtime"
+          # performance-compression-runtime's two scenarios need
+          # oci.registry.enable = true (see specNeedsRegistry /
+          # shardNeedsRegistry below): compressionApplied only observes
+          # a container once it's actually pushed through the registry,
+          # and nothing else pushes these images there otherwise.
+          #
+          # Deliberately kept OUT of performance-c (which also hosts
+          # performance-turbo-soci-runtime's turbo pushes), not grouped
+          # with it: nix2container-turbo's cross-push layer cache
+          # reuses a cached compressed blob keyed purely on source
+          # digest, with no check that the cached entry's compression
+          # format matches what's requested (confirmed against its own
+          # source, destination/soci_wrap.go). Every nix2container image
+          # shares at least one small bootstrap-metadata layer
+          # regardless of package (confirmed live: identical digest
+          # cb191795... appeared across SOCI and estargz pushes alike
+          # despite using unrelated packages), so ANY two turbo pushes
+          # sharing a VM/registry session risk the second one silently
+          # reusing the first's cached format for that shared layer
+          # (reproduced live: estargz's manifest came back mediaType
+          # +zstd despite requesting gzip:estargz, even after switching
+          # its own package to eliminate a package-specific collision --
+          # the real collision was never the package layer at all).
+          # performance-b has no other registry-pushing spec, so
+          # compression's own two pushes (one non-turbo zstd push that
+          # never touches n2ct's cache machinery at all, one turbo
+          # estargz push) are guaranteed to be the only turbo push in
+          # this shard's session.
+          "performance-compression-runtime"
         ] (_: "performance-b")
-        # performance-turbo-soci-runtime's and performance-compression-
-        # runtime's scenarios both need oci.registry.enable = true (see
-        # specNeedsRegistry / shardNeedsRegistry below): sociZtocPresent
-        # and compressionApplied both only observe a container once it's
-        # actually pushed through the registry, and nothing else pushes
-        # these specific images there otherwise. Kept in their own
-        # shard rather than flipping that switch for the whole
-        # performance-b VM: registry push+pull round-trips for every
-        # one of performance-b's other unrelated containers would add
-        # boot time this shard doesn't have slack for (see the
-        # 30min-CI-timeout history comment above mkBddVmFor).
+        # performance-turbo-soci-runtime's scenarios need
+        # oci.registry.enable = true too, for the same sociZtocPresent
+        # reason. Kept in its own shard rather than flipping that
+        # switch for the whole performance-b VM: registry push+pull
+        # round-trips for every one of performance-b's other unrelated
+        # containers would add boot time this shard doesn't have slack
+        # for (see the 30min-CI-timeout history comment above
+        # mkBddVmFor).
         // lib.genAttrs [
           "performance-turbo-soci-runtime"
-          "performance-compression-runtime"
         ] (_: "performance-c");
 
       # `deploy`'s 8 groups all share that first token too, and the
