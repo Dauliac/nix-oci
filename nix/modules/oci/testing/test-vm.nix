@@ -352,7 +352,22 @@ in
           volumes = existingVolumes ++ extraStateVolumes;
         }
         // lib.optionalAttrs (spec.level == "runtime") {
-          autoStart = true;
+          # Runtime-level specs default to autoStart = true (most
+          # assertions need the container actually running), but a
+          # spec can opt out with an explicit `container.autoStart =
+          # false;` -- needed for compressionApplied's estargz
+          # scenario: estargz recompression embeds a TOC that changes
+          # the layer's uncompressed bytes, so its digest no longer
+          # matches the DiffID nix2container recorded in the image
+          # config at build time. A normal (non-stargz-aware) `podman
+          # pull` enforces that match strictly and rejects the image
+          # (reproduced live: "trying to reuse blob ... does not match
+          # config's DiffID"). eStargz is designed for lazy pulling via
+          # a stargz-aware snapshotter, not a plain pull-and-run, so
+          # that scenario only needs the push (which compressionApplied
+          # verifies directly against the registry) -- never a local
+          # run.
+          autoStart = spec.container.autoStart or true;
           mode = "oneshot";
         }
         // lib.optionalAttrs (spec.level == "deploy") {
@@ -884,9 +899,14 @@ in
                 name: ''machine.wait_for_unit("oci-load-${name}.service")''
               ) shardBddContainerNames}
 
-              ${lib.concatMapStringsSep "\n" (
-                name: ''machine.wait_for_unit("${containerServicePrefix}${name}.service")''
-              ) (lib.attrNames (shardRuntime // shardDeploy))}
+              ${lib.concatMapStringsSep "\n"
+                (name: ''machine.wait_for_unit("${containerServicePrefix}${name}.service")'')
+                (
+                  lib.filter (name: shardBddContainers.${name}.autoStart or false) (
+                    lib.attrNames (shardRuntime // shardDeploy)
+                  )
+                )
+              }
 
               ${lib.optionalString (includeRegistryTest && registryTestOCI != null) ''
                 machine.wait_for_unit("flake-oci-load-${registryTestName}.service")
@@ -1096,9 +1116,14 @@ in
               ) bddContainerNames}
 
               # Wait for BDD runtime/deploy container services
-              ${lib.concatMapStringsSep "\n" (
-                name: ''machine.wait_for_unit("${containerServicePrefix}${name}.service")''
-              ) (lib.attrNames (runtimeSpecs // deploySpecs))}
+              ${lib.concatMapStringsSep "\n"
+                (name: ''machine.wait_for_unit("${containerServicePrefix}${name}.service")'')
+                (
+                  lib.filter (name: bddContainers.${name}.autoStart or false) (
+                    lib.attrNames (runtimeSpecs // deploySpecs)
+                  )
+                )
+              }
 
               # Wait for the single registry push test
               ${lib.optionalString (registryTestOCI != null) ''

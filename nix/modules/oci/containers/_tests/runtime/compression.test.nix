@@ -52,11 +52,36 @@
           level = "runtime";
           target = "oci";
           container = {
-            package = pkgs.busybox;
+            # A package not shared with any sibling container in this
+            # shard (busybox is also used by runtime-zstd-layers and
+            # both performance-turbo-soci-runtime scenarios). turbo-
+            # skopeo's cross-push layer cache keys reuse purely on
+            # source-layer digest, with no check that the cached
+            # entry's compression format matches what's currently
+            # requested (confirmed against nix2container-turbo's own
+            # destination/soci_wrap.go) -- sharing busybox's identical
+            # layer with those other turbo-enabled pushes let an
+            # earlier push's cached compressed blob get silently
+            # reused here instead of actually compressing fresh as
+            # gzip:estargz (reproduced live: manifest came back
+            # mediaType +zstd despite requesting gzip:estargz). A
+            # distinct package guarantees a distinct source digest, so
+            # there's nothing to collide with.
+            package = pkgs.hello;
             isRoot = true;
             performance.enable = true;
             performance.turbo.enable = true;
             performance.compression = "gzip:estargz";
+            # estargz embeds a TOC that changes the layer's uncompressed
+            # bytes, so its digest no longer matches the DiffID
+            # nix2container recorded in the image config at build time.
+            # A plain (non-stargz-aware) `podman pull` enforces that
+            # match strictly and rejects the image -- eStargz is meant
+            # for lazy pulling via a stargz-aware snapshotter, not a
+            # normal pull-and-run. This scenario only needs the push,
+            # which compressionApplied verifies directly against the
+            # registry.
+            autoStart = false;
           };
           assertions.compressionApplied = {
             registry = "localhost:5000";

@@ -13,6 +13,7 @@
       lib,
       pkgs,
       skopeoTurbo ? null,
+      skopeoNix2Container,
       ...
     }:
     let
@@ -79,7 +80,23 @@
               else
                 "";
             sociFlag = lib.optionalString sociEnabled "--dest-soci --dest-soci-span-size=${toString sociSpanSize}";
-            skopeoPackage = if sociEnabled && skopeoTurbo != null then skopeoTurbo else pkgs.skopeo;
+            # skopeoNix2Container (nix2container's own patched skopeo)
+            # is the baseline, not pkgs.skopeo: the "nix:" source
+            # transport below is a custom scheme only nix2container's
+            # fork implements (plain nixpkgs skopeo fails with "unknown
+            # transport nix", reproduced live -- this went unnoticed
+            # until now because every registry push exercised so far
+            # happened to also need SOCI, which always took the turbo
+            # branch).
+            #
+            # Keyed on turboEnabled, not sociEnabled: gzip:estargz
+            # compression also requires the turbo-patched skopeo (its
+            # "cannot find compressor" failure for plain skopeo was
+            # reproduced live) -- same condition mkPushApp.nix uses
+            # (`if turboEnabled then skopeoTurbo else skopeo`), which
+            # also asserts `compression == "gzip:estargz" -> turboEnabled`
+            # as an invariant.
+            skopeoPackage = if turboEnabled && skopeoTurbo != null then skopeoTurbo else skopeoNix2Container;
             execStart =
               if useRegistry then
                 let

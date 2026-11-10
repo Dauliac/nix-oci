@@ -40,6 +40,17 @@ in
       ];
       _module.args.nix2container = inputs.nix2container.packages.${pkgs.system}.nix2container;
       _module.args.nixLibNixosModule = inputs.nix-lib.nixosModules.default;
+      # nix2container's own skopeo fork, patched to understand the
+      # custom "nix:" source transport that copyToRegistry's push
+      # scripts always use as their source ref -- plain nixpkgs skopeo
+      # does not implement this transport at all ("unknown transport
+      # nix", reproduced live). Same package perSystem's
+      # oci.packages.skopeo defaults to (nix/modules/oci/packages/
+      # skopeo.nix); duplicated here via _module.args rather than
+      # routed through config.oci.packages because NixOS modules can't
+      # reach perSystem options, same reasoning as skopeoTurbo below.
+      _module.args.skopeoNix2Container =
+        inputs.nix2container.packages.${pkgs.system}.skopeo-nix2container;
       # Same null-when-unavailable fallback as perSystem's
       # oci.packages.skopeoTurbo -- see nix/modules/oci/packages/skopeoTurbo.nix.
       # Load-services.nix needs this directly: NixOS modules can't reach
@@ -65,6 +76,8 @@ in
       ];
       _module.args.nix2container = inputs.nix2container.packages.${pkgs.system}.nix2container;
       _module.args.nixLibNixosModule = inputs.nix-lib.nixosModules.default;
+      _module.args.skopeoNix2Container =
+        inputs.nix2container.packages.${pkgs.system}.skopeo-nix2container;
     };
 
   flake.modules.systemManager.nix-oci =
@@ -83,5 +96,7 @@ in
       ];
       _module.args.nix2container = inputs.nix2container.packages.${pkgs.system}.nix2container;
       _module.args.nixLibNixosModule = inputs.nix-lib.nixosModules.default;
+      _module.args.skopeoNix2Container =
+        inputs.nix2container.packages.${pkgs.system}.skopeo-nix2container;
     };
 }
