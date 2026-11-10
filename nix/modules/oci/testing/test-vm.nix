@@ -55,6 +55,17 @@ let
           if spec.level == "runtime" || spec.level == "deploy" then { "${group}--${name}" = spec; } else { }
         ) scenarios
     ) allSpecs;
+
+  # Assertion types that only ever observe a container through a
+  # registry push, never a direct podman/docker load: sociZtocPresent
+  # (zTOC generation is a push-time skopeo transform) and
+  # compressionApplied (compression is only ever applied via skopeo's
+  # --dest-compress-format flag at push time, see load-services.nix).
+  # Used by aggNeedsRegistry/shardNeedsRegistry below to flip
+  # oci.registry.enable on for any shard containing such a spec.
+  specNeedsRegistry =
+    s:
+    (s.assertions.sociZtocPresent or null) != null || (s.assertions.compressionApplied or null) != null;
 in
 {
   # Internal options
@@ -291,9 +302,7 @@ in
       aggBackend = config.test.oci._vmBackend;
       aggContainerServicePrefix = if aggBackend == "docker" then "docker-" else "podman-";
       # See shardNeedsRegistry in mkBddVmFor for the full rationale.
-      aggNeedsRegistry = lib.any (s: (s.assertions.sociZtocPresent or null) != null) (
-        lib.attrValues loadableSpecs
-      );
+      aggNeedsRegistry = lib.any specNeedsRegistry (lib.attrValues loadableSpecs);
       aggUsesApparmor =
         s: (s.container.hardening.enable or false) && (s.container.hardening.apparmor.enable or false);
       allApparmorNames = lib.attrNames (lib.filterAttrs (_: aggUsesApparmor) loadableSpecs);
@@ -505,25 +514,25 @@ in
           "performance-startup-runtime"
         ] (_: "performance-a")
         // lib.genAttrs [
-          "performance-compression-runtime"
           "performance-glibc-tunables-runtime"
           "performance-glibc-tunables-preset-runtime"
           "performance-turbo-enable-runtime"
           "performance-turbo-layer-cache-runtime"
         ] (_: "performance-b")
-        # performance-turbo-soci-runtime's two scenarios need
-        # oci.registry.enable = true (see shardNeedsRegistry below) to
-        # push their images through the local registry -- the
-        # sociZtocPresent assertion queries the registry's referrers
-        # API directly, and nothing else pushes these specific images
-        # there otherwise. Kept in its own shard rather than flipping
-        # that switch for the whole performance-b VM: registry push+
-        # pull round-trips for every one of performance-b's other
-        # unrelated containers would add boot time this shard doesn't
-        # have slack for (see the 30min-CI-timeout history comment
-        # above mkBddVmFor).
+        # performance-turbo-soci-runtime's and performance-compression-
+        # runtime's scenarios both need oci.registry.enable = true (see
+        # specNeedsRegistry / shardNeedsRegistry below): sociZtocPresent
+        # and compressionApplied both only observe a container once it's
+        # actually pushed through the registry, and nothing else pushes
+        # these specific images there otherwise. Kept in their own
+        # shard rather than flipping that switch for the whole
+        # performance-b VM: registry push+pull round-trips for every
+        # one of performance-b's other unrelated containers would add
+        # boot time this shard doesn't have slack for (see the
+        # 30min-CI-timeout history comment above mkBddVmFor).
         // lib.genAttrs [
           "performance-turbo-soci-runtime"
+          "performance-compression-runtime"
         ] (_: "performance-c");
 
       # `deploy`'s 8 groups all share that first token too, and the
@@ -635,18 +644,16 @@ in
           usesApparmor =
             s: (s.container.hardening.enable or false) && (s.container.hardening.apparmor.enable or false);
           shardApparmorNames = lib.attrNames (lib.filterAttrs (_: usesApparmor) shardSpecs);
-          # sociZtocPresent queries the local registry's referrers API
-          # directly for a specific repo:tag, so that container's image
-          # has to actually be IN the registry. oci.registry.enable
-          # switches oci-load from a direct podman/docker load to a
-          # registry push (nix2container's copyToRegistry), using
-          # repo:tag = lib.toLower container.name:container.tag -- see
+          # sociZtocPresent and compressionApplied both only observe a
+          # specific repo:tag as actually pushed to the registry.
+          # oci.registry.enable switches oci-load from a direct
+          # podman/docker load to a registry push (nix2container's
+          # copyToRegistry), using repo:tag =
+          # lib.toLower container.name:container.tag -- see
           # nix/modules/deploy/nix-oci/nixos/load-services.nix and
           # nix/lib/deploy.nix's registryImageRef. Nothing else pushes
           # these images there otherwise.
-          shardNeedsRegistry = lib.any (s: (s.assertions.sociZtocPresent or null) != null) (
-            lib.attrValues shardSpecs
-          );
+          shardNeedsRegistry = lib.any specNeedsRegistry (lib.attrValues shardSpecs);
           shardStateRequires = lib.mapAttrs' (
             name: _:
             lib.nameValuePair "${containerServicePrefix}${name}" {

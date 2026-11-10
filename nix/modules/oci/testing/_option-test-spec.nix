@@ -172,6 +172,45 @@ let
     };
   };
 
+  # Subtype for compression-applied check on a pushed image. Compression
+  # (zstd / gzip:estargz) is only ever actually applied via skopeo's
+  # --dest-compress-format flag at push time (see mkPushApp.nix,
+  # load-services.nix) -- there is no build-time or direct-load
+  # equivalent, so this always requires routing the container through
+  # the registry push path (oci.registry.enable), same as sociZtocPresent.
+  compressionAppliedType = types.submodule {
+    options = {
+      registry = mkOption {
+        type = types.str;
+        default = "localhost:5000";
+        description = "Registry host:port hosting the image.";
+      };
+      repository = mkOption {
+        type = types.str;
+        description = "Repository (name) of the pushed image.";
+      };
+      tag = mkOption {
+        type = types.str;
+        default = "latest";
+        description = "Image tag under which the compressed image was pushed.";
+      };
+      family = mkOption {
+        type = types.enum [
+          "zstd"
+          "gzip"
+        ];
+        description = ''
+          Expected layer mediaType family: `"zstd"` asserts every
+          layer descriptor mediaType ends in `+zstd`; `"gzip"` asserts
+          every layer descriptor mediaType is in the plain-gzip family
+          (covers both `performance.compression = "gzip"` and
+          `"gzip:estargz"` -- estargz stacks TOC entries on top of a
+          gzip-family layer, it does not change the mediaType).
+        '';
+      };
+    };
+  };
+
   # Subtype for reproducibility: manifest digest match across two builds.
   manifestDigestMatchesType = types.submodule {
     options = {
@@ -544,6 +583,18 @@ types.submodule {
               a SOCI zTOC referrer manifest attached (uses ORAS or
               curl on the referrers API). Optionally verifies the
               zTOC span size.
+            '';
+          };
+
+          compressionApplied = mkOption {
+            type = types.nullOr compressionAppliedType;
+            default = null;
+            description = ''
+              Assert the given repository:tag in a local registry has
+              layer descriptors matching the expected compression
+              family. Compression only applies at push time, so this
+              always pushes the container through the registry
+              (oci.registry.enable), never a direct podman/docker load.
             '';
           };
 
