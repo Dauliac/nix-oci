@@ -55,6 +55,17 @@ let
           if spec.level == "runtime" || spec.level == "deploy" then { "${group}--${name}" = spec; } else { }
         ) scenarios
     ) allSpecs;
+
+  # Assertion types that only ever observe a container through a
+  # registry push, never a direct podman/docker load: sociZtocPresent
+  # (zTOC generation is a push-time skopeo transform) and
+  # compressionApplied (compression is only ever applied via skopeo's
+  # --dest-compress-format flag at push time, see load-services.nix).
+  # Used by aggNeedsRegistry/shardNeedsRegistry below to flip
+  # oci.registry.enable on for any shard containing such a spec.
+  specNeedsRegistry =
+    s:
+    (s.assertions.sociZtocPresent or null) != null || (s.assertions.compressionApplied or null) != null;
 in
 {
   # Internal options
@@ -291,9 +302,7 @@ in
       aggBackend = config.test.oci._vmBackend;
       aggContainerServicePrefix = if aggBackend == "docker" then "docker-" else "podman-";
       # See shardNeedsRegistry in mkBddVmFor for the full rationale.
-      aggNeedsRegistry = lib.any (s: (s.assertions.sociZtocPresent or null) != null) (
-        lib.attrValues loadableSpecs
-      );
+      aggNeedsRegistry = lib.any specNeedsRegistry (lib.attrValues loadableSpecs);
       aggUsesApparmor =
         s: (s.container.hardening.enable or false) && (s.container.hardening.apparmor.enable or false);
       allApparmorNames = lib.attrNames (lib.filterAttrs (_: aggUsesApparmor) loadableSpecs);
@@ -343,7 +352,22 @@ in
           volumes = existingVolumes ++ extraStateVolumes;
         }
         // lib.optionalAttrs (spec.level == "runtime") {
-          autoStart = true;
+          # Runtime-level specs default to autoStart = true (most
+          # assertions need the container actually running), but a
+          # spec can opt out with an explicit `container.autoStart =
+          # false;` -- needed for compressionApplied's estargz
+          # scenario: estargz recompression embeds a TOC that changes
+          # the layer's uncompressed bytes, so its digest no longer
+          # matches the DiffID nix2container recorded in the image
+          # config at build time. A normal (non-stargz-aware) `podman
+          # pull` enforces that match strictly and rejects the image
+          # (reproduced live: "trying to reuse blob ... does not match
+          # config's DiffID"). eStargz is designed for lazy pulling via
+          # a stargz-aware snapshotter, not a plain pull-and-run, so
+          # that scenario only needs the push (which compressionApplied
+          # verifies directly against the registry) -- never a local
+          # run.
+          autoStart = spec.container.autoStart or true;
           mode = "oneshot";
         }
         // lib.optionalAttrs (spec.level == "deploy") {
@@ -505,23 +529,48 @@ in
           "performance-startup-runtime"
         ] (_: "performance-a")
         // lib.genAttrs [
-          "performance-compression-runtime"
           "performance-glibc-tunables-runtime"
           "performance-glibc-tunables-preset-runtime"
           "performance-turbo-enable-runtime"
           "performance-turbo-layer-cache-runtime"
+          # performance-compression-runtime's two scenarios need
+          # oci.registry.enable = true (see specNeedsRegistry /
+          # shardNeedsRegistry below): compressionApplied only observes
+          # a container once it's actually pushed through the registry,
+          # and nothing else pushes these images there otherwise.
+          #
+          # Deliberately kept OUT of performance-c (which also hosts
+          # performance-turbo-soci-runtime's turbo pushes), not grouped
+          # with it: nix2container-turbo's cross-push layer cache
+          # reuses a cached compressed blob keyed purely on source
+          # digest, with no check that the cached entry's compression
+          # format matches what's requested (confirmed against its own
+          # source, destination/soci_wrap.go). Every nix2container image
+          # shares at least one small bootstrap-metadata layer
+          # regardless of package (confirmed live: identical digest
+          # cb191795... appeared across SOCI and estargz pushes alike
+          # despite using unrelated packages), so ANY two turbo pushes
+          # sharing a VM/registry session risk the second one silently
+          # reusing the first's cached format for that shared layer
+          # (reproduced live: estargz's manifest came back mediaType
+          # +zstd despite requesting gzip:estargz, even after switching
+          # its own package to eliminate a package-specific collision --
+          # the real collision was never the package layer at all).
+          # performance-b has no other registry-pushing spec, so
+          # compression's own two pushes (one non-turbo zstd push that
+          # never touches n2ct's cache machinery at all, one turbo
+          # estargz push) are guaranteed to be the only turbo push in
+          # this shard's session.
+          "performance-compression-runtime"
         ] (_: "performance-b")
-        # performance-turbo-soci-runtime's two scenarios need
-        # oci.registry.enable = true (see shardNeedsRegistry below) to
-        # push their images through the local registry -- the
-        # sociZtocPresent assertion queries the registry's referrers
-        # API directly, and nothing else pushes these specific images
-        # there otherwise. Kept in its own shard rather than flipping
-        # that switch for the whole performance-b VM: registry push+
-        # pull round-trips for every one of performance-b's other
-        # unrelated containers would add boot time this shard doesn't
-        # have slack for (see the 30min-CI-timeout history comment
-        # above mkBddVmFor).
+        # performance-turbo-soci-runtime's scenarios need
+        # oci.registry.enable = true too, for the same sociZtocPresent
+        # reason. Kept in its own shard rather than flipping that
+        # switch for the whole performance-b VM: registry push+pull
+        # round-trips for every one of performance-b's other unrelated
+        # containers would add boot time this shard doesn't have slack
+        # for (see the 30min-CI-timeout history comment above
+        # mkBddVmFor).
         // lib.genAttrs [
           "performance-turbo-soci-runtime"
         ] (_: "performance-c");
@@ -635,18 +684,16 @@ in
           usesApparmor =
             s: (s.container.hardening.enable or false) && (s.container.hardening.apparmor.enable or false);
           shardApparmorNames = lib.attrNames (lib.filterAttrs (_: usesApparmor) shardSpecs);
-          # sociZtocPresent queries the local registry's referrers API
-          # directly for a specific repo:tag, so that container's image
-          # has to actually be IN the registry. oci.registry.enable
-          # switches oci-load from a direct podman/docker load to a
-          # registry push (nix2container's copyToRegistry), using
-          # repo:tag = lib.toLower container.name:container.tag -- see
+          # sociZtocPresent and compressionApplied both only observe a
+          # specific repo:tag as actually pushed to the registry.
+          # oci.registry.enable switches oci-load from a direct
+          # podman/docker load to a registry push (nix2container's
+          # copyToRegistry), using repo:tag =
+          # lib.toLower container.name:container.tag -- see
           # nix/modules/deploy/nix-oci/nixos/load-services.nix and
           # nix/lib/deploy.nix's registryImageRef. Nothing else pushes
           # these images there otherwise.
-          shardNeedsRegistry = lib.any (s: (s.assertions.sociZtocPresent or null) != null) (
-            lib.attrValues shardSpecs
-          );
+          shardNeedsRegistry = lib.any specNeedsRegistry (lib.attrValues shardSpecs);
           shardStateRequires = lib.mapAttrs' (
             name: _:
             lib.nameValuePair "${containerServicePrefix}${name}" {
@@ -877,9 +924,14 @@ in
                 name: ''machine.wait_for_unit("oci-load-${name}.service")''
               ) shardBddContainerNames}
 
-              ${lib.concatMapStringsSep "\n" (
-                name: ''machine.wait_for_unit("${containerServicePrefix}${name}.service")''
-              ) (lib.attrNames (shardRuntime // shardDeploy))}
+              ${lib.concatMapStringsSep "\n"
+                (name: ''machine.wait_for_unit("${containerServicePrefix}${name}.service")'')
+                (
+                  lib.filter (name: shardBddContainers.${name}.autoStart or false) (
+                    lib.attrNames (shardRuntime // shardDeploy)
+                  )
+                )
+              }
 
               ${lib.optionalString (includeRegistryTest && registryTestOCI != null) ''
                 machine.wait_for_unit("flake-oci-load-${registryTestName}.service")
@@ -1089,9 +1141,14 @@ in
               ) bddContainerNames}
 
               # Wait for BDD runtime/deploy container services
-              ${lib.concatMapStringsSep "\n" (
-                name: ''machine.wait_for_unit("${containerServicePrefix}${name}.service")''
-              ) (lib.attrNames (runtimeSpecs // deploySpecs))}
+              ${lib.concatMapStringsSep "\n"
+                (name: ''machine.wait_for_unit("${containerServicePrefix}${name}.service")'')
+                (
+                  lib.filter (name: bddContainers.${name}.autoStart or false) (
+                    lib.attrNames (runtimeSpecs // deploySpecs)
+                  )
+                )
+              }
 
               # Wait for the single registry push test
               ${lib.optionalString (registryTestOCI != null) ''

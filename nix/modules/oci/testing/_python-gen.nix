@@ -343,6 +343,49 @@ let
       ${spanCheck}
     '';
 
+  # Generate code for compressionApplied: performance.compression is only
+  # ever actually applied via skopeo's --dest-compress-format flag at
+  # push time (see mkPushApp.nix, load-services.nix) -- inspect the
+  # pushed registry image's manifest directly, same mechanism as
+  # mkSociZtocPresent, rather than a loaded local image (which is never
+  # the code path this option affects).
+  mkCompressionApplied =
+    _containerName: comp:
+    ''
+      # compressionApplied: ${comp.registry}/${comp.repository}:${comp.tag} (${comp.family})
+      import subprocess, json
+      _manifest_raw = subprocess.check_output(
+          ["curl", "-sSf",
+           "-H", "Accept: application/vnd.oci.image.manifest.v1+json",
+           f"http://${comp.registry}/v2/${comp.repository}/manifests/${comp.tag}"]
+      )
+      _manifest = json.loads(_manifest_raw)
+      _layers = _manifest.get("layers") or []
+      assert _layers, f"expected at least one layer in the manifest, got: {_manifest!r}"
+    ''
+    + (
+      if comp.family == "zstd" then
+        ''
+          for _l in _layers:
+              _mt = _l.get("mediaType", "")
+              assert _mt.endswith("+zstd"), (
+                  f"expected zstd layer, got mediaType={_mt!r}"
+              )
+        ''
+      else
+        ''
+          _gzip_family = (
+              "application/vnd.oci.image.layer.v1.tar+gzip",
+              "application/vnd.docker.image.rootfs.diff.tar.gzip",
+          )
+          for _l in _layers:
+              _mt = _l.get("mediaType", "")
+              assert _mt in _gzip_family, (
+                  f"expected gzip-family layer, got mediaType={_mt!r}"
+              )
+        ''
+    );
+
   # Generate code for manifestDigestMatches: compare two manifest files by
   # SHA-256 to prove reproducibility across two builds.
   mkManifestDigestMatches = _containerName: mdm: ''
@@ -439,6 +482,9 @@ in
         + (optionalString (a.envVarSet or { } != { }) (mkEnvVarSet containerName a.envVarSet))
         + (optionalString (a.sociZtocPresent or null != null) (
           mkSociZtocPresent containerName a.sociZtocPresent
+        ))
+        + (optionalString (a.compressionApplied or null != null) (
+          mkCompressionApplied containerName a.compressionApplied
         ))
         + (optionalString (a.manifestDigestMatches or null != null) (
           mkManifestDigestMatches containerName a.manifestDigestMatches
