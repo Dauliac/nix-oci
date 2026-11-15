@@ -8,6 +8,14 @@
 #   - oci.container.generatedLabels → Labels
 #   - environment.etc (minus excludedEtcFiles denylist) → _output.etcFiles
 { lib, ... }:
+let
+  # Pure helpers are imported directly rather than read from
+  # `config.lib.oci`: the nix-lib registration of a top-level
+  # `nix-lib.lib.oci.*` function populates the top-level lib, not
+  # perSystem's, so reading it here fails with "attribute missing".
+  # Registration exists for typing, docs and unit tests.
+  pure = import ../../../lib/oci.nix { inherit lib; };
+in
 {
   config.perSystem =
     {
@@ -36,7 +44,7 @@
             _nixosChecks = oci.nixosConfig._checks or "";
             nixosEval = oci.nixosConfig.eval;
             out = nixosEval.oci.container._output;
-            fullName = ociLib.mkRepoRef {
+            fullName = pure.mkRepoRef {
               inherit (oci) registry name;
             };
 

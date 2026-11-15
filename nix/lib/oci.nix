@@ -52,6 +52,61 @@ let
       else
         lib.strings.toLower name;
 
+    # -- Compression and SOCI push flags --
+
+    # Derive the skopeo compression / SOCI flags for a push, and
+    # enforce the invariants that govern their combination.
+    #
+    # The same derivation was copy-pasted at four sites: mkPushApp,
+    # mkPushAllTagsApp, the multi-arch per-arch push, and the deploy
+    # registry push in nixos/load-services.nix. Only the first three
+    # asserted the invariants, so the deploy push path could be
+    # configured into a combination the build path rejects. The
+    # `sociSpanSize` default was additionally restated at six sites.
+    #
+    # Invariants (previously only on the build side):
+    #   - SOCI needs a seekable gzip layer, so it cannot combine with
+    #     zstd or with gzip:estargz.
+    #   - gzip:estargz requires the turbo-patched skopeo, which plain
+    #     skopeo cannot produce ("cannot find compressor").
+    #
+    # The `turbo -> skopeoTurbo != null` check stays at the call sites,
+    # since it needs the package set.
+    mkCompressionFlags =
+      {
+        compression ? "gzip",
+        turbo ? { },
+      }:
+      let
+        turboEnabled = turbo.enable or false;
+        sociEnabled = turboEnabled && (turbo.soci or false);
+        sociSpanSize = turbo.sociSpanSize or 4194304;
+
+        errors =
+          lib.optional (sociEnabled && compression == "zstd")
+            ''performance.turbo.soci cannot combine with performance.compression = "zstd": SOCI needs a seekable gzip layer. Set compression to "gzip", or disable soci.''
+          ++
+            lib.optional (sociEnabled && compression == "gzip:estargz")
+              ''performance.turbo.soci cannot combine with performance.compression = "gzip:estargz": both rewrite the layer format. Pick one.''
+          ++
+            lib.optional (compression == "gzip:estargz" && !turboEnabled)
+              ''performance.compression = "gzip:estargz" requires performance.turbo.enable = true: plain skopeo cannot produce estargz.'';
+
+        result = {
+          inherit turboEnabled sociEnabled sociSpanSize;
+          compressFlag =
+            if compression == "zstd" then
+              "--dest-compress-format zstd"
+            else if compression == "gzip:estargz" then
+              "--dest-compress-format gzip:estargz"
+            else
+              "";
+          sociFlags =
+            if sociEnabled then "--dest-soci --dest-soci-span-size=${toString sociSpanSize}" else "";
+        };
+      in
+      if errors != [ ] then throw "nix-oci: ${builtins.head errors}" else result;
+
     # -- Apache httpd listen resolution --
 
     # Derive the listen facts for an Apache httpd container from

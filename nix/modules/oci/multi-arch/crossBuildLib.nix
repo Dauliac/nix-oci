@@ -3,6 +3,9 @@
 let
   inherit (lib) types;
   # archData replaced by config.lib.oci inside perSystem
+  # Imported directly, not via `config.lib.oci`: a top-level nix-lib
+  # registration populates the top-level lib, not perSystem's.
+  pure = import ../../../lib/oci.nix { inherit lib; };
 in
 {
   config.perSystem =
@@ -33,7 +36,7 @@ in
             let
               ociLib = config.lib.oci or { };
               oci = perSystemConfig.containers.${containerId};
-              fullName = ociLib.mkRepoRef { inherit (oci) registry name; };
+              fullName = pure.mkRepoRef { inherit (oci) registry name; };
 
               # Reuse the NixOS eval from the native container (shadow,
               # certs, nsswitch are arch-independent)
@@ -98,7 +101,7 @@ in
               targetSystems = lib.attrNames images;
               arches = map ociDeployLib.systemToOCIArch targetSystems;
               containerConfig = perSystemConfig.containers.${containerId};
-              fullName = ociDeployLib.mkRepoRef { inherit (containerConfig) registry name; };
+              fullName = pure.mkRepoRef { inherit (containerConfig) registry name; };
               primaryTag = builtins.head (
                 lib.attrNames (lib.filterAttrs (_: tc: tc.primary) containerConfig.tagConfigs)
               );
@@ -197,7 +200,7 @@ in
                 lib.attrNames (lib.filterAttrs (_: tc: tc.primary) containerConfig.tagConfigs)
               );
               additionalTags = lib.attrNames (lib.filterAttrs (_: tc: !tc.primary) containerConfig.tagConfigs);
-              baseName = ociDeployLib.mkRepoRef { inherit (containerConfig) registry name; };
+              baseName = pure.mkRepoRef { inherit (containerConfig) registry name; };
             in
             pkgs.writeShellApplication {
               name = "push-multiarch-${containerId}";

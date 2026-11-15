@@ -8,6 +8,9 @@
 let
   inherit (lib) types;
   cfg = config;
+  # Imported directly, not via `config.lib.oci`: a top-level nix-lib
+  # registration populates the top-level lib, not perSystem's.
+  pure = import ../../../lib/oci.nix { inherit lib; };
 in
 {
   config.perSystem =
@@ -36,27 +39,22 @@ in
               containerConfig = perSystemConfig.containers.${containerId};
               ociOutput = perSystemConfig.internal.OCIs.${containerId};
               tempTagPrefix = containerConfig.multiArch.tempTagPrefix;
-              baseName = ociLib.mkRepoRef { inherit (containerConfig) registry name; };
-              compression = containerConfig.performance.compression or "gzip";
-              turboEnabled = containerConfig.performance.turbo.enable or false;
-              sociEnabled = turboEnabled && (containerConfig.performance.turbo.soci or false);
-              sociSpanSize = containerConfig.performance.turbo.sociSpanSize or 4194304;
-              compressFlag =
-                if compression == "zstd" then
-                  "--dest-compress-format zstd"
-                else if compression == "gzip:estargz" then
-                  "--dest-compress-format gzip:estargz"
-                else
-                  "";
-              sociFlags =
-                if sociEnabled then "--dest-soci --dest-soci-span-size=${toString sociSpanSize}" else "";
+              baseName = pure.mkRepoRef { inherit (containerConfig) registry name; };
+              # Shared with mkPushApp, mkPushAllTagsApp and the deploy
+              # registry push; see mkCompressionFlags in nix/lib/oci.nix.
+              flags = pure.mkCompressionFlags {
+                compression = containerConfig.performance.compression or "gzip";
+                turbo = containerConfig.performance.turbo or { };
+              };
+              inherit (flags) compressFlag sociFlags;
               skopeoPackage =
-                if turboEnabled then perSystemConfig.packages.skopeoTurbo else perSystemConfig.packages.skopeo;
+                if flags.turboEnabled then
+                  perSystemConfig.packages.skopeoTurbo
+                else
+                  perSystemConfig.packages.skopeo;
             in
-            assert turboEnabled -> perSystemConfig.packages.skopeoTurbo != null;
-            assert sociEnabled -> compression != "zstd";
-            assert sociEnabled -> compression != "gzip:estargz";
-            assert (compression == "gzip:estargz") -> turboEnabled;
+            # Stays here: needs the package set.
+            assert flags.turboEnabled -> perSystemConfig.packages.skopeoTurbo != null;
             pkgs.writeShellApplication {
               name = "push-tmp-${containerId}";
               runtimeInputs = [
@@ -109,7 +107,7 @@ in
             }:
             let
               containerConfig = perSystemConfig.containers.${containerId};
-              baseName = ociLib.mkRepoRef { inherit (containerConfig) registry name; };
+              baseName = pure.mkRepoRef { inherit (containerConfig) registry name; };
               arches = builtins.map (sys: ociLib.systemToOCIArch sys) systems;
               primaryTag = builtins.head (
                 lib.attrNames (lib.filterAttrs (_: tc: tc.primary) containerConfig.tagConfigs)
