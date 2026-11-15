@@ -11,7 +11,7 @@
 
       Defaults to `fatal` so `nix flake check` does not fail on WARN or
       INFO findings — nix-oci deliberately surfaces choices like
-      `isRoot = true` and per-container `test.dockle.enabled = false`
+      `isRoot = true` and per-container `lint.dockle.enabled = false`
       instead of silently rewriting the image. Projects that want a
       stricter gate can set this to `warn` or `info` per-container.
     '';
