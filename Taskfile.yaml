@@ -27,9 +27,20 @@ tasks:
     cmds:
       - nix flake check -L 2>&1 | nom
   test:unit:
-    desc: Run nix-lib unit tests (nix-unit)
+    desc: >
+      Run nix-lib unit tests. Compares each `flake.tests` entry's `expr` against its `expected`, which is exactly what the CI `eval` job does, so local and CI agree. There is no `checks.*.nix-unit` attribute to build.
+
     cmds:
-      - nix build .#checks.x86_64-linux.nix-unit -L 2>&1 | nom
+      - |
+        set -euo pipefail
+        failures=$(nix eval .#tests --json --apply \
+          'ts: builtins.filter (n: (ts.${n}).expected != (ts.${n}).expr) (builtins.attrNames ts)')
+        if [ "$failures" != "[]" ]; then
+          echo "Failing unit tests:"
+          echo "$failures"
+          exit 1
+        fi
+        echo "All unit tests pass."
   test:vm:
     desc: Run NixOS VM deploy integration test (via nom)
     cmds:
