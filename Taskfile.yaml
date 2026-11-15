@@ -116,17 +116,25 @@ tasks:
     cmds:
       # 1. Enumerate the current `bdd-app-*` checks and write them
       #    to the per-container matrix input.
+      #
+      #    `--json`, not `--raw`: the apply returns a LIST, and --raw
+      #    cannot coerce a list to a string. It failed, 2>/dev/null hid
+      #    the error, python then wrote an empty array, and `pipefail`
+      #    only aborted the task AFTER the matrix file had already been
+      #    truncated to []. Capture first, validate, then write, so a
+      #    failed eval can never clobber a good matrix.
       - |
         set -euo pipefail
-        nix eval .#checks.x86_64-linux --apply '
+        out="$(nix eval .#checks.x86_64-linux --apply '
           cs: builtins.filter
             (n: builtins.substring 0 8 n == "bdd-app-")
             (builtins.attrNames cs)
-        ' --raw 2>/dev/null \
-          | python3 -c "
-        import sys, json, re
-        raw = sys.stdin.read()
-        names = re.findall(r'\"([^\"]+)\"', raw)
+        ' --json)"
+        printf '%s' "$out" | python3 -c "
+        import sys, json
+        names = json.load(sys.stdin)
+        if not names:
+            sys.exit('refusing to write an empty bdd-containers.json')
         containers = sorted(n.replace('bdd-app-', '', 1) for n in names)
         with open('.github/workflows/bdd-containers.json', 'w') as f:
             json.dump(containers, f, indent=2)
@@ -134,18 +142,19 @@ tasks:
         print(f'wrote {len(containers)} containers')
         "
       # 2. Enumerate the current `bdd-vm-*` checks and write them to
-      #    the per-group matrix input.
+      #    the per-group matrix input. Same reasoning as step 1.
       - |
         set -euo pipefail
-        nix eval .#checks.x86_64-linux --apply '
+        out="$(nix eval .#checks.x86_64-linux --apply '
           cs: builtins.filter
             (n: builtins.substring 0 7 n == "bdd-vm-")
             (builtins.attrNames cs)
-        ' --raw 2>/dev/null \
-          | python3 -c "
-        import sys, json, re
-        raw = sys.stdin.read()
-        names = re.findall(r'\"([^\"]+)\"', raw)
+        ' --json)"
+        printf '%s' "$out" | python3 -c "
+        import sys, json
+        names = json.load(sys.stdin)
+        if not names:
+            sys.exit('refusing to write an empty bdd-vm-groups.json')
         groups = sorted(n.replace('bdd-vm-', '', 1) for n in names)
         with open('.github/workflows/bdd-vm-groups.json', 'w') as f:
             json.dump(groups, f, indent=2)

@@ -573,7 +573,25 @@ in
         # mkBddVmFor).
         // lib.genAttrs [
           "performance-turbo-soci-runtime"
-        ] (_: "performance-c");
+        ] (_: "performance-c")
+        # performance-compression-estargz-runtime is the OTHER turbo
+        # push, and it gets its own shard for the same reason
+        # performance-turbo-soci-runtime does: two turbo pushes sharing
+        # a VM session risk the second silently reusing the first's
+        # cached compression format for the bootstrap-metadata layer
+        # they both carry.
+        #
+        # It used to be a second scenario inside
+        # performance-compression-runtime, which meant its turbo push
+        # shared a session with that group's non-turbo zstd push and
+        # collided with it. Keeping the group out of performance-c was
+        # never sufficient, because the collision did not need a second
+        # spec. Observed failing on CI runs 43739248076 and
+        # 43750594601, passing on 43727324923 and 43744806100 with the
+        # same code.
+        // lib.genAttrs [
+          "performance-compression-estargz-runtime"
+        ] (_: "performance-d");
 
       # `deploy`'s 8 groups all share that first token too, and the
       # shard also runs the flake-level registry-push smoke test by

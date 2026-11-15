@@ -41,7 +41,33 @@
             family = "zstd";
           };
         };
+      };
 
+      # Deliberately a SEPARATE group from the zstd scenario above, not
+      # a second scenario inside it.
+      #
+      # Specs are sharded by group, and one shard is one VM with one
+      # local registry. Keeping both scenarios in one group put a
+      # non-turbo zstd push and a turbo estargz push in the same
+      # session, and nix2container-turbo's cross-push layer cache
+      # reuses a cached compressed blob keyed purely on source digest
+      # with no check that the cached format matches the requested one
+      # (its own destination/soci_wrap.go). Every nix2container image
+      # shares at least one small bootstrap-metadata layer regardless
+      # of package, so whichever push ran first decided the format for
+      # that shared layer and the second silently inherited it.
+      #
+      # Observed live: estargz's manifest came back `+zstd`, failing
+      # this scenario, on CI runs 43739248076 and 43750594601, while
+      # the identical commit passed on 43727324923 and 43744806100.
+      # Flaky on push ordering, which is why it survived so long.
+      #
+      # The previous mitigation only kept this group away from
+      # performance-turbo-soci-runtime's turbo pushes. That was not
+      # enough, because the collision never needed a second SPEC: the
+      # group's own two pushes collided with each other. Splitting the
+      # group is what actually separates the sessions.
+      test.oci.perContainer.performance-compression-estargz-runtime = {
         # gzip:estargz: layer mediaTypes remain gzip (+gzip) but the
         # image gains estargz TOC entries. Verify at least one layer's
         # mediaType matches the gzip family.
@@ -52,16 +78,12 @@
           level = "runtime";
           target = "oci";
           container = {
-            # Package choice here is incidental, not the fix: every
-            # nix2container image shares at least one small bootstrap-
-            # metadata layer regardless of package (confirmed live --
-            # swapping busybox for this distinct package did NOT, on
-            # its own, stop the collision below). The actual fix is
-            # keeping this whole group out of any shard that also runs
-            # performance-turbo-soci-runtime's turbo pushes -- see
-            # performanceShardOverride's comment in test-vm.nix for the
-            # full explanation of nix2container-turbo's layer-cache
-            # format-blind reuse.
+            # Package choice is incidental: every nix2container image
+            # shares at least one small bootstrap-metadata layer
+            # regardless of package, so swapping busybox for this did
+            # not on its own stop the collision. The fix is the group
+            # split documented above, which puts this turbo push in a
+            # VM of its own.
             package = pkgs.hello;
             isRoot = true;
             performance.enable = true;
@@ -78,9 +100,11 @@
             # registry.
             autoStart = false;
           };
+          # Repository follows the spec key `<group>--<scenario>`, so
+          # it tracks the group rename above.
           assertions.compressionApplied = {
             registry = "localhost:5000";
-            repository = "performance-compression-runtime--runtime-estargz-layers";
+            repository = "performance-compression-estargz-runtime--runtime-estargz-layers";
             tag = "latest";
             family = "gzip";
           };
