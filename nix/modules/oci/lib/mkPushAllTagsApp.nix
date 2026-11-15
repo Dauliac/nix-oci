@@ -74,6 +74,11 @@
 
             registryFallback = if containerConfig.registry != null then containerConfig.registry else "";
 
+            # The registry arrives at runtime via NIX_OCI_REGISTRY /
+            # CI_REGISTRY_IMAGE, so only the repository path can be
+            # normalised here. OCI requires it lowercase.
+            repoName = lib.strings.toLower containerConfig.name;
+
             compression = containerConfig.performance.compression or "gzip";
             turboEnabled = containerConfig.performance.turbo.enable or false;
             sociEnabled = turboEnabled && (containerConfig.performance.turbo.soci or false);
@@ -133,7 +138,7 @@
                     PRIMARY_DEST="oci:$OCI_DIR:${primaryTag}"
                     DEST_PREFIX="oci:$OCI_DIR:"
                   elif [ -n "$REGISTRY" ]; then
-                    BASE_REF="$REGISTRY/${containerConfig.name}"
+                    BASE_REF="$REGISTRY/${repoName}"
                     PRIMARY_DEST="docker://$BASE_REF:${primaryTag}"
                     DEST_PREFIX="docker://$BASE_REF:"
                   else

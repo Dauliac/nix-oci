@@ -36,14 +36,9 @@
             _nixosChecks = oci.nixosConfig._checks or "";
             nixosEval = oci.nixosConfig.eval;
             out = nixosEval.oci.container._output;
-            # OCI repository names must be lowercase (podman rejects
-            # mixed-case refs). The registry prefix (host:port) is
-            # case-insensitive anyway and kept as-is.
-            fullName =
-              if oci.registry != null && oci.registry != "" then
-                "${oci.registry}/${lib.toLower oci.name}"
-              else
-                lib.toLower oci.name;
+            fullName = ociLib.mkRepoRef {
+              inherit (oci) registry name;
+            };
 
             fromImage =
               if !(oci.fromImage.enabled or false) then

@@ -27,6 +27,31 @@ let
       else
         (builtins.parseDrvName name).name;
 
+    # -- Image reference --
+
+    # Full repository reference for a container: `<registry>/<name>`,
+    # or just `<name>` when no registry is configured.
+    #
+    # The repository path MUST be lowercase: the OCI distribution spec
+    # restricts it to `[a-z0-9]` plus separators, and podman rejects
+    # mixed-case refs outright. The registry component is a host (and
+    # optional port), which is case-insensitive, so it is kept verbatim.
+    #
+    # Single source of truth on purpose. This expression used to be
+    # copy-pasted across the image builder, both push apps, the
+    # multi-arch merge and the cross-build lib, and only the image
+    # builder lowercased, so a container named `MyApp` built as
+    # `myapp` and pushed to `.../MyApp`.
+    mkRepoRef =
+      {
+        registry,
+        name,
+      }:
+      if registry != null && registry != "" then
+        "${registry}/${lib.strings.toLower name}"
+      else
+        lib.strings.toLower name;
+
     # -- Port parsing --
 
     parseContainerPort =

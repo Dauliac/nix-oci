@@ -25,6 +25,9 @@
       config,
       ...
     }:
+    let
+      ociLib = config.lib.oci or { };
+    in
     {
       nix-lib.lib.oci.mkPushApp = {
         type = lib.types.functionTo lib.types.package;
@@ -44,11 +47,13 @@
             containerConfig = perSystemConfig.containers.${containerId};
             tag = tagConfig._tagName;
             ociOutput = perSystemConfig.internal.OCIs.${containerId};
-            baseName =
-              if containerConfig.registry != null && containerConfig.registry != "" then
-                "${containerConfig.registry}/${containerConfig.name}"
-              else
-                containerConfig.name;
+            baseName = ociLib.mkRepoRef {
+              inherit (containerConfig) registry name;
+            };
+            # The registry can also arrive at runtime via
+            # NIX_OCI_REGISTRY / CI_REGISTRY_IMAGE, so the repository
+            # path is lowercased separately for that branch.
+            repoName = lib.strings.toLower containerConfig.name;
             appName = "push-${containerId}-${tag}";
             primaryLiteral = if tagConfig.primary then "true" else "false";
             # registry is types.nullOr types.str -- `or ""` does NOT handle null
@@ -87,7 +92,7 @@
                 REF="$OCI_DIR:${tag}"
                 DEST="oci:$REF"
               elif [ -n "$REGISTRY" ]; then
-                REF="$REGISTRY/${containerConfig.name}:${tag}"
+                REF="$REGISTRY/${repoName}:${tag}"
                 DEST="docker://$REF"
               else
                 echo "[${appName}] ERROR: no registry configured. Set NIX_OCI_REGISTRY or CI_REGISTRY_IMAGE, or set OCI_DIR for a local push." >&2
