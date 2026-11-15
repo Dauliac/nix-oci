@@ -30,7 +30,13 @@
             let
               secOpts = container.securityOpts or [ ];
               perfOpts = deployLib.mkPerfOpts container;
-              healthOpts = if cfg.backend == "podman" then deployLib.mkHealthcheckOpts container else [ ];
+              # --health-* works on both backends; only --sdnotify is
+              # podman-only. Gating the whole set on podman left docker
+              # deploys with no healthcheck at all, because nix2container
+              # #197 means the image config carries none either.
+              healthOpts =
+                deployLib.mkHealthFlags container
+                ++ lib.optionals (cfg.backend == "podman") (deployLib.mkSdnotifyFlags container);
               allExtraOpts =
                 secOpts
                 ++ perfOpts

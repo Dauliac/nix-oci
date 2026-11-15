@@ -17,6 +17,11 @@
 #   "NIX_OCI_PUSHED_DIGEST=<sha256:...>"        (consumed by oci-attach-referrer-substrate)
 # fired on stdout -- downstream consumers grep for this marker.
 { lib, ... }:
+let
+  # Imported directly, not via `config.lib.oci`: a top-level nix-lib
+  # registration populates the top-level lib, not perSystem's.
+  pure = import ../../../lib/oci.nix { inherit lib; };
+in
 {
   config.perSystem =
     {
@@ -25,6 +30,9 @@
       config,
       ...
     }:
+    let
+      ociLib = config.lib.oci or { };
+    in
     {
       nix-lib.lib.oci.mkPushApp = {
         type = lib.types.functionTo lib.types.package;
@@ -44,36 +52,34 @@
             containerConfig = perSystemConfig.containers.${containerId};
             tag = tagConfig._tagName;
             ociOutput = perSystemConfig.internal.OCIs.${containerId};
-            baseName =
-              if containerConfig.registry != null && containerConfig.registry != "" then
-                "${containerConfig.registry}/${containerConfig.name}"
-              else
-                containerConfig.name;
+            baseName = pure.mkRepoRef {
+              inherit (containerConfig) registry name;
+            };
+            # The registry can also arrive at runtime via
+            # NIX_OCI_REGISTRY / CI_REGISTRY_IMAGE, so the repository
+            # path is lowercased separately for that branch.
+            repoName = lib.strings.toLower containerConfig.name;
             appName = "push-${containerId}-${tag}";
             primaryLiteral = if tagConfig.primary then "true" else "false";
             # registry is types.nullOr types.str -- `or ""` does NOT handle null
             # (or only fires for missing attributes, not null values), so guard explicitly.
             registryFallback = if containerConfig.registry != null then containerConfig.registry else "";
-            compression = containerConfig.performance.compression or "gzip";
-            turboEnabled = containerConfig.performance.turbo.enable or false;
-            sociEnabled = turboEnabled && (containerConfig.performance.turbo.soci or false);
-            sociSpanSize = containerConfig.performance.turbo.sociSpanSize or 4194304;
-            compressFlag =
-              if compression == "zstd" then
-                "--dest-compress-format zstd"
-              else if compression == "gzip:estargz" then
-                "--dest-compress-format gzip:estargz"
-              else
-                "";
-            sociFlags =
-              if sociEnabled then "--dest-soci --dest-soci-span-size=${toString sociSpanSize}" else "";
+            # Compression / SOCI flags and their invariants live in the
+            # pure lib so all four push paths share one derivation.
+            flags = pure.mkCompressionFlags {
+              compression = containerConfig.performance.compression or "gzip";
+              turbo = containerConfig.performance.turbo or { };
+            };
+            inherit (flags) compressFlag sociFlags;
             skopeoPackage =
-              if turboEnabled then perSystemConfig.packages.skopeoTurbo else perSystemConfig.packages.skopeo;
+              if flags.turboEnabled then
+                perSystemConfig.packages.skopeoTurbo
+              else
+                perSystemConfig.packages.skopeo;
           in
-          assert turboEnabled -> perSystemConfig.packages.skopeoTurbo != null;
-          assert sociEnabled -> compression != "zstd";
-          assert sociEnabled -> compression != "gzip:estargz";
-          assert (compression == "gzip:estargz") -> turboEnabled;
+          # Stays here: needs the package set, which the pure lib has no
+          # access to.
+          assert flags.turboEnabled -> perSystemConfig.packages.skopeoTurbo != null;
           pkgs.writeShellApplication {
             name = appName;
             runtimeInputs = [
@@ -87,7 +93,7 @@
                 REF="$OCI_DIR:${tag}"
                 DEST="oci:$REF"
               elif [ -n "$REGISTRY" ]; then
-                REF="$REGISTRY/${containerConfig.name}:${tag}"
+                REF="$REGISTRY/${repoName}:${tag}"
                 DEST="docker://$REF"
               else
                 echo "[${appName}] ERROR: no registry configured. Set NIX_OCI_REGISTRY or CI_REGISTRY_IMAGE, or set OCI_DIR for a local push." >&2

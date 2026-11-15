@@ -16,6 +16,28 @@
     in
     {
       config = lib.mkIf cfg.enable {
+        # `oci.registry` is registered for systemManager in
+        # options/registry.nix and imported into this composition by
+        # compose.nix, but neither this loader nor system-manager's
+        # run-services has a registry branch. Enabling it fell through
+        # to a direct backend load, silently losing the SOCI lazy pull
+        # that is the stated reason the registry path exists. Say so
+        # rather than quietly doing the wrong thing.
+        assertions = [
+          {
+            assertion = !(cfg.registry.enable or false);
+            message = ''
+              oci.registry.enable is not implemented for the system-manager deploy
+              target: images are loaded directly into ${cfg.backend} and the local
+              registry is never used, so SOCI lazy pull would silently not apply.
+
+              Either set oci.registry.enable = false here, or deploy these
+              containers through the NixOS target, which implements the registry
+              push path.
+            '';
+          }
+        ];
+
         systemd.services = lib.mapAttrs' (
           name: container:
           let

@@ -20,7 +20,12 @@
 #   After the primary push, additionally:
 #   "NIX_OCI_PUSHED_DIGEST=<sha256:...>"
 #   consumed by the oci-attach-referrer-substrate for referrer subject binding.
-{ ... }:
+{ lib, ... }:
+let
+  # Imported directly, not via `config.lib.oci`: a top-level nix-lib
+  # registration populates the top-level lib, not perSystem's.
+  pure = import ../../../lib/oci.nix { inherit lib; };
+in
 {
   config.perSystem =
     {
@@ -74,21 +79,23 @@
 
             registryFallback = if containerConfig.registry != null then containerConfig.registry else "";
 
-            compression = containerConfig.performance.compression or "gzip";
-            turboEnabled = containerConfig.performance.turbo.enable or false;
-            sociEnabled = turboEnabled && (containerConfig.performance.turbo.soci or false);
-            sociSpanSize = containerConfig.performance.turbo.sociSpanSize or 4194304;
-            compressFlag =
-              if compression == "zstd" then
-                "--dest-compress-format zstd"
-              else if compression == "gzip:estargz" then
-                "--dest-compress-format gzip:estargz"
-              else
-                "";
-            sociFlags =
-              if sociEnabled then "--dest-soci --dest-soci-span-size=${toString sociSpanSize}" else "";
+            # The registry arrives at runtime via NIX_OCI_REGISTRY /
+            # CI_REGISTRY_IMAGE, so only the repository path can be
+            # normalised here. OCI requires it lowercase.
+            repoName = lib.strings.toLower containerConfig.name;
+
+            # Shared with mkPushApp, the multi-arch push and the deploy
+            # registry push; see mkCompressionFlags in nix/lib/oci.nix.
+            flags = pure.mkCompressionFlags {
+              compression = containerConfig.performance.compression or "gzip";
+              turbo = containerConfig.performance.turbo or { };
+            };
+            inherit (flags) compressFlag sociFlags;
             skopeoPackage =
-              if turboEnabled then perSystemConfig.packages.skopeoTurbo else perSystemConfig.packages.skopeo;
+              if flags.turboEnabled then
+                perSystemConfig.packages.skopeoTurbo
+              else
+                perSystemConfig.packages.skopeo;
 
             mkAdditionalTagScript = tag: ''
               # Check if this additional tag already points to the correct digest.
@@ -108,10 +115,9 @@
               fi
             '';
           in
-          assert turboEnabled -> perSystemConfig.packages.skopeoTurbo != null;
-          assert sociEnabled -> compression != "zstd";
-          assert sociEnabled -> compression != "gzip:estargz";
-          assert (compression == "gzip:estargz") -> turboEnabled;
+          # Stays here: needs the package set. The compression and SOCI
+          # invariants moved into mkCompressionFlags.
+          assert flags.turboEnabled -> perSystemConfig.packages.skopeoTurbo != null;
           pkgs.writeShellApplication {
             name = appName;
             runtimeInputs = [
@@ -133,7 +139,7 @@
                     PRIMARY_DEST="oci:$OCI_DIR:${primaryTag}"
                     DEST_PREFIX="oci:$OCI_DIR:"
                   elif [ -n "$REGISTRY" ]; then
-                    BASE_REF="$REGISTRY/${containerConfig.name}"
+                    BASE_REF="$REGISTRY/${repoName}"
                     PRIMARY_DEST="docker://$BASE_REF:${primaryTag}"
                     DEST_PREFIX="docker://$BASE_REF:"
                   else

@@ -20,6 +20,7 @@
       cfg = config.oci;
       reg = cfg.registry;
       deployLib = import ../../../../lib/deploy.nix { inherit lib; };
+      ociLib = import ../../../../lib/oci.nix { inherit lib; };
       useRegistry = reg.enable;
     in
     {
@@ -68,18 +69,18 @@
             # exactly like the test harness's own one-off registry-push
             # script already does for the same reason.
             perf = container.performance or { };
-            turboEnabled = perf.turbo.enable or false;
-            sociEnabled = turboEnabled && (perf.turbo.soci or false);
-            sociSpanSize = perf.turbo.sociSpanSize or 4194304;
-            compression = perf.compression or "gzip";
-            compressFlag =
-              if compression == "zstd" then
-                "--dest-compress-format zstd"
-              else if compression == "gzip:estargz" then
-                "--dest-compress-format gzip:estargz"
-              else
-                "";
-            sociFlag = lib.optionalString sociEnabled "--dest-soci --dest-soci-span-size=${toString sociSpanSize}";
+            # Shared with the three build-side push paths. This site
+            # previously re-derived the same flags without the SOCI and
+            # estargz invariants, so a deploy could be configured into a
+            # combination the build path rejects. mkCompressionFlags
+            # enforces them for every caller.
+            flags = ociLib.mkCompressionFlags {
+              compression = perf.compression or "gzip";
+              turbo = perf.turbo or { };
+            };
+            turboEnabled = flags.turboEnabled;
+            compressFlag = flags.compressFlag;
+            sociFlag = flags.sociFlags;
             # skopeoNix2Container (nix2container's own patched skopeo)
             # is the baseline, not pkgs.skopeo: the "nix:" source
             # transport below is a custom scheme only nix2container's

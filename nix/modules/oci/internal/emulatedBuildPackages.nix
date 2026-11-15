@@ -85,11 +85,12 @@ in
                   (attrsets.mapAttrs (
                     containerId: _:
                     let
-                      nativeArch = ociLib.systemToOCIArch system;
                       nativeImage = config.oci.internal.OCIs.${containerId};
+                      # Keyed by target system, matching emulatedOCIs.
+                      # See the same note in crossBuildPackages.nix.
                       emulatedImages = config.oci.internal.emulatedOCIs.${containerId};
                       allImages = {
-                        ${nativeArch} = nativeImage;
+                        ${system} = nativeImage;
                       }
                       // emulatedImages;
                     in

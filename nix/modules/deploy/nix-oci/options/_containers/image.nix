@@ -237,6 +237,19 @@ in
               layers = hwcapsLayers;
             }
         )
+        # Nix-in-container support. Both are declared in the SHARED
+        # _options tree, so they are settable from a deploy module, but
+        # this builder never forwarded them and they were silent no-ops
+        # here while working on the flake-parts path. Mirrors
+        # mkOCIImage.nix:168-178.
+        // lib.optionalAttrs (useNixosEval && (out.nixPerms or [ ]) != [ ]) {
+          perms = out.nixPerms;
+        }
+        // lib.optionalAttrs (config.initializeNixDatabase or false) {
+          initializeNixDatabase = true;
+          nixUid = if config.isRoot then 0 else config.uid;
+          nixGid = if config.isRoot then 0 else config.gid;
+        }
       );
   };
 }

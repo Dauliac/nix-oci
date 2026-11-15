@@ -27,6 +27,154 @@ let
       else
         (builtins.parseDrvName name).name;
 
+    # -- Image reference --
+
+    # Full repository reference for a container: `<registry>/<name>`,
+    # or just `<name>` when no registry is configured.
+    #
+    # The repository path MUST be lowercase: the OCI distribution spec
+    # restricts it to `[a-z0-9]` plus separators, and podman rejects
+    # mixed-case refs outright. The registry component is a host (and
+    # optional port), which is case-insensitive, so it is kept verbatim.
+    #
+    # Single source of truth on purpose. This expression used to be
+    # copy-pasted across the image builder, both push apps, the
+    # multi-arch merge and the cross-build lib, and only the image
+    # builder lowercased, so a container named `MyApp` built as
+    # `myapp` and pushed to `.../MyApp`.
+    mkRepoRef =
+      {
+        registry,
+        name,
+      }:
+      if registry != null && registry != "" then
+        "${registry}/${lib.strings.toLower name}"
+      else
+        lib.strings.toLower name;
+
+    # -- Compression and SOCI push flags --
+
+    # Derive the skopeo compression / SOCI flags for a push, and
+    # enforce the invariants that govern their combination.
+    #
+    # The same derivation was copy-pasted at four sites: mkPushApp,
+    # mkPushAllTagsApp, the multi-arch per-arch push, and the deploy
+    # registry push in nixos/load-services.nix. Only the first three
+    # asserted the invariants, so the deploy push path could be
+    # configured into a combination the build path rejects. The
+    # `sociSpanSize` default was additionally restated at six sites.
+    #
+    # Invariants (previously only on the build side):
+    #   - SOCI needs a seekable gzip layer, so it cannot combine with
+    #     zstd or with gzip:estargz.
+    #   - gzip:estargz requires the turbo-patched skopeo, which plain
+    #     skopeo cannot produce ("cannot find compressor").
+    #
+    # The `turbo -> skopeoTurbo != null` check stays at the call sites,
+    # since it needs the package set.
+    mkCompressionFlags =
+      {
+        compression ? "gzip",
+        turbo ? { },
+      }:
+      let
+        turboEnabled = turbo.enable or false;
+        sociEnabled = turboEnabled && (turbo.soci or false);
+        sociSpanSize = turbo.sociSpanSize or 4194304;
+
+        errors =
+          lib.optional (sociEnabled && compression == "zstd")
+            ''performance.turbo.soci cannot combine with performance.compression = "zstd": SOCI needs a seekable gzip layer. Set compression to "gzip", or disable soci.''
+          ++
+            lib.optional (sociEnabled && compression == "gzip:estargz")
+              ''performance.turbo.soci cannot combine with performance.compression = "gzip:estargz": both rewrite the layer format. Pick one.''
+          ++
+            lib.optional (compression == "gzip:estargz" && !turboEnabled)
+              ''performance.compression = "gzip:estargz" requires performance.turbo.enable = true: plain skopeo cannot produce estargz.'';
+
+        result = {
+          inherit turboEnabled sociEnabled sociSpanSize;
+          compressFlag =
+            if compression == "zstd" then
+              "--dest-compress-format zstd"
+            else if compression == "gzip:estargz" then
+              "--dest-compress-format gzip:estargz"
+            else
+              "";
+          sociFlags =
+            if sociEnabled then "--dest-soci --dest-soci-span-size=${toString sociSpanSize}" else "";
+        };
+      in
+      if errors != [ ] then throw "nix-oci: ${builtins.head errors}" else result;
+
+    # -- Apache httpd listen resolution --
+
+    # Derive the listen facts for an Apache httpd container from
+    # `services.httpd.virtualHosts`.
+    #
+    # Mirrors nixpkgs' own `mkListenInfo`: an explicit per-vhost
+    # `listen` wins, otherwise the vhost gets 443 when any SSL mode is
+    # enabled and 80 unless `onlySSL`.
+    #
+    # This exists as a pure function because the service adapter used
+    # to read the top-level `services.httpd.listen`, which nixpkgs
+    # removed with `mkRemovedOptionModule`. That throws on access
+    # rather than leaving the attribute absent, so `listen or [ ]` did
+    # not guard it and every `mainService = "httpd"` container failed
+    # at eval. Keeping the derivation here makes it testable without
+    # booting a VM.
+    #
+    # Returns:
+    #   detectedPorts : every port the server binds, for the
+    #                   port/privilege coherence check
+    #   healthPort    : the port to probe, preferring plaintext
+    #   usesSsl       : true when only a TLS listener exists, so the
+    #                   probe has to skip certificate verification
+    resolveHttpdListen =
+      { virtualHosts }:
+      let
+        vhosts = lib.attrValues virtualHosts;
+
+        sslEnabled =
+          vhost: (vhost.onlySSL or false) || (vhost.addSSL or false) || (vhost.forceSSL or false);
+
+        mkListenInfo =
+          vhost:
+          if (vhost.listen or [ ]) != [ ] then
+            vhost.listen
+          else
+            lib.optionals (sslEnabled vhost) (
+              map (addr: {
+                ip = addr;
+                port = 443;
+                ssl = true;
+              }) (vhost.listenAddresses or [ ])
+            )
+            ++ lib.optionals (!(vhost.onlySSL or false)) (
+              map (addr: {
+                ip = addr;
+                port = 80;
+                ssl = false;
+              }) (vhost.listenAddresses or [ ])
+            );
+
+        listenInfo = lib.unique (lib.concatMap mkListenInfo vhosts);
+        plainPorts = map (l: l.port) (lib.filter (l: !(l.ssl or false)) listenInfo);
+        sslPorts = map (l: l.port) (lib.filter (l: l.ssl or false) listenInfo);
+        ports = lib.unique (map (l: l.port) listenInfo);
+      in
+      {
+        detectedPorts = if ports != [ ] then ports else [ 80 ];
+        usesSsl = plainPorts == [ ] && sslPorts != [ ];
+        healthPort =
+          if plainPorts != [ ] then
+            lib.head plainPorts
+          else if sslPorts != [ ] then
+            lib.head sslPorts
+          else
+            80;
+      };
+
     # -- Port parsing --
 
     parseContainerPort =

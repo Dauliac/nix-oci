@@ -67,11 +67,15 @@ in
                   (attrsets.mapAttrs (
                     containerId: _:
                     let
-                      nativeArch = ociLib.systemToOCIArch system;
                       nativeImage = config.oci.internal.OCIs.${containerId};
+                      # Keyed by target system, matching crossOCIs
+                      # above. mkMultiArchOCILayout derives both the
+                      # layout tag and the manifest platform from the
+                      # system; keying by OCI arch here lost the
+                      # variant and mixed two key spaces in one attrset.
                       crossImages = config.oci.internal.crossOCIs.${containerId};
                       allImages = {
-                        ${nativeArch} = nativeImage;
+                        ${system} = nativeImage;
                       }
                       // crossImages;
                     in

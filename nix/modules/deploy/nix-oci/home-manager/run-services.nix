@@ -20,81 +20,104 @@
       autoStart = deployLib.autoStartContainers cfg.containers;
     in
     {
-      config = lib.mkIf (cfg.enable && cfg.backend == "podman" && autoStart != { }) {
-        services.podman = {
-          enable = true;
-          containers = lib.mapAttrs (
-            name: container:
-            let
-              perfArgs = deployLib.mkPerfOpts container;
-              healthArgs = deployLib.mkHealthcheckOpts container;
-              hasHc = container.hasHealthcheck or false;
-              allPodmanArgs = perfArgs ++ healthArgs;
-              perf = container.performance.runtime or { };
-              ulimits = perf.ulimits or { };
-
-              # Quadlet Service section: systemd cgroup v2 properties
-              # These supplement container runtime flags with finer control.
-              serviceOverrides =
-                lib.optionalAttrs ((perf.memoryHigh or null) != null) {
-                  MemoryHigh = perf.memoryHigh;
-                }
-                // lib.optionalAttrs ((perf.memoryMin or null) != null) {
-                  MemoryMin = perf.memoryMin;
-                }
-                // lib.optionalAttrs ((perf.cpuWeight or null) != null) {
-                  CPUWeight = toString perf.cpuWeight;
-                }
-                // lib.optionalAttrs ((perf.ioWeight or null) != null) {
-                  IOWeight = toString perf.ioWeight;
-                }
-                // lib.optionalAttrs ((perf.oomScoreAdj or null) != null) {
-                  OOMScoreAdjust = toString perf.oomScoreAdj;
-                }
-                // lib.optionalAttrs ((ulimits.nofile or null) != null) {
-                  LimitNOFILE = toString ulimits.nofile;
-                }
-                // lib.optionalAttrs ((ulimits.memlock or null) != null) {
-                  LimitMEMLOCK = ulimits.memlock;
-                }
-                // lib.optionalAttrs ((ulimits.nproc or null) != null) {
-                  LimitNPROC = toString ulimits.nproc;
-                };
-            in
+      config = lib.mkMerge [
+        {
+          # `oci.backend` is a shared enum accepting "docker", but this
+          # target runs containers through `services.podman` quadlets
+          # and has no docker equivalent. The runner below is gated on
+          # podman while `load-services` is gated only on `enable`, so
+          # selecting docker used to produce loader units and no runner
+          # units at all, with no error. Fail loudly instead.
+          assertions = [
             {
-              image = container.imageRef;
-              extraConfig = {
-                Unit = {
-                  After = [ "oci-load-${name}.service" ];
-                  Requires = [ "oci-load-${name}.service" ];
+              assertion = !cfg.enable || cfg.backend == "podman" || autoStart == { };
+              message = ''
+                oci.backend = "${cfg.backend}" is not supported by the home-manager
+                deploy target: containers are run through services.podman quadlets,
+                which require podman.
+
+                Either set oci.backend = "podman", or deploy these containers through
+                the NixOS or system-manager target, which do support docker.
+              '';
+            }
+          ];
+        }
+        (lib.mkIf (cfg.enable && cfg.backend == "podman" && autoStart != { }) {
+          services.podman = {
+            enable = true;
+            containers = lib.mapAttrs (
+              name: container:
+              let
+                perfArgs = deployLib.mkPerfOpts container;
+                healthArgs = deployLib.mkHealthcheckOpts container;
+                hasHc = container.hasHealthcheck or false;
+                allPodmanArgs = perfArgs ++ healthArgs;
+                perf = container.performance.runtime or { };
+                ulimits = perf.ulimits or { };
+
+                # Quadlet Service section: systemd cgroup v2 properties
+                # These supplement container runtime flags with finer control.
+                serviceOverrides =
+                  lib.optionalAttrs ((perf.memoryHigh or null) != null) {
+                    MemoryHigh = perf.memoryHigh;
+                  }
+                  // lib.optionalAttrs ((perf.memoryMin or null) != null) {
+                    MemoryMin = perf.memoryMin;
+                  }
+                  // lib.optionalAttrs ((perf.cpuWeight or null) != null) {
+                    CPUWeight = toString perf.cpuWeight;
+                  }
+                  // lib.optionalAttrs ((perf.ioWeight or null) != null) {
+                    IOWeight = toString perf.ioWeight;
+                  }
+                  // lib.optionalAttrs ((perf.oomScoreAdj or null) != null) {
+                    OOMScoreAdjust = toString perf.oomScoreAdj;
+                  }
+                  // lib.optionalAttrs ((ulimits.nofile or null) != null) {
+                    LimitNOFILE = toString ulimits.nofile;
+                  }
+                  // lib.optionalAttrs ((ulimits.memlock or null) != null) {
+                    LimitMEMLOCK = ulimits.memlock;
+                  }
+                  // lib.optionalAttrs ((ulimits.nproc or null) != null) {
+                    LimitNPROC = toString ulimits.nproc;
+                  };
+              in
+              {
+                image = container.imageRef;
+                extraConfig = {
+                  Unit = {
+                    After = [ "oci-load-${name}.service" ];
+                    Requires = [ "oci-load-${name}.service" ];
+                  };
+                }
+                // lib.optionalAttrs hasHc {
+                  Container = {
+                    Notify = "healthy";
+                  };
+                  Service = {
+                    Type = "notify";
+                  };
+                }
+                // lib.optionalAttrs (serviceOverrides != { }) {
+                  Service = (lib.optionalAttrs hasHc { Type = "notify"; }) // serviceOverrides;
                 };
               }
-              // lib.optionalAttrs hasHc {
-                Container = {
-                  Notify = "healthy";
-                };
-                Service = {
-                  Type = "notify";
-                };
+              // lib.optionalAttrs (container.ports != [ ]) {
+                ports = container.ports;
               }
-              // lib.optionalAttrs (serviceOverrides != { }) {
-                Service = (lib.optionalAttrs hasHc { Type = "notify"; }) // serviceOverrides;
-              };
-            }
-            // lib.optionalAttrs (container.ports != [ ]) {
-              ports = container.ports;
-            }
-            // lib.optionalAttrs (container.environment != { }) {
-              environment = container.environment;
-            }
-            // lib.optionalAttrs (container.volumes != [ ]) {
-              volumes = container.volumes;
-            }
-            // lib.optionalAttrs (allPodmanArgs != [ ]) {
-              extraPodmanArgs = allPodmanArgs;
-            }
-          ) autoStart;
-        };
-      };
+              // lib.optionalAttrs (container.environment != { }) {
+                environment = container.environment;
+              }
+              // lib.optionalAttrs (container.volumes != [ ]) {
+                volumes = container.volumes;
+              }
+              // lib.optionalAttrs (allPodmanArgs != [ ]) {
+                extraPodmanArgs = allPodmanArgs;
+              }
+            ) autoStart;
+          };
+        })
+      ];
     };
 }

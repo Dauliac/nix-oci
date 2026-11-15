@@ -3,6 +3,9 @@
 let
   inherit (lib) types;
   # archData replaced by config.lib.oci inside perSystem
+  # Imported directly, not via `config.lib.oci`: a top-level nix-lib
+  # registration populates the top-level lib, not perSystem's.
+  pure = import ../../../lib/oci.nix { inherit lib; };
 in
 {
   config.perSystem =
@@ -33,8 +36,7 @@ in
             let
               ociLib = config.lib.oci or { };
               oci = perSystemConfig.containers.${containerId};
-              fullName =
-                if oci.registry != null && oci.registry != "" then "${oci.registry}/${oci.name}" else oci.name;
+              fullName = pure.mkRepoRef { inherit (oci) registry name; };
 
               # Reuse the NixOS eval from the native container (shadow,
               # certs, nsswitch are arch-independent)
@@ -69,14 +71,54 @@ in
               inherit arch;
               name = fullName;
               copyToRoot = [ root ];
+              # Fields below are read straight out of the shared NixOS
+              # eval, the same `_output.*` mkOCIImage consumes. They
+              # used to be dropped here, so a cross-built image silently
+              # lost its healthcheck, stop signal, working directory,
+              # declared volumes and every adapter-generated label,
+              # while the natively-built image of the same container
+              # kept them.
               config = {
                 entrypoint = if out.entrypoint != [ ] then out.entrypoint else oci.entrypoint;
                 User = oci.user;
                 Env = out.envVars;
               }
-              // lib.optionalAttrs (oci.labels != { }) {
-                Labels = oci.labels;
-              };
+              // (
+                let
+                  labels = (nixosEval.oci.container.generatedLabels or { }) // (oci.labels or { });
+                in
+                lib.optionalAttrs (labels != { }) {
+                  Labels = labels;
+                }
+              )
+              // (
+                let
+                  hc = out.healthcheck or null;
+                in
+                lib.optionalAttrs (hc != null) {
+                  Healthcheck = {
+                    Test = [ "CMD" ] ++ hc.command;
+                    Interval = hc.interval * 1000000000;
+                    Timeout = hc.timeout * 1000000000;
+                    StartPeriod = hc.startPeriod * 1000000000;
+                    Retries = hc.retries;
+                  };
+                }
+              )
+              // lib.optionalAttrs ((out.stopSignal or null) != null) {
+                StopSignal = out.stopSignal;
+              }
+              // lib.optionalAttrs ((out.workingDir or null) != null) {
+                WorkingDir = out.workingDir;
+              }
+              // (
+                let
+                  vols = out.declaredVolumes or [ ];
+                in
+                lib.optionalAttrs (vols != [ ]) {
+                  Volumes = builtins.listToAttrs (map (v: lib.nameValuePair v { }) vols);
+                }
+              );
             };
         };
 
@@ -91,13 +133,15 @@ in
               images,
             }:
             let
-              arches = lib.attrNames images;
+              # `images` is keyed by Nix target system (e.g.
+              # "armv7l-linux"), never by OCI arch. Both the layout tag
+              # and the manifest platform are derived from the system
+              # here so the OCI variant ("linux/arm/v7") survives;
+              # systemToOCIArch alone discards it.
+              targetSystems = lib.attrNames images;
+              arches = map ociDeployLib.systemToOCIArch targetSystems;
               containerConfig = perSystemConfig.containers.${containerId};
-              fullName =
-                if containerConfig.registry != null && containerConfig.registry != "" then
-                  "${containerConfig.registry}/${containerConfig.name}"
-                else
-                  containerConfig.name;
+              fullName = pure.mkRepoRef { inherit (containerConfig) registry name; };
               primaryTag = builtins.head (
                 lib.attrNames (lib.filterAttrs (_: tc: tc.primary) containerConfig.tagConfigs)
               );
@@ -114,14 +158,17 @@ in
                   ''
                     mkdir -p $out
                     ${lib.concatStringsSep "\n" (
-                      lib.mapAttrsToList (arch: image: ''
-                        echo "==> Copying ${arch} image to OCI layout"
-                        skopeo --insecure-policy copy nix:${image} oci:$out:${arch}
+                      lib.mapAttrsToList (sys: image: ''
+                        echo "==> Copying ${ociDeployLib.systemToOCIArch sys} image to OCI layout"
+                        skopeo --insecure-policy copy nix:${image} oci:$out:${ociDeployLib.systemToOCIArch sys}
                       '') images
                     )}
                     regctl index create ocidir://$out:latest \
                       ${lib.concatStringsSep " " (
-                        map (arch: "--ref ocidir://$out:${arch} --platform linux/${arch}") arches
+                        map (
+                          sys:
+                          "--ref ocidir://$out:${ociDeployLib.systemToOCIArch sys} --platform ${ociDeployLib.systemToOCIPlatform sys}"
+                        ) targetSystems
                       )}
                     echo "==> Built multi-arch OCI layout: ${lib.concatStringsSep ", " arches}"
                   '';
@@ -193,11 +240,7 @@ in
                 lib.attrNames (lib.filterAttrs (_: tc: tc.primary) containerConfig.tagConfigs)
               );
               additionalTags = lib.attrNames (lib.filterAttrs (_: tc: !tc.primary) containerConfig.tagConfigs);
-              baseName =
-                if containerConfig.registry != null && containerConfig.registry != "" then
-                  "${containerConfig.registry}/${containerConfig.name}"
-                else
-                  containerConfig.name;
+              baseName = pure.mkRepoRef { inherit (containerConfig) registry name; };
             in
             pkgs.writeShellApplication {
               name = "push-multiarch-${containerId}";

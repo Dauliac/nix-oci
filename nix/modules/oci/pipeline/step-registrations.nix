@@ -30,7 +30,7 @@
           phase = "build-check";
           category = "policy";
           backend = "pure";
-          isEnabled = c: c.policy.conftest.enabled or true;
+          isEnabled = c: c.policy.conftest.enabled or false;
           mkStamp =
             {
               containerId,
@@ -45,7 +45,7 @@
           phase = "build-check";
           category = "lint";
           backend = "pure";
-          isEnabled = c: c.test.dockle.enabled or true;
+          isEnabled = c: c.lint.dockle.enabled or false;
           mkStamp =
             {
               containerId,
@@ -60,7 +60,7 @@
           phase = "build-check";
           category = "structure";
           backend = "pure";
-          isEnabled = c: c.test.dive.enabled or true;
+          isEnabled = c: c.test.dive.enabled or false;
           mkStamp =
             {
               containerId,
@@ -75,7 +75,7 @@
           phase = "build-check";
           category = "sbom";
           backend = "pure";
-          isEnabled = c: c.sbom.syft.enabled or true;
+          isEnabled = c: c.sbom.syft.enabled or false;
           mkStamp =
             {
               containerId,
@@ -90,7 +90,7 @@
           phase = "build-check";
           category = "credentials";
           backend = "pure";
-          isEnabled = c: c.credentialsLeak.trivy.enabled or true;
+          isEnabled = c: c.credentialsLeak.trivy.enabled or false;
           mkStamp =
             {
               containerId,
