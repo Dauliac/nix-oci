@@ -533,35 +533,6 @@ in
           "performance-glibc-tunables-preset-runtime"
           "performance-turbo-enable-runtime"
           "performance-turbo-layer-cache-runtime"
-          # performance-compression-runtime's two scenarios need
-          # oci.registry.enable = true (see specNeedsRegistry /
-          # shardNeedsRegistry below): compressionApplied only observes
-          # a container once it's actually pushed through the registry,
-          # and nothing else pushes these images there otherwise.
-          #
-          # Deliberately kept OUT of performance-c (which also hosts
-          # performance-turbo-soci-runtime's turbo pushes), not grouped
-          # with it: nix2container-turbo's cross-push layer cache
-          # reuses a cached compressed blob keyed purely on source
-          # digest, with no check that the cached entry's compression
-          # format matches what's requested (confirmed against its own
-          # source, destination/soci_wrap.go). Every nix2container image
-          # shares at least one small bootstrap-metadata layer
-          # regardless of package (confirmed live: identical digest
-          # cb191795... appeared across SOCI and estargz pushes alike
-          # despite using unrelated packages), so ANY two turbo pushes
-          # sharing a VM/registry session risk the second one silently
-          # reusing the first's cached format for that shared layer
-          # (reproduced live: estargz's manifest came back mediaType
-          # +zstd despite requesting gzip:estargz, even after switching
-          # its own package to eliminate a package-specific collision --
-          # the real collision was never the package layer at all).
-          # performance-b has no other registry-pushing spec, so
-          # compression's own two pushes (one non-turbo zstd push that
-          # never touches n2ct's cache machinery at all, one turbo
-          # estargz push) are guaranteed to be the only turbo push in
-          # this shard's session.
-          "performance-compression-runtime"
         ] (_: "performance-b")
         # performance-turbo-soci-runtime's scenarios need
         # oci.registry.enable = true too, for the same sociZtocPresent
@@ -574,24 +545,45 @@ in
         // lib.genAttrs [
           "performance-turbo-soci-runtime"
         ] (_: "performance-c")
-        # performance-compression-estargz-runtime is the OTHER turbo
-        # push, and it gets its own shard for the same reason
-        # performance-turbo-soci-runtime does: two turbo pushes sharing
-        # a VM session risk the second silently reusing the first's
-        # cached compression format for the bootstrap-metadata layer
-        # they both carry.
+        # The two compression scenarios each get a shard to themselves.
         #
-        # It used to be a second scenario inside
-        # performance-compression-runtime, which meant its turbo push
-        # shared a session with that group's non-turbo zstd push and
-        # collided with it. Keeping the group out of performance-c was
-        # never sufficient, because the collision did not need a second
-        # spec. Observed failing on CI runs 43739248076 and
-        # 43750594601, passing on 43727324923 and 43744806100 with the
-        # same code.
+        # THE INVARIANT: a spec that asserts on the compression format
+        # of a pushed layer must be the ONLY pushing container in its
+        # VM. Not merely the only turbo one, and not merely separated
+        # from one specific other group.
+        #
+        # Why it has to be that strong. Enabling `oci.registry.enable`
+        # for a shard makes EVERY container in that shard load through
+        # the registry push path, not just the spec that asked for the
+        # registry. Every nix2container image carries the same small
+        # bootstrap-metadata layer, so whichever push lands first fixes
+        # that layer's compressed form and later pushes reuse it
+        # regardless of the format they requested.
+        #
+        # The history, each step disproving the previous theory:
+        #   - Originally both scenarios lived in one group, so the
+        #     estargz push inherited the zstd push's format. Observed
+        #     on runs 43739248076 and 43750594601; passed on
+        #     43727324923 and 43744806100. Flaky on push ordering.
+        #   - Splitting them into separate shards fixed estargz
+        #     (performance-d green on 43757771501 and 43761504857) but
+        #     NOT zstd, which then inherited plain gzip from one of
+        #     performance-b's seven other pushing containers and failed
+        #     with the mirror symptom, "expected zstd layer, got
+        #     ...tar+gzip", on run 43761504857.
+        #   - Measured directly: performance-b carried 8 oci-load
+        #     units, performance-d only 2. Isolation, not turbo-ness,
+        #     is what decides the outcome.
+        #
+        # So zstd gets performance-e. As a side effect performance-b
+        # keeps no registry-asserting spec at all, so its VM stops
+        # enabling the registry and stops doing those pushes entirely.
         // lib.genAttrs [
           "performance-compression-estargz-runtime"
-        ] (_: "performance-d");
+        ] (_: "performance-d")
+        // lib.genAttrs [
+          "performance-compression-runtime"
+        ] (_: "performance-e");
 
       # `deploy`'s 8 groups all share that first token too, and the
       # shard also runs the flake-level registry-push smoke test by

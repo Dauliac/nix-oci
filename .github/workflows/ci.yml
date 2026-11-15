@@ -130,6 +130,7 @@ jobs:
           - performance-b
           - performance-c
           - performance-d
+          - performance-e
           - runtime
     timeout-minutes: 30
   eval:
