@@ -71,14 +71,54 @@ in
               inherit arch;
               name = fullName;
               copyToRoot = [ root ];
+              # Fields below are read straight out of the shared NixOS
+              # eval, the same `_output.*` mkOCIImage consumes. They
+              # used to be dropped here, so a cross-built image silently
+              # lost its healthcheck, stop signal, working directory,
+              # declared volumes and every adapter-generated label,
+              # while the natively-built image of the same container
+              # kept them.
               config = {
                 entrypoint = if out.entrypoint != [ ] then out.entrypoint else oci.entrypoint;
                 User = oci.user;
                 Env = out.envVars;
               }
-              // lib.optionalAttrs (oci.labels != { }) {
-                Labels = oci.labels;
-              };
+              // (
+                let
+                  labels = (nixosEval.oci.container.generatedLabels or { }) // (oci.labels or { });
+                in
+                lib.optionalAttrs (labels != { }) {
+                  Labels = labels;
+                }
+              )
+              // (
+                let
+                  hc = out.healthcheck or null;
+                in
+                lib.optionalAttrs (hc != null) {
+                  Healthcheck = {
+                    Test = [ "CMD" ] ++ hc.command;
+                    Interval = hc.interval * 1000000000;
+                    Timeout = hc.timeout * 1000000000;
+                    StartPeriod = hc.startPeriod * 1000000000;
+                    Retries = hc.retries;
+                  };
+                }
+              )
+              // lib.optionalAttrs ((out.stopSignal or null) != null) {
+                StopSignal = out.stopSignal;
+              }
+              // lib.optionalAttrs ((out.workingDir or null) != null) {
+                WorkingDir = out.workingDir;
+              }
+              // (
+                let
+                  vols = out.declaredVolumes or [ ];
+                in
+                lib.optionalAttrs (vols != [ ]) {
+                  Volumes = builtins.listToAttrs (map (v: lib.nameValuePair v { }) vols);
+                }
+              );
             };
         };
 
