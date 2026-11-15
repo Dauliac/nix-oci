@@ -4,31 +4,36 @@
 # scenario `httpd container returns 200 on health endpoint` in
 # `openspec/changes/runtime-behavioral-test-coverage/specs/testing/deploy-runtime-verification/spec.md`.
 #
-# BLOCKER: the httpd adapter in
-# `nix/modules/_nixos-oci/service-adapters/httpd.nix` reads
-# `services.httpd.listen` which nixpkgs removed in favour of
-# `virtualHosts.<name>.listen`. Any container with
-# `mainService = "httpd"` therefore fails at Nix eval with:
+# The adapter is no longer blocked. It used to read the top-level
+# `services.httpd.listen`, which nixpkgs removed via
+# `mkRemovedOptionModule`; that throws on access rather than leaving
+# the attribute absent, so `listen or [ ]` did not guard it and every
+# `mainService = "httpd"` container failed at eval. The adapter now
+# derives its ports from `services.httpd.virtualHosts` through
+# `resolveHttpdListen` in nix/lib/oci.nix.
 #
-#   The option `services.httpd.listen' can no longer be used since
-#   it's been removed. Please define a virtual host using
-#   `services.httpd.virtualHosts`.
+# Where the real coverage currently lives:
+#   - `resolveHttpdListen` has six nix-lib unit tests that DO execute,
+#     via `nix eval .#tests`.
+#   - The adapter was additionally evaluated against the real nixpkgs
+#     apache-httpd module in three shapes (plain, onlySSL, explicit
+#     listen); see the fix commit body for the observed output.
 #
-# Tracked as `docs-ci-deploy-gb2`. Until the adapter is fixed,
-# this file only documents the intended BDD narrative at
-# `level = "eval"` with a hello-world container so the collector
-# eval stays green. Flip back to `level = "deploy"` +
-# `mainService = "httpd"` once the adapter is patched.
+# This spec sets `mainService = "httpd"` so it exercises the adapter as
+# soon as the harness can run it, but note that `level = "eval"` specs
+# have NO reader today: `test.oci.perContainer` is consumed only by
+# `test-vm.nix`, which keeps `runtime` and `deploy` specs and discards
+# the rest. Tracked as `docs-ci-deploy-kgs.1.1`. Promoting this to
+# `level = "deploy"` means adding a container to a VM shard, whose
+# placement is hand-maintained (`docs-ci-deploy-kgs.3.4`), so that is
+# deliberately left as separate work.
 { ... }:
 {
   perSystem =
     { pkgs, ... }:
     {
       test.oci.perContainer.deploy-httpd = {
-        # BDD narrative preserved so the spec doc renders even while
-        # the adapter is broken. This intentionally does NOT set
-        # mainService = "httpd"  -  see the file-level comment.
-        eval-httpd-adapter-blocked-by-listen-removal = {
+        eval-httpd-adapter-resolves-virtualhost-ports = {
           given = "an Apache httpd container with mainService = httpd";
           "when" = "GET /_nix_oci_health from the VM host";
           "then" = "the server returns HTTP 200 with mod_status output";
@@ -36,7 +41,8 @@
           target = "oci";
           container = {
             isRoot = true;
-            package = pkgs.hello;
+            package = pkgs.apacheHttpd;
+            mainService = "httpd";
           };
         };
       };

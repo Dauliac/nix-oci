@@ -52,6 +52,74 @@ let
       else
         lib.strings.toLower name;
 
+    # -- Apache httpd listen resolution --
+
+    # Derive the listen facts for an Apache httpd container from
+    # `services.httpd.virtualHosts`.
+    #
+    # Mirrors nixpkgs' own `mkListenInfo`: an explicit per-vhost
+    # `listen` wins, otherwise the vhost gets 443 when any SSL mode is
+    # enabled and 80 unless `onlySSL`.
+    #
+    # This exists as a pure function because the service adapter used
+    # to read the top-level `services.httpd.listen`, which nixpkgs
+    # removed with `mkRemovedOptionModule`. That throws on access
+    # rather than leaving the attribute absent, so `listen or [ ]` did
+    # not guard it and every `mainService = "httpd"` container failed
+    # at eval. Keeping the derivation here makes it testable without
+    # booting a VM.
+    #
+    # Returns:
+    #   detectedPorts : every port the server binds, for the
+    #                   port/privilege coherence check
+    #   healthPort    : the port to probe, preferring plaintext
+    #   usesSsl       : true when only a TLS listener exists, so the
+    #                   probe has to skip certificate verification
+    resolveHttpdListen =
+      { virtualHosts }:
+      let
+        vhosts = lib.attrValues virtualHosts;
+
+        sslEnabled =
+          vhost: (vhost.onlySSL or false) || (vhost.addSSL or false) || (vhost.forceSSL or false);
+
+        mkListenInfo =
+          vhost:
+          if (vhost.listen or [ ]) != [ ] then
+            vhost.listen
+          else
+            lib.optionals (sslEnabled vhost) (
+              map (addr: {
+                ip = addr;
+                port = 443;
+                ssl = true;
+              }) (vhost.listenAddresses or [ ])
+            )
+            ++ lib.optionals (!(vhost.onlySSL or false)) (
+              map (addr: {
+                ip = addr;
+                port = 80;
+                ssl = false;
+              }) (vhost.listenAddresses or [ ])
+            );
+
+        listenInfo = lib.unique (lib.concatMap mkListenInfo vhosts);
+        plainPorts = map (l: l.port) (lib.filter (l: !(l.ssl or false)) listenInfo);
+        sslPorts = map (l: l.port) (lib.filter (l: l.ssl or false) listenInfo);
+        ports = lib.unique (map (l: l.port) listenInfo);
+      in
+      {
+        detectedPorts = if ports != [ ] then ports else [ 80 ];
+        usesSsl = plainPorts == [ ] && sslPorts != [ ];
+        healthPort =
+          if plainPorts != [ ] then
+            lib.head plainPorts
+          else if sslPorts != [ ] then
+            lib.head sslPorts
+          else
+            80;
+      };
+
     # -- Port parsing --
 
     parseContainerPort =
