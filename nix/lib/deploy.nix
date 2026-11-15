@@ -87,6 +87,42 @@ let
       in
       lib.mapAttrsToList (k: v: "--sysctl=${k}=${v}") effectiveSysctls
     );
+
+  # Healthcheck flags understood by BOTH docker and podman.
+  #
+  # Injected at runtime to work around nix2container not embedding
+  # Healthcheck in the image config (upstream bug #197), which means
+  # these flags are the only thing that gives a deployed container a
+  # healthcheck at all. The /bin/sh required by --health-cmd is
+  # provided by the healthcheck NixOS module (adapterPackages) when a
+  # healthcheck is configured.
+  #
+  # Split out from mkHealthcheckOpts because that bundled the
+  # podman-only --sdnotify flag, so callers gated the whole thing on
+  # podman and docker deploys silently got no healthcheck at all.
+  mkHealthFlags =
+    container:
+    let
+      hc = container.healthcheckConfig or null;
+    in
+    lib.optionals (hc != null) [
+      "--health-cmd=${lib.concatStringsSep " " hc.command}"
+      "--health-interval=${toString hc.interval}s"
+      "--health-timeout=${toString hc.timeout}s"
+      "--health-start-period=${toString hc.startPeriod}s"
+      "--health-retries=${toString hc.retries}"
+    ];
+
+  # podman only: forward READY=1 to systemd once the first healthcheck
+  # passes, so dependents wait for real readiness. docker has no
+  # equivalent, and this is the only genuinely backend-specific part of
+  # healthcheck wiring.
+  mkSdnotifyFlags =
+    container: lib.optional ((container.healthcheckConfig or null) != null) "--sdnotify=healthy";
+
+  # Both together, for callers that are podman-only by construction
+  # (the home-manager target, which asserts podman).
+  mkHealthcheckOpts = container: mkHealthFlags container ++ mkSdnotifyFlags container;
 in
 {
   inherit mkPerfOpts;
@@ -129,27 +165,7 @@ in
       lib.attrValues containers
     );
 
-  # Compute podman healthcheck + sdnotify flags.
-  # Injects --health-cmd at runtime to work around nix2container not
-  # embedding Healthcheck in the image config (upstream bug #197).
-  # The /bin/sh required by --health-cmd is provided by the healthcheck
-  # NixOS module (adapterPackages) when a healthcheck is configured.
-  mkHealthcheckOpts =
-    container:
-    let
-      hc = container.healthcheckConfig or null;
-    in
-    if hc != null then
-      [
-        "--health-cmd=${lib.concatStringsSep " " hc.command}"
-        "--health-interval=${toString hc.interval}s"
-        "--health-timeout=${toString hc.timeout}s"
-        "--health-start-period=${toString hc.startPeriod}s"
-        "--health-retries=${toString hc.retries}"
-        "--sdnotify=healthy"
-      ]
-    else
-      [ ];
+  inherit mkHealthFlags mkSdnotifyFlags mkHealthcheckOpts;
 
   # Build docker/podman run arguments for a container.
   mkRunArgs =
@@ -183,5 +199,12 @@ in
     ++ volumeArgs
     ++ secOpts
     ++ perfOpts
+    # Without these the system-manager target produced containers with
+    # no healthcheck at all: it is the only caller of mkRunArgs, and
+    # the image config carries no Healthcheck either (nix2container
+    # #197). --sdnotify is deliberately absent, since this path builds
+    # a plain `docker run` / `podman run` ExecStart rather than a
+    # notify-type unit.
+    ++ mkHealthFlags container
     ++ [ container.imageRef ];
 }
