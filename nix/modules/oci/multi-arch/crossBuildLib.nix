@@ -33,8 +33,7 @@ in
             let
               ociLib = config.lib.oci or { };
               oci = perSystemConfig.containers.${containerId};
-              fullName =
-                if oci.registry != null && oci.registry != "" then "${oci.registry}/${oci.name}" else oci.name;
+              fullName = ociLib.mkRepoRef { inherit (oci) registry name; };
 
               # Reuse the NixOS eval from the native container (shadow,
               # certs, nsswitch are arch-independent)
@@ -91,13 +90,15 @@ in
               images,
             }:
             let
-              arches = lib.attrNames images;
+              # `images` is keyed by Nix target system (e.g.
+              # "armv7l-linux"), never by OCI arch. Both the layout tag
+              # and the manifest platform are derived from the system
+              # here so the OCI variant ("linux/arm/v7") survives;
+              # systemToOCIArch alone discards it.
+              targetSystems = lib.attrNames images;
+              arches = map ociDeployLib.systemToOCIArch targetSystems;
               containerConfig = perSystemConfig.containers.${containerId};
-              fullName =
-                if containerConfig.registry != null && containerConfig.registry != "" then
-                  "${containerConfig.registry}/${containerConfig.name}"
-                else
-                  containerConfig.name;
+              fullName = ociDeployLib.mkRepoRef { inherit (containerConfig) registry name; };
               primaryTag = builtins.head (
                 lib.attrNames (lib.filterAttrs (_: tc: tc.primary) containerConfig.tagConfigs)
               );
@@ -114,14 +115,17 @@ in
                   ''
                     mkdir -p $out
                     ${lib.concatStringsSep "\n" (
-                      lib.mapAttrsToList (arch: image: ''
-                        echo "==> Copying ${arch} image to OCI layout"
-                        skopeo --insecure-policy copy nix:${image} oci:$out:${arch}
+                      lib.mapAttrsToList (sys: image: ''
+                        echo "==> Copying ${ociDeployLib.systemToOCIArch sys} image to OCI layout"
+                        skopeo --insecure-policy copy nix:${image} oci:$out:${ociDeployLib.systemToOCIArch sys}
                       '') images
                     )}
                     regctl index create ocidir://$out:latest \
                       ${lib.concatStringsSep " " (
-                        map (arch: "--ref ocidir://$out:${arch} --platform linux/${arch}") arches
+                        map (
+                          sys:
+                          "--ref ocidir://$out:${ociDeployLib.systemToOCIArch sys} --platform ${ociDeployLib.systemToOCIPlatform sys}"
+                        ) targetSystems
                       )}
                     echo "==> Built multi-arch OCI layout: ${lib.concatStringsSep ", " arches}"
                   '';
@@ -193,11 +197,7 @@ in
                 lib.attrNames (lib.filterAttrs (_: tc: tc.primary) containerConfig.tagConfigs)
               );
               additionalTags = lib.attrNames (lib.filterAttrs (_: tc: !tc.primary) containerConfig.tagConfigs);
-              baseName =
-                if containerConfig.registry != null && containerConfig.registry != "" then
-                  "${containerConfig.registry}/${containerConfig.name}"
-                else
-                  containerConfig.name;
+              baseName = ociDeployLib.mkRepoRef { inherit (containerConfig) registry name; };
             in
             pkgs.writeShellApplication {
               name = "push-multiarch-${containerId}";

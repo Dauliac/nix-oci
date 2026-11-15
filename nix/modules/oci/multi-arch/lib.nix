@@ -36,11 +36,7 @@ in
               containerConfig = perSystemConfig.containers.${containerId};
               ociOutput = perSystemConfig.internal.OCIs.${containerId};
               tempTagPrefix = containerConfig.multiArch.tempTagPrefix;
-              baseName =
-                if containerConfig.registry != null && containerConfig.registry != "" then
-                  "${containerConfig.registry}/${containerConfig.name}"
-                else
-                  containerConfig.name;
+              baseName = ociLib.mkRepoRef { inherit (containerConfig) registry name; };
               compression = containerConfig.performance.compression or "gzip";
               turboEnabled = containerConfig.performance.turbo.enable or false;
               sociEnabled = turboEnabled && (containerConfig.performance.turbo.soci or false);
@@ -113,11 +109,7 @@ in
             }:
             let
               containerConfig = perSystemConfig.containers.${containerId};
-              baseName =
-                if containerConfig.registry != null && containerConfig.registry != "" then
-                  "${containerConfig.registry}/${containerConfig.name}"
-                else
-                  containerConfig.name;
+              baseName = ociLib.mkRepoRef { inherit (containerConfig) registry name; };
               arches = builtins.map (sys: ociLib.systemToOCIArch sys) systems;
               primaryTag = builtins.head (
                 lib.attrNames (lib.filterAttrs (_: tc: tc.primary) containerConfig.tagConfigs)
@@ -141,11 +133,16 @@ in
                   PRIMARY_REF="$BASE_NAME:${primaryTag}"
                 fi
 
+                # Built in Nix rather than a shell loop over `arches`:
+                # the manifest platform needs the OCI *variant*
+                # (`linux/arm/v7`), which `systemToOCIArch` discards.
+                # The temp tag still keys off the bare arch, matching
+                # how mkPushTempOCIApp pushed it.
                 REFS=""
-                for arch in ${lib.concatStringsSep " " arches}; do
-                  TEMP_TAG="${containerConfig.multiArch.tempTagPrefix}-$arch-$COMMIT_SHA"
-                  REFS="$REFS --ref $BASE_NAME:$TEMP_TAG --platform linux/$arch"
-                done
+                ${lib.concatMapStrings (sys: ''
+                  TEMP_TAG="${containerConfig.multiArch.tempTagPrefix}-${ociLib.systemToOCIArch sys}-$COMMIT_SHA"
+                  REFS="$REFS --ref $BASE_NAME:$TEMP_TAG --platform ${ociLib.systemToOCIPlatform sys}"
+                '') systems}
 
                 echo "==> Creating multi-arch manifest"
                 echo "    architectures: ${lib.concatStringsSep ", " arches}"
