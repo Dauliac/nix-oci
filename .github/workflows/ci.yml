@@ -155,6 +155,12 @@ jobs:
           echo "All unit tests pass."
       - name: Evaluate flake outputs
         run: nix flake show --all-systems > /dev/null
+      - name: Force check derivations (instantiate, do not build)
+        run: |
+          set -euo pipefail
+          forced=$(nix eval .#checks.x86_64-linux --apply \
+            'cs: builtins.length (builtins.filter (x: x != null) (builtins.attrValues (builtins.mapAttrs (_: c: c.drvPath) cs)))')
+          echo "forced $forced check derivations"
     timeout-minutes: 20
   lint:
     runs-on: ubuntu-latest

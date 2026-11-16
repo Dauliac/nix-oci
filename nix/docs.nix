@@ -787,6 +787,29 @@ in
                     name = "Evaluate flake outputs";
                     run = "nix flake show --all-systems > /dev/null";
                   }
+                  {
+                    # `flake show` above walks the output TREE but never
+                    # instantiates a derivation, so a missing attribute
+                    # inside a builder survives it. Forcing every check's
+                    # drvPath does instantiate them, purely at eval time
+                    # and with no IFD, which is what makes this cheap.
+                    #
+                    # Two things depend on this step:
+                    #   - `spec-eval` is the reader for level = "eval"
+                    #     BDD specs. Its INSTANTIATION is the assertion,
+                    #     so forcing drvPaths is what executes them.
+                    #   - It is the gate that would have caught the
+                    #     `attribute 'mkRepoRef' missing` failure that
+                    #     reached CI in #25, where attrNames-only checks
+                    #     and `flake show` both passed.
+                    name = "Force check derivations (instantiate, do not build)";
+                    run = ''
+                      set -euo pipefail
+                      forced=$(nix eval .#checks.x86_64-linux --apply \
+                        'cs: builtins.length (builtins.filter (x: x != null) (builtins.attrValues (builtins.mapAttrs (_: c: c.drvPath) cs)))')
+                      echo "forced $forced check derivations"
+                    '';
+                  }
                 ];
               };
 

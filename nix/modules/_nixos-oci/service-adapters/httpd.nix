@@ -21,19 +21,6 @@ let
 
   isHttpd = cfg.mainService == "httpd";
 
-  httpdForeground = pkgs.symlinkJoin {
-    name = "httpd-foreground";
-    paths = [ originalPkg ];
-    postBuild = ''
-      rm "$out/bin/httpd"
-      cat > "$out/bin/httpd" <<'WRAPPER'
-      #!/bin/sh
-      exec ${originalPkg}/bin/httpd -DFOREGROUND "$@"
-      WRAPPER
-      chmod +x "$out/bin/httpd"
-    '';
-  };
-
   # Resolve the listen ports from the virtual hosts.
   #
   # The top-level `services.httpd.listen` this adapter used to read was
@@ -62,8 +49,23 @@ in
     # port/privilege coherence check, which needs to see 443 as well as
     # 80 to reason about NET_BIND_SERVICE.
     oci.container._output.detectedPorts = listen.detectedPorts;
-    services.httpd.package = lib.mkForce httpdForeground;
-    systemd.services.httpd.serviceConfig.Type = lib.mkForce "simple";
+    # Force the unit into the foreground by rewriting ExecStart, the
+    # same way the dnsmasq, bind and postfix adapters do.
+    #
+    # NOT by wrapping services.httpd.package: this adapter used to read
+    # `httpdCfg.package` to build a wrapper and then assign that wrapper
+    # back to `services.httpd.package`, which is self-referential and
+    # evaluates to "error: infinite recursion encountered". It went
+    # unnoticed because the removed-option read of `services.httpd.listen`
+    # threw first, masking it; fixing that exposed this.
+    #
+    # ExecStart mirrors nixpkgs' own (apache-httpd/default.nix), minus
+    # the `@` prefix (argv[0] rewriting, pointless here) and plus
+    # -DFOREGROUND.
+    systemd.services.httpd.serviceConfig = {
+      Type = lib.mkForce "simple";
+      ExecStart = lib.mkForce "${httpdCfg.package}/bin/httpd -f /etc/httpd/httpd.conf -DFOREGROUND";
+    };
 
     # Inject mod_status at a localhost-only endpoint
     services.httpd.extraConfig = ''

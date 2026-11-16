@@ -47,7 +47,12 @@
             package = pkgs.git;
             isRoot = false;
             homeConfig = {
-              flake = inputs.home-manager or null;
+              # `homeManagerFlake`, not `flake`: the latter is not an
+              # option and this trip-wire could never have evaluated.
+              # It went unnoticed because nothing read eval-level specs
+              # until spec-eval, despite the header above claiming this
+              # scenario "will fail loudly at nix flake check time".
+              homeManagerFlake = inputs.home-manager or null;
               modules = [
                 (
                   { ... }:
