@@ -788,26 +788,30 @@ in
                     run = "nix flake show --all-systems > /dev/null";
                   }
                   {
-                    # `flake show` above walks the output TREE but never
-                    # instantiates a derivation, so a missing attribute
-                    # inside a builder survives it. Forcing every check's
-                    # drvPath does instantiate them, purely at eval time
-                    # and with no IFD, which is what makes this cheap.
+                    # Executes the level = "eval" BDD specs.
                     #
-                    # Two things depend on this step:
-                    #   - `spec-eval` is the reader for level = "eval"
-                    #     BDD specs. Its INSTANTIATION is the assertion,
-                    #     so forcing drvPaths is what executes them.
-                    #   - It is the gate that would have caught the
-                    #     `attribute 'mkRepoRef' missing` failure that
-                    #     reached CI in #25, where attrNames-only checks
-                    #     and `flake show` both passed.
-                    name = "Force check derivations (instantiate, do not build)";
+                    # `flake show` above walks the output TREE without
+                    # instantiating anything, so it cannot run a spec and
+                    # cannot catch a missing attribute inside a builder.
+                    # Building `spec-eval` instantiates it, and
+                    # instantiation IS the assertion: the derivation's
+                    # inputs are strings that only exist once every
+                    # spec's narrative and container config have
+                    # evaluated. The build itself is a file copy.
+                    #
+                    # Scoped to this one check on purpose. Forcing every
+                    # check's drvPath would also catch the
+                    # `attribute 'mkRepoRef' missing` class from #25, but
+                    # it re-evaluates the 13 VM derivations that the
+                    # check-bdd-vm jobs already evaluate, and it
+                    # overran this job's 20-minute timeout on a cold
+                    # runner. That wider gate is worth having and needs
+                    # its own job rather than a free ride here.
+                    name = "Execute eval-level BDD specs (spec-eval)";
                     run = ''
                       set -euo pipefail
-                      forced=$(nix eval .#checks.x86_64-linux --apply \
-                        'cs: builtins.length (builtins.filter (x: x != null) (builtins.attrValues (builtins.mapAttrs (_: c: c.drvPath) cs)))')
-                      echo "forced $forced check derivations"
+                      nix build .#checks.x86_64-linux.spec-eval --print-build-logs
+                      cat result/summary.txt
                     '';
                   }
                 ];
