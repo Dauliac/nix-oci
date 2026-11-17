@@ -290,6 +290,29 @@ types.submodule {
       '';
     };
 
+    parked = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      description = ''
+        Why this spec is NOT executed, or `null` when it is.
+
+        Parking used to be done by setting `level = "eval"` and relying
+        on the fact that nothing read eval-level specs. That made a
+        parked spec indistinguishable from a real assertion, and from a
+        spec someone simply forgot to finish. `spec-eval` now executes
+        eval-level specs, so parking has to be said out loud.
+
+        A parked spec still contributes its BDD narrative to the
+        coverage docs, and `spec-eval` still forces that narrative, so a
+        regression guard interpolated into `then` keeps firing. What it
+        skips is evaluating the container.
+
+        Set this to the concrete blocker, not a vague note. Prefer
+        fixing the spec over parking it.
+      '';
+      example = "nixpkgs postfix etc-postfix builder reads /var/lib/postfix/conf";
+    };
+
     # ── Existing fields ────────────────────────────────────
 
     level = mkOption {

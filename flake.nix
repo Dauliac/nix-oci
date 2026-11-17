@@ -136,7 +136,15 @@
                   )
                   // lib.mapAttrs' (name: drv: lib.nameValuePair "bdd-app-${name}" drv) (
                     config.test.oci._bddAppsChecks or { }
-                  );
+                  )
+                  # `spec-eval` is the reader for `level = "eval"` specs,
+                  # which nothing read before: test-vm.nix keeps only
+                  # runtime and deploy. Its INSTANTIATION is the
+                  # assertion, so the CI `eval` job catches a broken spec
+                  # without building anything. See testing/spec-eval.nix.
+                  // lib.optionalAttrs (config.test.oci._specEvalCheck != null) {
+                    spec-eval = config.test.oci._specEvalCheck;
+                  };
 
                 # Opt-in multi-arch aggregate (design D8): NOT wired into
                 # `checks.<sys>.*` because `nix flake check` unconditionally

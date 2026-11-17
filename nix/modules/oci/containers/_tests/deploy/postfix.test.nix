@@ -36,9 +36,12 @@
           given = "a Postfix container with mainService = postfix";
           "when" = "`postfix status` runs inside the container";
           "then" = "the output reports the master pid";
-          # See BUILD note above: currently blocked by nixpkgs postfix's
-          # build-time reference to /var/lib/postfix/conf.
+          # See BUILD note above. `parked` states the blocker
+          # explicitly: spec-eval executes eval-level specs now, so
+          # parking can no longer be done by leaning on the fact that
+          # nothing read them.
           level = "eval";
+          parked = "nixpkgs postfix etc-postfix builder reads /var/lib/postfix/conf, a runtime-only path absent in the Nix sandbox";
           mode = "daemon";
           target = "oci";
           container = {

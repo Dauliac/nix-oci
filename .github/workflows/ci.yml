@@ -155,6 +155,11 @@ jobs:
           echo "All unit tests pass."
       - name: Evaluate flake outputs
         run: nix flake show --all-systems > /dev/null
+      - name: Execute eval-level BDD specs (spec-eval)
+        run: |
+          set -euo pipefail
+          nix build .#checks.x86_64-linux.spec-eval --print-build-logs
+          cat result/summary.txt
     timeout-minutes: 20
   lint:
     runs-on: ubuntu-latest

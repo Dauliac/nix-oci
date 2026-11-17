@@ -787,6 +787,33 @@ in
                     name = "Evaluate flake outputs";
                     run = "nix flake show --all-systems > /dev/null";
                   }
+                  {
+                    # Executes the level = "eval" BDD specs.
+                    #
+                    # `flake show` above walks the output TREE without
+                    # instantiating anything, so it cannot run a spec and
+                    # cannot catch a missing attribute inside a builder.
+                    # Building `spec-eval` instantiates it, and
+                    # instantiation IS the assertion: the derivation's
+                    # inputs are strings that only exist once every
+                    # spec's narrative and container config have
+                    # evaluated. The build itself is a file copy.
+                    #
+                    # Scoped to this one check on purpose. Forcing every
+                    # check's drvPath would also catch the
+                    # `attribute 'mkRepoRef' missing` class from #25, but
+                    # it re-evaluates the 13 VM derivations that the
+                    # check-bdd-vm jobs already evaluate, and it
+                    # overran this job's 20-minute timeout on a cold
+                    # runner. That wider gate is worth having and needs
+                    # its own job rather than a free ride here.
+                    name = "Execute eval-level BDD specs (spec-eval)";
+                    run = ''
+                      set -euo pipefail
+                      nix build .#checks.x86_64-linux.spec-eval --print-build-logs
+                      cat result/summary.txt
+                    '';
+                  }
                 ];
               };
 
